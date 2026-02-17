@@ -1,0 +1,222 @@
+---
+title: Installing Extensions
+description: Install extensions, manage trust policies, and monitor extension health in your FarmClaw instance.
+section: Extensions
+order: 2
+icon: Download
+tags: [extensions, install, trust, health]
+---
+
+# Installing Extensions
+
+This guide covers the complete extension installation workflow: configuring your trust policy, installing extensions from the catalog, monitoring health, and understanding the staged rollout system for updates.
+
+## Trust policies
+
+Every FarmClaw account has an extension trust policy that controls which extensions can be installed. The trust policy has two components:
+
+### Allowed source types
+
+The `allowed_source_types` list determines which source types you permit at all. By default, all five source types are allowed:
+
+- `internal` -- FarmClaw first-party extensions
+- `local` -- Extensions bundled with your instance image
+- `clawhub` -- FarmClaw marketplace packages
+- `npm` -- Node package registry packages
+- `git` -- Git repository extensions
+
+You must keep at least one source type allowed at all times.
+
+### Verification requirements
+
+The `require_verified_source_types` list determines which allowed sources must be verified before installation. By default, three source types require verification:
+
+- `npm`
+- `git`
+- `clawhub`
+
+Internal and local sources do not support verification -- they are implicitly trusted because FarmClaw or your deployment controls them.
+
+<Callout variant="info" title="Default trust policy">
+Out of the box, your trust policy allows all source types and requires verification for npm, git, and clawhub. This provides a balanced security posture: first-party and local extensions are always trusted, while third-party sources must be verified.
+</Callout>
+
+### Configuring your trust policy
+
+1. Go to **Settings > Extensions**.
+2. In the **Trust Policy** section, toggle each source type on or off under the **Allowed** column.
+3. For source types that support verification (clawhub, npm, git), toggle **Require verified** on or off.
+4. Click **Save Policy**.
+
+The policy takes effect immediately for all future installation requests.
+
+| Source type | Can be allowed | Can require verification |
+|---|---|---|
+| `internal` | Yes | No (implicitly trusted) |
+| `local` | Yes | No (implicitly trusted) |
+| `clawhub` | Yes | Yes |
+| `npm` | Yes | Yes |
+| `git` | Yes | Yes |
+
+<Callout variant="warning" title="Verification requirements only apply to allowed sources">
+If you set a source type to require verification but then disallow that source entirely, the verification requirement is automatically removed. Verified-required source types must also be in your allowed list.
+</Callout>
+
+### How trust evaluation works
+
+When you attempt to install an extension, FarmClaw evaluates it against your trust policy in two steps:
+
+1. **Source type check** -- Is the extension's source type in your `allowed_source_types`? If not, the install is blocked.
+2. **Verification check** -- Is the source type in your `require_verified_source_types`? If yes, is the extension marked as verified? If it requires verification and is not verified, the install is blocked.
+
+If both checks pass, the installation proceeds.
+
+## Installation flow
+
+Installing an extension from the catalog follows this sequence:
+
+### Step 1: Select an extension
+
+Browse the [Marketplace](/docs/extensions/marketplace) and find the extension you want to install. Click **Install** on the extension card.
+
+### Step 2: Trust policy check
+
+FarmClaw automatically evaluates the extension against your trust policy. If the extension is blocked, you receive an error message explaining the reason (e.g., "source type 'npm' is blocked by trust policy" or "extension is unverified for source type 'clawhub'").
+
+### Step 3: Version resolution
+
+FarmClaw resolves the target version. By default, this is the latest published version. If you are upgrading an existing installation, the latest version that is newer than your current version is selected.
+
+You can optionally **pin** an installation to a specific version. Pinned installations do not receive automatic upgrades through the rollout system.
+
+### Step 4: Operation queued
+
+FarmClaw creates an installation record (or updates an existing one) and queues an operation. The operation tracks the installation's progress:
+
+| Operation field | Description |
+|---|---|
+| `operation_type` | `install` for new installations, `upgrade` for existing ones |
+| `scope_type` | `instance` if tied to a specific instance, `customer` if account-wide |
+| `status` | Starts as `pending`, progresses to `in_progress`, then `completed` or `failed` |
+
+### Step 5: Execution
+
+The queued operation is picked up by FarmClaw's operation processor. It installs the extension package, configures it for your instance, and updates the installation status.
+
+### Step 6: Confirmation
+
+Once complete, the installation status changes to `installed` and the extension is active on your instance. The health monitor begins tracking the extension's status.
+
+<Callout variant="success" title="Installation is asynchronous">
+Extension installations are processed asynchronously. After clicking Install, you can navigate away from the page. Check back on the Installed section to see the current status.
+</Callout>
+
+## Health monitoring
+
+Every installed extension is monitored for health. The health status appears as a badge next to each installation in the **Installed** section.
+
+| Health status | Meaning |
+|---|---|
+| `unknown` | Health has not been evaluated yet (typical right after install) |
+| `healthy` | The extension is operating normally |
+| `degraded` | The extension is experiencing intermittent issues |
+| `unhealthy` | The extension is failing consistently |
+
+Health status is updated automatically. If an extension becomes unhealthy, you can queue a rollback to revert to the previous version.
+
+### Viewing health details
+
+Each installed extension card shows:
+
+- **Install status** -- Current installation state (installed, pending, failed, etc.)
+- **Health status** -- Current health evaluation
+- **Last error** -- If the extension has encountered an error, the most recent error message is displayed
+- **Version** -- The currently installed version number
+- **Last updated** -- When the installation was last modified
+
+## Rollbacks
+
+If an extension update causes problems, you can revert to the previous version.
+
+1. Go to **Settings > Extensions**.
+2. Find the extension in the **Installed** section.
+3. Click **Queue Rollback**.
+
+FarmClaw queues a rollback operation that reverts the installation to the previous version. The installation status changes to `rollback_pending` and then to `rolled_back` once complete.
+
+<Callout variant="tip" title="Rollbacks are non-destructive">
+A rollback changes the active version but does not delete the newer version from the catalog. You can upgrade again later when a fix is available.
+</Callout>
+
+## Rollout system
+
+When extension authors publish new versions, FarmClaw uses a staged rollout system to deploy updates safely across all installations. This prevents a bad update from affecting every customer at once.
+
+### Rollout rings
+
+Updates are deployed in three rings, each progressively larger:
+
+| Ring | Default batch size | Purpose |
+|---|---|---|
+| **canary** | 1 instance | Early validation on a single installation |
+| **standard** | 10 instances | Broader validation across a small group |
+| **delayed** | 100 instances | Full rollout to remaining installations |
+
+The rollout advances from canary to standard to delayed, pausing between rings to evaluate health metrics.
+
+### Gate policy
+
+Between each ring, FarmClaw evaluates the update against health thresholds called the **gate policy**. If any threshold is exceeded, the rollout is halted and affected installations are rolled back.
+
+| Metric | Default threshold | Description |
+|---|---|---|
+| **Max failure rate** | 10% | Maximum percentage of installations that can fail |
+| **Max P95 latency** | 10,000 ms (10s) | Maximum 95th percentile response latency |
+| **Max timeout rate** | 5% | Maximum percentage of installations that time out |
+| **Max hard error rate** | 3% | Maximum percentage of installations with unrecoverable errors |
+
+<Callout variant="warning" title="Automatic rollback on threshold breach">
+If the gate policy thresholds are exceeded during a rollout, FarmClaw automatically halts the rollout and rolls back affected installations. This protects your instance from bad updates.
+</Callout>
+
+### Rollout statuses
+
+A rollout progresses through these statuses:
+
+| Status | Meaning |
+|---|---|
+| `pending` | Rollout has been created but not started |
+| `in_progress` | Currently deploying to the active ring |
+| `paused` | Manually paused by an administrator |
+| `completed` | All rings deployed successfully |
+| `failed` | A ring failed and the rollout was stopped |
+| `canceled` | Manually canceled before completion |
+| `halted` | Automatically stopped due to gate policy violation |
+
+### Per-target tracking
+
+Each installation targeted by a rollout has its own tracking record with:
+
+- **Ring assignment** -- Which ring the installation belongs to
+- **Status** -- pending, in_progress, completed, failed, skipped, or rolled_back
+- **Attempt count** -- How many times the update has been attempted
+- **Latency** -- Measured response latency in milliseconds
+- **Timeout count** -- Number of timeout events
+- **Hard error count** -- Number of unrecoverable errors
+- **Error message** -- Details if the target failed
+
+## Pinning versions
+
+If you want to stay on a specific version and opt out of automatic rollouts:
+
+1. Install the extension and note the version number.
+2. The installation's `pinned_version` field locks it to that version.
+
+Pinned installations are skipped by the rollout system. To receive updates again, install the latest version manually, which clears the pin.
+
+## What's next
+
+- [Marketplace](/docs/extensions/marketplace) -- Browse and discover available extensions
+- [Extensions Overview](/docs/extensions) -- Extension types, sources, and lifecycle
+- [Skills](/docs/skills) -- Built-in capabilities that come with every instance
+- [MCP Servers](/docs/mcp-servers) -- Tool servers for filesystem, database, and memory access

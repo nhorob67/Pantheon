@@ -1,0 +1,85 @@
+---
+title: AI Agents
+description: FarmClaw supports multiple AI agents per instance, each with their own personality, skills, and channel assignments.
+section: AI Agents
+order: 0
+icon: Bot
+tags: [agents, overview, multi-agent]
+---
+
+## Overview
+
+Every FarmClaw instance comes with at least one AI agent — your farm's assistant. Out of the box, a single general-purpose agent handles grain bids, weather, scale tickets, and anything else you ask about.
+
+But FarmClaw also supports **multiple agents** per instance. Each agent can have its own personality, its own skill set, and its own Discord channel assignment. Think of it as building a small team of specialists for your operation.
+
+## Single agent vs. multi-agent
+
+### Single agent (the default)
+
+When you first set up FarmClaw, you get one agent with the **General Advisor** personality. It has access to all your enabled skills and handles every channel in your Discord server plus DMs.
+
+This is the simplest setup and works well for most operations. One agent that does everything.
+
+### Multi-agent setup
+
+As your operation grows or you want more focused responses, you can add specialist agents:
+
+- A **Grain Specialist** that lives in `#grain-desk` and knows cash bids inside and out
+- A **Weather agent** in `#weather` that handles forecasts, spray windows, and GDD tracking
+- A **Scale Ticket Clerk** in `#scale-tickets` that logs deliveries quickly and precisely
+- A **Field Operations** manager for equipment scheduling and input tracking
+
+Each specialist is tuned for its area. The Grain Specialist leads with numbers and basis comparisons. The Weather agent is cautious and safety-first. The Ticket Clerk is fast and precise. They each know their boundaries and will delegate to other agents when a question falls outside their expertise.
+
+<Callout variant="tip" title="Start with one agent">
+You can always add more agents later. Start with the default General Advisor and see how it handles your day-to-day questions. When you find yourself wanting more focused responses on a specific topic, add a specialist.
+</Callout>
+
+## What makes up an agent
+
+Each agent in your FarmClaw instance has these configurable properties:
+
+| Property | Description |
+|----------|-------------|
+| **Display name** | The name shown in Discord (e.g., "Farm Assistant", "Grain Desk") |
+| **Personality preset** | Determines the agent's tone, focus area, and boundaries |
+| **Skills** | Which FarmClaw skills this agent can use (grain bids, weather, scale tickets) |
+| **Channel binding** | Which Discord channel this agent is assigned to (optional) |
+| **Cron jobs** | Scheduled messages like morning weather or daily grain bids |
+| **Default status** | Whether this is the default agent (handles unbound channels and DMs) |
+
+## Skills
+
+FarmClaw currently offers three core skills that can be assigned to agents:
+
+| Skill | What it does |
+|-------|-------------|
+| **Grain Bids** | Scrapes configured elevator websites for current cash grain prices |
+| **Weather** | NWS forecasts, spray window analysis, and GDD calculations |
+| **Scale Tickets** | Log grain deliveries via photo OCR, voice dictation, or guided entry |
+
+Each agent can have any combination of skills. A Grain Specialist typically only has the Grain Bids skill. A General Advisor might have all three.
+
+## Cron jobs
+
+Agents can run scheduled tasks that post messages to their assigned channel automatically:
+
+| Cron Job | Schedule | Required Skill |
+|----------|----------|---------------|
+| **Morning Weather** | 6:00 AM daily | Weather |
+| **Daily Grain Bids** | 9:00 AM Mon-Fri | Grain Bids |
+
+Cron jobs are optional. Enable them per agent based on what information you want delivered proactively.
+
+## Inter-agent communication
+
+When you have multiple agents, they can talk to each other. If someone asks the Farm Assistant a detailed grain marketing question, it can delegate to the Grain Specialist using built-in communication tools (`agents_list` and `sessions_send`).
+
+The farmer sees a seamless experience — they ask a question in any channel, and the right agent handles it.
+
+## Next steps
+
+- [Multi-Agent Setups](/docs/agents/multi-agent-system) — Pre-built 2, 3, and 4-agent configurations you can deploy with one click
+- [Personality Presets](/docs/agents/personality-presets) — Detailed breakdown of each personality type and its boundaries
+- [Channel Configuration](/docs/discord/channel-config) — How to bind agents to specific Discord channels

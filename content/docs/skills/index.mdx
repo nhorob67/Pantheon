@@ -1,0 +1,83 @@
+---
+title: Skills
+description: Skills are the capabilities that power your AI assistant — grain bids, weather forecasts, scale ticket management, and more.
+section: Skills
+order: 0
+icon: Wrench
+tags: [skills, overview, capabilities]
+---
+
+# Skills
+
+Skills define what your AI assistant can actually do. Each skill provides a set of instructions, tools, and workflows that enable your assistant to perform specific farm tasks -- from fetching grain bids off elevator websites to reading scale tickets from a photo.
+
+## Built-in skills
+
+Every FarmClaw instance ships with three built-in skills. These cover the core tasks that Upper Midwest row crop farmers use daily.
+
+| Skill | What it does | Key capability |
+|---|---|---|
+| [Grain Bids](/docs/skills/grain-bids) | Scrapes elevator websites for cash grain prices | Real-time bid comparison across all your elevators |
+| [Weather Forecasts](/docs/skills/weather-forecasts) | Agriculture-focused weather from the National Weather Service | Spray window analysis, GDD tracking, morning briefings |
+| [Scale Tickets](/docs/skills/scale-tickets) | Logs grain deliveries via photo, voice, or guided entry | OCR from ticket photos, natural language parsing, export to spreadsheet |
+
+<Callout variant="info" title="All three skills are available on every plan">
+The $40/month subscription includes all built-in skills. There is no tiered feature gating. The only variable cost is metered API usage based on how often you interact with your assistant.
+</Callout>
+
+## How skills work
+
+Skills are loaded into your AI assistant's configuration when your instance is provisioned. Each skill contains:
+
+- **Instructions** -- Detailed guidance that tells the assistant how to perform the task, what data to look for, and how to format the output.
+- **Tools** -- Access to browser automation, APIs, databases, or file creation capabilities needed to complete the task.
+- **Configuration** -- Farm-specific settings like your elevator list, weather coordinates, or which scale ticket fields to display.
+
+When you ask your assistant a question, it determines which skill applies and follows the skill's instructions to produce a response. For example, asking "What's corn at?" triggers the Grain Bids skill, which navigates to your elevator websites and extracts the current posted prices.
+
+## Enabling and disabling skills
+
+You can toggle skills on or off from the FarmClaw dashboard.
+
+1. Go to **Settings > Skills**.
+2. Toggle the switch next to each skill to enable or disable it.
+3. Click **Save Changes**.
+
+<Callout variant="warning" title="Saving changes restarts your assistant">
+When you change skill settings, FarmClaw rebuilds your instance configuration and restarts the container. Your assistant will be briefly unavailable in Discord for 15--30 seconds.
+</Callout>
+
+Disabling a skill removes it from your assistant's configuration entirely. The assistant will not attempt tasks related to a disabled skill, even if asked directly.
+
+## Skills and agents
+
+If you run a [multi-agent setup](/docs/agents/skills-per-agent), each agent gets its own subset of the globally-enabled skills. This lets you create focused specialists:
+
+- A **Grain Desk** agent with only the Grain Bids skill
+- A **Weather Watch** agent with only the Weather Forecasts skill
+- A **Ticket Clerk** agent with only the Scale Tickets skill
+- A **General Advisor** that has all skills for catch-all questions
+
+A skill must be enabled globally before it can be assigned to any agent. Disabling a skill globally removes it from all agents.
+
+| Configuration level | Where to change it | What it controls |
+|---|---|---|
+| Global skill toggle | Settings > Skills | Whether the skill is available at all |
+| Per-agent assignment | Settings > Agents > [Agent] | Which agents can use the skill |
+
+## Skill configuration
+
+Each skill has its own configuration that comes from your farm profile and onboarding data:
+
+- **Grain Bids** reads your elevator list (name, URL, crops to track) from your farm setup.
+- **Weather Forecasts** reads your latitude, longitude, location name, and timezone.
+- **Scale Tickets** reads your crop list for bushel weight conversions and your visible/required field preferences.
+
+To update these settings, edit the relevant section in your farm profile or skill-specific settings page. See each skill's documentation for details.
+
+## What's next
+
+- [Grain Bids](/docs/skills/grain-bids) -- Real-time cash grain prices from your elevators
+- [Weather Forecasts](/docs/skills/weather-forecasts) -- NWS-powered forecasts, spray windows, and GDD
+- [Scale Tickets](/docs/skills/scale-tickets) -- Three ways to log grain deliveries
+- [Skills & Scheduling](/docs/agents/skills-per-agent) -- Assign skills to specific agents and set up cron jobs

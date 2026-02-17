@@ -1,0 +1,88 @@
+---
+title: Crop Selection
+description: Choose from 10 supported crops. Crop selection affects grain bid tracking, scale ticket conversions, and agent recommendations.
+section: Farm Setup
+order: 2
+icon: Wheat
+tags: [crops, selection, bushel weights]
+---
+
+# Crop Selection
+
+FarmClaw supports 10 row crops commonly grown in the Upper Midwest. During onboarding, you select the crops you grow as part of your [farm profile](/docs/farm-setup/farm-profile). You must select at least one crop, and you can select as many as apply to your operation.
+
+## Supported Crops and Bushel Weights
+
+Each crop has a standard bushel weight used for weight-to-bushel conversions throughout the platform. These weights follow USDA standard bushel weights and are used whenever your AI assistant converts between pounds and bushels -- for example, when logging scale tickets or calculating delivery totals.
+
+| Crop | Bushel Weight (lbs/bu) |
+|---|---|
+| Corn | 56 |
+| Soybeans | 60 |
+| Spring Wheat | 60 |
+| Winter Wheat | 60 |
+| Durum | 60 |
+| Barley | 48 |
+| Sunflowers | 24 |
+| Canola | 50 |
+| Dry Beans | 60 |
+| Flax | 56 |
+
+<Callout variant="info" title="How bushel conversion works">
+When you deliver grain and log a scale ticket, your assistant converts net weight to bushels using the formula:
+
+**Net Bushels = Net Weight (lbs) / Bushel Weight (lbs/bu)**
+
+For example, a 48,000-pound load of corn converts to **857.1 bushels** (48,000 / 56). Your assistant always displays both pounds and bushels so you can verify the math.
+</Callout>
+
+## How Crop Selection Affects Your Experience
+
+### Grain Bid Tracking
+
+When you configure grain elevators in the [elevator setup](/docs/farm-setup/elevator-config), your selected crops determine which commodities are tracked at each elevator. If you grow corn and soybeans, your assistant pulls corn and soybean bids from each elevator and ignores commodities you do not produce.
+
+When you ask your assistant for grain bids, it returns prices only for your crops. This keeps bid reports clean and relevant rather than listing every commodity an elevator handles.
+
+### Scale Tickets
+
+Your crop list is used in three ways during scale ticket entry:
+
+- **Photo OCR** -- When you photograph a scale ticket, the assistant cross-references the commodity on the ticket against your crop list to select the correct bushel weight for conversion.
+- **Voice and text entry** -- When you dictate a load ("48k of corn to CHS"), the assistant recognizes the crop name and applies the correct conversion factor.
+- **Structured entry** -- When walking through ticket fields step by step, your assistant suggests your configured crops in a pick list rather than showing all 10 options.
+
+### Agent Configuration
+
+Your crop selection influences how AI agent personality presets behave:
+
+- **Grain Specialist** agents focus on market analysis and basis tracking for your specific commodities.
+- **General Advisor** agents tailor agronomic recommendations to the crops you actually grow.
+- **Scale Ticket Clerk** agents pre-configure their visible fields and suggested entries based on your crop mix.
+
+## Common Crop Abbreviations
+
+Your assistant understands common shorthand when you talk about crops in Discord:
+
+| What You Say | What It Means |
+|---|---|
+| beans | Soybeans |
+| HRS, spring wheat | Spring Wheat |
+| HRW, winter wheat | Winter Wheat |
+| durum | Durum |
+| sunnies, sunflowers | Sunflowers |
+| corn | Corn |
+| canola | Canola |
+| barley | Barley |
+
+<Callout variant="tip" title="You do not need to grow all your crops every year">
+Select every crop you might grow in a typical rotation. Even if you are not growing durum this year, having it in your crop list means your assistant is ready if you add it next season. There is no cost difference for selecting more crops.
+</Callout>
+
+## Updating Your Crops
+
+You can add or remove crops at any time from **Settings > Farm Profile** in your dashboard. Changes take effect after a configuration rebuild, which typically completes in 15-30 seconds.
+
+<Callout variant="warning" title="Removing a crop does not delete scale tickets">
+If you remove a crop from your profile, any scale tickets already logged for that crop remain in your database. You can still query and export them. The crop simply will not appear in suggested lists going forward.
+</Callout>

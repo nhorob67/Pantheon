@@ -1,0 +1,39 @@
+---
+title: Workflow KPI Review Cadence
+description: Weekly KPI review rhythm and escalation thresholds for workflow builder launch operations.
+section: Tools
+order: 3
+icon: BarChart3
+tags: [workflow, kpi, review, operations]
+---
+
+# Workflow KPI Review Cadence
+
+Run a weekly launch review every **Monday at 16:00 UTC**.
+
+## Required KPIs
+
+- Time to first publish (median)
+- Draft to publish completion rate
+- Run success rate
+- Retry rate
+- Retry recovery success rate
+- Approval cycle time (p50)
+- Weekly active builders
+- Estimated operator hours saved
+
+## Meeting agenda
+
+1. Check KPI trend deltas week-over-week.
+2. Review performance gates and sample sufficiency.
+3. Decide rollout action: promote, hold, or rollback ring.
+4. Assign follow-up owners and due dates.
+
+## Escalation thresholds
+
+Escalate to incident response if:
+
+- run success rate drops by 10+ points week-over-week
+- retry recovery falls below 70%
+- approval cycle p50 doubles week-over-week
+- any gate remains failed across two reviews

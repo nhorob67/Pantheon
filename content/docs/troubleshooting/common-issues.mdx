@@ -1,0 +1,171 @@
+---
+title: Common Issues
+description: Solutions for the most frequently encountered problems with FarmClaw — login, Discord, skills, provisioning, and billing.
+section: Troubleshooting
+order: 1
+icon: AlertCircle
+tags: [troubleshooting, faq, common issues, errors]
+---
+
+## Login & authentication
+
+### I didn't receive the magic link email
+
+- Check your **spam**, **junk**, or **promotions** folder
+- Verify you entered the correct email address
+- Wait 60 seconds before requesting another link — there's a cooldown
+- If using a corporate email, your IT department may be blocking the sender
+- Try a different email provider (Gmail, Outlook) if issues persist
+
+### The magic link says it's expired
+
+Magic links expire after a short time for security. Request a new one from the login page. Don't bookmark or save magic link URLs — they're single-use.
+
+### I'm getting redirected to the login page repeatedly
+
+Your session may have expired. Clear your browser cookies for FarmClaw and request a new magic link. If this happens frequently, check that your browser allows cookies.
+
+---
+
+## Discord connectivity
+
+### The bot appears offline in Discord
+
+1. Check your **dashboard** — if the instance shows "Stopped" or "Error", the container may need to be restarted
+2. Verify the **bot token** hasn't been regenerated in the Discord Developer Portal. If you regenerated it, update the token in Settings > Discord
+3. Check that the bot hasn't been **kicked** from the server. Re-invite it using the original invite URL
+
+### The bot is online but not responding
+
+- Make sure you're messaging in a channel the bot has access to. Check the bot's role permissions in Discord server settings.
+- Verify the bot has these permissions: **Send Messages**, **Read Message History**, **Read Messages/View Channels**, **Embed Links**, **Attach Files**
+- If using channel bindings, make sure the channel you're in is bound to an agent or is handled by the default agent
+- Check your dashboard for any error indicators on the instance
+
+### The bot responds slowly
+
+- First response after the instance restarts may take 10–15 seconds as the AI model loads
+- Grain bid fetches involve scraping elevator websites, which can take 5–15 seconds per elevator
+- Photo OCR for scale tickets requires image processing, which takes a few extra seconds
+- If consistently slow, check your usage dashboard for any unusual patterns
+
+<Callout variant="info" title="Cold starts">
+If your instance hasn't received a message in a while, the first response may be slightly slower than usual. Subsequent responses will be faster.
+</Callout>
+
+---
+
+## Grain bids
+
+### "Elevator website unreachable" error
+
+- The elevator's website may be temporarily down — try again in a few minutes
+- The elevator may have changed their website URL. Check their current bid page URL and update it in Settings > Farm > Elevators
+- Some elevator websites have anti-scraping protections that may block automated access
+
+### Bids seem outdated
+
+- Cash grain bids are typically updated **once daily in the morning** by elevators
+- If you check in the evening, the bids shown are from that morning's posting
+- FarmClaw always fetches fresh data — it never uses cached or remembered prices from previous conversations
+
+### Missing crops in bid results
+
+- Verify the missing crop is listed in the elevator's configuration. Go to Settings > Farm > Elevators and check the crops list for that elevator
+- Not all elevators post bids for all commodities — the elevator may not buy that crop at that location
+- Seasonal crops may not have posted bids during off-seasons
+
+---
+
+## Weather
+
+### "Unable to fetch forecast" error
+
+- The National Weather Service API occasionally has outages. Try again in a few minutes.
+- Verify your weather coordinates are correct in Settings > Farm. Latitude should be 40–49°N and longitude should be -104 to -89°W for the supported Midwest region.
+
+### Morning briefing not appearing
+
+- Check that the morning weather cron job is enabled for one of your agents in Settings > Agents
+- The briefing is scheduled for 6:00 AM in your configured timezone. Verify your timezone is correct.
+- Check the channel that the agent with the cron job is bound to — the briefing posts there
+
+### Spray window data seems wrong
+
+Spray window assessment uses these thresholds:
+- Wind: 3–10 mph (too calm = inversion risk, too high = drift risk)
+- Temperature: 50–85°F
+- No precipitation in current hour or next 2 hours
+- Humidity: below 80%
+
+If the assessment doesn't match your conditions, note that it's based on the NWS hourly forecast, not real-time sensor data. Local conditions may vary from the forecast.
+
+---
+
+## Scale tickets
+
+### Photo OCR didn't read my ticket correctly
+
+- Take the photo in good lighting with the ticket flat and fully visible
+- Avoid glare, shadows, and wrinkled tickets
+- Handwritten tickets are harder to read than printed ones — consider using voice or structured entry instead
+- After OCR extraction, you're always shown the results for confirmation. Reply with corrections before saving.
+
+### Can't find a ticket I logged
+
+- Use "show today's tickets" or "show tickets from [date]" to search by date
+- Check that you're asking the right agent if you have multiple agents — scale tickets are stored per instance, but only agents with the scale-tickets skill can query them
+
+### Export not working
+
+The export function generates an Excel file using Python pandas. If exports fail, the instance may need pandas installed. Contact support if this persists.
+
+---
+
+## Provisioning
+
+### Instance stuck on "Provisioning"
+
+Provisioning typically takes 2–3 minutes. If it's been more than 10 minutes:
+
+- Refresh your dashboard page
+- Check that your subscription is active
+- The cloud provider (Hetzner) may be experiencing capacity issues in rare cases
+
+If the instance is stuck for more than 30 minutes, contact support.
+
+### Instance shows "Error" status
+
+This usually means the container failed to start. Common causes:
+
+- Invalid Discord bot token — double-check the token in the Discord Developer Portal
+- The bot token was regenerated after initial setup — update it in Settings
+
+<Callout variant="warning" title="Don't regenerate your bot token">
+If you regenerate your Discord bot token in the Developer Portal, your FarmClaw instance will lose connectivity. Always update the new token in FarmClaw Settings immediately after regenerating.
+</Callout>
+
+---
+
+## Billing
+
+### I was charged but my instance isn't working
+
+- Check your instance status on the dashboard first
+- If the instance shows an error, try the provisioning troubleshooting steps above
+- Your subscription is valid regardless of instance status — you won't lose your billing period
+
+### How do I get a refund?
+
+Contact support through your dashboard. Refund requests are handled on a case-by-case basis.
+
+### Unexpected high usage charges
+
+Check your usage dashboard at Settings > Usage:
+
+- Look for spikes in daily token usage
+- Automated cron jobs (morning weather, daily grain bids) consume tokens every day even if you don't read them
+- Multiple agents each consume tokens independently
+- Photo OCR uses significantly more tokens than text-based interactions
+
+To reduce usage, consider disabling unused cron jobs and using text entry instead of photo OCR when possible. See the [Metered Usage](/docs/billing/metered-usage) guide for more tips.

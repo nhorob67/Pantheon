@@ -1,0 +1,41 @@
+---
+title: Workflow Builder Rollout Rings
+description: Canary, standard, and delayed release strategy for controlled workflow builder rollout.
+section: Tools
+order: 2
+icon: Shield
+tags: [workflow, rollout, canary, release]
+---
+
+# Workflow Builder Rollout Rings
+
+FarmClaw uses three rollout rings to release workflow builder updates safely:
+
+- **Canary**: first 10% of customers by deterministic customer-ID bucket.
+- **Standard**: next 60% of customers.
+- **Delayed**: remaining 30% of customers after gates pass.
+
+## Target ring control
+
+The environment variable `WORKFLOW_BUILDER_ROLLOUT_TARGET_RING` controls how far release is opened:
+
+- `canary`: canary customers only.
+- `standard`: canary + standard.
+- `delayed`: all rings.
+
+If unset or invalid, FarmClaw defaults to `delayed`.
+
+## Promotion checklist
+
+Before promoting to the next ring:
+
+1. Check launch-readiness dashboard for KPI regressions.
+2. Confirm performance gates (`INP`, `LCP`, `CLS`) are passing or have an approved exception.
+3. Confirm no P1/P2 workflow incidents are open.
+4. Confirm retry recovery and approval cycle metrics are stable week-over-week.
+
+## Rollback rule
+
+If P1 incidents are detected or gate failures persist across two checks, set
+`WORKFLOW_BUILDER_ROLLOUT_TARGET_RING` back to the prior ring and hold promotion
+until runbook actions are complete.

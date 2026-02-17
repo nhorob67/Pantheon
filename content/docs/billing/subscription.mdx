@@ -1,0 +1,68 @@
+---
+title: Subscription
+description: Your FarmClaw subscription costs $40/month and includes a dedicated AI instance, all built-in skills, and platform access.
+section: Billing & Usage
+order: 1
+icon: Receipt
+tags: [subscription, stripe, payment]
+---
+
+## Plan details
+
+FarmClaw offers a single subscription plan:
+
+| Feature | Details |
+|---------|---------|
+| Monthly price | $40.00 |
+| Billing cycle | Monthly |
+| Payment processor | Stripe |
+| Cancellation | Anytime, effective end of billing period |
+
+## What you get
+
+Your subscription activates a dedicated FarmClaw instance that includes:
+
+- **Dedicated cloud server** — Your own VPS running 24/7
+- **Three built-in skills** — Grain bids, weather forecasts, scale tickets
+- **Multi-agent support** — Up to 4 specialized agents
+- **MCP servers** — Filesystem, SQLite, and memory servers
+- **Extension marketplace** — Access to additional capabilities
+- **Dashboard** — Usage analytics, settings management
+- **Automated scheduling** — Cron jobs for morning briefings and daily bid updates
+
+## Activating your subscription
+
+During onboarding, you'll be redirected to Stripe's secure checkout:
+
+1. Click "Subscribe" on the activation prompt
+2. Enter your payment information on the Stripe checkout page
+3. Complete the purchase
+4. You're redirected back to FarmClaw to continue onboarding
+
+<Callout variant="info" title="Secure payments">
+All payment processing is handled by Stripe. FarmClaw never sees or stores your credit card number. Stripe is PCI Level 1 certified — the highest level of payment security.
+</Callout>
+
+## Managing your subscription
+
+Access your subscription settings at **Settings > Billing**:
+
+### Update payment method
+
+Click "Manage Billing" to open the Stripe customer portal where you can update your card on file, switch payment methods, or add a backup payment method.
+
+### View invoices
+
+The Stripe portal shows your complete billing history with downloadable PDF invoices for each billing period.
+
+### Cancel your subscription
+
+You can cancel anytime from the Stripe portal. Your instance will remain active until the end of your current billing period. After that:
+
+- Your AI assistant goes offline
+- Your data (farm profile, scale tickets, configuration) is retained for 30 days
+- You can reactivate within 30 days to restore everything
+
+<Callout variant="warning" title="Data retention">
+After 30 days of cancellation, your instance data including scale ticket records may be permanently deleted. Export any important data before canceling.
+</Callout>

@@ -1,0 +1,208 @@
+---
+title: Security and Privacy
+description: How Composio integrations handle credentials, what data flows where, and how to control access.
+section: Integrations
+order: 4
+icon: Shield
+tags: [integrations, security, privacy, credentials, encryption, oauth, composio]
+---
+
+# Security and Privacy
+
+This page explains how FarmClaw's Composio integration handles your credentials, what data flows between systems, and what controls you have over access.
+
+## Architecture overview
+
+Three systems are involved in the integrations flow:
+
+```
+Your Browser ──► FarmClaw API ──► Composio API ──► Service API
+                                                   (Google, Slack, etc.)
+```
+
+| System | What it stores | What it does |
+|---|---|---|
+| **FarmClaw** | Composio entity ID, MCP server URL, toolkit selections, cached connection status | Manages configuration, triggers config rebuilds, serves the dashboard UI |
+| **Composio** | OAuth tokens (access + refresh), connection metadata | Handles OAuth flows, stores credentials, proxies API calls, refreshes tokens |
+| **Service (Google, etc.)** | Your account data | Processes API requests from Composio on your behalf |
+
+### What FarmClaw does NOT store
+
+FarmClaw never stores:
+
+- Your service passwords
+- OAuth access tokens
+- OAuth refresh tokens
+- Service API keys
+- Any credentials for Google, Slack, Notion, or other connected services
+
+The only credential-related data FarmClaw stores is the **connection status** (connected/disconnected/expired) and the **account identifier** (e.g., the email address associated with the connection). These are cached from Composio for display in the dashboard.
+
+## Credential encryption
+
+Composio encrypts all stored credentials using AES-256-GCM encryption at rest. This is the same encryption standard used by banks and government systems. Credentials are decrypted only at the moment they are needed to make an API call on your behalf.
+
+<Callout variant="info" title="AES-256-GCM">
+AES-256-GCM is an authenticated encryption algorithm that provides both confidentiality and integrity. It uses a 256-bit key, making brute-force attacks computationally infeasible. The GCM mode adds authentication, ensuring encrypted data cannot be tampered with.
+</Callout>
+
+## Data flow
+
+### When your assistant uses an integration
+
+Here is the complete data flow when your assistant performs an integration action (e.g., writing to a Google Sheet):
+
+1. Your assistant decides it needs to call a Google Sheets action based on your Discord message.
+2. The assistant sends a tool call request to the Composio MCP server via SSE (Server-Sent Events).
+3. Composio receives the request, identifies your entity, and retrieves your stored OAuth token.
+4. Composio makes the API call to Google Sheets using your token.
+5. Google Sheets processes the request and returns the result.
+6. Composio forwards the result back to your assistant via SSE.
+7. Your assistant uses the result to compose its response in Discord.
+
+```
+Discord ──► Your Assistant ──► Composio MCP (SSE) ──► Google Sheets API
+   ◄────────────────────────────────────────────────────────────┘
+                        Response flows back
+```
+
+### What data Composio can see
+
+Composio acts as a proxy. When processing your requests, Composio can see:
+
+- The action being called (e.g., "read spreadsheet")
+- The parameters of the action (e.g., spreadsheet ID, cell range)
+- The response from the service (e.g., cell values)
+
+Composio does not:
+
+- Store the content of your requests or responses beyond what is needed for the immediate API call
+- Share your data with other Composio users
+- Use your data for training or analytics
+- Access your connected services outside of explicit tool calls from your assistant
+
+### What FarmClaw can see
+
+FarmClaw can see:
+
+- That you have Composio enabled
+- Which toolkits you have selected
+- Which services are connected (status only, not tokens)
+- Standard API usage metrics (request counts for billing)
+
+FarmClaw cannot see:
+
+- The content of integration requests or responses (these flow directly between your assistant and Composio)
+- Your OAuth tokens or service credentials
+- Your service account data (spreadsheet contents, emails, calendar events, etc.)
+
+## Access controls
+
+### You control what is enabled
+
+You have several layers of control over what your assistant can access through integrations:
+
+| Control | What it does | How to change |
+|---|---|---|
+| **Composio toggle** | Enables/disables all integrations | Settings > Integrations > toggle switch |
+| **Toolkit selection** | Controls which services are available | Settings > Integrations > Toolkits > Save |
+| **Service connection** | Authorizes/revokes access to specific services | Settings > Integrations > Connect/Disconnect |
+| **OAuth consent** | Grants specific permission scopes | During the OAuth flow (Google consent screen, etc.) |
+
+### Principle of least privilege
+
+Each layer is independent:
+
+- Disabling Composio removes all integration access, regardless of toolkit or connection state.
+- Deselecting a toolkit removes that service's actions even if the connection is active.
+- Disconnecting a service revokes access even if the toolkit is selected.
+- You can limit OAuth scopes during the consent step (though this may prevent some actions from working).
+
+<Callout variant="tip" title="Review your permissions periodically">
+Visit the Connected Accounts section periodically to review which services are connected and disconnect any you no longer need. Less access surface means less risk.
+</Callout>
+
+## Disconnection and revocation
+
+### Disconnecting from FarmClaw
+
+When you click **Disconnect** in the FarmClaw dashboard:
+
+1. FarmClaw calls Composio's API to revoke the connection.
+2. Composio deletes the stored OAuth tokens.
+3. The connection status updates to "Disconnected" in FarmClaw.
+4. Your assistant immediately loses access to that service.
+
+### Revoking from the service side
+
+You can also revoke access directly from the service provider (e.g., Google Account > Security > Third-party apps). When you do:
+
+1. The service invalidates the OAuth tokens.
+2. Composio's next attempt to use the token will fail.
+3. The connection status will show as "Expired" after a refresh.
+4. Your assistant will receive an authorization error when trying to use the service.
+
+Both methods are equally effective. Disconnecting from FarmClaw is the recommended approach because it provides immediate UI feedback.
+
+## Transport security
+
+### FarmClaw to Composio
+
+All communication between your FarmClaw instance and Composio occurs over HTTPS (TLS 1.2+). The MCP server connection uses Server-Sent Events (SSE) over HTTPS.
+
+### Composio to services
+
+Composio communicates with service APIs over HTTPS. Composio does not support unencrypted connections to service providers.
+
+### Your browser to FarmClaw
+
+The FarmClaw dashboard is served over HTTPS. OAuth callbacks are also HTTPS-only.
+
+## Incident response
+
+### If Composio is compromised
+
+In the unlikely event of a Composio security incident:
+
+1. Immediately disconnect all services from the FarmClaw dashboard.
+2. Revoke FarmClaw's access from each service provider's security settings.
+3. Disable the Composio integration toggle.
+4. Change passwords on your connected service accounts.
+
+### If FarmClaw is compromised
+
+A FarmClaw compromise would not expose your service credentials because FarmClaw does not store them. However, an attacker with access to your FarmClaw account could:
+
+- See which services are connected (status only)
+- Enable/disable toolkits
+- Trigger new OAuth flows (but would need your service password to complete them)
+
+To mitigate: use a strong password and magic link authentication for your FarmClaw account.
+
+## Frequently asked questions
+
+### Can FarmClaw employees access my Google Sheets / emails / calendar?
+
+No. FarmClaw does not store your service credentials and does not have access to your connected service accounts. Only your AI assistant, running on your dedicated instance, can make API calls through Composio using your authorized tokens.
+
+### What happens to my data if I cancel my FarmClaw subscription?
+
+When your subscription ends and your instance is deprovisioned:
+
+- Your Composio entity and all stored tokens are deleted.
+- All service connections are revoked.
+- No residual access to your services remains.
+
+### Can I use integrations without giving FarmClaw access to my email?
+
+Yes. Each toolkit is independent. You can enable Google Sheets and Google Calendar without enabling Gmail. You choose exactly which services to connect.
+
+### Is Composio SOC 2 / GDPR compliant?
+
+Composio maintains enterprise security practices. Check [composio.dev/security](https://composio.dev) for their latest compliance certifications and security documentation.
+
+## What's next
+
+- [Integrations Overview](/docs/integrations) -- How integrations fit into your FarmClaw instance
+- [Connecting Services](/docs/integrations/connecting-services) -- OAuth flow and connection management
+- [Troubleshooting](/docs/troubleshooting/common-issues) -- Common issues and solutions

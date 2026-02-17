@@ -1,0 +1,125 @@
+---
+title: Channel Configuration
+description: Map AI agents to specific Discord channels for organized, focused conversations.
+section: Discord Integration
+order: 2
+icon: Hash
+tags: [discord, channels, bindings]
+---
+
+## Overview
+
+Channel configuration lets you control which AI agent responds in which Discord channel. This is how you keep conversations organized — grain questions go to the grain expert, weather questions go to the weather agent, and your general assistant handles everything else.
+
+If you're running a single agent (the default), it responds in all channels and DMs. Channel bindings only matter when you have multiple agents set up.
+
+## How channel bindings work
+
+Each agent in your FarmClaw instance can be **bound** to one or more specific Discord channels. When a message comes in on a bound channel, only the assigned agent responds.
+
+Here are the key rules:
+
+- **Bound channels** — Only the assigned agent responds in that channel
+- **Unbound channels** — The **default agent** handles any channel without an explicit binding
+- **Direct messages** — Always handled by the default agent
+- **One agent per channel** — Each channel can only have one agent bound to it
+
+<Callout variant="info" title="Default agent is required">
+Every FarmClaw instance must have exactly one agent marked as the default. This agent is the catch-all — it handles DMs and any channel that isn't explicitly bound to another agent.
+</Callout>
+
+## Example setup
+
+Here's a common three-agent configuration with channel bindings:
+
+| Discord Channel | Bound Agent | Personality | What it handles |
+|----------------|-------------|-------------|-----------------|
+| `#general` | Farm Assistant (default) | General Advisor | Daily questions, broad farm topics, delegation |
+| `#grain-desk` | Grain Desk | Grain Specialist | Cash bids, basis, elevator comparisons |
+| `#weather` | Farm Assistant (default) | General Advisor | Unbound channel, handled by default agent |
+| `#scale-tickets` | Ticket Clerk | Scale Ticket Clerk | Logging and tracking deliveries |
+| DMs | Farm Assistant (default) | General Advisor | Private questions, always default agent |
+
+In this example, `#grain-desk` and `#scale-tickets` are bound to specialist agents. `#general` and `#weather` have no explicit binding, so the default Farm Assistant handles them.
+
+<Callout variant="tip" title="Start simple">
+You don't need to bind every channel on day one. Start with your default agent handling everything, then add specialist agents and channel bindings as you see which topics come up most.
+</Callout>
+
+## Configuring channel bindings
+
+### From the dashboard
+
+1. Go to **Settings > Channels** in your FarmClaw dashboard
+2. You'll see a list of your Discord server's channels
+3. For each channel, select which agent should handle it from the dropdown
+4. Channels left as "Default" will be handled by your default agent
+5. Click **Save**
+
+Your instance will rebuild its configuration and restart automatically. This typically takes under a minute.
+
+### When creating an agent
+
+You can also assign a channel when creating or editing an agent:
+
+1. Go to **Settings > Agents**
+2. Create a new agent or edit an existing one
+3. Under **Channel Binding**, select a Discord channel
+4. Save the agent
+
+## How agents handle cross-channel requests
+
+If someone asks a question in `#general` that would be better handled by the Grain Desk agent in `#grain-desk`, the default agent can **delegate** the question. With inter-agent communication enabled, agents can:
+
+1. Recognize that a question falls outside their expertise
+2. Use `agents_list` to see which specialists are available
+3. Use `sessions_send` to pass the question to the right agent
+4. Inform the farmer that they're delegating to the specialist
+
+The response comes back in the same channel where the question was asked. The farmer doesn't need to switch channels.
+
+<Callout variant="info" title="Delegation is automatic">
+You don't need to configure delegation rules. Each agent's personality preset includes guidance on when to defer to other agents. The General Advisor knows to pass grain marketing questions to the Grain Specialist, weather questions to the Weather agent, and so on.
+</Callout>
+
+## Channel configuration and security
+
+Your Discord channel configuration is **encrypted at rest** in FarmClaw's database. Channel IDs and the mapping between channels and agents are stored using AES encryption, the same standard used for your bot token.
+
+When your instance restarts or rebuilds, the configuration is decrypted at runtime and passed to the container as part of the deployment process.
+
+## Common patterns
+
+### Single agent (default)
+
+No channel configuration needed. Your one agent handles everything everywhere.
+
+### Two agents: General + Grain
+
+| Channel | Agent |
+|---------|-------|
+| `#grain-desk` | Grain Desk |
+| Everything else | Farm Assistant (default) |
+
+### Three agents: General + Grain + Tickets
+
+| Channel | Agent |
+|---------|-------|
+| `#grain-desk` | Grain Desk |
+| `#scale-tickets` | Ticket Clerk |
+| Everything else | Farm Assistant (default) |
+
+### Four agents: Full Team
+
+| Channel | Agent |
+|---------|-------|
+| `#grain-desk` | Grain Desk |
+| `#weather` | Weather Watch |
+| `#scale-tickets` | Ticket Clerk |
+| Everything else | Farm Assistant (default) |
+
+## Next steps
+
+- [AI Agents](/docs/agents) — Learn about multi-agent setups
+- [Multi-Agent Setups](/docs/agents/multi-agent-system) — Pre-built 2, 3, and 4-agent configurations
+- [Personality Presets](/docs/agents/personality-presets) — How agent personalities work

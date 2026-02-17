@@ -1,0 +1,122 @@
+---
+title: Marketplace
+description: Browse and discover extensions to add new capabilities to your FarmClaw instance.
+section: Extensions
+order: 1
+icon: Store
+tags: [extensions, marketplace, catalog, browse]
+---
+
+# Marketplace
+
+The FarmClaw extension marketplace is the catalog of all available extensions you can add to your AI assistant. Browse by type, filter by source, and check verification status before installing.
+
+## Browsing the catalog
+
+The extension catalog is accessible from **Settings > Extensions** in your FarmClaw dashboard. The **Catalog** section at the bottom of the page displays all active extensions with their key details.
+
+Each extension entry in the catalog shows:
+
+- **Display name** -- The human-readable name of the extension.
+- **Slug** -- A unique machine-readable identifier (e.g., `crop-planning-toolkit`).
+- **Type** -- The extension kind: skill, plugin, connector, mcp_server, or tool_pack.
+- **Source type** -- Where the extension comes from: internal, local, clawhub, npm, or git.
+- **Latest version** -- The most recently published version number, if available.
+- **Verified status** -- Whether the extension has been verified for its source type.
+
+Verified extensions display a green **verified** badge. Unverified extensions display an amber **unverified** badge.
+
+## Filtering extensions
+
+The catalog supports several filters to help you find what you need.
+
+### By type
+
+Filter by extension type to narrow results to a specific category:
+
+| Filter value | Shows |
+|---|---|
+| `skill` | Extensions that add new assistant capabilities |
+| `plugin` | Extensions that modify or enhance existing behavior |
+| `connector` | Extensions that integrate with external services |
+| `mcp_server` | Extensions that add new MCP tool servers |
+| `tool_pack` | Extensions that bundle multiple related tools |
+
+### By source
+
+Filter by source type to see extensions from a specific origin:
+
+| Filter value | Description |
+|---|---|
+| `internal` | First-party extensions managed by FarmClaw |
+| `local` | Extensions bundled directly with your instance image |
+| `clawhub` | Third-party packages from the FarmClaw marketplace |
+| `npm` | Node package registry sources |
+| `git` | Git repositories pinned by catalog reference |
+
+### By verification status
+
+Toggle the **verified** filter to show only extensions that have passed verification for their source type. This is useful when your trust policy requires verification for certain sources.
+
+### By search
+
+Use the search field to find extensions by name or slug. The search matches against the display name and slug fields.
+
+## Pagination
+
+The catalog returns up to **20 items per page** by default. You can request up to **100 items per page** through the API. The dashboard handles pagination automatically, displaying results in a scrollable list.
+
+<Callout variant="info" title="Only active extensions are shown">
+The marketplace only displays extensions that have been marked as active in the catalog. Deprecated or deactivated extensions are hidden from the browsing view.
+</Callout>
+
+## Source types explained
+
+Understanding where an extension comes from helps you evaluate whether to trust and install it.
+
+### Internal
+
+Internal extensions are built and maintained by the FarmClaw team. They are first-party packages that ship with the platform and are implicitly trusted. Internal extensions do not require verification because FarmClaw controls the source code and release process.
+
+### Local
+
+Local extensions are bundled directly into your instance's container image. These are typically custom extensions that have been built specifically for your deployment. Like internal extensions, they are implicitly trusted because they are part of the image you are already running.
+
+### ClawHub
+
+ClawHub is the FarmClaw-hosted marketplace for third-party extensions. Developers can publish extension packages to ClawHub, where they go through a review and verification process. ClawHub extensions support verification -- you can require that only verified ClawHub packages are installable through your trust policy.
+
+<Callout variant="tip" title="ClawHub is the recommended source for third-party extensions">
+ClawHub extensions go through a review process before being listed in the catalog. If you want third-party capabilities with an extra layer of trust, prioritize ClawHub-sourced extensions.
+</Callout>
+
+### NPM
+
+NPM extensions are published to the Node package registry. These are standard npm packages that implement the FarmClaw extension interface. NPM sources support verification -- the catalog tracks whether a given npm package has been verified by the FarmClaw team.
+
+### Git
+
+Git extensions are hosted in Git repositories and pinned by a catalog reference (commit hash, tag, or branch). This source type is common for extensions in active development or extensions maintained by a specific organization. Git sources support verification.
+
+## Installing from the catalog
+
+Each extension in the catalog has an **Install** button (or **Queue Upgrade** if you already have it installed). Clicking the button queues an installation operation.
+
+Before the installation proceeds, FarmClaw checks your trust policy:
+
+1. Is the extension's source type in your `allowed_source_types` list?
+2. If the source type is in your `require_verified_source_types` list, is the extension verified?
+
+If either check fails, the installation is blocked and you receive an error message explaining why.
+
+<Callout variant="warning" title="Trust policy blocks take effect immediately">
+If you change your trust policy to disallow a source type, you will not be able to install new extensions from that source. Existing installations are not automatically removed, but you will not be able to upgrade them.
+</Callout>
+
+For the full installation workflow, trust policy configuration, and health monitoring details, see [Installing Extensions](/docs/extensions/installing).
+
+## What's next
+
+- [Installing Extensions](/docs/extensions/installing) -- Trust policies, installation flow, health monitoring, and staged rollouts
+- [Extensions Overview](/docs/extensions) -- Extension types, lifecycle, and versioning
+- [MCP Servers](/docs/mcp-servers) -- Built-in tool servers available without the marketplace

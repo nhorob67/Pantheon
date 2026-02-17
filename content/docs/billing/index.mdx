@@ -1,0 +1,55 @@
+---
+title: Billing & Usage
+description: Understand FarmClaw's pricing — a simple monthly subscription plus transparent metered API usage.
+section: Billing & Usage
+order: 0
+icon: CreditCard
+tags: [billing, pricing, overview]
+---
+
+## How billing works
+
+FarmClaw uses a straightforward pricing model with two components:
+
+1. **Monthly base subscription** — A fixed $40/month fee that covers your dedicated cloud instance, container hosting, and platform access
+2. **Metered API usage** — Billed at cost based on the actual AI model tokens your assistant consumes
+
+This structure keeps the base price low while ensuring you only pay for what you use.
+
+## What's included in the base subscription
+
+Your $40/month subscription includes:
+
+- A dedicated cloud server (Hetzner VPS) running your AI instance 24/7
+- Container orchestration and automatic restarts
+- All three built-in skills (grain bids, weather, scale tickets)
+- Multi-agent support with personality presets
+- MCP server hosting (filesystem, SQLite, memory)
+- Access to the extension marketplace
+- Dashboard with usage analytics
+- Encrypted configuration storage
+
+## What counts as API usage
+
+Every time your AI assistant processes a message — whether it's answering a grain bid question, generating a weather briefing, or reading a scale ticket photo — it uses tokens from the underlying AI model (Claude by Anthropic, via OpenRouter).
+
+Token usage varies by task:
+
+- Simple question/answer: ~500–1,000 tokens
+- Grain bid fetch with comparison: ~2,000–4,000 tokens
+- Scale ticket photo OCR: ~3,000–5,000 tokens
+- Morning weather briefing: ~1,500–3,000 tokens
+
+For a typical farm operation, metered usage runs **$5–15/month** depending on how actively you use the assistant.
+
+## Managing your billing
+
+All billing is managed through **Settings > Billing** in your FarmClaw dashboard. From there you can:
+
+- View your current plan and billing period
+- See your metered usage breakdown
+- Update your payment method
+- Access invoices and billing history
+- Cancel your subscription
+
+Payments are processed securely through Stripe. FarmClaw never stores your credit card information directly.

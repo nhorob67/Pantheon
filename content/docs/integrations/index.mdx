@@ -1,0 +1,107 @@
+---
+title: Integrations
+description: Connect your AI assistant to Google Sheets, Gmail, Calendar, and 800+ third-party services through Composio.
+section: Integrations
+order: 0
+icon: Link2
+tags: [integrations, composio, google, oauth, third-party]
+---
+
+# Integrations
+
+Integrations let your AI assistant connect to external services like Google Sheets, Gmail, Google Calendar, Slack, and hundreds more. Instead of being limited to skills and local tools, your assistant can read spreadsheets, send emails, create calendar events, and interact with the services you already use on the farm.
+
+FarmClaw integrations are powered by [Composio](https://composio.dev), a platform that provides secure, authenticated access to 800+ third-party APIs through a single connection. Composio runs as a remote MCP server alongside your existing local MCP servers (filesystem, SQLite, memory).
+
+## How it works
+
+When you enable integrations, FarmClaw:
+
+1. Creates a Composio entity for your account (no separate Composio sign-up required).
+2. Provisions a remote MCP server that your assistant can call.
+3. Injects the server into your instance configuration alongside your existing MCP servers.
+4. Rebuilds and restarts your instance so the assistant can use the new tools.
+
+From that point, your assistant has access to the actions exposed by your selected toolkits. You authorize each service individually through a standard OAuth flow -- the same "Sign in with Google" experience you use elsewhere.
+
+```
+Instance
+├── Local MCP Servers
+│   ├── filesystem
+│   ├── sqlite
+│   └── memory
+└── Remote MCP Servers
+    └── composio (SSE)
+        ├── Google Sheets actions
+        ├── Gmail actions
+        ├── Google Calendar actions
+        └── ...selected toolkit actions
+```
+
+## Key concepts
+
+### Toolkits
+
+A toolkit is a bundle of related actions for a single service. For example, the **Google Sheets** toolkit includes actions for reading spreadsheets, writing data, and creating new sheets. You select which toolkits your assistant has access to -- only selected toolkits are available.
+
+FarmClaw curates a set of toolkits with descriptions tailored to farming use cases. See [Available Toolkits](/docs/integrations/toolkits) for the full list.
+
+### Connections
+
+A connection is an authorized link between your assistant and a specific service. When you connect Google Sheets, for example, you go through Google's OAuth consent screen and grant your assistant permission to access your spreadsheets. The connection is managed by Composio -- your Google credentials are never stored on FarmClaw servers.
+
+See [Connecting Services](/docs/integrations/connecting-services) for the full OAuth walkthrough.
+
+### Remote MCP servers
+
+Unlike your local MCP servers (filesystem, SQLite, memory) which run as sidecar processes on your instance, Composio runs as a remote MCP server over Server-Sent Events (SSE). Your assistant connects to Composio's hosted endpoint, which routes requests to the appropriate service API.
+
+This means Composio does not consume resources on your instance. It runs entirely on Composio's infrastructure.
+
+<Callout variant="info" title="No extra cost for Composio">
+Composio integration is included in your FarmClaw subscription. The Composio API key is platform-level -- you do not need your own Composio account or API key.
+</Callout>
+
+## What can your assistant do with integrations?
+
+Here are some real examples of what farmers can ask once integrations are connected:
+
+| Service | Example prompt | What happens |
+|---|---|---|
+| Google Sheets | "Add today's scale tickets to my harvest tracker spreadsheet" | Reads ticket data from SQLite, writes rows to your Google Sheet |
+| Google Sheets | "Pull my input costs from the planning sheet" | Reads specific cells/ranges from a spreadsheet |
+| Gmail | "Email the grain contract summary to my wife" | Composes and sends an email with delivery data |
+| Google Calendar | "Schedule spraying for next Tuesday at 6 AM" | Creates a calendar event with details |
+| Google Calendar | "What's on the farm calendar this week?" | Lists upcoming events |
+| Slack | "Post today's weather summary to the #farm-updates channel" | Sends a message to a Slack channel |
+| Notion | "Save this field scouting report to Notion" | Creates a page in your Notion workspace |
+
+<Callout variant="tip" title="Integrations work alongside skills">
+Integrations complement your existing skills. Your assistant can combine data from skills (grain bids, weather, scale tickets) with integration actions (write to spreadsheet, send email, create calendar event) in a single response.
+</Callout>
+
+## Getting started
+
+1. Go to **Settings > Integrations** in your FarmClaw dashboard.
+2. Toggle the **Composio** switch to enable the integration.
+3. Select the toolkits you want your assistant to access.
+4. Click **Save Toolkits** to apply changes (this rebuilds your instance config).
+5. Connect each service by clicking **Connect** and completing the OAuth flow.
+
+For detailed setup instructions, see [Setup Guide](/docs/integrations/setup).
+
+## Privacy and security
+
+- Your service credentials (Google tokens, Slack tokens, etc.) are encrypted with AES-256-GCM and managed by Composio. They are never stored on FarmClaw servers.
+- Composio acts as a secure proxy -- your assistant accesses services through authorized API calls only.
+- Disconnecting a service immediately revokes all access and removes stored tokens.
+- You control exactly which toolkits your assistant can use. Disabling a toolkit removes the assistant's ability to call those actions.
+
+See [Security and Privacy](/docs/integrations/security) for full details.
+
+## What's next
+
+- [Setup Guide](/docs/integrations/setup) -- Step-by-step walkthrough of enabling Composio and connecting services
+- [Available Toolkits](/docs/integrations/toolkits) -- Full list of curated toolkits with farming-specific descriptions
+- [Connecting Services](/docs/integrations/connecting-services) -- OAuth flow, popup handling, and troubleshooting
+- [Security and Privacy](/docs/integrations/security) -- How credentials are stored, what data flows where, and how to revoke access

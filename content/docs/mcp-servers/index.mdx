@@ -1,0 +1,92 @@
+---
+title: MCP Servers
+description: Model Context Protocol servers extend your AI assistant with filesystem access, database queries, and persistent memory.
+section: MCP Servers
+order: 0
+icon: Server
+tags: [mcp, servers, overview]
+---
+
+# MCP Servers
+
+Model Context Protocol (MCP) servers extend your AI assistant with additional tools and data access beyond its default capabilities. Each MCP server runs as a sidecar process alongside your AI instance, giving the assistant structured access to filesystems, databases, persistent memory, and more.
+
+## What is MCP?
+
+MCP is an open protocol that lets AI assistants connect to external tool servers using a standardized interface. Instead of building tool access directly into the AI model, MCP servers expose capabilities that the assistant can call on demand. This keeps the assistant's core lightweight while enabling powerful integrations.
+
+When your assistant needs to read a file, query a database, or recall something from memory, it sends a request to the appropriate MCP server. The server processes the request and returns the result, which the assistant then uses to answer your question.
+
+## Curated presets
+
+FarmClaw provides three curated MCP server presets that cover the most common use cases for farm operations. Each preset is pre-configured and can be added to your instance with a single click.
+
+| Preset | Package | What it does |
+|---|---|---|
+| [Filesystem](/docs/mcp-servers/filesystem) | `@modelcontextprotocol/server-filesystem` | Read and write files in the workspace directory |
+| [SQLite](/docs/mcp-servers/sqlite) | `@modelcontextprotocol/server-sqlite` | Query and manage a local SQLite database |
+| [Memory](/docs/mcp-servers/memory) | `@modelcontextprotocol/server-memory` | Persistent key-value memory across conversations |
+
+<Callout variant="info" title="MCP servers are auto-included in your configuration">
+When you add an MCP server, FarmClaw automatically rebuilds your instance configuration and restarts the container. The server is injected into the OpenClaw config and is immediately available to your assistant.
+</Callout>
+
+## How MCP servers fit into your instance
+
+MCP servers are defined at the instance level by default, meaning every agent in a multi-agent setup can use them. You can also scope a server to a specific agent if you want to restrict access.
+
+```
+Instance
+├── Agent: General Advisor
+│   ├── Skills: grain-bids, weather, scale-tickets
+│   └── MCP Servers: filesystem, sqlite, memory (via instance scope)
+├── Agent: Ticket Clerk
+│   ├── Skills: scale-tickets
+│   └── MCP Servers: filesystem, sqlite, memory (via instance scope)
+└── MCP Servers (instance-scoped)
+    ├── filesystem
+    ├── sqlite
+    └── memory
+```
+
+Each server is identified by a unique `server_key` (e.g., `filesystem`, `sqlite`, `memory`). The key is used internally to reference the server in the OpenClaw configuration.
+
+## Managing MCP servers
+
+MCP servers are managed through the FarmClaw dashboard.
+
+1. Go to **Settings > MCP Servers**.
+2. Click **Add MCP Server** to add a new server.
+3. Choose **From Preset** to select a curated server, or **Custom** to configure your own.
+4. Fill in the required fields and click **Add Server**.
+
+You can enable, disable, edit, or delete servers at any time. Each change triggers a configuration rebuild and container restart.
+
+<Callout variant="warning" title="Changes restart your assistant">
+Adding, editing, enabling, disabling, or removing an MCP server rebuilds your instance configuration and restarts the container. Your assistant will be briefly unavailable in Discord for 15--30 seconds.
+</Callout>
+
+## Custom MCP servers
+
+Beyond the curated presets, you can add any MCP-compatible server by providing the command and arguments manually. When adding a custom server, you will need to provide:
+
+| Field | Description | Example |
+|---|---|---|
+| `server_key` | Unique lowercase identifier (letters, numbers, hyphens) | `my-custom-server` |
+| `display_name` | Human-readable label shown in the dashboard | `My Custom Server` |
+| `command` | The executable to run | `npx` |
+| `args` | Arguments passed to the command (space-separated) | `-y @my-org/my-mcp-server /data` |
+| `env_vars` | Optional environment variables for the server process | `{"API_KEY": "..."}` |
+| `scope` | `instance` (all agents) or `agent` (specific agent only) | `instance` |
+| `enabled` | Whether the server is active | `true` |
+
+<Callout variant="tip" title="Server keys are immutable">
+The `server_key` cannot be changed after creation. If you need a different key, delete the server and create a new one.
+</Callout>
+
+## What's next
+
+- [Filesystem Server](/docs/mcp-servers/filesystem) -- Read and write files in your assistant's workspace
+- [SQLite Server](/docs/mcp-servers/sqlite) -- Local database access for scale tickets and custom data
+- [Memory Server](/docs/mcp-servers/memory) -- Persistent key-value storage across conversations
+- [Extensions](/docs/extensions) -- Add more capabilities through the extension marketplace

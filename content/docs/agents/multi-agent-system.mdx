@@ -1,0 +1,165 @@
+---
+title: Multi-Agent Setups
+description: Pre-built 2, 3, and 4-agent configurations for one-click deployment. Agents can delegate tasks to each other.
+section: AI Agents
+order: 1
+icon: Users
+tags: [agents, multi-agent, presets, delegation]
+---
+
+## Overview
+
+FarmClaw offers three pre-built multi-agent configurations that you can deploy with one click. Each setup is designed around real farm workflows — you pick the configuration that matches your operation's needs, and FarmClaw handles the rest.
+
+You can also build a custom setup from scratch, but these suggested configurations are a good starting point for most operations.
+
+## Suggested setups
+
+### Two-Agent: General + Grain
+
+An all-purpose assistant for daily operations and a specialist for grain markets and elevator bids.
+
+| Agent | Personality | Skills | Cron Jobs | Default |
+|-------|------------|--------|-----------|---------|
+| **Farm Assistant** | General Advisor | Grain Bids, Weather, Scale Tickets | Morning Weather (6:00 AM) | Yes |
+| **Grain Desk** | Grain Specialist | Grain Bids | Daily Grain Bids (9:00 AM Mon-Fri) | No |
+
+**Best for:** Operations that want a dedicated grain market channel with daily bid updates, while keeping one general agent for everything else.
+
+**Typical channel setup:**
+
+| Channel | Agent |
+|---------|-------|
+| `#grain-desk` | Grain Desk |
+| All other channels + DMs | Farm Assistant |
+
+<Callout variant="tip" title="Most popular setup">
+The two-agent configuration is the most common choice. It gives you a focused grain channel without overcomplicating things.
+</Callout>
+
+---
+
+### Three-Agent: General + Grain + Scale Tickets
+
+Full coverage: general operations, grain marketing, and a dedicated clerk for logging deliveries.
+
+| Agent | Personality | Skills | Cron Jobs | Default |
+|-------|------------|--------|-----------|---------|
+| **Farm Assistant** | General Advisor | Grain Bids, Weather | Morning Weather (6:00 AM) | Yes |
+| **Grain Desk** | Grain Specialist | Grain Bids | Daily Grain Bids (9:00 AM Mon-Fri) | No |
+| **Ticket Clerk** | Scale Ticket Clerk | Scale Tickets | None | No |
+
+**Best for:** Operations that haul a lot of grain and want a fast, focused ticket logging experience separate from general conversation.
+
+**Typical channel setup:**
+
+| Channel | Agent |
+|---------|-------|
+| `#grain-desk` | Grain Desk |
+| `#scale-tickets` | Ticket Clerk |
+| All other channels + DMs | Farm Assistant |
+
+The Ticket Clerk is optimized for speed. It supports three entry methods — snap a photo of your scale ticket, dictate the numbers, or walk through a guided form. Having it in its own channel keeps ticket logging clean and separate from other conversations.
+
+---
+
+### Four-Agent: Full Team
+
+Four specialists: general advisor, grain markets, weather and field ops, and scale ticket logging.
+
+| Agent | Personality | Skills | Cron Jobs | Default |
+|-------|------------|--------|-----------|---------|
+| **Farm Assistant** | General Advisor | Grain Bids, Weather, Scale Tickets | None | Yes |
+| **Grain Desk** | Grain Specialist | Grain Bids | Daily Grain Bids (9:00 AM Mon-Fri) | No |
+| **Weather Watch** | Weather & Field Ops | Weather | Morning Weather (6:00 AM) | No |
+| **Ticket Clerk** | Scale Ticket Clerk | Scale Tickets | None | No |
+
+**Best for:** Larger operations that want fully specialized channels with dedicated agents and automated daily updates in the right place.
+
+**Typical channel setup:**
+
+| Channel | Agent |
+|---------|-------|
+| `#grain-desk` | Grain Desk |
+| `#weather` | Weather Watch |
+| `#scale-tickets` | Ticket Clerk |
+| All other channels + DMs | Farm Assistant |
+
+<Callout variant="info" title="Cron jobs follow the agent">
+Notice that in the four-agent setup, the morning weather cron job moves to Weather Watch and is removed from the Farm Assistant. Daily grain bids are posted by Grain Desk. Each cron job runs in the agent's bound channel, so the information lands where it belongs.
+</Callout>
+
+## How inter-agent delegation works
+
+When you run multiple agents, they can communicate with each other. This is built into each agent's personality — you don't need to configure any delegation rules.
+
+### The tools
+
+Each agent has access to two inter-agent communication tools:
+
+| Tool | Purpose |
+|------|---------|
+| `agents_list` | Lists all other agents in the instance, their specialties, and their channel bindings |
+| `sessions_send` | Sends a message or question to another agent and receives a response |
+
+### How it works in practice
+
+1. A farmer asks the Farm Assistant in `#general`: "What's the best corn bid right now?"
+2. The Farm Assistant recognizes this is a grain marketing question
+3. It checks `agents_list` and sees Grain Desk is available
+4. It tells the farmer: "Let me check with our grain specialist..."
+5. It uses `sessions_send` to pass the question to Grain Desk
+6. Grain Desk processes the request, pulls elevator bids, and returns the answer
+7. The Farm Assistant relays the response in `#general`
+
+The farmer gets a detailed, specialist-quality answer without leaving their channel.
+
+### Delegation by preset
+
+Each personality preset includes guidance on when to defer to other agents:
+
+| Agent Preset | Defers grain questions to | Defers weather questions to | Defers ticket questions to | Defers field ops questions to |
+|-------------|--------------------------|---------------------------|---------------------------|------------------------------|
+| General Advisor | Grain Specialist | Weather & Field Ops | Scale Ticket Clerk | Field Operations |
+| Grain Specialist | -- | Weather & Field Ops | Scale Ticket Clerk | Field Operations |
+| Weather & Field Ops | Grain Specialist | -- | Scale Ticket Clerk | Field Operations |
+| Scale Ticket Clerk | Grain Specialist | Weather & Field Ops | -- | Field Operations |
+| Field Operations | Grain Specialist | Weather & Field Ops | Scale Ticket Clerk | -- |
+
+<Callout variant="info" title="Delegation is optional">
+If a specialist agent is not present in the instance, the delegating agent will handle the question itself with whatever skills it has available. Delegation only happens when the target agent actually exists.
+</Callout>
+
+## Deploying a suggested setup
+
+1. Go to **Settings > Agents** in your FarmClaw dashboard
+2. Click **Suggested Setups**
+3. Select one of the three configurations
+4. Review the agents, skills, and cron jobs
+5. Click **Deploy**
+
+FarmClaw will create all the agents, assign skills and cron jobs, rebuild your instance configuration, and restart the container. The process takes about a minute.
+
+<Callout variant="warning" title="Deploying a setup replaces existing agents">
+Choosing a suggested setup replaces your current agent configuration. If you have custom agents with specific settings, make note of them before deploying a preset. You can always reconfigure agents individually afterward.
+</Callout>
+
+## Building a custom setup
+
+If the suggested configurations don't match your needs, you can build your own:
+
+1. Go to **Settings > Agents**
+2. Click **Add Agent**
+3. Choose a personality preset (or select Custom to write your own)
+4. Assign skills and cron jobs
+5. Optionally bind the agent to a Discord channel
+6. Repeat for as many agents as you need
+7. Make sure one agent is marked as the default
+
+There's no hard limit on the number of agents, but 2-4 agents is the practical sweet spot. More agents mean more specialized responses but also more complexity in routing and delegation.
+
+## Next steps
+
+- [Personality Presets](/docs/agents/personality-presets) — Detailed breakdown of what each preset does and its boundaries
+- [Channel Configuration](/docs/discord/channel-config) — How to bind agents to Discord channels
+- [Skills Overview](/docs/skills) — Learn about grain bids, weather, and scale tickets in depth

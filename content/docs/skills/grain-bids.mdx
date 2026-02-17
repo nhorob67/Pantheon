@@ -1,0 +1,178 @@
+---
+title: Grain Bids
+description: Get real-time cash grain bids from your configured elevators. Compare prices, track basis levels, and find the best deal.
+section: Skills
+order: 1
+icon: TrendingUp
+tags: [grain, bids, elevators, prices, basis]
+---
+
+# Grain Bids
+
+The Grain Bids skill scrapes your configured elevator websites using a browser tool to extract currently posted cash grain bid information. It fetches live data every time you ask -- no cached or stale prices.
+
+## How it works
+
+When you ask about grain prices, the assistant:
+
+1. Opens each configured elevator's cash bid webpage in a headless browser.
+2. Takes an ARIA snapshot of the page to understand its structure.
+3. Locates the cash bid table and extracts rows matching your configured crops.
+4. If the page requires interaction (e.g., selecting a location dropdown), the assistant interacts with the page elements as needed.
+5. Presents the results in a clean, scannable format with timestamps.
+
+<Callout variant="info" title="Fresh data every time">
+The assistant never uses remembered or cached prices from previous conversations. Every bid request triggers a live scrape of the elevator website. This means your data is always as current as the elevator has posted.
+</Callout>
+
+## What it fetches
+
+For each elevator, the assistant extracts the following fields when available:
+
+| Field | Description | Example |
+|---|---|---|
+| Commodity | The crop name | Corn, Soybeans, Spring Wheat |
+| Bid price | Cash price per bushel | $4.52 |
+| Basis | Cents +/- relative to futures contract | -35 |
+| Delivery period | Spot, deferred, or forward months | Spot, Dec 2025 |
+| Futures month | The reference futures contract month | Mar 26, May 26 |
+
+## Output format
+
+Bids are displayed in a clean tabular format organized by commodity:
+
+```
+Cash Grain Bids -- October 15, 2025 9:15 AM CT
+
+CORN
+  CHS Fargo:      $4.52 (basis -35 Mar)
+  ADM Casselton:  $4.48 (basis -39 Mar)
+
+SOYBEANS
+  CHS Fargo:      $10.15 (basis -55 Mar)
+  ADM Casselton:  $10.22 (basis -48 Mar)
+```
+
+When you ask about a single elevator, the assistant shows all available commodities and delivery periods for that location.
+
+## Comparison mode
+
+When you ask to compare elevators, the assistant:
+
+1. Fetches bids from all configured elevators.
+2. Shows a side-by-side comparison sorted by best price per commodity.
+3. Highlights the best bid for each commodity so you can see where to get the most per bushel at a glance.
+
+```
+Elevator Comparison -- Corn (Spot)
+
+  ADM Casselton:  $4.55 (basis -31 Mar)  <-- Best
+  CHS Fargo:      $4.52 (basis -35 Mar)
+  Gavilon Amenia: $4.49 (basis -38 Mar)
+```
+
+## Configuration
+
+The Grain Bids skill reads your elevator list from your farm profile. Each elevator entry includes:
+
+| Setting | Description | Example |
+|---|---|---|
+| Name | Display name of the elevator | CHS Fargo |
+| URL | The page where cash bids are posted | `https://www.chsinc.com/...` |
+| Crops | Which commodities to track at this elevator | Corn, Soybeans |
+
+You configure elevators during onboarding and can update them at any time in **Settings > Farm Profile > Elevators**. FarmClaw provides presets for major elevator companies with state-specific defaults:
+
+- CHS
+- ADM
+- Cargill
+- AGP
+- Columbia Grain
+- Gavilon
+
+<Callout variant="tip" title="Add your local independent elevators too">
+The presets cover major companies, but you can add any elevator that posts cash bids on a public webpage. Just provide the name, the URL of their bid page, and which crops to track.
+</Callout>
+
+## Understanding basis
+
+Basis is the difference between the local cash price and the nearby futures contract price, expressed in cents per bushel.
+
+- **Negative basis** (e.g., -35) means the cash price is 35 cents under the futures price. This is typical for inland locations.
+- **Positive basis** (e.g., +10) means the cash price is above futures. This is less common and usually indicates strong local demand.
+- **Narrowing basis** (e.g., -35 moving to -25) means the local cash price is improving relative to futures.
+
+The assistant always reports basis alongside the cash bid so you can evaluate both the absolute price and the local premium or discount.
+
+## Error handling
+
+Not every scrape succeeds every time. The assistant handles failures gracefully:
+
+| Situation | What the assistant does |
+|---|---|
+| Elevator website is unreachable | Reports which elevator failed, shows results from others |
+| Page structure changed | Tells you the site may have been updated, suggests checking directly |
+| Bids not found for a crop | Indicates no bids were found for that commodity at that elevator |
+| All elevators fail | Reports the issue and suggests trying again later |
+
+The assistant always includes a timestamp showing when the data was fetched.
+
+<Callout variant="warning" title="Bids are typically updated once daily">
+Most elevators update their posted cash bids in the morning. If you check in the evening, the bids shown may be from that morning's posting. The assistant will note the time of the data.
+</Callout>
+
+## Automated daily bids
+
+You can set up a **Daily Grain Bids** cron job to have the assistant automatically post bids every weekday morning. This runs Monday through Friday at 9:00 AM in your local timezone.
+
+To enable it:
+
+1. Go to **Settings > Agents**.
+2. Select the agent you want to run the job (typically your Grain Desk or General Advisor).
+3. Toggle on **Daily Grain Bids** under Scheduled Jobs.
+4. Save changes.
+
+See [Skills & Scheduling](/docs/agents/skills-per-agent) for more on cron job configuration.
+
+## Example prompts
+
+Here are some ways to ask about grain bids in Discord:
+
+```
+What are today's corn bids?
+```
+
+```
+Compare soybean prices across all elevators
+```
+
+```
+Show me bids from CHS
+```
+
+```
+What's the basis on spring wheat?
+```
+
+```
+Best bid for corn right now?
+```
+
+```
+Put those bids in a spreadsheet
+```
+
+The last example will generate an `.xlsx` file with elevator, crop, bid, and basis columns and send it as a Discord attachment.
+
+## File exports
+
+The assistant can export bid data as files:
+
+| Format | Use case | How to ask |
+|---|---|---|
+| Excel (.xlsx) | Bid summaries, elevator comparisons | "Put those bids in a spreadsheet" |
+| CSV | Quick tabular export | "Export bids as CSV" |
+| PNG chart | Basis history or comparison charts | "Chart the basis" |
+| PDF | Formatted grain marketing summary | "Send me a bid report as PDF" |
+
+Files are sent as Discord message attachments (25 MB limit).

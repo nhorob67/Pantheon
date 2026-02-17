@@ -1,0 +1,209 @@
+---
+title: Skills & Scheduling
+description: Assign specific skills to each agent and configure automated cron jobs for morning weather briefings and daily grain bid updates.
+section: AI Agents
+order: 3
+icon: Settings
+tags: [agents, skills, cron, scheduling]
+---
+
+# Skills & Scheduling
+
+Each agent in your FarmClaw instance can be assigned a specific subset of skills and its own set of scheduled cron jobs. This lets you create focused specialists -- a Grain Desk agent that only handles bids, a Weather Watch agent that only handles forecasts, or a Ticket Clerk that only logs deliveries.
+
+## How per-agent skills work
+
+FarmClaw has two levels of skill configuration:
+
+1. **Global skill toggle** -- Enables or disables a skill for your entire instance (Settings > Skills).
+2. **Per-agent assignment** -- Determines which of the globally-enabled skills each agent can use (Settings > Agents > [Agent]).
+
+A skill must be enabled globally before it can be assigned to any agent. If you disable a skill globally, it is removed from all agents automatically.
+
+| Level | Where to configure | Effect |
+|---|---|---|
+| Global | Settings > Skills | Controls whether the skill is available at all |
+| Per-agent | Settings > Agents > [Agent] | Controls which agents can use the skill |
+
+<Callout variant="info" title="Global first, then per-agent">
+Think of it as two gates. The global toggle is the first gate -- if the skill is off globally, no agent can use it. The per-agent assignment is the second gate -- even if a skill is on globally, only agents with it assigned will use it.
+</Callout>
+
+## Assigning skills to an agent
+
+1. Go to **Settings > Agents**.
+2. Select the agent you want to configure.
+3. Under **Skills**, toggle each skill on or off for that agent.
+4. Click **Save Changes**.
+
+### Available skills
+
+| Skill | ID | What it provides |
+|---|---|---|
+| Grain Bids | `farm-grain-bids` | Elevator website scraping for cash grain prices |
+| Weather | `farm-weather` | NWS forecasts, spray windows, GDD tracking |
+| Scale Tickets | `farm-scale-tickets` | Delivery logging via photo, voice, or guided entry |
+
+### Personality preset defaults
+
+When you create a new agent and select a personality preset, FarmClaw auto-selects a recommended set of skills. You can change these after creation.
+
+| Personality preset | Default skills |
+|---|---|
+| General Advisor | Grain Bids, Weather |
+| Grain Specialist | Grain Bids |
+| Weather & Field Ops | Weather |
+| Scale Ticket Clerk | Scale Tickets |
+| Field Operations | (none) |
+| Custom | (none) |
+
+## Channel bindings
+
+Each agent can be bound to a specific Discord channel. When a message comes in on a bound channel, only the assigned agent responds.
+
+- **Bound channels** -- The assigned agent handles all messages in that channel.
+- **Unbound channels** -- The **default agent** handles messages in any channel that is not explicitly bound to another agent.
+- **DMs** -- The default agent always handles direct messages to the bot.
+
+This means you can set up a `#grain-bids` channel bound to your Grain Desk agent and a `#weather` channel bound to your Weather Watch agent. General questions in `#farm-general` (or any unbound channel) go to your default General Advisor.
+
+<Callout variant="tip" title="One agent must be the default">
+Every instance must have exactly one default agent. This agent handles DMs and any channel that is not bound to a specific agent. It is usually your General Advisor with all skills enabled.
+</Callout>
+
+## Suggested multi-agent setups
+
+FarmClaw provides pre-built agent configurations that you can apply with one click during setup. These are starting points -- you can customize them after applying.
+
+### Two-agent setup: General + Grain
+
+| Agent | Preset | Skills | Cron jobs | Default |
+|---|---|---|---|---|
+| Farm Assistant | General Advisor | Grain Bids, Weather, Scale Tickets | Morning Weather | Yes |
+| Grain Desk | Grain Specialist | Grain Bids | Daily Grain Bids | No |
+
+Best for operations that want focused grain market monitoring in a dedicated channel while keeping a general-purpose assistant for everything else.
+
+### Three-agent setup: General + Grain + Scale Tickets
+
+| Agent | Preset | Skills | Cron jobs | Default |
+|---|---|---|---|---|
+| Farm Assistant | General Advisor | Grain Bids, Weather | Morning Weather | Yes |
+| Grain Desk | Grain Specialist | Grain Bids | Daily Grain Bids | No |
+| Ticket Clerk | Scale Ticket Clerk | Scale Tickets | (none) | No |
+
+Adds a dedicated scale ticket clerk. Useful during harvest when you are logging dozens of tickets per day and want a separate channel for delivery records.
+
+### Four-agent setup: Full Team
+
+| Agent | Preset | Skills | Cron jobs | Default |
+|---|---|---|---|---|
+| Farm Assistant | General Advisor | Grain Bids, Weather, Scale Tickets | (none) | Yes |
+| Grain Desk | Grain Specialist | Grain Bids | Daily Grain Bids | No |
+| Weather Watch | Weather & Field Ops | Weather | Morning Weather | No |
+| Ticket Clerk | Scale Ticket Clerk | Scale Tickets | (none) | No |
+
+Full specialist coverage. Each agent focuses on its area of expertise, and the general advisor handles anything that falls through the cracks.
+
+## Cron jobs (scheduled messages)
+
+Cron jobs are automated messages that an agent sends on a schedule. They run in the agent's bound channel (or the default channel if the agent has no binding).
+
+### Available cron jobs
+
+| Cron job | Schedule | Required skill | What it posts |
+|---|---|---|---|
+| Morning Weather | Daily at 6:00 AM | Weather | Full morning briefing: today's forecast, 3-day outlook, alerts, spray window assessment, ag notes |
+| Daily Grain Bids | Mon--Fri at 9:00 AM | Grain Bids | Cash grain bids from all configured elevators, organized by commodity |
+
+All times are in your farm's local timezone (Central for most states, Mountain for Montana).
+
+### Enabling cron jobs
+
+1. Go to **Settings > Agents**.
+2. Select the agent that should run the cron job.
+3. Under **Scheduled Jobs**, toggle on the cron job.
+4. Click **Save Changes**.
+
+<Callout variant="warning" title="Cron jobs require the matching skill">
+You can only enable a cron job on an agent that has the required skill assigned. For example, the Morning Weather cron job requires the Weather skill. If the Weather skill is not assigned to the agent, the Morning Weather toggle will not appear.
+</Callout>
+
+### Personality preset defaults
+
+When you create a new agent with a personality preset, FarmClaw auto-enables recommended cron jobs:
+
+| Personality preset | Default cron jobs |
+|---|---|
+| General Advisor | Morning Weather, Daily Grain Bids |
+| Grain Specialist | Daily Grain Bids |
+| Weather & Field Ops | Morning Weather |
+| Scale Ticket Clerk | (none) |
+| Field Operations | (none) |
+| Custom | (none) |
+
+You can change these defaults after agent creation.
+
+## Inter-agent communication
+
+When you have multiple agents, they can collaborate. If a farmer asks the Grain Desk about the weather, the Grain Desk can delegate the question to the Weather Watch agent using inter-agent messaging.
+
+This happens automatically based on each agent's personality configuration:
+
+- **Grain Desk** defers weather and scale ticket questions to the appropriate specialist.
+- **Weather Watch** defers grain pricing and scale ticket questions.
+- **Ticket Clerk** defers grain pricing and weather questions.
+- **General Advisor** can handle most questions directly but will defer to specialists when they are available.
+
+The agent always tells the farmer when it is passing a question to another assistant, so there is no confusion about who is responding.
+
+<Callout variant="info" title="Delegation is transparent">
+When an agent delegates to another, you will see a message like "Let me pass that to Weather Watch -- they handle forecasts." The response then comes from the specialist agent.
+</Callout>
+
+## Configuration rebuild
+
+Any change to agent skills, cron jobs, or channel bindings triggers a configuration rebuild. FarmClaw:
+
+1. Fetches all current agent, skill, and MCP server settings.
+2. Rebuilds the OpenClaw configuration file.
+3. Pushes the updated configuration to your instance.
+4. Restarts the container.
+
+This process takes 15--30 seconds. Your assistant will be briefly unavailable in Discord during the restart.
+
+## Example: setting up a three-agent system
+
+Here is a walkthrough of configuring a three-agent system from scratch.
+
+**1. Enable all skills globally.**
+
+Go to Settings > Skills and make sure Grain Bids, Weather, and Scale Tickets are all toggled on.
+
+**2. Create Agent 1: Farm Assistant (default).**
+
+- Personality: General Advisor
+- Skills: Grain Bids, Weather
+- Cron: Morning Weather
+- Channel: (none -- handles unbound channels and DMs)
+- Default: Yes
+
+**3. Create Agent 2: Grain Desk.**
+
+- Personality: Grain Specialist
+- Skills: Grain Bids
+- Cron: Daily Grain Bids
+- Channel: `#grain-bids`
+- Default: No
+
+**4. Create Agent 3: Ticket Clerk.**
+
+- Personality: Scale Ticket Clerk
+- Skills: Scale Tickets
+- Cron: (none)
+- Channel: `#scale-tickets`
+- Default: No
+
+**5. Save and wait for the rebuild.**
+
+Your three agents will come online, each responding in their designated channels. The Farm Assistant handles DMs and any channel not explicitly bound to another agent.

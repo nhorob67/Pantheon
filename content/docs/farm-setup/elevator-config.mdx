@@ -1,0 +1,145 @@
+---
+title: Elevator Configuration
+description: Add grain elevators to get real-time cash bid comparisons. FarmClaw includes presets for major elevator companies.
+section: Farm Setup
+order: 3
+icon: Building
+tags: [elevators, grain bids, presets]
+---
+
+# Elevator Configuration
+
+Elevator configuration connects your FarmClaw assistant to the grain elevators you deliver to. Once configured, your assistant can pull real-time cash grain bids from each elevator's website, compare prices across locations, and help you decide where to haul.
+
+You set up elevators during Step 2 of onboarding (Grain Marketing) and can update them at any time from your dashboard.
+
+## What Each Elevator Needs
+
+Every elevator in your configuration has three pieces of information:
+
+| Field | Required | Description |
+|---|---|---|
+| Name | Yes | A display name for the elevator (e.g., "CHS Fargo") |
+| URL | Yes | The direct URL to the elevator's cash bid page. Must be a valid URL. |
+| Crops | Yes | Which of your selected crops to track at this elevator. At least one crop must be selected per elevator. |
+
+<Callout variant="info" title="Use the bid page URL, not the homepage">
+For best results, enter the URL of the elevator's **cash bid page** specifically, not their homepage. The grain bids skill navigates directly to this URL and scrapes the bid table. A direct bid page URL means faster, more reliable results.
+</Callout>
+
+You can configure up to **20 elevators** per instance. Most farmers configure 2-5 elevators representing their primary delivery options.
+
+## Preset Elevator Companies
+
+FarmClaw includes one-click presets for major elevator companies operating in the Upper Midwest. When you select your state in the farm profile, the onboarding wizard shows presets relevant to your area. Tap a preset to add it with the correct name, URL, and your selected crops pre-filled.
+
+### Available Presets
+
+| Company | Preset Name | States Served |
+|---|---|---|
+| CHS | CHS - Fargo | ND, MN |
+| CHS | CHS - Sioux Falls | SD |
+| ADM | ADM - Casselton | ND |
+| Cargill | Cargill - Minneapolis | MN |
+| AGP | AGP - Omaha | NE, IA |
+| Columbia Grain | Columbia Grain - Great Falls | MT |
+| Gavilon | Gavilon - Des Moines | IA, NE |
+
+### Presets by State
+
+Here is what you will see based on your state selection:
+
+| State | Available Presets |
+|---|---|
+| North Dakota (ND) | CHS - Fargo, ADM - Casselton |
+| South Dakota (SD) | CHS - Sioux Falls |
+| Minnesota (MN) | CHS - Fargo, Cargill - Minneapolis |
+| Montana (MT) | Columbia Grain - Great Falls |
+| Iowa (IA) | AGP - Omaha, Gavilon - Des Moines |
+| Nebraska (NE) | AGP - Omaha, Gavilon - Des Moines |
+
+<Callout variant="tip" title="Presets are a starting point">
+The presets cover major regional elevators, but most farmers also deliver to local independent elevators or co-ops. Use presets for the big companies and add your local elevators as custom entries.
+</Callout>
+
+## Adding a Custom Elevator
+
+If your elevator is not in the preset list, you can add it manually:
+
+1. Click **Add custom elevator** below the preset list.
+2. Enter the elevator name (e.g., "Farmers Union - Cooperstown").
+3. Enter the URL of their cash bid page.
+4. Click **Add Elevator**.
+
+Your selected crops are automatically assigned to custom elevators. You can adjust which crops to track per elevator from your settings after onboarding.
+
+### Finding the Right URL
+
+To find the bid page URL for a local elevator:
+
+1. Go to the elevator's website in your browser.
+2. Navigate to their cash bids, grain prices, or market information page.
+3. Copy the URL from your browser's address bar.
+4. Paste it into the URL field in FarmClaw.
+
+<Callout variant="warning" title="Some elevator websites require interaction">
+A few elevator websites require selecting a location from a dropdown before showing bids. FarmClaw's grain bid skill can interact with page elements like dropdowns and buttons when needed. If your bids are not loading correctly, check that the URL points to the page that shows the actual bid table, even if it requires a location selection.
+</Callout>
+
+## How the Grain Bids Skill Uses Your Elevators
+
+Once your elevators are configured, here is what happens behind the scenes:
+
+1. **On demand** -- When you ask your assistant "what are grain bids?" or "check corn prices", it navigates to each configured elevator's bid page using a browser tool.
+2. **Scraping** -- It takes a snapshot of the page, locates the bid table, and extracts cash prices, basis levels, delivery periods, and futures month references for your crops.
+3. **Presentation** -- Bids are displayed in a clean, scannable format in your Discord channel, organized by commodity.
+4. **Comparison** -- When you ask to compare elevators, your assistant fetches bids from all configured elevators and highlights the best price for each commodity.
+
+Example output in Discord:
+
+```
+Cash Grain Bids -- Feb 15, 2026, 9:15 AM CT
+
+CORN
+  CHS Fargo:      $4.52 (basis -35 Mar)
+  ADM Casselton:  $4.48 (basis -39 Mar)
+
+SOYBEANS
+  CHS Fargo:      $10.15 (basis -55 Mar)
+  ADM Casselton:  $10.22 (basis -48 Mar)
+```
+
+<Callout variant="info" title="Bids are fetched fresh every time">
+Your assistant never caches or remembers old prices. Every bid check navigates to the elevator website and pulls current data. Cash bids are typically updated by elevators once daily in the morning. If you check in the evening, the bids shown are likely from that morning's posting.
+</Callout>
+
+### Understanding Basis
+
+Basis numbers in bid results represent the difference between the local cash price and the corresponding futures contract price, expressed in cents per bushel:
+
+- **Negative basis** (e.g., -35) means the cash price is 35 cents per bushel below the futures price. This is the most common scenario.
+- **Positive basis** (e.g., +10) means the cash price is 10 cents above futures, which can occur during tight local supply.
+
+Your assistant includes the futures contract month reference (e.g., "Mar" for March) so you can see which futures contract the basis is calculated against.
+
+## Managing Elevators After Onboarding
+
+You can add, remove, or update elevators at any time:
+
+1. Open your FarmClaw dashboard.
+2. Go to **Settings > Farm Profile** or **Settings > Skills > Grain Bids**.
+3. Add new elevators, remove ones you no longer deliver to, or update URLs.
+4. Save your changes.
+
+<Callout variant="warning" title="Configuration rebuild on save">
+Saving elevator changes triggers a configuration rebuild and container restart. Your assistant will be briefly unavailable (15-30 seconds) while the new configuration is applied.
+</Callout>
+
+## Troubleshooting
+
+| Issue | Solution |
+|---|---|
+| Bids not showing for an elevator | Verify the URL points to the actual bid page. Try opening it in your browser to confirm bids are visible. |
+| Wrong crops showing in bids | Check that the correct crops are assigned to that elevator in your settings. |
+| Elevator website changed | Elevator companies occasionally redesign their websites. If scraping stops working, your assistant will notify you and suggest checking the elevator's site directly. |
+| Bids seem outdated | Most elevators update bids once in the morning. Evening checks show the most recent posted bids, which may be from the morning. |

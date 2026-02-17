@@ -1,0 +1,44 @@
+---
+title: Tools
+description: Quick reference for FarmClaw's accessible built-in tools and what each one is used for.
+section: Tools
+order: 0
+icon: Wrench
+tags: [tools, skills, inventory]
+---
+
+# Tools
+
+FarmClaw tools are delivered through skills. Each skill gives your assistant a focused capability and the workflow needed to execute it reliably.
+
+## Tool inventory
+
+The current built-in tool set includes three skills:
+
+| Tool | Skill ID | What it does | Best for |
+|---|---|---|---|
+| [Grain Bids](/docs/skills/grain-bids) | `farm-grain-bids` | Visits your configured elevator pages and extracts current cash bids. | Price checks, cross-elevator comparisons, and finding the best bid by commodity |
+| [Weather Forecasts](/docs/skills/weather-forecasts) | `farm-weather` | Pulls forecast and alert data for your farm location, then adds ag-focused interpretation. | Morning weather briefings, spray-window checks, and short-term field planning |
+| [Scale Tickets](/docs/skills/scale-tickets) | `farm-scale-tickets` | Records delivery tickets from photo, voice, or manual entry and stores them in SQLite. | Harvest logging, load history, bushel totals, and export-ready records |
+
+<Callout variant="info" title="Source of truth for available tools">
+These tool IDs are the same IDs used in FarmClaw configuration and agent assignment (`farm-grain-bids`, `farm-weather`, `farm-scale-tickets`).
+</Callout>
+
+## How tools are managed
+
+Tool access follows the same two-step model as skills:
+
+1. **Global toggle** in **Settings > Skills** controls whether the tool is enabled for the instance.
+2. **Per-agent assignment** in **Settings > Agents** controls which agents can use each enabled tool.
+
+This mirrors OpenClaw's docs pattern: an explicit inventory of tools plus clear policy on how access is controlled.
+
+## Related docs
+
+- [Skills Overview](/docs/skills) -- Detailed behavior and configuration for each built-in skill
+- [Skills & Scheduling](/docs/agents/skills-per-agent) -- Assign tools per agent and configure cron jobs
+- [MCP Servers](/docs/mcp-servers) -- Additional runtime tools like filesystem and SQLite servers
+- [Visual Workflow Builder](/docs/tools/workflow-builder) -- Guided automation authoring walkthrough
+- [Workflow Builder Rollout Rings](/docs/tools/workflow-builder-rollout) -- Canary/standard/delayed release controls
+- [Workflow KPI Review Cadence](/docs/tools/workflow-builder-kpi-review) -- Weekly launch readiness review workflow

@@ -1,0 +1,9 @@
+name = "farmclaw-email-router"
+main = "worker.js"
+compatibility_date = "2026-02-12"
+
+[vars]
+ROOT_DOMAIN = "farmclaw.com"
+FORWARD_TO = "ingress@inbound.farmclaw.com"
+# Optional comma-separated blocked senders:
+# BLOCKED_SENDERS = "blocked@example.com,spam@example.org"

@@ -1,0 +1,156 @@
+---
+title: Server Setup
+description: Create a Discord server, set up a bot application, and connect it to FarmClaw.
+section: Discord Integration
+order: 1
+icon: Settings
+tags: [discord, bot, server, setup]
+---
+
+## Overview
+
+This guide walks you through creating a Discord server, setting up a bot application, and connecting it to FarmClaw. The entire process takes about 10 minutes.
+
+You'll need:
+
+- A Discord account (free at [discord.com](https://discord.com))
+- A web browser for the Discord Developer Portal
+- Access to your FarmClaw onboarding wizard or Settings page
+
+## Step 1: Create a Discord server
+
+If you already have a Discord server for your farm, skip to Step 2.
+
+1. Open Discord (desktop app or web)
+2. Click the **+** button in the server list on the left sidebar
+3. Select **Create My Own**
+4. Choose **For me and my friends** (or **For a club or community** if you prefer)
+5. Name your server — something like "Smith Farms" or "Prairie View Ag"
+6. Click **Create**
+
+Your server is ready. You can customize it later with channels, roles, and permissions.
+
+<Callout variant="tip" title="Suggested channels">
+Consider creating channels that match your workflow: `#general`, `#grain-desk`, `#weather`, `#scale-tickets`. You can bind different AI agents to each channel later.
+</Callout>
+
+## Step 2: Create a bot application
+
+1. Go to the [Discord Developer Portal](https://discord.com/developers/applications)
+2. Click **New Application** in the top right
+3. Name it something like "FarmClaw" or "Farm Assistant"
+4. Accept the Terms of Service and click **Create**
+
+You'll land on the application's General Information page. No changes needed here.
+
+## Step 3: Create the bot
+
+1. Click **Bot** in the left sidebar
+2. Your bot user is created automatically with your application
+3. Under the **Token** section, click **Reset Token**
+4. Confirm by clicking **Yes, do it!**
+5. **Copy the token immediately** — you won't be able to see it again
+
+<Callout variant="warning" title="Keep your bot token secret">
+Your bot token is like a password for your bot. Anyone with this token can control your bot. Never share it publicly, post it in a message, or commit it to a code repository. If you suspect your token has been compromised, return to the Developer Portal and reset it immediately.
+</Callout>
+
+<Callout variant="info" title="Token encryption">
+When you paste your bot token into FarmClaw, it is encrypted with AES encryption before being stored. FarmClaw never stores your token in plain text. The encrypted token is only decrypted at runtime when your instance needs to connect to Discord.
+</Callout>
+
+### Bot settings
+
+While on the Bot page, configure these settings:
+
+| Setting | Value | Why |
+|---------|-------|-----|
+| Public Bot | **Off** | Prevents others from adding your bot to their servers |
+| Requires OAuth2 Code Grant | **Off** | Not needed for FarmClaw |
+| Message Content Intent | **On** | Required for your bot to read message content |
+
+Under **Privileged Gateway Intents**, make sure **Message Content Intent** is toggled on. Without this, your bot cannot read messages in your server.
+
+## Step 4: Set bot permissions
+
+Your bot needs specific permissions to function correctly. Here's exactly what's required:
+
+| Permission | Purpose |
+|------------|---------|
+| Send Messages | Respond to your questions and post updates |
+| Read Message History | Provide context in threaded conversations |
+| Embed Links | Format responses with rich embeds (tables, cards) |
+| Attach Files | Send spreadsheets, charts, and PDFs |
+| Read Messages / View Channels | See messages in the channels it's assigned to |
+
+These are the minimum permissions needed. FarmClaw does not request administrator access or any permissions beyond what's listed above.
+
+## Step 5: Generate the invite URL
+
+1. Click **OAuth2** in the left sidebar
+2. Click **URL Generator**
+3. Under **Scopes**, check **bot**
+4. Under **Bot Permissions**, check the five permissions listed above:
+   - Send Messages
+   - Read Message History
+   - Embed Links
+   - Attach Files
+   - Read Messages/View Channels
+5. Copy the **Generated URL** at the bottom of the page
+
+## Step 6: Add the bot to your server
+
+1. Paste the generated URL into your browser
+2. Select your farm's Discord server from the dropdown
+3. Click **Authorize**
+4. Complete the CAPTCHA if prompted
+
+You should see a confirmation message that the bot has been added. In your Discord server, the bot will appear in the member list as offline — it won't come online until FarmClaw connects it.
+
+## Step 7: Paste the token into FarmClaw
+
+You have two options depending on where you are in the setup process:
+
+### During onboarding
+
+On the Discord Connection step of the onboarding wizard, paste your bot token into the **Bot Token** field. The wizard validates the token format before proceeding.
+
+### After onboarding
+
+If you need to update your bot token later:
+
+1. Go to **Settings > Farm** in your FarmClaw dashboard
+2. Find the **Discord Bot Token** field
+3. Paste your new token
+4. Click **Save**
+
+Your instance will automatically restart with the new token.
+
+<Callout variant="success" title="You're connected">
+Once your instance finishes provisioning and shows "Running" status on your dashboard, your bot will appear online in Discord. Send it a message to verify everything is working.
+</Callout>
+
+## Troubleshooting
+
+### Bot shows offline
+
+- Verify your instance shows "Running" status on the FarmClaw dashboard
+- Check that you copied the full token (they're long — make sure nothing was cut off)
+- Confirm **Message Content Intent** is enabled in the Developer Portal
+
+### Bot doesn't respond to messages
+
+- Make sure the bot has **Read Messages/View Channels** and **Send Messages** permissions in the channel you're testing
+- Check that **Message Content Intent** is toggled on in the Developer Portal
+- Try messaging the bot in a DM to rule out channel permission issues
+
+### "Invalid token" error during onboarding
+
+- Go back to the Developer Portal and reset the token
+- Copy the new token carefully — no extra spaces before or after
+- Paste it fresh into the FarmClaw token field
+
+## Next steps
+
+- [Channel Configuration](/docs/discord/channel-config) — Map agents to specific Discord channels
+- [AI Agents](/docs/agents) — Set up multiple agents with different specialties

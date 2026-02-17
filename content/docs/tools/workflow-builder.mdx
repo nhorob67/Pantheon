@@ -1,0 +1,43 @@
+---
+title: Visual Workflow Builder
+description: Guided walkthrough for creating, publishing, and running workflows from the dashboard.
+section: Tools
+order: 1
+icon: GitBranch
+tags: [workflow, visual builder, automation, walkthrough]
+---
+
+# Visual Workflow Builder
+
+Use FarmClaw's visual workflow builder to design automations without calling APIs.
+
+## Guided walkthrough
+
+1. Open **Settings > Workflows** (`/settings/workflows`).
+2. Select **New workflow** and choose a starter template.
+3. Add or edit nodes in the canvas, then resolve validation errors in the right panel.
+4. Click **Publish** to promote the current draft and trigger runtime deploy.
+5. Click **Run** or open **Runs** to verify execution and artifacts.
+6. Open **Launch readiness** to review rollout ring and KPI baseline.
+
+## Keyboard map
+
+- `Cmd/Ctrl + S` save draft
+- `Cmd/Ctrl + Z` undo
+- `Shift + Cmd/Ctrl + Z` redo
+- `Cmd/Ctrl + D` duplicate selected node
+- `Cmd/Ctrl + K` open command palette
+- `F` fit canvas
+- `+ / -` zoom
+- `Esc` clear selection / close palette
+
+## Recovery controls
+
+- **Retry from here**: retry a failed/canceled run from a specific step.
+- **Rerun workflow**: queue a fresh run for the latest published version.
+- **Rollback**: move published version to the prior release and redeploy.
+
+## Related docs
+
+- [Workflow rollout rings](/docs/tools/workflow-builder-rollout)
+- [Workflow builder support runbook](/docs/troubleshooting/workflow-builder-support-runbook)

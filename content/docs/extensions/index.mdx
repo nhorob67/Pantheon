@@ -1,0 +1,99 @@
+---
+title: Extensions
+description: The FarmClaw extension marketplace lets you add new capabilities to your AI assistant — skills, plugins, connectors, and more.
+section: Extensions
+order: 0
+icon: Puzzle
+tags: [extensions, marketplace, overview]
+---
+
+# Extensions
+
+The FarmClaw extension system lets you expand your AI assistant's capabilities beyond the three built-in skills. Extensions are installable packages that add new skills, plugins, connectors, MCP servers, and tool packs to your instance.
+
+## Extension types
+
+Extensions come in five types, each serving a different purpose:
+
+| Type | What it does | Example |
+|---|---|---|
+| **skill** | Adds a new capability or workflow to your assistant | A livestock price skill, a soil sampling analyzer |
+| **plugin** | Modifies or enhances existing assistant behavior | A response formatter, a conversation logger |
+| **connector** | Integrates with an external service or API | A John Deere Operations Center bridge, a DTN feed |
+| **mcp_server** | Adds a new MCP server for tool access | A custom database connector, a cloud storage bridge |
+| **tool_pack** | Bundles multiple related tools together | A crop planning toolkit, a financial analysis suite |
+
+## Source types
+
+Extensions can come from five different sources. Each source type has different trust and verification characteristics.
+
+| Source | Description | Supports verification |
+|---|---|---|
+| **internal** | First-party extensions built and maintained by FarmClaw | No (implicitly trusted) |
+| **local** | Extensions bundled directly with your hosted instance image | No (implicitly trusted) |
+| **clawhub** | Third-party packages hosted on the FarmClaw marketplace | Yes |
+| **npm** | Extensions published to the Node package registry | Yes |
+| **git** | Extensions hosted in Git repositories, pinned by catalog reference | Yes |
+
+<Callout variant="info" title="Trust policies control what you can install">
+Your account has a trust policy that determines which source types are allowed and which require verification before installation. By default, all sources are allowed, and npm, git, and clawhub sources require verified status. See [Installing Extensions](/docs/extensions/installing) for details.
+</Callout>
+
+## How extensions work
+
+Extensions are managed through a catalog-and-installation model:
+
+1. **Catalog** -- FarmClaw maintains a catalog of available extensions. Each catalog entry has a slug, type, source, description, and one or more versioned releases.
+2. **Installation** -- When you install an extension, FarmClaw creates an installation record tied to your customer account and instance. The installation tracks which version is active and the current health status.
+3. **Operations** -- Install, upgrade, rollback, and remove actions are queued as operations. Each operation is tracked with a status (pending, in_progress, completed, failed, canceled) so you can monitor progress.
+4. **Health monitoring** -- Installed extensions are continuously monitored. Each installation reports a health status: `healthy`, `degraded`, `unhealthy`, or `unknown`.
+
+## Versioned installations
+
+Every extension in the catalog has one or more published versions. When you install an extension, you get the latest version by default. Each version includes:
+
+- A semantic version number
+- Release notes describing what changed
+- A manifest with configuration and dependency information
+- An optional SHA-256 checksum for integrity verification
+
+You can pin an installation to a specific version to prevent automatic upgrades, or leave it unpinned to receive new versions through the [rollout system](/docs/extensions/installing#rollout-system).
+
+## Managing extensions
+
+Extensions are managed through the FarmClaw dashboard at **Settings > Extensions**. The panel provides three sections:
+
+- **Trust Policy** -- Configure which source types are allowed and which require verification.
+- **Installed** -- View your active installations with status, health, and version info. Queue rollbacks if needed.
+- **Catalog** -- Browse available extensions, see verification status, and install or upgrade with one click.
+
+<Callout variant="tip" title="Rollbacks are always available">
+If an extension update causes problems, you can queue a rollback from the Installed section to revert to the previous version.
+</Callout>
+
+## Extension lifecycle
+
+An extension installation moves through the following statuses over its lifetime:
+
+```
+pending → installing → installed
+                    ↘ failed
+installed → rollback_pending → rolled_back
+installed → removed
+```
+
+| Status | Meaning |
+|---|---|
+| `pending` | Installation or upgrade has been queued but not yet started |
+| `installing` | The operation is actively running |
+| `installed` | The extension is active and operational |
+| `failed` | The installation or upgrade encountered an error |
+| `rollback_pending` | A rollback has been queued |
+| `rolled_back` | Successfully reverted to a previous version |
+| `removed` | The extension has been uninstalled |
+
+## What's next
+
+- [Marketplace](/docs/extensions/marketplace) -- Browse and discover available extensions
+- [Installing Extensions](/docs/extensions/installing) -- Trust policies, installation flow, health monitoring, and rollouts
+- [MCP Servers](/docs/mcp-servers) -- Built-in tool servers for filesystem, database, and memory access

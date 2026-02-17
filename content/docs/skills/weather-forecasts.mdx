@@ -1,0 +1,260 @@
+---
+title: Weather Forecasts
+description: Agriculture-focused weather intelligence powered by the National Weather Service. Includes spray window analysis and GDD tracking.
+section: Skills
+order: 2
+icon: CloudSun
+tags: [weather, forecast, spray, gdd, nws]
+---
+
+# Weather Forecasts
+
+The Weather Forecasts skill provides agriculture-focused weather intelligence powered by the National Weather Service (NWS) API. It goes beyond standard forecasts with spray window analysis, Growing Degree Day (GDD) tracking, and automatic morning briefings -- all calibrated for Upper Midwest row crop farming.
+
+## Data source
+
+All weather data comes from the **National Weather Service API** (api.weather.gov). This is a free, reliable, public API maintained by NOAA. No API key is required, and the data is the same source used by local TV meteorologists and ag extension services.
+
+The NWS API provides:
+
+- 7-day forecasts broken into day/night periods
+- Hourly forecasts for the next 156 hours
+- Active weather alerts (watches, warnings, advisories)
+- Current observations from the nearest weather station
+
+When the NWS API is insufficient (e.g., soil temperature maps or drought monitor data), the assistant falls back to browser-based lookups on sites like NDAWN and the U.S. Drought Monitor.
+
+<Callout variant="info" title="No additional cost for weather data">
+The NWS API is free and publicly funded. Weather queries use your normal metered API credits for the assistant's processing, but there is no separate charge for weather data itself.
+</Callout>
+
+## Configuration
+
+The Weather Forecasts skill reads four settings from your farm profile:
+
+| Setting | Description | Example |
+|---|---|---|
+| Latitude | Your farm's latitude | 46.8772 |
+| Longitude | Your farm's longitude | -96.7898 |
+| Location name | Display name for your area | near Fargo, ND |
+| Timezone | IANA timezone identifier | America/Chicago |
+
+These are set during onboarding and can be updated in **Settings > Farm Profile > Weather Location**. The coordinates determine which NWS grid point is used for your forecasts, so accuracy matters -- use your actual farm location, not just the nearest town.
+
+## Features
+
+### 7-day forecast
+
+Ask for the forecast and get a multi-day outlook with high/low temperatures, wind, precipitation chances, and short descriptions for each period.
+
+```
+What's the weather forecast?
+```
+
+The assistant presents today's conditions prominently, followed by a 3--7 day outlook. All temperatures are in Fahrenheit, wind in mph, precipitation in inches, and times in your local timezone.
+
+### Hourly forecast
+
+For more granular planning, ask for hourly conditions. This is especially useful for timing fieldwork or spray applications.
+
+```
+What's the weather hour by hour today?
+```
+
+### Active weather alerts
+
+The assistant checks for active NWS alerts for your location. Severe weather alerts are **always displayed prominently** regardless of what you originally asked about. If there is a tornado watch, severe thunderstorm warning, or other alert, you will see it.
+
+<Callout variant="warning" title="Severe alerts are always shown">
+If there is an active severe weather alert for your location, the assistant will display it at the top of any weather response -- even if you only asked about tomorrow's forecast. Safety first.
+</Callout>
+
+### Morning weather briefing
+
+The morning briefing is an automated daily message sent at **6:00 AM** in your local timezone. It provides a concise overview to start your day:
+
+```
+Morning Weather -- near Fargo, ND
+Monday, October 15, 2025
+
+TODAY: Partly sunny, breezy
+  High: 62 F | Low: 38 F
+  Wind: 12-18 mph NW
+  Precip: 10% chance
+  Humidity: 55%
+
+NEXT 3 DAYS:
+  Tuesday:    Sunny | H 58 L 35
+  Wednesday:  Mostly cloudy | H 52 L 33
+  Thursday:   Rain likely | H 48 L 36
+
+ALERTS: None
+
+AG NOTES:
+  - Spray windows look good today 7AM-11AM (wind 5-8 mph)
+  - No rain expected until Thursday
+  - Overnight freeze possible Wednesday night (33 F low)
+```
+
+To enable the morning briefing, toggle on the **Morning Weather** cron job on the agent that has the Weather skill assigned. See [Skills & Scheduling](/docs/agents/skills-per-agent) for setup instructions.
+
+## Spray window analysis
+
+Spray window analysis is one of the most useful features for in-season field operations. The assistant evaluates hourly forecast data for the next 48 hours and identifies windows where all spray conditions are met.
+
+### Spray window criteria
+
+| Condition | Acceptable range | Why it matters |
+|---|---|---|
+| Wind speed | 3--10 mph | Below 3 mph risks temperature inversions; above 10 mph causes drift |
+| Temperature | 50--85 F | Outside this range, product efficacy drops and volatilization risk increases |
+| Precipitation | None in current hour or next 2 hours | Rain washes off product before absorption |
+| Humidity | Below 80% | High humidity slows drying and can reduce uptake |
+
+### Spray window output
+
+```
+SPRAY WINDOWS (next 48 hrs):
+  Today 7AM-11AM:    Wind 5-8 mph SW, 62-71 F, 0% precip
+  Today 5PM-8PM:     Wind 4-6 mph S, 68-65 F, 0% precip
+  Tomorrow 6AM-2PM:  Wind 3-7 mph NW, 58-74 F, 0% precip
+
+AVOID:
+  Today 12PM-4PM:    Wind 15-20 mph gusting 25 mph
+  Tomorrow 4PM+:     60% chance thunderstorms
+```
+
+<Callout variant="tip" title="Ask during growing season for best results">
+Spray window analysis is most relevant from April through October. The morning briefing automatically includes spray assessments during growing season months.
+</Callout>
+
+### Example spray prompts
+
+```
+Any spray windows this week?
+```
+
+```
+Can I spray tomorrow morning?
+```
+
+```
+When's the next good window to get out?
+```
+
+## GDD (Growing Degree Day) tracking
+
+Growing Degree Days measure accumulated heat units that drive crop development. The assistant calculates GDD using the standard method for corn.
+
+### GDD calculation method
+
+| Parameter | Value |
+|---|---|
+| Base temperature | 50 F |
+| High cap | 86 F (temperatures above 86 are counted as 86) |
+| Low cap | 50 F (temperatures below 50 are counted as 50) |
+| Formula | GDD = ((min(High, 86) + max(Low, 50)) / 2) - 50 |
+
+The assistant accumulates GDD from your planting date forward. If you have not provided a planting date, it will ask for one.
+
+### GDD milestones for corn
+
+| Growth stage | Approximate GDD |
+|---|---|
+| Emergence (VE) | 100--120 |
+| V6 (6 leaves) | 475--500 |
+| Tassel (VT) | 1,100--1,200 |
+| Silking (R1) | 1,200--1,350 |
+| Physiological maturity (R6) | 2,400--2,800 |
+
+### Example GDD prompts
+
+```
+What's my GDD accumulation?
+```
+
+```
+How many GDDs since May 5th?
+```
+
+```
+Am I on track for corn maturity?
+```
+
+## Units and conventions
+
+The assistant follows standard Upper Midwest farming conventions:
+
+| Measurement | Unit |
+|---|---|
+| Temperature | Fahrenheit (F) |
+| Wind speed | Miles per hour (mph) |
+| Precipitation | Inches |
+| Pressure | Inches of mercury (inHg) |
+| Times | Farmer's local timezone |
+
+All times default to your configured timezone. You never need to specify "Central Time" -- the assistant already knows.
+
+## Error handling
+
+| Situation | What the assistant does |
+|---|---|
+| NWS API returns an error | Retries once after 5 seconds |
+| NWS API is down | Falls back to browser-based lookup on weather.gov |
+| Low forecast confidence | States explicitly that confidence is low |
+| Alert data unavailable | Notes the issue, still provides forecast data |
+
+The assistant always includes the data source (NWS) and timestamp in weather responses so you know how current the information is.
+
+<Callout variant="info" title="Current observations vs. forecast">
+The assistant clearly distinguishes between current observations (what is happening now at the nearest station) and forecast data (what the NWS model predicts). If you ask "What's the temperature?", you get the current observation. If you ask "What will it be tomorrow?", you get the forecast.
+</Callout>
+
+## Example prompts
+
+Here are common ways to ask about weather in Discord:
+
+```
+What's the weather?
+```
+
+```
+What's the forecast for this week?
+```
+
+```
+Any spray windows this week?
+```
+
+```
+What's my GDD accumulation since May 1?
+```
+
+```
+Is there any frost risk this week?
+```
+
+```
+Can I get in the field tomorrow?
+```
+
+```
+Any severe weather alerts?
+```
+
+```
+Send me the forecast as a PDF
+```
+
+## File exports
+
+The assistant can export weather data as files:
+
+| Format | Use case | How to ask |
+|---|---|---|
+| PDF | Formatted multi-day forecast summary | "Send me the forecast" |
+| PNG chart | GDD accumulation curves | "Chart the GDD" |
+| Excel (.xlsx) | Hourly spray window data with GO/NO-GO columns | "Spray window spreadsheet" |
+| CSV | Daily high/low/precip/wind data | "Export this week's weather" |
+
+Files are sent as Discord message attachments (25 MB limit).

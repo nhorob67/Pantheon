@@ -1,0 +1,53 @@
+---
+title: Workflow Builder Support Runbook
+description: Triage and incident SOP for workflow authoring, publishing, and runtime failures.
+section: Troubleshooting
+order: 2
+icon: LifeBuoy
+tags: [workflow, support, incident, runbook]
+---
+
+# Workflow Builder Support Runbook
+
+Use this runbook when workflow builder behavior impacts operators or production runs.
+
+## Severity model
+
+- **P1**: publish failures or run failures across multiple customers with active impact.
+- **P2**: single-customer publish/run failures that block operations.
+- **P3**: degraded UX with available workaround.
+
+## First-response checklist (first 15 minutes)
+
+1. Confirm incident scope: customer IDs, instance IDs, workflow IDs, run IDs.
+2. Check `/settings/workflows/launch` for KPI spikes and gate failures.
+3. Validate rollout target ring and customer assigned ring.
+4. Inspect latest run timeline, step errors, and artifact events.
+5. Classify incident severity and assign incident commander.
+
+## API checks
+
+- `GET /api/instances/:id/workflow-runs`
+- `GET /api/instances/:id/workflow-runs/:runId`
+- `POST /api/instances/:id/workflow-runs/:runId/retry-step`
+- `POST /api/instances/:id/workflows/:workflowId/rollback`
+
+## Immediate mitigations
+
+- Pause ring promotion by setting `WORKFLOW_BUILDER_ROLLOUT_TARGET_RING` to prior ring.
+- For run-time regressions, rollback affected workflows to prior published version.
+- For validation regressions, block publish and route users to manual run procedures.
+
+## Escalation path
+
+1. Support on-call
+2. Workflow platform engineer
+3. Runtime/infrastructure on-call
+4. Product owner for customer comms
+
+## Incident close-out
+
+1. Document root cause and recovery timeline.
+2. Link impacted run IDs and workflows.
+3. Update weekly KPI review agenda with follow-up actions.
+4. Add regression coverage for the triggering condition.

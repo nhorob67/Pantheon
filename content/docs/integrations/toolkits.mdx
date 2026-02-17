@@ -1,0 +1,288 @@
+---
+title: Available Toolkits
+description: Full list of curated Composio toolkits available in FarmClaw, with farming-specific use cases and actions.
+section: Integrations
+order: 2
+icon: Package
+tags: [integrations, toolkits, google sheets, gmail, calendar, slack, notion, airtable]
+---
+
+# Available Toolkits
+
+FarmClaw curates a set of Composio toolkits with descriptions and recommendations tailored to Upper Midwest row crop farming. Each toolkit bundles the most useful actions for a single service.
+
+## Recommended toolkits
+
+These four toolkits cover the most common integration use cases for farmers. They are highlighted in the **Recommended** tab when selecting toolkits.
+
+### Google Sheets
+
+| | |
+|---|---|
+| **Category** | Recommended |
+| **Requires auth** | Yes (Google account) |
+| **Actions** | Read Spreadsheet, Write Spreadsheet, Create Spreadsheet |
+
+**What it does:** Read and write Google Sheets spreadsheets directly from Discord.
+
+**Farm use cases:**
+
+- Track harvest deliveries in a shared spreadsheet alongside scale ticket data
+- Log daily field observations and input applications
+- Pull cost-per-acre numbers from a planning spreadsheet
+- Build season summary reports that update automatically
+
+**Example prompts:**
+
+```
+Add today's corn deliveries to the Harvest 2025 spreadsheet
+```
+
+```
+What does my input cost tracker show for soybeans?
+```
+
+```
+Create a new spreadsheet called "Fall Field Notes" with columns for date, field, observation, and action
+```
+
+<Callout variant="tip" title="Combine with scale tickets">
+Google Sheets works great alongside the Scale Tickets skill. Ask your assistant to "export this week's tickets to my harvest tracker spreadsheet" and it will read from SQLite and write to Google Sheets in one step.
+</Callout>
+
+### Google Calendar
+
+| | |
+|---|---|
+| **Category** | Recommended |
+| **Requires auth** | Yes (Google account) |
+| **Actions** | Create Event, List Events, Update Event |
+
+**What it does:** Manage Google Calendar events -- create, read, and update scheduling entries.
+
+**Farm use cases:**
+
+- Schedule planting and spraying windows based on weather forecasts
+- Block time for equipment maintenance and field work
+- Track delivery appointments at elevators
+- Set reminders for crop insurance deadlines
+
+**Example prompts:**
+
+```
+Schedule corn planting for the north section next Monday through Wednesday
+```
+
+```
+What's on the farm calendar this week?
+```
+
+```
+Move the spray window to Thursday -- the forecast looks better
+```
+
+<Callout variant="tip" title="Combine with weather skill">
+Ask your assistant to check the forecast and schedule accordingly: "Find the next 3-day window with no rain and schedule bean spraying."
+</Callout>
+
+### Gmail
+
+| | |
+|---|---|
+| **Category** | Recommended |
+| **Requires auth** | Yes (Google account) |
+| **Actions** | Send Email, List Emails, Read Email |
+
+**What it does:** Send and read Gmail messages through your assistant.
+
+**Farm use cases:**
+
+- Forward grain contract summaries to partners or family
+- Email daily delivery reports to your accountant
+- Share weather alerts with crew members
+- Send equipment breakdown notifications
+
+**Example prompts:**
+
+```
+Email today's delivery summary to john@example.com
+```
+
+```
+Send the weekly grain bid comparison to my wife
+```
+
+```
+Check if I have any emails from CHS about contract pricing
+```
+
+<Callout variant="warning" title="Email sends are real">
+When your assistant sends an email through Gmail, it sends from your actual Gmail account. Double-check recipients and content before confirming sends, especially for the first few uses.
+</Callout>
+
+### Slack
+
+| | |
+|---|---|
+| **Category** | Communication |
+| **Requires auth** | Yes (Slack workspace) |
+| **Actions** | Send Message, List Channels |
+
+**What it does:** Post messages to Slack channels from your assistant.
+
+**Farm use cases:**
+
+- Cross-post weather alerts and market reports from Discord to Slack
+- Notify a shared Slack channel when a large delivery is logged
+- Share daily grain bid summaries with a team channel
+
+**Example prompts:**
+
+```
+Post today's weather summary to the #farm-updates Slack channel
+```
+
+```
+Send the morning grain bids to Slack
+```
+
+## Productivity toolkits
+
+### Notion
+
+| | |
+|---|---|
+| **Category** | Productivity |
+| **Requires auth** | Yes (Notion account) |
+| **Actions** | Create Page, Search, Update Page |
+
+**What it does:** Create and search Notion pages from your assistant.
+
+**Farm use cases:**
+
+- Build a searchable knowledge base of field notes and SOPs
+- Document crop plans and seasonal strategies
+- Store equipment maintenance logs
+- Keep running notes on field performance year over year
+
+**Example prompts:**
+
+```
+Create a Notion page for the north quarter scouting report with today's observations
+```
+
+```
+Search Notion for last year's corn planting notes
+```
+
+### Google Drive
+
+| | |
+|---|---|
+| **Category** | Productivity |
+| **Requires auth** | Yes (Google account) |
+| **Actions** | List Files, Upload File, Download File |
+
+**What it does:** Access and organize files in Google Drive.
+
+**Farm use cases:**
+
+- Store and retrieve field maps, soil test results, and aerial imagery
+- Access grain contracts and insurance documents
+- Organize photos by field and season
+
+**Example prompts:**
+
+```
+What files are in my Farm Documents folder?
+```
+
+```
+Find the soil test results from last spring
+```
+
+### Todoist
+
+| | |
+|---|---|
+| **Category** | Productivity |
+| **Requires auth** | Yes (Todoist account) |
+| **Actions** | Create Task, List Tasks, Complete Task |
+
+**What it does:** Manage tasks and to-do lists.
+
+**Farm use cases:**
+
+- Track maintenance tasks for equipment
+- Create to-do lists for fieldwork preparation
+- Manage delivery schedules and logistics
+
+**Example prompts:**
+
+```
+Add "Change oil in combine" to my equipment maintenance list
+```
+
+```
+What tasks are due this week?
+```
+
+```
+Mark the grain bin cleanout as done
+```
+
+## Data toolkits
+
+### Airtable
+
+| | |
+|---|---|
+| **Category** | Data |
+| **Requires auth** | Yes (Airtable account) |
+| **Actions** | Create Record, List Records, Update Record |
+
+**What it does:** Read and write records in Airtable bases.
+
+**Farm use cases:**
+
+- Manage equipment inventory with structured records
+- Track seed lot information across fields and years
+- Log chemical and fertilizer applications with rates and dates
+- Build custom databases for any tracking need
+
+**Example prompts:**
+
+```
+Add the new seed lot to the Airtable inventory -- Pioneer P0589, 8 bags, North field
+```
+
+```
+Show all equipment records that need service before harvest
+```
+
+## Toolkit selection tips
+
+### Start small
+
+Enable only the toolkits you will actively use. Each toolkit adds actions to your assistant's tool list, and a smaller tool list means faster, more focused responses. You can always add more toolkits later.
+
+### Recommended first
+
+The four recommended toolkits (Google Sheets, Google Calendar, Gmail, Slack) cover 90% of integration use cases for most farms. Start with these and expand as needed.
+
+### Combine with skills
+
+The most powerful workflows combine FarmClaw skills with integration actions:
+
+| Skill | + Integration | Result |
+|---|---|---|
+| Scale Tickets | Google Sheets | Auto-export delivery data to spreadsheets |
+| Weather | Google Calendar | Schedule field work around forecast windows |
+| Grain Bids | Gmail | Email daily bid reports to partners |
+| Weather | Slack | Cross-post alerts to team channels |
+
+## What's next
+
+- [Setup Guide](/docs/integrations/setup) -- Enable Composio and select your toolkits
+- [Connecting Services](/docs/integrations/connecting-services) -- Authorize your accounts
+- [Security and Privacy](/docs/integrations/security) -- How your credentials are protected

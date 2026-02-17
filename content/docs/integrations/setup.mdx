@@ -1,0 +1,173 @@
+---
+title: Setup Guide
+description: Step-by-step walkthrough of enabling Composio integrations and connecting your first service.
+section: Integrations
+order: 1
+icon: Settings
+tags: [integrations, composio, setup, enable, configure]
+---
+
+# Setup Guide
+
+This guide walks you through enabling Composio integrations, selecting toolkits, and connecting your first third-party service.
+
+## Prerequisites
+
+Before you can enable integrations, you need:
+
+- An active FarmClaw subscription
+- A provisioned instance (your AI assistant must already be running)
+- Access to the FarmClaw dashboard
+
+If your instance is not yet provisioned, complete the [onboarding wizard](/docs/getting-started/quick-start) first.
+
+## Step 1: Enable Composio
+
+1. Navigate to **Settings > Integrations** in your FarmClaw dashboard.
+2. You will see the **Composio** integration card at the top of the page.
+3. Toggle the switch to **enable** the integration.
+
+When you enable Composio, FarmClaw performs several setup steps behind the scenes:
+
+- Creates a Composio entity for your account
+- Provisions a remote MCP server endpoint
+- Stores the server configuration in your database
+- Rebuilds your instance configuration to include the Composio MCP server
+- Restarts your instance container
+
+<Callout variant="info" title="Brief downtime during setup">
+Enabling or disabling Composio triggers a configuration rebuild and container restart. Your assistant will be unavailable in Discord for approximately 15--30 seconds.
+</Callout>
+
+This is a one-time setup. Once enabled, adding or removing toolkits and connecting services does not require re-provisioning.
+
+## Step 2: Select toolkits
+
+After enabling Composio, the **Toolkits** section appears below the integration card.
+
+1. Browse the available toolkits using the category tabs: **Recommended**, **Productivity**, **Communication**, **Data**, or **All**.
+2. Click on a toolkit card to select or deselect it.
+3. Selected toolkits show a green checkmark and highlighted border.
+4. Click **Save Toolkits** when you have made your selections.
+
+Saving toolkits triggers a configuration rebuild and container restart. Only the actions from your selected toolkits will be available to your assistant.
+
+<Callout variant="tip" title="Start with recommended toolkits">
+The **Recommended** tab shows the toolkits most useful for farm operations: Google Sheets, Google Calendar, Gmail, and Slack. These cover the most common integration use cases -- spreadsheet tracking, scheduling, email, and notifications.
+</Callout>
+
+### Changing toolkit selections
+
+You can add or remove toolkits at any time:
+
+1. Select or deselect toolkits as needed.
+2. The **Save Toolkits** button becomes active when your selections differ from the saved configuration.
+3. Click **Save Toolkits** to apply changes.
+
+Removing a toolkit does not disconnect the service. If you have Google Sheets connected and you deselect the Google Sheets toolkit, the connection remains intact but the assistant loses the ability to call Google Sheets actions. Re-selecting the toolkit restores access without needing to reconnect.
+
+## Step 3: Connect a service
+
+After selecting toolkits, the **Connected Accounts** section shows all selected toolkits that require authentication.
+
+1. Find the service you want to connect (e.g., Google Sheets).
+2. Click the **Connect** button next to it.
+3. A confirmation dialog appears showing:
+   - The service name
+   - The specific actions your assistant will have access to
+   - A privacy note about how credentials are handled
+4. Click **Authorize [Service Name]** to proceed.
+
+### OAuth popup flow
+
+After clicking Authorize:
+
+1. A popup window opens with the service's login/consent page (e.g., Google's "Choose an account" screen).
+2. Sign in to your account if prompted.
+3. Review the permissions requested and click **Allow** or **Grant Access**.
+4. The popup displays a "Connected" message and closes automatically after 2 seconds.
+5. The parent page updates to show the service as connected with a green "Connected" badge.
+6. A success toast notification appears: "Service connected successfully".
+
+<Callout variant="warning" title="Allow popups for FarmClaw">
+The OAuth flow uses a popup window. If your browser blocks the popup, FarmClaw falls back to a full-page redirect. To avoid interruption, allow popups for your FarmClaw dashboard URL.
+</Callout>
+
+### Connection status indicators
+
+After connecting, each service shows a status badge:
+
+| Badge | Meaning |
+|---|---|
+| **Connected** (green) | Active connection. Your assistant can use this service. |
+| **Expired** (amber) | Token has expired. Click **Connect** to re-authorize. |
+| **Disconnected** (gray) | Not connected. Click **Connect** to start the OAuth flow. |
+| **Pending** (blue) | OAuth flow in progress. |
+
+## Step 4: Test the integration
+
+Once a service is connected, test it by sending a message to your assistant in Discord:
+
+### Google Sheets test
+
+```
+Create a new spreadsheet called "Test Sheet" and add a row with today's date and "Hello from FarmClaw"
+```
+
+### Gmail test
+
+```
+Send a test email to myself with the subject "FarmClaw Integration Test"
+```
+
+### Google Calendar test
+
+```
+What events do I have on my calendar this week?
+```
+
+If the assistant responds with data from the service, your integration is working correctly.
+
+## Disabling Composio
+
+To disable the entire Composio integration:
+
+1. Navigate to **Settings > Integrations**.
+2. Toggle the Composio switch to **off**.
+3. Your instance configuration is rebuilt without the Composio MCP server.
+4. Your assistant loses access to all integration actions.
+
+<Callout variant="info" title="Connections are preserved">
+Disabling Composio does not disconnect your service accounts. If you re-enable Composio later, your existing connections will still be active. To fully disconnect, remove each service connection before disabling.
+</Callout>
+
+## Troubleshooting
+
+### "Failed to enable integration"
+
+This usually means the Composio API is temporarily unavailable. Wait a minute and try again. If the issue persists, check the [Troubleshooting](/docs/troubleshooting/common-issues) page.
+
+### OAuth popup does not appear
+
+Your browser may be blocking popups. Check your browser's popup blocker settings and allow popups for your FarmClaw dashboard domain.
+
+### Service shows "Expired"
+
+OAuth tokens expire periodically. Click **Connect** next to the expired service to re-authorize. The flow is the same as the initial connection.
+
+### Assistant says it cannot access a service
+
+Verify that:
+
+1. Composio is enabled (toggle is on).
+2. The toolkit for that service is selected and saved.
+3. The service is connected (green "Connected" badge).
+4. Your instance has been restarted since the last configuration change.
+
+If all four conditions are met and the assistant still cannot access the service, click **Refresh** in the Connected Accounts section to sync the latest connection status from Composio.
+
+## What's next
+
+- [Available Toolkits](/docs/integrations/toolkits) -- Full list of services with farming-specific descriptions
+- [Connecting Services](/docs/integrations/connecting-services) -- Deep dive into the OAuth flow and connection management
+- [Security and Privacy](/docs/integrations/security) -- How credentials are protected

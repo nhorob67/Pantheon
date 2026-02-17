@@ -1,0 +1,71 @@
+---
+title: Account Setup
+description: Create your FarmClaw account using magic link authentication and activate your subscription through Stripe.
+section: Getting Started
+order: 2
+icon: User
+tags: [account, auth, login, signup]
+---
+
+## Magic link authentication
+
+FarmClaw uses **magic link** authentication powered by Supabase Auth. There are no passwords to remember or manage.
+
+### How it works
+
+1. Enter your email address on the login or signup page
+2. Check your inbox for an email from FarmClaw
+3. Click the login link in the email
+4. You're signed in — the link is single-use and expires after a short time
+
+<Callout variant="info" title="Session management">
+Your session stays active as you use FarmClaw. The system automatically refreshes your session in the background, so you won't be logged out during active use.
+</Callout>
+
+### Troubleshooting login
+
+If you don't receive the magic link email:
+
+- Check your **spam**, **junk**, or **promotions** folder
+- Make sure you entered the correct email address
+- Wait a minute and try again — there's a short cooldown between requests
+- If using a corporate email, check with your IT team about email filtering
+
+## Activating your subscription
+
+After your first login, you'll need to activate a subscription before you can use FarmClaw. The subscription is managed through Stripe.
+
+### Subscription details
+
+| Item | Cost |
+|------|------|
+| Monthly base subscription | $40.00/month |
+| Metered API usage | Billed at cost |
+
+The base subscription covers your dedicated cloud instance, container hosting, and platform access. API usage (the AI model calls your assistant makes) is metered daily and billed separately based on actual token usage.
+
+### Checkout flow
+
+1. Click "Subscribe" on the onboarding prompt
+2. You'll be redirected to a Stripe checkout page
+3. Enter your payment information
+4. Complete the purchase
+5. You'll be redirected back to FarmClaw to begin onboarding
+
+### Managing your subscription
+
+After setup, you can manage your subscription at any time from **Settings > Billing**:
+
+- View your current plan and usage
+- Update payment method
+- Access billing history and invoices
+- Cancel or modify your subscription
+
+The billing portal is provided by Stripe and handles all payment processing securely.
+
+## Account security
+
+- All sessions are managed server-side with secure HTTP-only cookies
+- API routes validate authentication on every request
+- Row-Level Security (RLS) ensures you can only access your own data
+- Admin operations require a separate admin role

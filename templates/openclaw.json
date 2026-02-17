@@ -1,0 +1,83 @@
+{
+  "name": "FarmClaw",
+  "version": "1.0.0",
+
+  "providers": {
+    "anthropic": {
+      "apiKey": "{{ANTHROPIC_API_KEY}}",
+      "default": true
+    }
+  },
+
+  "models": {
+    "default": "claude-sonnet-4-5-20250929",
+    "thinking": "claude-sonnet-4-5-20250929"
+  },
+
+  "channels": {
+    "discord": {
+      "enabled": true,
+      "token": "{{DISCORD_BOT_TOKEN}}",
+      "dm": {
+        "policy": "owner"
+      }
+    }
+  },
+
+  "tools": {
+    "allow": [
+      "read", "write", "edit", "exec", "web_search", "web_fetch", "browser",
+      "message", "memory_read", "memory_write",
+      "sessions_list", "sessions_history", "session_status",
+      "image"
+    ],
+    "deny": ["apply_patch", "process"],
+    "elevated": { "enabled": false }
+  },
+
+  "skills": {
+    "install": {
+      "nodeManager": "npm"
+    },
+    "entries": {
+      "farm-grain-bids": {
+        "enabled": true,
+        "config": {
+          "elevators": "{{ELEVATOR_CONFIG_JSON}}",
+          "crops": "{{CROPS_JSON}}"
+        }
+      },
+      "farm-weather": {
+        "enabled": true,
+        "config": {
+          "latitude": "{{WEATHER_LAT}}",
+          "longitude": "{{WEATHER_LNG}}",
+          "location_name": "{{WEATHER_LOCATION}}",
+          "timezone": "{{TIMEZONE}}"
+        }
+      }
+    }
+  },
+
+  "cron": {
+    "morning-weather": {
+      "schedule": "0 6 * * *",
+      "timezone": "{{TIMEZONE}}",
+      "message": "Run the morning weather summary skill and send me today's weather briefing."
+    },
+    "daily-grain-bids": {
+      "schedule": "0 9 * * 1-5",
+      "timezone": "{{TIMEZONE}}",
+      "message": "Run the grain bids skill and send me today's cash bids from my configured elevators."
+    }
+  },
+
+  "browser": {
+    "enabled": true,
+    "headless": true
+  },
+
+  "memory": {
+    "enabled": true
+  }
+}

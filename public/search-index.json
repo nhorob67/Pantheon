@@ -1,0 +1,1994 @@
+[
+  {
+    "slug": "agents",
+    "title": "AI Agents",
+    "section": "AI Agents",
+    "headings": [
+      {
+        "id": "overview",
+        "title": "Overview"
+      },
+      {
+        "id": "single-agent-vs-multi-agent",
+        "title": "Single agent vs. multi-agent"
+      },
+      {
+        "id": "single-agent-the-default",
+        "title": "Single agent (the default)"
+      },
+      {
+        "id": "multi-agent-setup",
+        "title": "Multi-agent setup"
+      },
+      {
+        "id": "what-makes-up-an-agent",
+        "title": "What makes up an agent"
+      },
+      {
+        "id": "skills",
+        "title": "Skills"
+      },
+      {
+        "id": "cron-jobs",
+        "title": "Cron jobs"
+      },
+      {
+        "id": "inter-agent-communication",
+        "title": "Inter-agent communication"
+      },
+      {
+        "id": "next-steps",
+        "title": "Next steps"
+      }
+    ],
+    "body": "Overview\n\nEvery FarmClaw instance comes with at least one AI agent — your farm's assistant. Out of the box, a single general-purpose agent handles grain bids, weather, scale tickets, and anything else you ask about.\n\nBut FarmClaw also supports multiple agents per instance. Each agent can have its own personality, its own skill set, and its own Discord channel assignment. Think of it as building a small team of specialists for your operation.\n\nSingle agent vs. multi-agent\n\nSingle agent (the defau"
+  },
+  {
+    "slug": "agents/multi-agent-system",
+    "title": "Multi-Agent Setups",
+    "section": "AI Agents",
+    "headings": [
+      {
+        "id": "overview",
+        "title": "Overview"
+      },
+      {
+        "id": "suggested-setups",
+        "title": "Suggested setups"
+      },
+      {
+        "id": "two-agent-general-grain",
+        "title": "Two-Agent: General + Grain"
+      },
+      {
+        "id": "three-agent-general-grain-scale-tickets",
+        "title": "Three-Agent: General + Grain + Scale Tickets"
+      },
+      {
+        "id": "four-agent-full-team",
+        "title": "Four-Agent: Full Team"
+      },
+      {
+        "id": "how-inter-agent-delegation-works",
+        "title": "How inter-agent delegation works"
+      },
+      {
+        "id": "the-tools",
+        "title": "The tools"
+      },
+      {
+        "id": "how-it-works-in-practice",
+        "title": "How it works in practice"
+      },
+      {
+        "id": "delegation-by-preset",
+        "title": "Delegation by preset"
+      },
+      {
+        "id": "deploying-a-suggested-setup",
+        "title": "Deploying a suggested setup"
+      },
+      {
+        "id": "building-a-custom-setup",
+        "title": "Building a custom setup"
+      },
+      {
+        "id": "next-steps",
+        "title": "Next steps"
+      }
+    ],
+    "body": "Overview\n\nFarmClaw offers three pre-built multi-agent configurations that you can deploy with one click. Each setup is designed around real farm workflows — you pick the configuration that matches your operation's needs, and FarmClaw handles the rest.\n\nYou can also build a custom setup from scratch, but these suggested configurations are a good starting point for most operations.\n\nSuggested setups\n\nTwo-Agent: General + Grain\n\nAn all-purpose assistant for daily operations and a specialist for gra"
+  },
+  {
+    "slug": "agents/personality-presets",
+    "title": "Personality Presets",
+    "section": "AI Agents",
+    "headings": [
+      {
+        "id": "overview",
+        "title": "Overview"
+      },
+      {
+        "id": "available-presets",
+        "title": "Available presets"
+      },
+      {
+        "id": "general-advisor",
+        "title": "General Advisor"
+      },
+      {
+        "id": "grain-specialist",
+        "title": "Grain Specialist"
+      },
+      {
+        "id": "weather-field-ops",
+        "title": "Weather & Field Ops"
+      },
+      {
+        "id": "scale-ticket-clerk",
+        "title": "Scale Ticket Clerk"
+      },
+      {
+        "id": "field-operations",
+        "title": "Field Operations"
+      },
+      {
+        "id": "custom",
+        "title": "Custom"
+      },
+      {
+        "id": "choosing-the-right-preset",
+        "title": "Choosing the right preset"
+      },
+      {
+        "id": "what-all-presets-share",
+        "title": "What all presets share"
+      },
+      {
+        "id": "changing-a-preset",
+        "title": "Changing a preset"
+      },
+      {
+        "id": "next-steps",
+        "title": "Next steps"
+      }
+    ],
+    "body": "Overview\n\nEvery FarmClaw agent has a personality preset that defines how it communicates, what it focuses on, and what it will and won't do. Think of presets as job descriptions for your AI assistants — they set the tone, expertise, and boundaries.\n\nFarmClaw ships with five built-in presets plus a custom option. Each preset is carefully designed for its role, including explicit guardrails about topics the agent will not handle.\n\nAvailable presets\n\nGeneral Advisor\n\nThe all-purpose farm assistant."
+  },
+  {
+    "slug": "agents/skills-per-agent",
+    "title": "Skills & Scheduling",
+    "section": "AI Agents",
+    "headings": [
+      {
+        "id": "how-per-agent-skills-work",
+        "title": "How per-agent skills work"
+      },
+      {
+        "id": "assigning-skills-to-an-agent",
+        "title": "Assigning skills to an agent"
+      },
+      {
+        "id": "available-skills",
+        "title": "Available skills"
+      },
+      {
+        "id": "personality-preset-defaults",
+        "title": "Personality preset defaults"
+      },
+      {
+        "id": "channel-bindings",
+        "title": "Channel bindings"
+      },
+      {
+        "id": "suggested-multi-agent-setups",
+        "title": "Suggested multi-agent setups"
+      },
+      {
+        "id": "two-agent-setup-general-grain",
+        "title": "Two-agent setup: General + Grain"
+      },
+      {
+        "id": "three-agent-setup-general-grain-scale-tickets",
+        "title": "Three-agent setup: General + Grain + Scale Tickets"
+      },
+      {
+        "id": "four-agent-setup-full-team",
+        "title": "Four-agent setup: Full Team"
+      },
+      {
+        "id": "cron-jobs-scheduled-messages",
+        "title": "Cron jobs (scheduled messages)"
+      },
+      {
+        "id": "available-cron-jobs",
+        "title": "Available cron jobs"
+      },
+      {
+        "id": "enabling-cron-jobs",
+        "title": "Enabling cron jobs"
+      },
+      {
+        "id": "personality-preset-defaults",
+        "title": "Personality preset defaults"
+      },
+      {
+        "id": "inter-agent-communication",
+        "title": "Inter-agent communication"
+      },
+      {
+        "id": "configuration-rebuild",
+        "title": "Configuration rebuild"
+      },
+      {
+        "id": "example-setting-up-a-three-agent-system",
+        "title": "Example: setting up a three-agent system"
+      }
+    ],
+    "body": "Skills & Scheduling\n\nEach agent in your FarmClaw instance can be assigned a specific subset of skills and its own set of scheduled cron jobs. This lets you create focused specialists -- a Grain Desk agent that only handles bids, a Weather Watch agent that only handles forecasts, or a Ticket Clerk that only logs deliveries.\n\nHow per-agent skills work\n\nFarmClaw has two levels of skill configuration:\n\n1. Global skill toggle -- Enables or disables a skill for your entire instance (Settings > Skills)"
+  },
+  {
+    "slug": "billing",
+    "title": "Billing & Usage",
+    "section": "Billing & Usage",
+    "headings": [
+      {
+        "id": "how-billing-works",
+        "title": "How billing works"
+      },
+      {
+        "id": "whats-included-in-the-base-subscription",
+        "title": "What's included in the base subscription"
+      },
+      {
+        "id": "what-counts-as-api-usage",
+        "title": "What counts as API usage"
+      },
+      {
+        "id": "managing-your-billing",
+        "title": "Managing your billing"
+      }
+    ],
+    "body": "How billing works\n\nFarmClaw uses a straightforward pricing model with two components:\n\n1. Monthly base subscription — A fixed $40/month fee that covers your dedicated cloud instance, container hosting, and platform access\n2. Metered API usage — Billed at cost based on the actual AI model tokens your assistant consumes\n\nThis structure keeps the base price low while ensuring you only pay for what you use.\n\nWhat's included in the base subscription\n\nYour $40/month subscription includes:\n\n- A dedicat"
+  },
+  {
+    "slug": "billing/metered-usage",
+    "title": "Metered Usage",
+    "section": "Billing & Usage",
+    "headings": [
+      {
+        "id": "how-metering-works",
+        "title": "How metering works"
+      },
+      {
+        "id": "what-are-tokens",
+        "title": "What are tokens?"
+      },
+      {
+        "id": "usage-by-task",
+        "title": "Usage by task"
+      },
+      {
+        "id": "typical-monthly-costs",
+        "title": "Typical monthly costs"
+      },
+      {
+        "id": "tracking-your-usage",
+        "title": "Tracking your usage"
+      },
+      {
+        "id": "dashboard",
+        "title": "Dashboard"
+      },
+      {
+        "id": "usage-table",
+        "title": "Usage table"
+      },
+      {
+        "id": "cost-transparency",
+        "title": "Cost transparency"
+      },
+      {
+        "id": "reducing-usage",
+        "title": "Reducing usage"
+      }
+    ],
+    "body": "How metering works\n\nEvery interaction with your AI assistant consumes tokens — the unit of measurement for AI model usage. FarmClaw tracks token usage daily and bills it as a separate line item on top of your $40/month subscription.\n\nWhat are tokens?\n\nTokens are the building blocks of AI text processing. Roughly:\n\n- 1 token ≈ 4 characters of English text\n- 100 tokens ≈ 75 words\n- A typical question and answer uses 500–2,000 tokens\n\nBoth the message you send and the response your assistant genera"
+  },
+  {
+    "slug": "billing/subscription",
+    "title": "Subscription",
+    "section": "Billing & Usage",
+    "headings": [
+      {
+        "id": "plan-details",
+        "title": "Plan details"
+      },
+      {
+        "id": "what-you-get",
+        "title": "What you get"
+      },
+      {
+        "id": "activating-your-subscription",
+        "title": "Activating your subscription"
+      },
+      {
+        "id": "managing-your-subscription",
+        "title": "Managing your subscription"
+      },
+      {
+        "id": "update-payment-method",
+        "title": "Update payment method"
+      },
+      {
+        "id": "view-invoices",
+        "title": "View invoices"
+      },
+      {
+        "id": "cancel-your-subscription",
+        "title": "Cancel your subscription"
+      }
+    ],
+    "body": "Plan details\n\nFarmClaw offers a single subscription plan:\n\n| Feature | Details |\n|---------|---------|\n| Monthly price | $40.00 |\n| Billing cycle | Monthly |\n| Payment processor | Stripe |\n| Cancellation | Anytime, effective end of billing period |\n\nWhat you get\n\nYour subscription activates a dedicated FarmClaw instance that includes:\n\n- Dedicated cloud server — Your own VPS running 24/7\n- Three built-in skills — Grain bids, weather forecasts, scale tickets\n- Multi-agent support — Up to 4 specia"
+  },
+  {
+    "slug": "discord/channel-config",
+    "title": "Channel Configuration",
+    "section": "Discord Integration",
+    "headings": [
+      {
+        "id": "overview",
+        "title": "Overview"
+      },
+      {
+        "id": "how-channel-bindings-work",
+        "title": "How channel bindings work"
+      },
+      {
+        "id": "example-setup",
+        "title": "Example setup"
+      },
+      {
+        "id": "configuring-channel-bindings",
+        "title": "Configuring channel bindings"
+      },
+      {
+        "id": "from-the-dashboard",
+        "title": "From the dashboard"
+      },
+      {
+        "id": "when-creating-an-agent",
+        "title": "When creating an agent"
+      },
+      {
+        "id": "how-agents-handle-cross-channel-requests",
+        "title": "How agents handle cross-channel requests"
+      },
+      {
+        "id": "channel-configuration-and-security",
+        "title": "Channel configuration and security"
+      },
+      {
+        "id": "common-patterns",
+        "title": "Common patterns"
+      },
+      {
+        "id": "single-agent-default",
+        "title": "Single agent (default)"
+      },
+      {
+        "id": "two-agents-general-grain",
+        "title": "Two agents: General + Grain"
+      },
+      {
+        "id": "three-agents-general-grain-tickets",
+        "title": "Three agents: General + Grain + Tickets"
+      },
+      {
+        "id": "four-agents-full-team",
+        "title": "Four agents: Full Team"
+      },
+      {
+        "id": "next-steps",
+        "title": "Next steps"
+      }
+    ],
+    "body": "Overview\n\nChannel configuration lets you control which AI agent responds in which Discord channel. This is how you keep conversations organized — grain questions go to the grain expert, weather questions go to the weather agent, and your general assistant handles everything else.\n\nIf you're running a single agent (the default), it responds in all channels and DMs. Channel bindings only matter when you have multiple agents set up.\n\nHow channel bindings work\n\nEach agent in your FarmClaw instance c"
+  },
+  {
+    "slug": "discord",
+    "title": "Discord Integration",
+    "section": "Discord Integration",
+    "headings": [
+      {
+        "id": "why-discord",
+        "title": "Why Discord?"
+      },
+      {
+        "id": "one-server-one-instance",
+        "title": "One server, one instance"
+      },
+      {
+        "id": "what-you-can-configure",
+        "title": "What you can configure"
+      },
+      {
+        "id": "bot-setup",
+        "title": "Bot setup"
+      },
+      {
+        "id": "channel-configuration",
+        "title": "Channel configuration"
+      },
+      {
+        "id": "agent-bindings",
+        "title": "Agent bindings"
+      },
+      {
+        "id": "how-it-works-in-practice",
+        "title": "How it works in practice"
+      },
+      {
+        "id": "next-steps",
+        "title": "Next steps"
+      }
+    ],
+    "body": "Why Discord?\n\nFarmClaw delivers your AI assistant through Discord because it's the best fit for how farmers actually work:\n\n- Mobile-first — Discord runs on your phone, tablet, and desktop. Ask for grain bids from the combine cab or check spray windows from the pickup.\n- Already familiar — Many farmers and farm families already use Discord. No new app to learn.\n- Multi-channel — Organize conversations by topic. Put grain talk in one channel, weather in another, scale tickets in a third.\n- Thread"
+  },
+  {
+    "slug": "discord/server-setup",
+    "title": "Server Setup",
+    "section": "Discord Integration",
+    "headings": [
+      {
+        "id": "overview",
+        "title": "Overview"
+      },
+      {
+        "id": "step-1-create-a-discord-server",
+        "title": "Step 1: Create a Discord server"
+      },
+      {
+        "id": "step-2-create-a-bot-application",
+        "title": "Step 2: Create a bot application"
+      },
+      {
+        "id": "step-3-create-the-bot",
+        "title": "Step 3: Create the bot"
+      },
+      {
+        "id": "bot-settings",
+        "title": "Bot settings"
+      },
+      {
+        "id": "step-4-set-bot-permissions",
+        "title": "Step 4: Set bot permissions"
+      },
+      {
+        "id": "step-5-generate-the-invite-url",
+        "title": "Step 5: Generate the invite URL"
+      },
+      {
+        "id": "step-6-add-the-bot-to-your-server",
+        "title": "Step 6: Add the bot to your server"
+      },
+      {
+        "id": "step-7-paste-the-token-into-farmclaw",
+        "title": "Step 7: Paste the token into FarmClaw"
+      },
+      {
+        "id": "during-onboarding",
+        "title": "During onboarding"
+      },
+      {
+        "id": "after-onboarding",
+        "title": "After onboarding"
+      },
+      {
+        "id": "troubleshooting",
+        "title": "Troubleshooting"
+      },
+      {
+        "id": "bot-shows-offline",
+        "title": "Bot shows offline"
+      },
+      {
+        "id": "bot-doesnt-respond-to-messages",
+        "title": "Bot doesn't respond to messages"
+      },
+      {
+        "id": "invalid-token-error-during-onboarding",
+        "title": "\"Invalid token\" error during onboarding"
+      },
+      {
+        "id": "next-steps",
+        "title": "Next steps"
+      }
+    ],
+    "body": "Overview\n\nThis guide walks you through creating a Discord server, setting up a bot application, and connecting it to FarmClaw. The entire process takes about 10 minutes.\n\nYou'll need:\n\n- A Discord account (free at discord.com)\n- A web browser for the Discord Developer Portal\n- Access to your FarmClaw onboarding wizard or Settings page\n\nStep 1: Create a Discord server\n\nIf you already have a Discord server for your farm, skip to Step 2.\n\n1. Open Discord (desktop app or web)\n2. Click the + button i"
+  },
+  {
+    "slug": "extensions",
+    "title": "Extensions",
+    "section": "Extensions",
+    "headings": [
+      {
+        "id": "extension-types",
+        "title": "Extension types"
+      },
+      {
+        "id": "source-types",
+        "title": "Source types"
+      },
+      {
+        "id": "how-extensions-work",
+        "title": "How extensions work"
+      },
+      {
+        "id": "versioned-installations",
+        "title": "Versioned installations"
+      },
+      {
+        "id": "managing-extensions",
+        "title": "Managing extensions"
+      },
+      {
+        "id": "extension-lifecycle",
+        "title": "Extension lifecycle"
+      },
+      {
+        "id": "whats-next",
+        "title": "What's next"
+      }
+    ],
+    "body": "Extensions\n\nThe FarmClaw extension system lets you expand your AI assistant's capabilities beyond the three built-in skills. Extensions are installable packages that add new skills, plugins, connectors, MCP servers, and tool packs to your instance.\n\nExtension types\n\nExtensions come in five types, each serving a different purpose:\n\n| Type | What it does | Example |\n|---|---|---|\n| skill | Adds a new capability or workflow to your assistant | A livestock price skill, a soil sampling analyzer |\n| p"
+  },
+  {
+    "slug": "extensions/installing",
+    "title": "Installing Extensions",
+    "section": "Extensions",
+    "headings": [
+      {
+        "id": "trust-policies",
+        "title": "Trust policies"
+      },
+      {
+        "id": "allowed-source-types",
+        "title": "Allowed source types"
+      },
+      {
+        "id": "verification-requirements",
+        "title": "Verification requirements"
+      },
+      {
+        "id": "configuring-your-trust-policy",
+        "title": "Configuring your trust policy"
+      },
+      {
+        "id": "how-trust-evaluation-works",
+        "title": "How trust evaluation works"
+      },
+      {
+        "id": "installation-flow",
+        "title": "Installation flow"
+      },
+      {
+        "id": "step-1-select-an-extension",
+        "title": "Step 1: Select an extension"
+      },
+      {
+        "id": "step-2-trust-policy-check",
+        "title": "Step 2: Trust policy check"
+      },
+      {
+        "id": "step-3-version-resolution",
+        "title": "Step 3: Version resolution"
+      },
+      {
+        "id": "step-4-operation-queued",
+        "title": "Step 4: Operation queued"
+      },
+      {
+        "id": "step-5-execution",
+        "title": "Step 5: Execution"
+      },
+      {
+        "id": "step-6-confirmation",
+        "title": "Step 6: Confirmation"
+      },
+      {
+        "id": "health-monitoring",
+        "title": "Health monitoring"
+      },
+      {
+        "id": "viewing-health-details",
+        "title": "Viewing health details"
+      },
+      {
+        "id": "rollbacks",
+        "title": "Rollbacks"
+      },
+      {
+        "id": "rollout-system",
+        "title": "Rollout system"
+      },
+      {
+        "id": "rollout-rings",
+        "title": "Rollout rings"
+      },
+      {
+        "id": "gate-policy",
+        "title": "Gate policy"
+      },
+      {
+        "id": "rollout-statuses",
+        "title": "Rollout statuses"
+      },
+      {
+        "id": "per-target-tracking",
+        "title": "Per-target tracking"
+      },
+      {
+        "id": "pinning-versions",
+        "title": "Pinning versions"
+      },
+      {
+        "id": "whats-next",
+        "title": "What's next"
+      }
+    ],
+    "body": "Installing Extensions\n\nThis guide covers the complete extension installation workflow: configuring your trust policy, installing extensions from the catalog, monitoring health, and understanding the staged rollout system for updates.\n\nTrust policies\n\nEvery FarmClaw account has an extension trust policy that controls which extensions can be installed. The trust policy has two components:\n\nAllowed source types\n\nThe allowedsourcetypes list determines which source types you permit at all. By default"
+  },
+  {
+    "slug": "extensions/marketplace",
+    "title": "Marketplace",
+    "section": "Extensions",
+    "headings": [
+      {
+        "id": "browsing-the-catalog",
+        "title": "Browsing the catalog"
+      },
+      {
+        "id": "filtering-extensions",
+        "title": "Filtering extensions"
+      },
+      {
+        "id": "by-type",
+        "title": "By type"
+      },
+      {
+        "id": "by-source",
+        "title": "By source"
+      },
+      {
+        "id": "by-verification-status",
+        "title": "By verification status"
+      },
+      {
+        "id": "by-search",
+        "title": "By search"
+      },
+      {
+        "id": "pagination",
+        "title": "Pagination"
+      },
+      {
+        "id": "source-types-explained",
+        "title": "Source types explained"
+      },
+      {
+        "id": "internal",
+        "title": "Internal"
+      },
+      {
+        "id": "local",
+        "title": "Local"
+      },
+      {
+        "id": "clawhub",
+        "title": "ClawHub"
+      },
+      {
+        "id": "npm",
+        "title": "NPM"
+      },
+      {
+        "id": "git",
+        "title": "Git"
+      },
+      {
+        "id": "installing-from-the-catalog",
+        "title": "Installing from the catalog"
+      },
+      {
+        "id": "whats-next",
+        "title": "What's next"
+      }
+    ],
+    "body": "Marketplace\n\nThe FarmClaw extension marketplace is the catalog of all available extensions you can add to your AI assistant. Browse by type, filter by source, and check verification status before installing.\n\nBrowsing the catalog\n\nThe extension catalog is accessible from Settings > Extensions in your FarmClaw dashboard. The Catalog section at the bottom of the page displays all active extensions with their key details.\n\nEach extension entry in the catalog shows:\n\n- Display name -- The human-read"
+  },
+  {
+    "slug": "farm-setup/crop-selection",
+    "title": "Crop Selection",
+    "section": "Farm Setup",
+    "headings": [
+      {
+        "id": "supported-crops-and-bushel-weights",
+        "title": "Supported Crops and Bushel Weights"
+      },
+      {
+        "id": "how-crop-selection-affects-your-experience",
+        "title": "How Crop Selection Affects Your Experience"
+      },
+      {
+        "id": "grain-bid-tracking",
+        "title": "Grain Bid Tracking"
+      },
+      {
+        "id": "scale-tickets",
+        "title": "Scale Tickets"
+      },
+      {
+        "id": "agent-configuration",
+        "title": "Agent Configuration"
+      },
+      {
+        "id": "common-crop-abbreviations",
+        "title": "Common Crop Abbreviations"
+      },
+      {
+        "id": "updating-your-crops",
+        "title": "Updating Your Crops"
+      }
+    ],
+    "body": "Crop Selection\n\nFarmClaw supports 10 row crops commonly grown in the Upper Midwest. During onboarding, you select the crops you grow as part of your farm profile. You must select at least one crop, and you can select as many as apply to your operation.\n\nSupported Crops and Bushel Weights\n\nEach crop has a standard bushel weight used for weight-to-bushel conversions throughout the platform. These weights follow USDA standard bushel weights and are used whenever your AI assistant converts between p"
+  },
+  {
+    "slug": "farm-setup/elevator-config",
+    "title": "Elevator Configuration",
+    "section": "Farm Setup",
+    "headings": [
+      {
+        "id": "what-each-elevator-needs",
+        "title": "What Each Elevator Needs"
+      },
+      {
+        "id": "preset-elevator-companies",
+        "title": "Preset Elevator Companies"
+      },
+      {
+        "id": "available-presets",
+        "title": "Available Presets"
+      },
+      {
+        "id": "presets-by-state",
+        "title": "Presets by State"
+      },
+      {
+        "id": "adding-a-custom-elevator",
+        "title": "Adding a Custom Elevator"
+      },
+      {
+        "id": "finding-the-right-url",
+        "title": "Finding the Right URL"
+      },
+      {
+        "id": "how-the-grain-bids-skill-uses-your-elevators",
+        "title": "How the Grain Bids Skill Uses Your Elevators"
+      },
+      {
+        "id": "understanding-basis",
+        "title": "Understanding Basis"
+      },
+      {
+        "id": "managing-elevators-after-onboarding",
+        "title": "Managing Elevators After Onboarding"
+      },
+      {
+        "id": "troubleshooting",
+        "title": "Troubleshooting"
+      }
+    ],
+    "body": "Elevator Configuration\n\nElevator configuration connects your FarmClaw assistant to the grain elevators you deliver to. Once configured, your assistant can pull real-time cash grain bids from each elevator's website, compare prices across locations, and help you decide where to haul.\n\nYou set up elevators during Step 2 of onboarding (Grain Marketing) and can update them at any time from your dashboard.\n\nWhat Each Elevator Needs\n\nEvery elevator in your configuration has three pieces of information"
+  },
+  {
+    "slug": "farm-setup/farm-profile",
+    "title": "Farm Profile",
+    "section": "Farm Setup",
+    "headings": [
+      {
+        "id": "required-fields",
+        "title": "Required Fields"
+      },
+      {
+        "id": "farm-name",
+        "title": "Farm Name"
+      },
+      {
+        "id": "state",
+        "title": "State"
+      },
+      {
+        "id": "county",
+        "title": "County"
+      },
+      {
+        "id": "primary-crops",
+        "title": "Primary Crops"
+      },
+      {
+        "id": "total-acres",
+        "title": "Total Acres"
+      },
+      {
+        "id": "timezone-reference",
+        "title": "Timezone Reference"
+      },
+      {
+        "id": "editing-your-farm-profile",
+        "title": "Editing Your Farm Profile"
+      },
+      {
+        "id": "validation-summary",
+        "title": "Validation Summary"
+      }
+    ],
+    "body": "Farm Profile\n\nYour farm profile is the first thing you fill out during onboarding. It tells FarmClaw where you are, what you grow, and the size of your operation. Every other feature -- grain bids, weather, scale tickets, agent behavior -- builds on this information.\n\nRequired Fields\n\nAll fields in the farm profile are required. Here is what each one does and what the system expects.\n\nFarm Name\n\nYour farm or operation name. This is used throughout the dashboard and in your AI assistant's configu"
+  },
+  {
+    "slug": "farm-setup",
+    "title": "Farm Setup",
+    "section": "Farm Setup",
+    "headings": [
+      {
+        "id": "farm-profile",
+        "title": "Farm Profile"
+      },
+      {
+        "id": "crop-selection",
+        "title": "Crop Selection"
+      },
+      {
+        "id": "elevator-configuration",
+        "title": "Elevator Configuration"
+      },
+      {
+        "id": "how-it-all-fits-together",
+        "title": "How It All Fits Together"
+      },
+      {
+        "id": "what-comes-next",
+        "title": "What Comes Next"
+      }
+    ],
+    "body": "Farm Setup\n\nBefore your FarmClaw AI assistant can start helping you, it needs to know the basics about your operation. Farm setup is the first step in onboarding and takes about five minutes. The information you provide here drives everything your assistant does -- from pulling the right grain bids to calculating bushel weights on scale tickets.\n\nFarm setup covers three key areas:\n\nFarm Profile\n\nYour farm profile includes your farm name, state, county, crop selection, and total acreage. This is "
+  },
+  {
+    "slug": "getting-started/account-setup",
+    "title": "Account Setup",
+    "section": "Getting Started",
+    "headings": [
+      {
+        "id": "magic-link-authentication",
+        "title": "Magic link authentication"
+      },
+      {
+        "id": "how-it-works",
+        "title": "How it works"
+      },
+      {
+        "id": "troubleshooting-login",
+        "title": "Troubleshooting login"
+      },
+      {
+        "id": "activating-your-subscription",
+        "title": "Activating your subscription"
+      },
+      {
+        "id": "subscription-details",
+        "title": "Subscription details"
+      },
+      {
+        "id": "checkout-flow",
+        "title": "Checkout flow"
+      },
+      {
+        "id": "managing-your-subscription",
+        "title": "Managing your subscription"
+      },
+      {
+        "id": "account-security",
+        "title": "Account security"
+      }
+    ],
+    "body": "Magic link authentication\n\nFarmClaw uses magic link authentication powered by Supabase Auth. There are no passwords to remember or manage.\n\nHow it works\n\n1. Enter your email address on the login or signup page\n2. Check your inbox for an email from FarmClaw\n3. Click the login link in the email\n4. You're signed in — the link is single-use and expires after a short time\n\nYour session stays active as you use FarmClaw. The system automatically refreshes your session in the background, so you won't be"
+  },
+  {
+    "slug": "getting-started",
+    "title": "Welcome to FarmClaw",
+    "section": "Getting Started",
+    "headings": [
+      {
+        "id": "what-is-farmclaw",
+        "title": "What is FarmClaw?"
+      },
+      {
+        "id": "who-is-it-for",
+        "title": "Who is it for?"
+      },
+      {
+        "id": "what-can-it-do",
+        "title": "What can it do?"
+      },
+      {
+        "id": "how-does-it-work",
+        "title": "How does it work?"
+      },
+      {
+        "id": "next-steps",
+        "title": "Next steps"
+      }
+    ],
+    "body": "What is FarmClaw?\n\nFarmClaw gives your farm a dedicated AI assistant that lives in your Discord server. Ask it for cash grain bids, weather forecasts, spray window assessments, and more — all in plain English, right from your phone or desktop.\n\nEach FarmClaw instance is a fully configured multi-agent system powered by Claude, Anthropic's AI model. You get real-time access to the information that matters during the growing season and harvest.\n\nWho is it for?\n\nFarmClaw is designed for row crop far"
+  },
+  {
+    "slug": "getting-started/quick-start",
+    "title": "Quick Start",
+    "section": "Getting Started",
+    "headings": [
+      {
+        "id": "overview",
+        "title": "Overview"
+      },
+      {
+        "id": "step-1-create-your-account",
+        "title": "Step 1: Create your account"
+      },
+      {
+        "id": "step-2-activate-your-subscription",
+        "title": "Step 2: Activate your subscription"
+      },
+      {
+        "id": "step-3-complete-the-onboarding-wizard",
+        "title": "Step 3: Complete the onboarding wizard"
+      },
+      {
+        "id": "farm-profile",
+        "title": "Farm Profile"
+      },
+      {
+        "id": "elevator-setup",
+        "title": "Elevator Setup"
+      },
+      {
+        "id": "weather-location",
+        "title": "Weather Location"
+      },
+      {
+        "id": "discord-connection",
+        "title": "Discord Connection"
+      },
+      {
+        "id": "step-4-wait-for-provisioning",
+        "title": "Step 4: Wait for provisioning"
+      },
+      {
+        "id": "step-5-send-your-first-message",
+        "title": "Step 5: Send your first message"
+      },
+      {
+        "id": "whats-next",
+        "title": "What's next?"
+      }
+    ],
+    "body": "Overview\n\nThis guide walks you through the entire setup process. By the end, you'll have a working AI assistant in your Discord server that can fetch grain bids, check weather, and log scale tickets.\n\nStep 1: Create your account\n\nGo to the FarmClaw signup page and enter your email address. We use magic link authentication — no password required. Check your inbox for the login link and click it to access your dashboard.\n\nMagic link emails occasionally land in spam or promotions folders. The email"
+  },
+  {
+    "slug": "integrations/connecting-services",
+    "title": "Connecting Services",
+    "section": "Integrations",
+    "headings": [
+      {
+        "id": "the-oauth-flow",
+        "title": "The OAuth flow"
+      },
+      {
+        "id": "step-by-step",
+        "title": "Step by step"
+      },
+      {
+        "id": "what-happens-behind-the-scenes",
+        "title": "What happens behind the scenes"
+      },
+      {
+        "id": "which-account-to-use",
+        "title": "Which account to use"
+      },
+      {
+        "id": "personal-vs-shared-accounts",
+        "title": "Personal vs. shared accounts"
+      },
+      {
+        "id": "multiple-accounts",
+        "title": "Multiple accounts"
+      },
+      {
+        "id": "managing-connections",
+        "title": "Managing connections"
+      },
+      {
+        "id": "viewing-connection-status",
+        "title": "Viewing connection status"
+      },
+      {
+        "id": "refreshing-status",
+        "title": "Refreshing status"
+      },
+      {
+        "id": "disconnecting-a-service",
+        "title": "Disconnecting a service"
+      },
+      {
+        "id": "connection-states",
+        "title": "Connection states"
+      },
+      {
+        "id": "expired-connections",
+        "title": "Expired connections"
+      },
+      {
+        "id": "popup-troubleshooting",
+        "title": "Popup troubleshooting"
+      },
+      {
+        "id": "popup-blocked",
+        "title": "Popup blocked"
+      },
+      {
+        "id": "popup-opened-but-stuck",
+        "title": "Popup opened but stuck"
+      },
+      {
+        "id": "popup-closed-before-completing",
+        "title": "Popup closed before completing"
+      },
+      {
+        "id": "dashboard-did-not-update-after-completing-oauth",
+        "title": "Dashboard did not update after completing OAuth"
+      },
+      {
+        "id": "revoking-access-from-the-service-side",
+        "title": "Revoking access from the service side"
+      },
+      {
+        "id": "whats-next",
+        "title": "What's next"
+      }
+    ],
+    "body": "Connecting Services\n\nEach toolkit that requires authentication needs a one-time OAuth connection before your assistant can use it. This page covers the full connection lifecycle -- authorizing, monitoring, refreshing, and disconnecting services.\n\nThe OAuth flow\n\nOAuth is the industry-standard protocol for granting third-party access to your accounts without sharing passwords. When you connect a service through FarmClaw, you go through the service provider's own login and consent screens. FarmCla"
+  },
+  {
+    "slug": "integrations",
+    "title": "Integrations",
+    "section": "Integrations",
+    "headings": [
+      {
+        "id": "how-it-works",
+        "title": "How it works"
+      },
+      {
+        "id": "key-concepts",
+        "title": "Key concepts"
+      },
+      {
+        "id": "toolkits",
+        "title": "Toolkits"
+      },
+      {
+        "id": "connections",
+        "title": "Connections"
+      },
+      {
+        "id": "remote-mcp-servers",
+        "title": "Remote MCP servers"
+      },
+      {
+        "id": "what-can-your-assistant-do-with-integrations",
+        "title": "What can your assistant do with integrations?"
+      },
+      {
+        "id": "getting-started",
+        "title": "Getting started"
+      },
+      {
+        "id": "privacy-and-security",
+        "title": "Privacy and security"
+      },
+      {
+        "id": "whats-next",
+        "title": "What's next"
+      }
+    ],
+    "body": "Integrations\n\nIntegrations let your AI assistant connect to external services like Google Sheets, Gmail, Google Calendar, Slack, and hundreds more. Instead of being limited to skills and local tools, your assistant can read spreadsheets, send emails, create calendar events, and interact with the services you already use on the farm.\n\nFarmClaw integrations are powered by Composio, a platform that provides secure, authenticated access to 800+ third-party APIs through a single connection. Composio "
+  },
+  {
+    "slug": "integrations/security",
+    "title": "Security and Privacy",
+    "section": "Integrations",
+    "headings": [
+      {
+        "id": "architecture-overview",
+        "title": "Architecture overview"
+      },
+      {
+        "id": "what-farmclaw-does-not-store",
+        "title": "What FarmClaw does NOT store"
+      },
+      {
+        "id": "credential-encryption",
+        "title": "Credential encryption"
+      },
+      {
+        "id": "data-flow",
+        "title": "Data flow"
+      },
+      {
+        "id": "when-your-assistant-uses-an-integration",
+        "title": "When your assistant uses an integration"
+      },
+      {
+        "id": "what-data-composio-can-see",
+        "title": "What data Composio can see"
+      },
+      {
+        "id": "what-farmclaw-can-see",
+        "title": "What FarmClaw can see"
+      },
+      {
+        "id": "access-controls",
+        "title": "Access controls"
+      },
+      {
+        "id": "you-control-what-is-enabled",
+        "title": "You control what is enabled"
+      },
+      {
+        "id": "principle-of-least-privilege",
+        "title": "Principle of least privilege"
+      },
+      {
+        "id": "disconnection-and-revocation",
+        "title": "Disconnection and revocation"
+      },
+      {
+        "id": "disconnecting-from-farmclaw",
+        "title": "Disconnecting from FarmClaw"
+      },
+      {
+        "id": "revoking-from-the-service-side",
+        "title": "Revoking from the service side"
+      },
+      {
+        "id": "transport-security",
+        "title": "Transport security"
+      },
+      {
+        "id": "farmclaw-to-composio",
+        "title": "FarmClaw to Composio"
+      },
+      {
+        "id": "composio-to-services",
+        "title": "Composio to services"
+      },
+      {
+        "id": "your-browser-to-farmclaw",
+        "title": "Your browser to FarmClaw"
+      },
+      {
+        "id": "incident-response",
+        "title": "Incident response"
+      },
+      {
+        "id": "if-composio-is-compromised",
+        "title": "If Composio is compromised"
+      },
+      {
+        "id": "if-farmclaw-is-compromised",
+        "title": "If FarmClaw is compromised"
+      },
+      {
+        "id": "frequently-asked-questions",
+        "title": "Frequently asked questions"
+      },
+      {
+        "id": "can-farmclaw-employees-access-my-google-sheets-emails-calendar",
+        "title": "Can FarmClaw employees access my Google Sheets / emails / calendar?"
+      },
+      {
+        "id": "what-happens-to-my-data-if-i-cancel-my-farmclaw-subscription",
+        "title": "What happens to my data if I cancel my FarmClaw subscription?"
+      },
+      {
+        "id": "can-i-use-integrations-without-giving-farmclaw-access-to-my-email",
+        "title": "Can I use integrations without giving FarmClaw access to my email?"
+      },
+      {
+        "id": "is-composio-soc-2-gdpr-compliant",
+        "title": "Is Composio SOC 2 / GDPR compliant?"
+      },
+      {
+        "id": "whats-next",
+        "title": "What's next"
+      }
+    ],
+    "body": "Security and Privacy\n\nThis page explains how FarmClaw's Composio integration handles your credentials, what data flows between systems, and what controls you have over access.\n\nArchitecture overview\n\nThree systems are involved in the integrations flow:\n\n| System | What it stores | What it does |\n|---|---|---|\n| FarmClaw | Composio entity ID, MCP server URL, toolkit selections, cached connection status | Manages configuration, triggers config rebuilds, serves the dashboard UI |\n| Composio | OAuth"
+  },
+  {
+    "slug": "integrations/setup",
+    "title": "Setup Guide",
+    "section": "Integrations",
+    "headings": [
+      {
+        "id": "prerequisites",
+        "title": "Prerequisites"
+      },
+      {
+        "id": "step-1-enable-composio",
+        "title": "Step 1: Enable Composio"
+      },
+      {
+        "id": "step-2-select-toolkits",
+        "title": "Step 2: Select toolkits"
+      },
+      {
+        "id": "changing-toolkit-selections",
+        "title": "Changing toolkit selections"
+      },
+      {
+        "id": "step-3-connect-a-service",
+        "title": "Step 3: Connect a service"
+      },
+      {
+        "id": "oauth-popup-flow",
+        "title": "OAuth popup flow"
+      },
+      {
+        "id": "connection-status-indicators",
+        "title": "Connection status indicators"
+      },
+      {
+        "id": "step-4-test-the-integration",
+        "title": "Step 4: Test the integration"
+      },
+      {
+        "id": "google-sheets-test",
+        "title": "Google Sheets test"
+      },
+      {
+        "id": "gmail-test",
+        "title": "Gmail test"
+      },
+      {
+        "id": "google-calendar-test",
+        "title": "Google Calendar test"
+      },
+      {
+        "id": "disabling-composio",
+        "title": "Disabling Composio"
+      },
+      {
+        "id": "troubleshooting",
+        "title": "Troubleshooting"
+      },
+      {
+        "id": "failed-to-enable-integration",
+        "title": "\"Failed to enable integration\""
+      },
+      {
+        "id": "oauth-popup-does-not-appear",
+        "title": "OAuth popup does not appear"
+      },
+      {
+        "id": "service-shows-expired",
+        "title": "Service shows \"Expired\""
+      },
+      {
+        "id": "assistant-says-it-cannot-access-a-service",
+        "title": "Assistant says it cannot access a service"
+      },
+      {
+        "id": "whats-next",
+        "title": "What's next"
+      }
+    ],
+    "body": "Setup Guide\n\nThis guide walks you through enabling Composio integrations, selecting toolkits, and connecting your first third-party service.\n\nPrerequisites\n\nBefore you can enable integrations, you need:\n\n- An active FarmClaw subscription\n- A provisioned instance (your AI assistant must already be running)\n- Access to the FarmClaw dashboard\n\nIf your instance is not yet provisioned, complete the onboarding wizard first.\n\nStep 1: Enable Composio\n\n1. Navigate to Settings > Integrations in your FarmC"
+  },
+  {
+    "slug": "integrations/toolkits",
+    "title": "Available Toolkits",
+    "section": "Integrations",
+    "headings": [
+      {
+        "id": "recommended-toolkits",
+        "title": "Recommended toolkits"
+      },
+      {
+        "id": "google-sheets",
+        "title": "Google Sheets"
+      },
+      {
+        "id": "google-calendar",
+        "title": "Google Calendar"
+      },
+      {
+        "id": "gmail",
+        "title": "Gmail"
+      },
+      {
+        "id": "slack",
+        "title": "Slack"
+      },
+      {
+        "id": "productivity-toolkits",
+        "title": "Productivity toolkits"
+      },
+      {
+        "id": "notion",
+        "title": "Notion"
+      },
+      {
+        "id": "google-drive",
+        "title": "Google Drive"
+      },
+      {
+        "id": "todoist",
+        "title": "Todoist"
+      },
+      {
+        "id": "data-toolkits",
+        "title": "Data toolkits"
+      },
+      {
+        "id": "airtable",
+        "title": "Airtable"
+      },
+      {
+        "id": "toolkit-selection-tips",
+        "title": "Toolkit selection tips"
+      },
+      {
+        "id": "start-small",
+        "title": "Start small"
+      },
+      {
+        "id": "recommended-first",
+        "title": "Recommended first"
+      },
+      {
+        "id": "combine-with-skills",
+        "title": "Combine with skills"
+      },
+      {
+        "id": "whats-next",
+        "title": "What's next"
+      }
+    ],
+    "body": "Available Toolkits\n\nFarmClaw curates a set of Composio toolkits with descriptions and recommendations tailored to Upper Midwest row crop farming. Each toolkit bundles the most useful actions for a single service.\n\nRecommended toolkits\n\nThese four toolkits cover the most common integration use cases for farmers. They are highlighted in the Recommended tab when selecting toolkits.\n\nGoogle Sheets\n\n| | |\n|---|---|\n| Category | Recommended |\n| Requires auth | Yes (Google account) |\n| Actions | Read S"
+  },
+  {
+    "slug": "mcp-servers/filesystem",
+    "title": "Filesystem Server",
+    "section": "MCP Servers",
+    "headings": [
+      {
+        "id": "overview",
+        "title": "Overview"
+      },
+      {
+        "id": "what-it-enables",
+        "title": "What it enables"
+      },
+      {
+        "id": "use-cases",
+        "title": "Use cases"
+      },
+      {
+        "id": "saving-reports",
+        "title": "Saving reports"
+      },
+      {
+        "id": "exporting-scale-ticket-data",
+        "title": "Exporting scale ticket data"
+      },
+      {
+        "id": "keeping-operational-notes",
+        "title": "Keeping operational notes"
+      },
+      {
+        "id": "configuration",
+        "title": "Configuration"
+      },
+      {
+        "id": "customizing-the-workspace-path",
+        "title": "Customizing the workspace path"
+      },
+      {
+        "id": "adding-the-filesystem-server",
+        "title": "Adding the Filesystem server"
+      },
+      {
+        "id": "enabling-and-disabling",
+        "title": "Enabling and disabling"
+      },
+      {
+        "id": "whats-next",
+        "title": "What's next"
+      }
+    ],
+    "body": "Filesystem Server\n\nThe Filesystem MCP server gives your AI assistant the ability to read, write, and manage files within its workspace directory. This is useful for saving reports, keeping notes, storing exported data, and working with files that persist across conversations.\n\nOverview\n\n| Field | Value |\n|---|---|\n| Package | @modelcontextprotocol/server-filesystem |\n| Command | npx |\n| Arguments | -y @modelcontextprotocol/server-filesystem /home/node/workspace |\n| Scope | Instance (available to"
+  },
+  {
+    "slug": "mcp-servers",
+    "title": "MCP Servers",
+    "section": "MCP Servers",
+    "headings": [
+      {
+        "id": "what-is-mcp",
+        "title": "What is MCP?"
+      },
+      {
+        "id": "curated-presets",
+        "title": "Curated presets"
+      },
+      {
+        "id": "how-mcp-servers-fit-into-your-instance",
+        "title": "How MCP servers fit into your instance"
+      },
+      {
+        "id": "managing-mcp-servers",
+        "title": "Managing MCP servers"
+      },
+      {
+        "id": "custom-mcp-servers",
+        "title": "Custom MCP servers"
+      },
+      {
+        "id": "whats-next",
+        "title": "What's next"
+      }
+    ],
+    "body": "MCP Servers\n\nModel Context Protocol (MCP) servers extend your AI assistant with additional tools and data access beyond its default capabilities. Each MCP server runs as a sidecar process alongside your AI instance, giving the assistant structured access to filesystems, databases, persistent memory, and more.\n\nWhat is MCP?\n\nMCP is an open protocol that lets AI assistants connect to external tool servers using a standardized interface. Instead of building tool access directly into the AI model, M"
+  },
+  {
+    "slug": "mcp-servers/sqlite",
+    "title": "SQLite Server",
+    "section": "MCP Servers",
+    "headings": [
+      {
+        "id": "overview",
+        "title": "Overview"
+      },
+      {
+        "id": "what-it-enables",
+        "title": "What it enables"
+      },
+      {
+        "id": "scale-tickets-integration",
+        "title": "Scale Tickets integration"
+      },
+      {
+        "id": "database-schema",
+        "title": "Database schema"
+      },
+      {
+        "id": "custom-data-storage",
+        "title": "Custom data storage"
+      },
+      {
+        "id": "configuration",
+        "title": "Configuration"
+      },
+      {
+        "id": "database-path",
+        "title": "Database path"
+      },
+      {
+        "id": "adding-the-sqlite-server-manually",
+        "title": "Adding the SQLite server manually"
+      },
+      {
+        "id": "enabling-and-disabling",
+        "title": "Enabling and disabling"
+      },
+      {
+        "id": "whats-next",
+        "title": "What's next"
+      }
+    ],
+    "body": "SQLite Server\n\nThe SQLite MCP server gives your AI assistant access to a local SQLite database, enabling it to store, query, and manage structured data. It is the backbone of the Scale Tickets skill and can also be used for any custom data storage you need.\n\nOverview\n\n| Field | Value |\n|---|---|\n| Package | @modelcontextprotocol/server-sqlite |\n| Command | npx |\n| Arguments | -y @modelcontextprotocol/server-sqlite /home/node/data/farmclaw.db |\n| Scope | Instance (available to all agents) |\n| Dat"
+  },
+  {
+    "slug": "skills/grain-bids",
+    "title": "Grain Bids",
+    "section": "Skills",
+    "headings": [
+      {
+        "id": "how-it-works",
+        "title": "How it works"
+      },
+      {
+        "id": "what-it-fetches",
+        "title": "What it fetches"
+      },
+      {
+        "id": "output-format",
+        "title": "Output format"
+      },
+      {
+        "id": "comparison-mode",
+        "title": "Comparison mode"
+      },
+      {
+        "id": "configuration",
+        "title": "Configuration"
+      },
+      {
+        "id": "understanding-basis",
+        "title": "Understanding basis"
+      },
+      {
+        "id": "error-handling",
+        "title": "Error handling"
+      },
+      {
+        "id": "automated-daily-bids",
+        "title": "Automated daily bids"
+      },
+      {
+        "id": "example-prompts",
+        "title": "Example prompts"
+      },
+      {
+        "id": "file-exports",
+        "title": "File exports"
+      }
+    ],
+    "body": "Grain Bids\n\nThe Grain Bids skill scrapes your configured elevator websites using a browser tool to extract currently posted cash grain bid information. It fetches live data every time you ask -- no cached or stale prices.\n\nHow it works\n\nWhen you ask about grain prices, the assistant:\n\n1. Opens each configured elevator's cash bid webpage in a headless browser.\n2. Takes an ARIA snapshot of the page to understand its structure.\n3. Locates the cash bid table and extracts rows matching your configure"
+  },
+  {
+    "slug": "skills",
+    "title": "Skills",
+    "section": "Skills",
+    "headings": [
+      {
+        "id": "built-in-skills",
+        "title": "Built-in skills"
+      },
+      {
+        "id": "how-skills-work",
+        "title": "How skills work"
+      },
+      {
+        "id": "enabling-and-disabling-skills",
+        "title": "Enabling and disabling skills"
+      },
+      {
+        "id": "skills-and-agents",
+        "title": "Skills and agents"
+      },
+      {
+        "id": "skill-configuration",
+        "title": "Skill configuration"
+      },
+      {
+        "id": "whats-next",
+        "title": "What's next"
+      }
+    ],
+    "body": "Skills\n\nSkills define what your AI assistant can actually do. Each skill provides a set of instructions, tools, and workflows that enable your assistant to perform specific farm tasks -- from fetching grain bids off elevator websites to reading scale tickets from a photo.\n\nBuilt-in skills\n\nEvery FarmClaw instance ships with three built-in skills. These cover the core tasks that Upper Midwest row crop farmers use daily.\n\n| Skill | What it does | Key capability |\n|---|---|---|\n| Grain Bids | Scrap"
+  },
+  {
+    "slug": "skills/scale-tickets",
+    "title": "Scale Tickets",
+    "section": "Skills",
+    "headings": [
+      {
+        "id": "how-it-works",
+        "title": "How it works"
+      },
+      {
+        "id": "three-entry-methods",
+        "title": "Three entry methods"
+      },
+      {
+        "id": "1-photo-ocr",
+        "title": "1. Photo OCR"
+      },
+      {
+        "id": "2-voice-unstructured-text",
+        "title": "2. Voice / unstructured text"
+      },
+      {
+        "id": "3-multi-step-structured-entry",
+        "title": "3. Multi-step structured entry"
+      },
+      {
+        "id": "bushel-weight-table",
+        "title": "Bushel weight table"
+      },
+      {
+        "id": "querying-your-tickets",
+        "title": "Querying your tickets"
+      },
+      {
+        "id": "by-date",
+        "title": "By date"
+      },
+      {
+        "id": "by-crop",
+        "title": "By crop"
+      },
+      {
+        "id": "by-elevator",
+        "title": "By elevator"
+      },
+      {
+        "id": "summary-reports",
+        "title": "Summary reports"
+      },
+      {
+        "id": "exports",
+        "title": "Exports"
+      },
+      {
+        "id": "editing-and-deleting-tickets",
+        "title": "Editing and deleting tickets"
+      },
+      {
+        "id": "example-prompts",
+        "title": "Example prompts"
+      },
+      {
+        "id": "file-exports",
+        "title": "File exports"
+      }
+    ],
+    "body": "Scale Tickets\n\nThe Scale Tickets skill lets you log, track, query, and export grain delivery records directly from Discord. It supports three entry methods -- snap a photo of the ticket, dictate the details by voice or text, or walk through a guided entry flow. All data is stored in a local SQLite database on your instance.\n\nHow it works\n\nScale ticket data is stored in a SQLite database managed through an MCP (Model Context Protocol) server. When you enable the Scale Tickets skill, FarmClaw auto"
+  },
+  {
+    "slug": "skills/weather-forecasts",
+    "title": "Weather Forecasts",
+    "section": "Skills",
+    "headings": [
+      {
+        "id": "data-source",
+        "title": "Data source"
+      },
+      {
+        "id": "configuration",
+        "title": "Configuration"
+      },
+      {
+        "id": "features",
+        "title": "Features"
+      },
+      {
+        "id": "7-day-forecast",
+        "title": "7-day forecast"
+      },
+      {
+        "id": "hourly-forecast",
+        "title": "Hourly forecast"
+      },
+      {
+        "id": "active-weather-alerts",
+        "title": "Active weather alerts"
+      },
+      {
+        "id": "morning-weather-briefing",
+        "title": "Morning weather briefing"
+      },
+      {
+        "id": "spray-window-analysis",
+        "title": "Spray window analysis"
+      },
+      {
+        "id": "spray-window-criteria",
+        "title": "Spray window criteria"
+      },
+      {
+        "id": "spray-window-output",
+        "title": "Spray window output"
+      },
+      {
+        "id": "example-spray-prompts",
+        "title": "Example spray prompts"
+      },
+      {
+        "id": "gdd-growing-degree-day-tracking",
+        "title": "GDD (Growing Degree Day) tracking"
+      },
+      {
+        "id": "gdd-calculation-method",
+        "title": "GDD calculation method"
+      },
+      {
+        "id": "gdd-milestones-for-corn",
+        "title": "GDD milestones for corn"
+      },
+      {
+        "id": "example-gdd-prompts",
+        "title": "Example GDD prompts"
+      },
+      {
+        "id": "units-and-conventions",
+        "title": "Units and conventions"
+      },
+      {
+        "id": "error-handling",
+        "title": "Error handling"
+      },
+      {
+        "id": "example-prompts",
+        "title": "Example prompts"
+      },
+      {
+        "id": "file-exports",
+        "title": "File exports"
+      }
+    ],
+    "body": "Weather Forecasts\n\nThe Weather Forecasts skill provides agriculture-focused weather intelligence powered by the National Weather Service (NWS) API. It goes beyond standard forecasts with spray window analysis, Growing Degree Day (GDD) tracking, and automatic morning briefings -- all calibrated for Upper Midwest row crop farming.\n\nData source\n\nAll weather data comes from the National Weather Service API (api.weather.gov). This is a free, reliable, public API maintained by NOAA. No API key is requ"
+  },
+  {
+    "slug": "tools",
+    "title": "Tools",
+    "section": "Tools",
+    "headings": [
+      {
+        "id": "tool-inventory",
+        "title": "Tool inventory"
+      },
+      {
+        "id": "how-tools-are-managed",
+        "title": "How tools are managed"
+      },
+      {
+        "id": "related-docs",
+        "title": "Related docs"
+      }
+    ],
+    "body": "Tools\n\nFarmClaw tools are delivered through skills. Each skill gives your assistant a focused capability and the workflow needed to execute it reliably.\n\nTool inventory\n\nThe current built-in tool set includes three skills:\n\n| Tool | Skill ID | What it does | Best for |\n|---|---|---|---|\n| Grain Bids | farm-grain-bids | Visits your configured elevator pages and extracts current cash bids. | Price checks, cross-elevator comparisons, and finding the best bid by commodity |\n| Weather Forecasts | far"
+  },
+  {
+    "slug": "tools/workflow-builder-kpi-review",
+    "title": "Workflow KPI Review Cadence",
+    "section": "Tools",
+    "headings": [
+      {
+        "id": "required-kpis",
+        "title": "Required KPIs"
+      },
+      {
+        "id": "meeting-agenda",
+        "title": "Meeting agenda"
+      },
+      {
+        "id": "escalation-thresholds",
+        "title": "Escalation thresholds"
+      }
+    ],
+    "body": "Workflow KPI Review Cadence\n\nRun a weekly launch review every Monday at 16:00 UTC.\n\nRequired KPIs\n\n- Time to first publish (median)\n- Draft to publish completion rate\n- Run success rate\n- Retry rate\n- Retry recovery success rate\n- Approval cycle time (p50)\n- Weekly active builders\n- Estimated operator hours saved\n\nMeeting agenda\n\n1. Check KPI trend deltas week-over-week.\n2. Review performance gates and sample sufficiency.\n3. Decide rollout action: promote, hold, or rollback ring.\n4. Assign follo"
+  },
+  {
+    "slug": "tools/workflow-builder-rollout",
+    "title": "Workflow Builder Rollout Rings",
+    "section": "Tools",
+    "headings": [
+      {
+        "id": "target-ring-control",
+        "title": "Target ring control"
+      },
+      {
+        "id": "promotion-checklist",
+        "title": "Promotion checklist"
+      },
+      {
+        "id": "rollback-rule",
+        "title": "Rollback rule"
+      }
+    ],
+    "body": "Workflow Builder Rollout Rings\n\nFarmClaw uses three rollout rings to release workflow builder updates safely:\n\n- Canary: first 10% of customers by deterministic customer-ID bucket.\n- Standard: next 60% of customers.\n- Delayed: remaining 30% of customers after gates pass.\n\nTarget ring control\n\nThe environment variable WORKFLOWBUILDERROLLOUTTARGETRING controls how far release is opened:\n\n- canary: canary customers only.\n- standard: canary + standard.\n- delayed: all rings.\n\nIf unset or invalid, Far"
+  },
+  {
+    "slug": "tools/workflow-builder",
+    "title": "Visual Workflow Builder",
+    "section": "Tools",
+    "headings": [
+      {
+        "id": "guided-walkthrough",
+        "title": "Guided walkthrough"
+      },
+      {
+        "id": "keyboard-map",
+        "title": "Keyboard map"
+      },
+      {
+        "id": "recovery-controls",
+        "title": "Recovery controls"
+      },
+      {
+        "id": "related-docs",
+        "title": "Related docs"
+      }
+    ],
+    "body": "Visual Workflow Builder\n\nUse FarmClaw's visual workflow builder to design automations without calling APIs.\n\nGuided walkthrough\n\n1. Open Settings > Workflows (/settings/workflows).\n2. Select New workflow and choose a starter template.\n3. Add or edit nodes in the canvas, then resolve validation errors in the right panel.\n4. Click Publish to promote the current draft and trigger runtime deploy.\n5. Click Run or open Runs to verify execution and artifacts.\n6. Open Launch readiness to review rollout "
+  },
+  {
+    "slug": "troubleshooting/common-issues",
+    "title": "Common Issues",
+    "section": "Troubleshooting",
+    "headings": [
+      {
+        "id": "login-authentication",
+        "title": "Login & authentication"
+      },
+      {
+        "id": "i-didnt-receive-the-magic-link-email",
+        "title": "I didn't receive the magic link email"
+      },
+      {
+        "id": "the-magic-link-says-its-expired",
+        "title": "The magic link says it's expired"
+      },
+      {
+        "id": "im-getting-redirected-to-the-login-page-repeatedly",
+        "title": "I'm getting redirected to the login page repeatedly"
+      },
+      {
+        "id": "discord-connectivity",
+        "title": "Discord connectivity"
+      },
+      {
+        "id": "the-bot-appears-offline-in-discord",
+        "title": "The bot appears offline in Discord"
+      },
+      {
+        "id": "the-bot-is-online-but-not-responding",
+        "title": "The bot is online but not responding"
+      },
+      {
+        "id": "the-bot-responds-slowly",
+        "title": "The bot responds slowly"
+      },
+      {
+        "id": "grain-bids",
+        "title": "Grain bids"
+      },
+      {
+        "id": "elevator-website-unreachable-error",
+        "title": "\"Elevator website unreachable\" error"
+      },
+      {
+        "id": "bids-seem-outdated",
+        "title": "Bids seem outdated"
+      },
+      {
+        "id": "missing-crops-in-bid-results",
+        "title": "Missing crops in bid results"
+      },
+      {
+        "id": "weather",
+        "title": "Weather"
+      },
+      {
+        "id": "unable-to-fetch-forecast-error",
+        "title": "\"Unable to fetch forecast\" error"
+      },
+      {
+        "id": "morning-briefing-not-appearing",
+        "title": "Morning briefing not appearing"
+      },
+      {
+        "id": "spray-window-data-seems-wrong",
+        "title": "Spray window data seems wrong"
+      },
+      {
+        "id": "scale-tickets",
+        "title": "Scale tickets"
+      },
+      {
+        "id": "photo-ocr-didnt-read-my-ticket-correctly",
+        "title": "Photo OCR didn't read my ticket correctly"
+      },
+      {
+        "id": "cant-find-a-ticket-i-logged",
+        "title": "Can't find a ticket I logged"
+      },
+      {
+        "id": "export-not-working",
+        "title": "Export not working"
+      },
+      {
+        "id": "provisioning",
+        "title": "Provisioning"
+      },
+      {
+        "id": "instance-stuck-on-provisioning",
+        "title": "Instance stuck on \"Provisioning\""
+      },
+      {
+        "id": "instance-shows-error-status",
+        "title": "Instance shows \"Error\" status"
+      },
+      {
+        "id": "billing",
+        "title": "Billing"
+      },
+      {
+        "id": "i-was-charged-but-my-instance-isnt-working",
+        "title": "I was charged but my instance isn't working"
+      },
+      {
+        "id": "how-do-i-get-a-refund",
+        "title": "How do I get a refund?"
+      },
+      {
+        "id": "unexpected-high-usage-charges",
+        "title": "Unexpected high usage charges"
+      }
+    ],
+    "body": "Login & authentication\n\nI didn't receive the magic link email\n\n- Check your spam, junk, or promotions folder\n- Verify you entered the correct email address\n- Wait 60 seconds before requesting another link — there's a cooldown\n- If using a corporate email, your IT department may be blocking the sender\n- Try a different email provider (Gmail, Outlook) if issues persist\n\nThe magic link says it's expired\n\nMagic links expire after a short time for security. Request a new one from the login page. Don'"
+  },
+  {
+    "slug": "troubleshooting",
+    "title": "Troubleshooting",
+    "section": "Troubleshooting",
+    "headings": [
+      {
+        "id": "getting-help",
+        "title": "Getting help"
+      },
+      {
+        "id": "quick-diagnostics",
+        "title": "Quick diagnostics"
+      },
+      {
+        "id": "common-categories",
+        "title": "Common categories"
+      }
+    ],
+    "body": "Getting help\n\nIf you run into issues with FarmClaw, this section covers the most common problems and their solutions. For issues not covered here, contact support through your dashboard.\n\nQuick diagnostics\n\nBefore diving into specific issues, check these basics:\n\n1. Instance status — Check your dashboard. Your instance should show \"Running\" status.\n2. Discord bot — Verify the bot appears online (green dot) in your Discord server's member list.\n3. Subscription — Confirm your subscription is activ"
+  },
+  {
+    "slug": "troubleshooting/workflow-builder-support-runbook",
+    "title": "Workflow Builder Support Runbook",
+    "section": "Troubleshooting",
+    "headings": [
+      {
+        "id": "severity-model",
+        "title": "Severity model"
+      },
+      {
+        "id": "first-response-checklist-first-15-minutes",
+        "title": "First-response checklist (first 15 minutes)"
+      },
+      {
+        "id": "api-checks",
+        "title": "API checks"
+      },
+      {
+        "id": "immediate-mitigations",
+        "title": "Immediate mitigations"
+      },
+      {
+        "id": "escalation-path",
+        "title": "Escalation path"
+      },
+      {
+        "id": "incident-close-out",
+        "title": "Incident close-out"
+      }
+    ],
+    "body": "Workflow Builder Support Runbook\n\nUse this runbook when workflow builder behavior impacts operators or production runs.\n\nSeverity model\n\n- P1: publish failures or run failures across multiple customers with active impact.\n- P2: single-customer publish/run failures that block operations.\n- P3: degraded UX with available workaround.\n\nFirst-response checklist (first 15 minutes)\n\n1. Confirm incident scope: customer IDs, instance IDs, workflow IDs, run IDs.\n2. Check /settings/workflows/launch for KPI"
+  }
+]

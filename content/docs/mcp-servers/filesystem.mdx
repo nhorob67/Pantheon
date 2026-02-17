@@ -1,0 +1,104 @@
+---
+title: Filesystem Server
+description: Give your AI assistant access to read and write files in its workspace directory.
+section: MCP Servers
+order: 1
+icon: FolderOpen
+tags: [mcp, filesystem, files]
+---
+
+# Filesystem Server
+
+The Filesystem MCP server gives your AI assistant the ability to read, write, and manage files within its workspace directory. This is useful for saving reports, keeping notes, storing exported data, and working with files that persist across conversations.
+
+## Overview
+
+| Field | Value |
+|---|---|
+| **Package** | `@modelcontextprotocol/server-filesystem` |
+| **Command** | `npx` |
+| **Arguments** | `-y @modelcontextprotocol/server-filesystem /home/node/workspace` |
+| **Scope** | Instance (available to all agents) |
+| **Workspace path** | `/home/node/workspace` |
+
+The Filesystem server is one of three curated presets available in FarmClaw. It is pre-configured during provisioning and can be added to your instance with a single click from the preset selector.
+
+## What it enables
+
+With the Filesystem server active, your assistant can:
+
+- **Read files** -- Open and read the contents of any file in the workspace directory.
+- **Write files** -- Create new files or overwrite existing ones. Useful for saving reports, exporting data, or generating documents.
+- **List directory contents** -- Browse what files and folders exist in the workspace.
+- **Create directories** -- Organize files into folders as needed.
+- **Move and rename files** -- Restructure workspace content without manual intervention.
+
+## Use cases
+
+### Saving reports
+
+Ask your assistant to generate a summary and save it to a file:
+
+> "Summarize this week's grain bids across all elevators and save the report to `reports/weekly-bids-2025-10-13.md`."
+
+The assistant will compile the data and write it to the specified path in the workspace.
+
+### Exporting scale ticket data
+
+If you want a local copy of your scale ticket records beyond what the SQLite database holds:
+
+> "Export all corn deliveries from October as a CSV file."
+
+The assistant writes the CSV to the workspace where it persists between conversations.
+
+### Keeping operational notes
+
+Your assistant can maintain running notes, checklists, or logs:
+
+> "Add a note to `field-notes.md` that the south quarter of section 12 had standing water after last night's rain."
+
+<Callout variant="info" title="Files persist across conversations">
+The workspace directory at `/home/node/workspace` is mounted as a persistent volume on your instance's server. Files saved here survive container restarts and configuration rebuilds.
+</Callout>
+
+## Configuration
+
+When added from the preset selector, the Filesystem server is automatically configured with the following values:
+
+| Field | Value |
+|---|---|
+| `server_key` | `filesystem` |
+| `display_name` | `Filesystem` |
+| `command` | `npx` |
+| `args` | `["-y", "@modelcontextprotocol/server-filesystem", "/home/node/workspace"]` |
+| `env_vars` | `{}` (none required) |
+| `scope` | `instance` |
+| `enabled` | `true` |
+
+### Customizing the workspace path
+
+The default workspace path is `/home/node/workspace`. If you need to point the server at a different directory, you can edit the server after creation and change the last argument.
+
+<Callout variant="warning" title="Stay within mounted volumes">
+The Filesystem server can only access paths that exist on your instance's container. Pointing it at a path outside the container's filesystem will result in errors. The default `/home/node/workspace` path is guaranteed to exist and persist.
+</Callout>
+
+## Adding the Filesystem server
+
+1. Go to **Settings > MCP Servers**.
+2. Click **Add MCP Server**.
+3. Select **From Preset**.
+4. Click **Filesystem** from the preset list.
+5. Review the pre-filled fields and click **Add Server**.
+
+FarmClaw rebuilds your configuration and restarts the container. The server is available to your assistant within 15--30 seconds.
+
+## Enabling and disabling
+
+You can toggle the Filesystem server on or off at any time using the switch on its card in **Settings > MCP Servers**. Disabling the server removes it from your assistant's active configuration. Your files in the workspace are not deleted when the server is disabled.
+
+## What's next
+
+- [SQLite Server](/docs/mcp-servers/sqlite) -- Local database for scale tickets and structured data
+- [Memory Server](/docs/mcp-servers/memory) -- Persistent key-value storage for your assistant
+- [MCP Servers Overview](/docs/mcp-servers) -- Learn about custom MCP server configuration

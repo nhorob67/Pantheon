@@ -1,0 +1,185 @@
+---
+title: Connecting Services
+description: How to authorize third-party services, manage connections, and troubleshoot OAuth issues.
+section: Integrations
+order: 3
+icon: Plug
+tags: [integrations, oauth, connect, disconnect, google, authorization]
+---
+
+# Connecting Services
+
+Each toolkit that requires authentication needs a one-time OAuth connection before your assistant can use it. This page covers the full connection lifecycle -- authorizing, monitoring, refreshing, and disconnecting services.
+
+## The OAuth flow
+
+OAuth is the industry-standard protocol for granting third-party access to your accounts without sharing passwords. When you connect a service through FarmClaw, you go through the service provider's own login and consent screens. FarmClaw never sees or stores your service passwords.
+
+### Step by step
+
+1. **Initiate:** In the Connected Accounts section, click **Connect** next to the service.
+2. **Confirm:** A dialog shows what actions your assistant will have access to. Click **Authorize [Service]**.
+3. **Authenticate:** A popup window opens with the service's login page (e.g., Google's account chooser).
+4. **Consent:** Review the permissions requested. Google, for example, shows exactly which scopes are being requested (read spreadsheets, send email, etc.).
+5. **Grant access:** Click **Allow** or **Grant Access** on the service's consent page.
+6. **Complete:** The popup shows "Connected" and closes automatically. The parent page updates with a green "Connected" badge.
+
+```
+FarmClaw Dashboard          Popup Window
+─────────────────          ─────────────
+Click "Connect"  ────────► Opens service login
+                           User signs in
+                           User grants consent
+Dashboard updates ◄──────  Popup closes
+"Connected" badge           "Connection successful!"
+Success toast
+```
+
+### What happens behind the scenes
+
+When you click Authorize:
+
+1. FarmClaw's API calls Composio to initiate an OAuth connection for your Composio entity.
+2. Composio generates a redirect URL pointing to the service's OAuth authorization endpoint.
+3. The popup navigates to this URL.
+4. After you consent, the service redirects back to FarmClaw's callback URL.
+5. The callback endpoint syncs your connection status from Composio and updates the database.
+6. The popup sends a `postMessage` to the parent window, which triggers a UI refresh.
+
+<Callout variant="info" title="Tokens are managed by Composio">
+OAuth access tokens and refresh tokens are stored and managed by Composio, not FarmClaw. Composio handles token refresh automatically when tokens expire. You do not need to re-authorize unless the refresh token itself expires (which is rare for most services).
+</Callout>
+
+## Which account to use
+
+When the OAuth popup opens, you choose which account to connect. Some considerations:
+
+### Personal vs. shared accounts
+
+| Scenario | Recommendation |
+|---|---|
+| Solo farmer | Use your personal Google/service account |
+| Family operation | Use a shared account (e.g., farm@gmail.com) that all partners can access |
+| Farm with employees | Use a dedicated farm account to avoid mixing personal and business data |
+
+### Multiple accounts
+
+If you have multiple Google accounts (personal and farm), make sure to select the correct one during the OAuth flow. The account chooser screen lets you pick which account to authorize.
+
+<Callout variant="warning" title="One connection per service">
+Each toolkit connects to one account. If you connect Google Sheets with your personal account and later want to switch to a farm account, disconnect the service first and then reconnect with the other account.
+</Callout>
+
+## Managing connections
+
+### Viewing connection status
+
+The **Connected Accounts** section in Settings > Integrations shows all selected toolkits that require authentication. Each entry displays:
+
+- **Service name** -- The toolkit name (e.g., Google Sheets)
+- **Account identifier** -- The email or username associated with the connection (e.g., farmer@gmail.com)
+- **Status badge** -- Current connection state
+- **Action button** -- Connect or Disconnect
+
+### Refreshing status
+
+Click the **Refresh** button at the top of the Connected Accounts section to sync the latest connection status from Composio. This is useful if:
+
+- You completed an OAuth flow but the status has not updated
+- You want to verify a connection is still active
+- You disconnected from the service provider's side (e.g., revoked access in Google settings)
+
+### Disconnecting a service
+
+To disconnect a service:
+
+1. Find the service in the Connected Accounts list.
+2. Click the **Disconnect** button.
+3. The connection is revoked immediately.
+
+Disconnecting does the following:
+
+- Removes the OAuth tokens from Composio
+- Updates your connection status to "Disconnected"
+- Your assistant can no longer access that service
+
+Disconnecting does **not** deselect the toolkit. The toolkit remains selected in your configuration -- it just has no active connection. You can reconnect at any time.
+
+<Callout variant="success" title="Instant revocation">
+When you disconnect a service, access is revoked immediately. There is no delay or grace period. Your assistant will get an authorization error if it tries to call that service's actions after disconnection.
+</Callout>
+
+## Connection states
+
+| State | Badge | Meaning | Action needed |
+|---|---|---|---|
+| Connected | Green | Active, working connection | None |
+| Disconnected | Gray | No connection established | Click Connect |
+| Expired | Amber | Token expired, needs re-auth | Click Connect to re-authorize |
+| Pending | Blue | OAuth flow in progress | Complete the flow in the popup |
+
+### Expired connections
+
+Most OAuth providers issue refresh tokens that Composio uses to automatically renew access. However, some scenarios cause expiration:
+
+- You changed your service account password
+- You revoked FarmClaw's access in the service's security settings
+- The refresh token exceeded its maximum lifetime (uncommon)
+- The service provider rotated their OAuth credentials (rare)
+
+To fix an expired connection, click **Connect** again. The OAuth flow is the same as the initial connection.
+
+## Popup troubleshooting
+
+### Popup blocked
+
+Most browsers block popups by default. If the OAuth popup does not appear:
+
+1. Check for a popup notification in your browser's address bar (usually a small icon).
+2. Click it and select "Always allow popups from this site."
+3. Try clicking Connect again.
+
+If popups remain blocked, FarmClaw falls back to a full-page redirect. You will be redirected away from the dashboard to complete the OAuth flow, then redirected back afterward.
+
+### Popup opened but stuck
+
+If the popup opens but does not show the service's login page:
+
+- Check your internet connection
+- Try closing the popup and clicking Connect again
+- Clear your browser cache for the service's domain (e.g., accounts.google.com)
+
+### Popup closed before completing
+
+If you accidentally close the popup before granting consent:
+
+- No connection is created
+- No tokens are stored
+- Click Connect again to restart the flow
+
+### Dashboard did not update after completing OAuth
+
+If the popup showed "Connected" but the dashboard still shows "Disconnected":
+
+1. Click the **Refresh** button in the Connected Accounts section
+2. If that does not help, reload the entire page
+
+## Revoking access from the service side
+
+You can also revoke FarmClaw's access directly from the service provider:
+
+| Service | Where to revoke |
+|---|---|
+| Google (Sheets, Calendar, Gmail, Drive) | [Google Account > Security > Third-party apps](https://myaccount.google.com/permissions) |
+| Slack | Slack workspace settings > Manage apps |
+| Notion | Notion settings > My connections |
+| Todoist | Todoist settings > Integrations |
+| Airtable | Airtable account settings > API |
+
+After revoking from the service side, click **Refresh** in FarmClaw to update your connection status. The status will change to "Expired" or "Disconnected."
+
+## What's next
+
+- [Available Toolkits](/docs/integrations/toolkits) -- Full list of services and their actions
+- [Security and Privacy](/docs/integrations/security) -- How credentials are stored and protected
+- [Setup Guide](/docs/integrations/setup) -- Complete setup walkthrough

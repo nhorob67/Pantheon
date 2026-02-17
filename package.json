@@ -4,14 +4,37 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node --experimental-strip-types scripts/build-search-index.ts",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --experimental-strip-types --test src/lib/email/webhook-signature.test.ts src/lib/email/processor-inputs.test.ts src/lib/security/constant-time.test.ts src/lib/webhooks/openclaw-signature.test.ts src/lib/utils/cost-projection.test.ts src/lib/templates/__tests__/onboarding-templates.test.ts src/lib/validators/workflow.test.ts src/lib/workflows/publish-runtime-freshness.test.ts src/lib/workflows/scheduler.test.ts src/lib/workflows/performance-gates.test.ts src/lib/workflows/templates-core.test.ts src/lib/workflows/import-export.test.ts src/lib/workflows/simulation.test.ts src/lib/workflows/experiments.test.ts src/lib/workflows/nl-draft.test.ts src/lib/workflows/workflow-hygiene.test.ts src/app/api/docs/ask/route.test.ts src/app/api/docs/ask-feedback/route.test.ts"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
+    "@stripe/stripe-js": "^8.7.0",
+    "@supabase/ssr": "^0.8.0",
+    "@supabase/supabase-js": "^2.95.3",
+    "date-fns": "^4.1.0",
+    "flexsearch": "^0.8.212",
+    "gray-matter": "^4.0.3",
+    "lucide-react": "^0.563.0",
+    "mammoth": "^1.11.0",
     "next": "16.1.6",
+    "next-mdx-remote": "^6.0.0",
+    "pdf-parse": "^2.4.5",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "react-hook-form": "^7.71.1",
+    "recharts": "^3.7.0",
+    "rehype-autolink-headings": "^7.1.0",
+    "rehype-slug": "^6.0.0",
+    "remark-gfm": "^4.0.1",
+    "shiki": "^3.22.0",
+    "stripe": "^20.3.1",
+    "unist-util-visit": "^5.1.0",
+    "zod": "^4.3.6",
+    "zustand": "^5.0.11"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
