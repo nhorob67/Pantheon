@@ -69,8 +69,8 @@ if [ -n "$KNOWLEDGE_FILES" ]; then
 fi
 
 # Lock down config directory and file permissions
-chmod 700 /home/node/.openclaw
-find /home/node/.openclaw -type f -exec chmod 600 {} +
+chmod 700 /home/node/.openclaw 2>/dev/null || true
+find /home/node/.openclaw -type f -exec chmod 600 {} + 2>/dev/null || true
 
 # Clear decoded config env vars so they're not readable via /proc/1/environ
 unset OPENCLAW_CONFIG SOUL_MD SOUL_FILES CUSTOM_SKILLS KNOWLEDGE_FILES 2>/dev/null || true
@@ -82,7 +82,7 @@ mkdir -p /home/node/data
 # Ensure local vault path exists for hybrid memory mode
 VAULT_PATH="${FARMCLAW_VAULT_PATH:-/home/node/.openclaw/vault}"
 mkdir -p "$VAULT_PATH"
-chmod 700 "$VAULT_PATH"
+chmod 700 "$VAULT_PATH" 2>/dev/null || true
 
 # Optional bootstrap if clawvault CLI is available in the image
 if [ "${FARMCLAW_MEMORY_MODE}" = "hybrid_local_vault" ] && command -v clawvault >/dev/null 2>&1; then

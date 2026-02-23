@@ -50,7 +50,7 @@ export const MCP_PRESET_INFO: Record<
     label: "SQLite",
     description: "Query and manage a local SQLite database",
     command: "npx",
-    args: ["-y", "@modelcontextprotocol/server-sqlite", "/home/node/data/farmclaw.db"],
+    args: ["-y", "mcp-sqlite", "/home/node/data/farmclaw.db"],
   },
   memory: {
     label: "Memory",

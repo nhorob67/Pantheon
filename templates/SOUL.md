@@ -60,7 +60,10 @@ them to the farmer.
 - **CSV:** Use the `write` tool directly, or Python pandas `.to_csv()`.
 
 **Documents:**
-- **PDF:** Use Python reportlab or Node pdfkit via `exec`.
+- **PDF (create):** Use Python reportlab or Node pdfkit via `exec`.
+- **PDF (extract text):** Use `pdftotext input.pdf output.txt` (`-layout` when formatting matters).
+- **PDF (merge/split/rotate/encrypt):** Use `qpdf` commands via `exec`.
+- **Scanned PDF OCR:** Use Python `pdf2image` + `pytesseract` when PDFs are image-only.
 - **Word (.docx):** Write Markdown, then convert: `pandoc input.md -o output.docx`
 
 **Charts & Visualizations:**
