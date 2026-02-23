@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useReducer,
   useRef,
   useState,
   type ChangeEvent,
@@ -160,6 +161,108 @@ interface PromotionStatePayload {
     can_promote_to_dev: boolean;
     can_promote_to_stage: boolean;
     can_promote_to_prod: boolean;
+  };
+}
+
+type WorkflowUiBooleanKey =
+  | "isManualSaving"
+  | "isPublishing"
+  | "isRunning"
+  | "isRollingBack"
+  | "isCommandPaletteOpen"
+  | "isExporting"
+  | "isImporting"
+  | "isSimulating"
+  | "isGeneratingDraft"
+  | "isEvaluatingExperiment"
+  | "isLoadingPromotions"
+  | "isPublishingPlaybook"
+  | "isRefreshingVersions";
+
+interface WorkflowUiState {
+  isManualSaving: boolean;
+  isPublishing: boolean;
+  isRunning: boolean;
+  isRollingBack: boolean;
+  isCommandPaletteOpen: boolean;
+  isExporting: boolean;
+  isImporting: boolean;
+  isSimulating: boolean;
+  isGeneratingDraft: boolean;
+  isEvaluatingExperiment: boolean;
+  isLoadingPromotions: boolean;
+  isPublishingPlaybook: boolean;
+  isRefreshingVersions: boolean;
+  isPromotingEnvironment: WorkflowEnvironment | null;
+}
+
+type WorkflowUiAction =
+  | {
+      type: "set-flag";
+      key: WorkflowUiBooleanKey;
+      value: boolean;
+    }
+  | {
+      type: "set-promoting-environment";
+      value: WorkflowEnvironment | null;
+    };
+
+const INITIAL_WORKFLOW_UI_STATE: WorkflowUiState = {
+  isManualSaving: false,
+  isPublishing: false,
+  isRunning: false,
+  isRollingBack: false,
+  isCommandPaletteOpen: false,
+  isExporting: false,
+  isImporting: false,
+  isSimulating: false,
+  isGeneratingDraft: false,
+  isEvaluatingExperiment: false,
+  isLoadingPromotions: false,
+  isPublishingPlaybook: false,
+  isRefreshingVersions: false,
+  isPromotingEnvironment: null,
+};
+
+function workflowUiReducer(state: WorkflowUiState, action: WorkflowUiAction): WorkflowUiState {
+  switch (action.type) {
+    case "set-flag":
+      return {
+        ...state,
+        [action.key]: action.value,
+      };
+    case "set-promoting-environment":
+      return {
+        ...state,
+        isPromotingEnvironment: action.value,
+      };
+    default:
+      return state;
+  }
+}
+
+function useWorkflowUiState() {
+  const [state, dispatch] = useReducer(workflowUiReducer, INITIAL_WORKFLOW_UI_STATE);
+
+  const setFlag = useCallback((key: WorkflowUiBooleanKey, value: boolean) => {
+    dispatch({
+      type: "set-flag",
+      key,
+      value,
+    });
+  }, []);
+
+  const setPromotingEnvironment = useCallback((value: WorkflowEnvironment | null) => {
+    dispatch({
+      type: "set-promoting-environment",
+      value,
+    });
+  }, []);
+
+  return {
+    state,
+    setFlag,
+    setPromotingEnvironment,
   };
 }
 
@@ -669,48 +772,57 @@ export function WorkflowBuilderShell({
 
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
-  const [isManualSaving, setIsManualSaving] = useState(false);
+  const {
+    state: workflowUiState,
+    setFlag: setWorkflowUiFlag,
+    setPromotingEnvironment: setWorkflowPromotingEnvironment,
+  } = useWorkflowUiState();
 
-  const [isPublishing, setIsPublishing] = useState(false);
+  const {
+    isManualSaving,
+    isPublishing,
+    isRunning,
+    isRollingBack,
+    isCommandPaletteOpen,
+    isExporting,
+    isImporting,
+    isSimulating,
+    isGeneratingDraft,
+    isEvaluatingExperiment,
+    isLoadingPromotions,
+    isPublishingPlaybook,
+    isRefreshingVersions,
+    isPromotingEnvironment,
+  } = workflowUiState;
+
   const [publishMessage, setPublishMessage] = useState<string | null>(null);
   const [publishError, setPublishError] = useState<string | null>(null);
-  const [isRunning, setIsRunning] = useState(false);
   const [runMessage, setRunMessage] = useState<string | null>(null);
   const [runError, setRunError] = useState<string | null>(null);
   const [latestRunId, setLatestRunId] = useState<string | null>(null);
-  const [isRollingBack, setIsRollingBack] = useState(false);
   const [rollbackMessage, setRollbackMessage] = useState<string | null>(null);
   const [rollbackError, setRollbackError] = useState<string | null>(null);
-  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [commandQuery, setCommandQuery] = useState("");
-  const [isExporting, setIsExporting] = useState(false);
   const [exportMessage, setExportMessage] = useState<string | null>(null);
   const [exportError, setExportError] = useState<string | null>(null);
-  const [isImporting, setIsImporting] = useState(false);
   const [importMessage, setImportMessage] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
-  const [isSimulating, setIsSimulating] = useState(false);
   const [simulationError, setSimulationError] = useState<string | null>(null);
   const [simulationResult, setSimulationResult] =
     useState<SimulationResponsePayload | null>(null);
   const [draftPrompt, setDraftPrompt] = useState("");
-  const [isGeneratingDraft, setIsGeneratingDraft] = useState(false);
   const [draftGenerationMessage, setDraftGenerationMessage] = useState<string | null>(
     null
   );
   const [draftGenerationError, setDraftGenerationError] = useState<string | null>(
     null
   );
-  const [isEvaluatingExperiment, setIsEvaluatingExperiment] = useState(false);
   const [experimentError, setExperimentError] = useState<string | null>(null);
   const [experimentResult, setExperimentResult] =
     useState<ExperimentResponsePayload | null>(null);
   const [promotionState, setPromotionState] = useState<PromotionStatePayload | null>(
     null
   );
-  const [isLoadingPromotions, setIsLoadingPromotions] = useState(false);
-  const [isPromotingEnvironment, setIsPromotingEnvironment] =
-    useState<WorkflowEnvironment | null>(null);
   const [promotionError, setPromotionError] = useState<string | null>(null);
   const [promotionMessage, setPromotionMessage] = useState<string | null>(null);
   const [playbookSlug, setPlaybookSlug] = useState(() => toSlug(initialWorkflow.name));
@@ -720,14 +832,55 @@ export function WorkflowBuilderShell({
   const [playbookStatus, setPlaybookStatus] = useState<"draft" | "published">(
     "published"
   );
-  const [isPublishingPlaybook, setIsPublishingPlaybook] = useState(false);
   const [playbookError, setPlaybookError] = useState<string | null>(null);
   const [playbookMessage, setPlaybookMessage] = useState<string | null>(null);
   const [versionHistory, setVersionHistory] = useState<WorkflowVersion[]>(
     normalizeWorkflowVersions(initialVersions)
   );
-  const [isRefreshingVersions, setIsRefreshingVersions] = useState(false);
   const [versionHistoryError, setVersionHistoryError] = useState<string | null>(null);
+
+  const setIsManualSaving = useCallback((value: boolean) => {
+    setWorkflowUiFlag("isManualSaving", value);
+  }, [setWorkflowUiFlag]);
+  const setIsPublishing = useCallback((value: boolean) => {
+    setWorkflowUiFlag("isPublishing", value);
+  }, [setWorkflowUiFlag]);
+  const setIsRunning = useCallback((value: boolean) => {
+    setWorkflowUiFlag("isRunning", value);
+  }, [setWorkflowUiFlag]);
+  const setIsRollingBack = useCallback((value: boolean) => {
+    setWorkflowUiFlag("isRollingBack", value);
+  }, [setWorkflowUiFlag]);
+  const setIsCommandPaletteOpen = useCallback((value: boolean) => {
+    setWorkflowUiFlag("isCommandPaletteOpen", value);
+  }, [setWorkflowUiFlag]);
+  const setIsExporting = useCallback((value: boolean) => {
+    setWorkflowUiFlag("isExporting", value);
+  }, [setWorkflowUiFlag]);
+  const setIsImporting = useCallback((value: boolean) => {
+    setWorkflowUiFlag("isImporting", value);
+  }, [setWorkflowUiFlag]);
+  const setIsSimulating = useCallback((value: boolean) => {
+    setWorkflowUiFlag("isSimulating", value);
+  }, [setWorkflowUiFlag]);
+  const setIsGeneratingDraft = useCallback((value: boolean) => {
+    setWorkflowUiFlag("isGeneratingDraft", value);
+  }, [setWorkflowUiFlag]);
+  const setIsEvaluatingExperiment = useCallback((value: boolean) => {
+    setWorkflowUiFlag("isEvaluatingExperiment", value);
+  }, [setWorkflowUiFlag]);
+  const setIsLoadingPromotions = useCallback((value: boolean) => {
+    setWorkflowUiFlag("isLoadingPromotions", value);
+  }, [setWorkflowUiFlag]);
+  const setIsPublishingPlaybook = useCallback((value: boolean) => {
+    setWorkflowUiFlag("isPublishingPlaybook", value);
+  }, [setWorkflowUiFlag]);
+  const setIsRefreshingVersions = useCallback((value: boolean) => {
+    setWorkflowUiFlag("isRefreshingVersions", value);
+  }, [setWorkflowUiFlag]);
+  const setIsPromotingEnvironment = useCallback((value: WorkflowEnvironment | null) => {
+    setWorkflowPromotingEnvironment(value);
+  }, [setWorkflowPromotingEnvironment]);
 
   const [serverValid, setServerValid] = useState(initialWorkflow.is_valid);
   const [serverValidationErrors, setServerValidationErrors] = useState(
@@ -1185,6 +1338,7 @@ export function WorkflowBuilderShell({
       name,
       normalizedTags,
       ownerId,
+      setIsManualSaving,
     ]
   );
 
@@ -1226,7 +1380,7 @@ export function WorkflowBuilderShell({
         }
       }
     },
-    [initialWorkflow.id, instanceId]
+    [initialWorkflow.id, instanceId, setIsRefreshingVersions]
   );
 
   const reloadPromotions = useCallback(async () => {
@@ -1267,7 +1421,7 @@ export function WorkflowBuilderShell({
     } finally {
       setIsLoadingPromotions(false);
     }
-  }, [initialWorkflow.id, instanceId]);
+  }, [initialWorkflow.id, instanceId, setIsLoadingPromotions]);
 
   const handlePublish = useCallback(async () => {
     setPublishError(null);
@@ -1353,6 +1507,7 @@ export function WorkflowBuilderShell({
     persistDraft,
     reloadPromotions,
     reloadVersionHistory,
+    setIsPublishing,
   ]);
 
   const handleRun = useCallback(async () => {
@@ -1422,6 +1577,7 @@ export function WorkflowBuilderShell({
     instanceId,
     isPublishing,
     publishedVersion,
+    setIsRunning,
     workflowStatus,
   ]);
 
@@ -1543,6 +1699,7 @@ export function WorkflowBuilderShell({
     publishedVersion,
     reloadPromotions,
     reloadVersionHistory,
+    setIsRollingBack,
     workflowStatus,
   ]);
 
@@ -1596,7 +1753,7 @@ export function WorkflowBuilderShell({
     } finally {
       setIsExporting(false);
     }
-  }, [initialWorkflow.id, instanceId, name]);
+  }, [initialWorkflow.id, instanceId, name, setIsExporting]);
 
   const handleImportButton = useCallback(() => {
     importFileInputRef.current?.click();
@@ -1663,7 +1820,7 @@ export function WorkflowBuilderShell({
         setIsImporting(false);
       }
     },
-    [instanceId]
+    [instanceId, setIsImporting]
   );
 
   const handleSimulate = useCallback(async () => {
@@ -1732,7 +1889,7 @@ export function WorkflowBuilderShell({
     } finally {
       setIsSimulating(false);
     }
-  }, [graph, initialWorkflow.id, instanceId]);
+  }, [graph, initialWorkflow.id, instanceId, setIsSimulating]);
 
   const handlePromoteEnvironment = useCallback(
     async (targetEnvironment: WorkflowEnvironment) => {
@@ -1790,7 +1947,7 @@ export function WorkflowBuilderShell({
         setIsPromotingEnvironment(null);
       }
     },
-    [initialWorkflow.id, instanceId, publishedVersion, workflowStatus]
+    [initialWorkflow.id, instanceId, publishedVersion, setIsPromotingEnvironment, workflowStatus]
   );
 
   const handleGenerateDraft = useCallback(async () => {
@@ -1875,7 +2032,7 @@ export function WorkflowBuilderShell({
     } finally {
       setIsGeneratingDraft(false);
     }
-  }, [applyGraphChange, description, draftPrompt, instanceId, name]);
+  }, [applyGraphChange, description, draftPrompt, instanceId, name, setIsGeneratingDraft]);
 
   const handleEvaluateExperiment = useCallback(async () => {
     setExperimentError(null);
@@ -1924,7 +2081,7 @@ export function WorkflowBuilderShell({
     } finally {
       setIsEvaluatingExperiment(false);
     }
-  }, [graph, initialWorkflow.id, instanceId]);
+  }, [graph, initialWorkflow.id, instanceId, setIsEvaluatingExperiment]);
 
   const handlePublishPlaybook = useCallback(async () => {
     setPlaybookError(null);
@@ -2007,6 +2164,7 @@ export function WorkflowBuilderShell({
     playbookStatus,
     playbookVisibility,
     publishedVersion,
+    setIsPublishingPlaybook,
     workflowStatus,
   ]);
 
@@ -2024,12 +2182,12 @@ export function WorkflowBuilderShell({
 
   const openCommandPalette = useCallback(() => {
     setIsCommandPaletteOpen(true);
-  }, []);
+  }, [setIsCommandPaletteOpen]);
 
   const closeCommandPalette = useCallback(() => {
     setIsCommandPaletteOpen(false);
     setCommandQuery("");
-  }, []);
+  }, [setIsCommandPaletteOpen]);
 
   const commandActions = useMemo<CommandPaletteAction[]>(
     () => [
