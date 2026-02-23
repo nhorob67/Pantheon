@@ -15,8 +15,10 @@ import {
   Bell,
   GitBranch,
   HelpCircle,
+  type LucideIcon,
 } from "lucide-react";
 import { useHelp } from "./help-provider";
+import type { SettingsNavItem } from "@/lib/navigation/settings";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -24,27 +26,26 @@ const navItems = [
   { href: "/alerts", label: "Alerts", icon: Bell },
 ];
 
-const settingsItems = [
-  { href: "/settings/farm", label: "Farm Profile", icon: Wheat },
-  { href: "/settings/channels", label: "Channels", icon: Users },
-  { href: "/settings/workflows", label: "Workflows", icon: GitBranch },
-  { href: "/settings/skills", label: "Skills", icon: Zap },
-  { href: "/settings/memory", label: "Memory", icon: Brain },
-  { href: "/settings/mcp-servers", label: "Tools", icon: Wrench },
-  { href: "/settings/alerts", label: "Alerts", icon: Bell },
-  { href: "/settings/billing", label: "Billing", icon: CreditCard },
-];
+const settingsIconsByHref: Record<string, LucideIcon> = {
+  "/settings/farm": Wheat,
+  "/settings/channels": Users,
+  "/settings/workflows": GitBranch,
+  "/settings/skills": Zap,
+  "/settings/memory": Brain,
+  "/settings/mcp-servers": Wrench,
+  "/settings/alerts": Bell,
+  "/settings/billing": CreditCard,
+};
 
 interface SidebarProps {
-  workflowBuilderEnabled: boolean;
+  settingsItems: SettingsNavItem[];
 }
 
-export function Sidebar({ workflowBuilderEnabled }: SidebarProps) {
+export function Sidebar({ settingsItems }: SidebarProps) {
   const pathname = usePathname();
-  const { openHelp } = useHelp();
-  const filteredSettingsItems = workflowBuilderEnabled
-    ? settingsItems
-    : settingsItems.filter((item) => item.href !== "/settings/workflows");
+  const {
+    actions: { openHelp },
+  } = useHelp();
 
   return (
     <aside className="w-64 border-r border-border bg-card min-h-screen px-4 py-6 hidden md:flex flex-col">
@@ -82,7 +83,8 @@ export function Sidebar({ workflowBuilderEnabled }: SidebarProps) {
             Settings
           </h3>
           <nav className="space-y-1">
-            {filteredSettingsItems.map((item) => {
+            {settingsItems.map((item) => {
+              const Icon = settingsIconsByHref[item.href] || Settings;
               const active =
                 pathname === item.href || pathname.startsWith(`${item.href}/`);
               return (
@@ -95,7 +97,7 @@ export function Sidebar({ workflowBuilderEnabled }: SidebarProps) {
                       : "text-foreground/60 hover:text-foreground hover:bg-muted"
                   }`}
                 >
-                  <item.icon className="w-4 h-4" />
+                  <Icon className="w-4 h-4" />
                   {item.label}
                 </Link>
               );

@@ -5,6 +5,7 @@ import { HelpProvider } from "@/components/dashboard/help-provider";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Topbar } from "@/components/dashboard/topbar";
 import { isWorkflowBuilderEnabledForCustomer } from "@/lib/workflows/feature-gate";
+import { buildSidebarSettingsItems } from "@/lib/navigation/settings";
 
 export default async function DashboardLayout({
   children,
@@ -39,7 +40,7 @@ export default async function DashboardLayout({
   return (
     <HelpProvider>
       <div className="flex min-h-screen bg-background">
-        <Sidebar workflowBuilderEnabled={workflowBuilderEnabled} />
+        <Sidebar settingsItems={buildSidebarSettingsItems(workflowBuilderEnabled)} />
         <div className="flex-1 flex flex-col">
           <Topbar
             farmName={farmName}

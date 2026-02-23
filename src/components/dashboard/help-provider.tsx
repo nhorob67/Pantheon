@@ -2,27 +2,37 @@
 
 import {
   createContext,
+  use,
   useCallback,
-  useContext,
   useEffect,
   useState,
 } from "react";
 import { HelpModal } from "./help-modal";
 
-interface HelpContextValue {
+interface HelpState {
   isOpen: boolean;
-  openHelp: () => void;
-  closeHelp: () => void;
 }
 
-const HelpContext = createContext<HelpContextValue>({
-  isOpen: false,
-  openHelp: () => {},
-  closeHelp: () => {},
-});
+interface HelpActions {
+  openHelp: () => void;
+  closeHelp: () => void;
+  toggleHelp: () => void;
+}
+
+interface HelpContextValue {
+  state: HelpState;
+  actions: HelpActions;
+}
+
+const HelpContext = createContext<HelpContextValue | null>(null);
 
 export function useHelp() {
-  return useContext(HelpContext);
+  const context = use(HelpContext);
+  if (!context) {
+    throw new Error("useHelp must be used within a <HelpProvider>");
+  }
+
+  return context;
 }
 
 export function HelpProvider({ children }: { children: React.ReactNode }) {
@@ -30,6 +40,7 @@ export function HelpProvider({ children }: { children: React.ReactNode }) {
 
   const openHelp = useCallback(() => setIsOpen(true), []);
   const closeHelp = useCallback(() => setIsOpen(false), []);
+  const toggleHelp = useCallback(() => setIsOpen((previous) => !previous), []);
 
   useEffect(() => {
     const isEditableTarget = (target: EventTarget | null) => {
@@ -47,16 +58,21 @@ export function HelpProvider({ children }: { children: React.ReactNode }) {
 
       if ((e.metaKey || e.ctrlKey) && e.key === "/") {
         e.preventDefault();
-        setIsOpen((prev) => !prev);
+        toggleHelp();
       }
     }
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [toggleHelp]);
 
   return (
-    <HelpContext value={{ isOpen, openHelp, closeHelp }}>
+    <HelpContext
+      value={{
+        state: { isOpen },
+        actions: { openHelp, closeHelp, toggleHelp },
+      }}
+    >
       {children}
       {isOpen && <HelpModal />}
     </HelpContext>

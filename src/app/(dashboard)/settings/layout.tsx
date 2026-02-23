@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireDashboardUser } from "@/lib/auth/dashboard-session";
 import { SettingsTabs } from "@/components/dashboard/settings-tabs";
 import { isWorkflowBuilderEnabledForCustomer } from "@/lib/workflows/feature-gate";
+import { buildSettingsTabs } from "@/lib/navigation/settings";
 
 export default async function SettingsLayout({
   children,
@@ -21,7 +22,7 @@ export default async function SettingsLayout({
         Settings
       </h2>
 
-      <SettingsTabs workflowBuilderEnabled={workflowBuilderEnabled} />
+      <SettingsTabs tabs={buildSettingsTabs(workflowBuilderEnabled)} />
 
       {children}
     </div>

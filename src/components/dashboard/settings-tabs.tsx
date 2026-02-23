@@ -2,42 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { SettingsNavItem } from "@/lib/navigation/settings";
 
 interface SettingsTabsProps {
-  workflowBuilderEnabled: boolean;
+  tabs: SettingsNavItem[];
 }
 
-interface SettingsTab {
-  href: string;
-  label: string;
-}
-
-function buildBaseSettingsTabs(workflowBuilderEnabled: boolean): SettingsTab[] {
-  const tabs: SettingsTab[] = [
-    { href: "/settings/farm", label: "Farm Profile" },
-    { href: "/settings/channels", label: "Channels" },
-    { href: "/settings/skills", label: "Skills" },
-    { href: "/settings/memory", label: "Memory" },
-    { href: "/settings/knowledge", label: "Knowledge" },
-    { href: "/settings/extensions", label: "Extensions" },
-    { href: "/settings/mcp-servers", label: "Tools" },
-    { href: "/settings/integrations", label: "Integrations" },
-    { href: "/settings/billing", label: "Billing" },
-  ];
-
-  if (workflowBuilderEnabled) {
-    tabs.splice(2, 0, { href: "/settings/workflows", label: "Workflows" });
-  }
-
-  return tabs;
-}
-
-export function SettingsTabs({ workflowBuilderEnabled }: SettingsTabsProps) {
+export function SettingsTabs({ tabs }: SettingsTabsProps) {
   const pathname = usePathname();
-  const baseSettingsTabs = buildBaseSettingsTabs(workflowBuilderEnabled);
-  const settingsTabs = pathname.startsWith("/settings/email")
-    ? [...baseSettingsTabs, { href: "/settings/email", label: "Email (Optional)" }]
-    : baseSettingsTabs;
+  const hasEmailTab = tabs.some((tab) => tab.href === "/settings/email");
+  const settingsTabs =
+    pathname.startsWith("/settings/email") && !hasEmailTab
+      ? [...tabs, { href: "/settings/email", label: "Email (Optional)" }]
+      : tabs;
 
   return (
     <div className="bg-muted rounded-full p-1 inline-flex mb-8">

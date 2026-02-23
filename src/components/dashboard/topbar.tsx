@@ -16,7 +16,9 @@ interface TopbarProps {
 export function Topbar({ farmName, instanceStatus, email }: TopbarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const router = useRouter();
-  const { openHelp } = useHelp();
+  const {
+    actions: { openHelp },
+  } = useHelp();
 
   const handleSignOut = async () => {
     const supabase = createClient();

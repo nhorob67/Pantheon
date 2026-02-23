@@ -2,28 +2,40 @@
 
 import {
   createContext,
+  use,
   useCallback,
-  useContext,
   useEffect,
   useState,
 } from "react";
 import { SearchModal } from "./search-modal";
 import { createClient } from "@/lib/supabase/client";
 
-interface SearchContextValue {
+interface SearchState {
   isOpen: boolean;
-  openSearch: () => void;
-  closeSearch: () => void;
+  canAskAi: boolean;
+  authChecked: boolean;
 }
 
-const SearchContext = createContext<SearchContextValue>({
-  isOpen: false,
-  openSearch: () => {},
-  closeSearch: () => {},
-});
+interface SearchActions {
+  openSearch: () => void;
+  closeSearch: () => void;
+  toggleSearch: () => void;
+}
+
+interface SearchContextValue {
+  state: SearchState;
+  actions: SearchActions;
+}
+
+const SearchContext = createContext<SearchContextValue | null>(null);
 
 export function useSearch() {
-  return useContext(SearchContext);
+  const context = use(SearchContext);
+  if (!context) {
+    throw new Error("useSearch must be used within a <SearchProvider>");
+  }
+
+  return context;
 }
 
 export function SearchProvider({ children }: { children: React.ReactNode }) {
@@ -33,18 +45,19 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
 
   const openSearch = useCallback(() => setIsOpen(true), []);
   const closeSearch = useCallback(() => setIsOpen(false), []);
+  const toggleSearch = useCallback(() => setIsOpen((previous) => !previous), []);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
-        setIsOpen((prev) => !prev);
+        toggleSearch();
       }
     }
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [toggleSearch]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -78,9 +91,22 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <SearchContext value={{ isOpen, openSearch, closeSearch }}>
+    <SearchContext
+      value={{
+        state: {
+          isOpen,
+          canAskAi,
+          authChecked,
+        },
+        actions: {
+          openSearch,
+          closeSearch,
+          toggleSearch,
+        },
+      }}
+    >
       {children}
-      {isOpen && <SearchModal canAskAi={canAskAi} authChecked={authChecked} />}
+      {isOpen && <SearchModal />}
     </SearchContext>
   );
 }

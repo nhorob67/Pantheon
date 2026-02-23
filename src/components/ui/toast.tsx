@@ -2,7 +2,7 @@
 
 import React, {
   createContext,
-  useContext,
+  use,
   useState,
   useCallback,
   useEffect,
@@ -152,7 +152,7 @@ function ToastProvider({ children }: { children: ReactNode }) {
 /* -------------------------------------------------------------------------- */
 
 function useToast(): ToastContextValue {
-  const ctx = useContext(ToastContext);
+  const ctx = use(ToastContext);
   if (!ctx) {
     throw new Error("useToast must be used within a <ToastProvider>");
   }

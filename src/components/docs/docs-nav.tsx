@@ -5,7 +5,9 @@ import { Search } from "lucide-react";
 import { useSearch } from "./search-provider";
 
 export function DocsNav() {
-  const { openSearch } = useSearch();
+  const {
+    actions: { openSearch },
+  } = useSearch();
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-16 flex items-center justify-between px-6 lg:px-8 bg-bg-deep/80 backdrop-blur-xl border-b border-border-light">

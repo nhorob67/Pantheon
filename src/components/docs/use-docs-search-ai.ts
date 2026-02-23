@@ -20,6 +20,16 @@ export interface AiSource {
   slug: string;
 }
 
+export type DocsAiStatus = "idle" | "loading" | "streaming" | "error" | "ready";
+
+interface DocsAiState {
+  status: DocsAiStatus;
+  answer: string;
+  sources: AiSource[];
+  error: string | null;
+  feedbackSent: boolean;
+}
+
 interface UseDocsSearchAiOptions {
   canAskAi: boolean;
   authChecked?: boolean;
@@ -44,23 +54,25 @@ export function useDocsSearchAi({
   const [entries, setEntries] = useState<SearchIndexEntry[]>([]);
   const [loaded, setLoaded] = useState(false);
 
-  const [aiMode, setAiMode] = useState(false);
-  const [aiAnswer, setAiAnswer] = useState("");
-  const [aiSources, setAiSources] = useState<AiSource[]>([]);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiStreaming, setAiStreaming] = useState(false);
-  const [aiError, setAiError] = useState<string | null>(null);
-  const [feedbackSent, setFeedbackSent] = useState(false);
+  const [aiState, setAiState] = useState<DocsAiState>({
+    status: "idle",
+    answer: "",
+    sources: [],
+    error: null,
+    feedbackSent: false,
+  });
+
+  const aiMode = aiState.status !== "idle";
 
   const resetAiState = useCallback(() => {
     abortRef.current?.abort();
-    setAiMode(false);
-    setAiAnswer("");
-    setAiSources([]);
-    setAiLoading(false);
-    setAiStreaming(false);
-    setAiError(null);
-    setFeedbackSent(false);
+    setAiState({
+      status: "idle",
+      answer: "",
+      sources: [],
+      error: null,
+      feedbackSent: false,
+    });
   }, []);
 
   useEffect(() => {
@@ -141,7 +153,13 @@ export function useDocsSearchAi({
     if (!query.trim()) return;
     if (!authChecked) return;
     if (!canAskAi) {
-      setAiError("Sign in to use Ask AI.");
+      setAiState({
+        status: "error",
+        answer: "",
+        sources: [],
+        error: "Sign in to use Ask AI.",
+        feedbackSent: false,
+      });
       return;
     }
 
@@ -149,13 +167,13 @@ export function useDocsSearchAi({
     const controller = new AbortController();
     abortRef.current = controller;
 
-    setAiMode(true);
-    setAiAnswer("");
-    setAiSources([]);
-    setAiLoading(true);
-    setAiStreaming(false);
-    setAiError(null);
-    setFeedbackSent(false);
+    setAiState({
+      status: "loading",
+      answer: "",
+      sources: [],
+      error: null,
+      feedbackSent: false,
+    });
 
     const uniqueSlugs = [...new Set(results.map((result) => result.slug))].slice(
       0,
@@ -178,27 +196,40 @@ export function useDocsSearchAi({
 
       if (!response.ok) {
         const errorBody = await response.json().catch(() => ({}));
-        if (response.status === 429) {
-          setAiError("Too many questions. Please wait a moment.");
-        } else if (response.status === 401) {
-          setAiError("Please sign in to use Ask AI.");
-        } else {
-          setAiError(
-            (errorBody as { error?: string }).error ||
-              "AI service temporarily unavailable."
-          );
-        }
-        setAiLoading(false);
+        const message =
+          response.status === 429
+            ? "Too many questions. Please wait a moment."
+            : response.status === 401
+              ? "Please sign in to use Ask AI."
+              : (errorBody as { error?: string }).error ||
+                "AI service temporarily unavailable.";
+
+        setAiState({
+          status: "error",
+          answer: "",
+          sources: [],
+          error: message,
+          feedbackSent: false,
+        });
+
         return;
       }
 
-      setAiLoading(false);
-      setAiStreaming(true);
+      setAiState((previous) => ({
+        ...previous,
+        status: "streaming",
+        error: null,
+      }));
 
       const reader = response.body?.getReader();
       if (!reader) {
-        setAiError("AI service returned an empty response.");
-        setAiStreaming(false);
+        setAiState({
+          status: "error",
+          answer: "",
+          sources: [],
+          error: "AI service returned an empty response.",
+          feedbackSent: false,
+        });
         return;
       }
 
@@ -225,24 +256,28 @@ export function useDocsSearchAi({
               sources?: AiSource[];
             };
 
-            if (payload.content) {
-              setAiAnswer((previous) => previous + payload.content);
-            }
-            if (payload.sources) {
-              setAiSources(payload.sources);
-            }
+            setAiState((previous) => ({
+              ...previous,
+              answer: payload.content ? previous.answer + payload.content : previous.answer,
+              sources: payload.sources || previous.sources,
+            }));
           } catch {
             // Keep stream processing resilient to malformed chunks.
           }
         }
       }
 
-      setAiStreaming(false);
+      setAiState((previous) => ({
+        ...previous,
+        status: "ready",
+      }));
     } catch (error: unknown) {
       if (error instanceof DOMException && error.name === "AbortError") return;
-      setAiError("Could not reach the AI service. Try again.");
-      setAiLoading(false);
-      setAiStreaming(false);
+      setAiState((previous) => ({
+        ...previous,
+        status: "error",
+        error: "Could not reach the AI service. Try again.",
+      }));
     }
   }, [authChecked, canAskAi, entries, query, results]);
 
@@ -257,7 +292,7 @@ export function useDocsSearchAi({
           body: JSON.stringify({
             query: query.trim(),
             helpful,
-            sources: aiSources,
+            sources: aiState.sources,
             surface: feedbackSurface,
           }),
         });
@@ -265,12 +300,15 @@ export function useDocsSearchAi({
         // Do not block UX on telemetry failures.
       }
     },
-    [aiSources, canAskAi, feedbackSurface, query]
+    [aiState.sources, canAskAi, feedbackSurface, query]
   );
 
   const sendFeedback = useCallback(
     (helpful: boolean) => {
-      setFeedbackSent(true);
+      setAiState((previous) => ({
+        ...previous,
+        feedbackSent: true,
+      }));
       void submitFeedback(helpful);
     },
     [submitFeedback]
@@ -288,12 +326,11 @@ export function useDocsSearchAi({
     askAI,
     resetAiState,
     aiMode,
-    aiAnswer,
-    aiSources,
-    aiLoading,
-    aiStreaming,
-    aiError,
-    feedbackSent,
+    aiStatus: aiState.status,
+    aiAnswer: aiState.answer,
+    aiSources: aiState.sources,
+    aiError: aiState.error,
+    feedbackSent: aiState.feedbackSent,
     sendFeedback,
   };
 }

@@ -5,16 +5,14 @@ import { useRouter } from "next/navigation";
 import { Search, FileText, Hash, ArrowRight, Sparkles } from "lucide-react";
 import { useSearch } from "./search-provider";
 import { AiAnswerPanel } from "./ai-answer-panel";
-import { useDocsSearchAi, type SearchResult } from "./use-docs-search-ai";
+import { useDocsSearchAi, type DocsAiStatus, type SearchResult } from "./use-docs-search-ai";
 import { useModalA11y } from "./use-modal-a11y";
 
-interface SearchModalProps {
-  canAskAi: boolean;
-  authChecked: boolean;
-}
-
-export function SearchModal({ canAskAi, authChecked }: SearchModalProps) {
-  const { closeSearch } = useSearch();
+export function SearchModal() {
+  const {
+    state: { canAskAi, authChecked },
+    actions: { closeSearch },
+  } = useSearch();
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -25,11 +23,9 @@ export function SearchModal({ canAskAi, authChecked }: SearchModalProps) {
     results,
     isQuestion,
     selectedIndex,
-    aiMode,
+    aiStatus,
     aiAnswer,
     aiSources,
-    aiLoading,
-    aiStreaming,
     aiError,
     feedbackSent,
     setActiveIndex,
@@ -77,7 +73,7 @@ export function SearchModal({ canAskAi, authChecked }: SearchModalProps) {
       isInputFocused &&
       (event.metaKey || event.ctrlKey) &&
       event.key === "Enter" &&
-      !aiMode &&
+      aiStatus === "idle" &&
       query.trim()
     ) {
       event.preventDefault();
@@ -94,14 +90,14 @@ export function SearchModal({ canAskAi, authChecked }: SearchModalProps) {
     } else if (
       event.key === "Enter" &&
       isInputFocused &&
-      !aiMode &&
+      aiStatus === "idle" &&
       results[selectedIndex]
     ) {
       event.preventDefault();
       navigate(results[selectedIndex]);
     } else if (event.key === "Escape") {
       event.preventDefault();
-      if (aiMode) {
+      if (aiStatus !== "idle") {
         resetAiState();
       } else {
         closeSearch();
@@ -109,7 +105,7 @@ export function SearchModal({ canAskAi, authChecked }: SearchModalProps) {
     }
   };
 
-  const showAiPanel = aiMode && canAskAi;
+  const showAiPanel = aiStatus !== "idle" && canAskAi;
   const maxResultsClass = showAiPanel ? "max-h-40" : "max-h-80";
 
   return (
@@ -153,7 +149,7 @@ export function SearchModal({ canAskAi, authChecked }: SearchModalProps) {
             </kbd>
           </div>
 
-          {query.trim() && !aiMode && authChecked && canAskAi && (
+          {query.trim() && aiStatus === "idle" && authChecked && canAskAi && (
             <div className="flex items-center gap-2 px-5 py-2.5 border-b border-border">
               <button
                 type="button"
@@ -182,7 +178,7 @@ export function SearchModal({ canAskAi, authChecked }: SearchModalProps) {
             </div>
           )}
 
-          {query.trim() && !aiMode && authChecked && !canAskAi && (
+          {query.trim() && aiStatus === "idle" && authChecked && !canAskAi && (
             <div className="flex items-center justify-between gap-2 px-5 py-2.5 border-b border-border">
               <span className="text-xs text-text-dim">Sign in to use Ask AI answers.</span>
               <button
@@ -200,10 +196,9 @@ export function SearchModal({ canAskAi, authChecked }: SearchModalProps) {
 
           {showAiPanel && (
             <AiAnswerPanel
+              status={aiStatus as Exclude<DocsAiStatus, "idle">}
               answer={aiAnswer}
               sources={aiSources}
-              loading={aiLoading}
-              streaming={aiStreaming}
               error={aiError}
               feedbackSent={feedbackSent}
               onRetry={() => {
@@ -223,7 +218,7 @@ export function SearchModal({ canAskAi, authChecked }: SearchModalProps) {
               </div>
             )}
 
-            {loaded && query && results.length === 0 && !aiMode && (
+            {loaded && query && results.length === 0 && aiStatus === "idle" && (
               <div className="px-5 py-8 text-center text-sm text-text-dim">
                 No results for &ldquo;{query}&rdquo;
               </div>

@@ -4,11 +4,17 @@ import { useCallback, useRef, type KeyboardEvent } from "react";
 import { Search, FileText, Hash, ArrowRight, Sparkles } from "lucide-react";
 import { useHelp } from "./help-provider";
 import { AiAnswerPanel } from "@/components/docs/ai-answer-panel";
-import { useDocsSearchAi, type SearchResult } from "@/components/docs/use-docs-search-ai";
+import {
+  useDocsSearchAi,
+  type DocsAiStatus,
+  type SearchResult,
+} from "@/components/docs/use-docs-search-ai";
 import { useModalA11y } from "@/components/docs/use-modal-a11y";
 
 export function HelpModal() {
-  const { closeHelp } = useHelp();
+  const {
+    actions: { closeHelp },
+  } = useHelp();
   const inputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
 
@@ -18,11 +24,9 @@ export function HelpModal() {
     results,
     isQuestion,
     selectedIndex,
-    aiMode,
+    aiStatus,
     aiAnswer,
     aiSources,
-    aiLoading,
-    aiStreaming,
     aiError,
     feedbackSent,
     setActiveIndex,
@@ -69,7 +73,7 @@ export function HelpModal() {
       isInputFocused &&
       (event.metaKey || event.ctrlKey) &&
       event.key === "Enter" &&
-      !aiMode &&
+      aiStatus === "idle" &&
       query.trim()
     ) {
       event.preventDefault();
@@ -86,14 +90,14 @@ export function HelpModal() {
     } else if (
       event.key === "Enter" &&
       isInputFocused &&
-      !aiMode &&
+      aiStatus === "idle" &&
       results[selectedIndex]
     ) {
       event.preventDefault();
       openDocsPage(results[selectedIndex]);
     } else if (event.key === "Escape") {
       event.preventDefault();
-      if (aiMode) {
+      if (aiStatus !== "idle") {
         resetAiState();
       } else {
         closeHelp();
@@ -101,7 +105,7 @@ export function HelpModal() {
     }
   };
 
-  const maxResultsClass = aiMode ? "max-h-40" : "max-h-80";
+  const maxResultsClass = aiStatus !== "idle" ? "max-h-40" : "max-h-80";
 
   return (
     <div className="fixed inset-0 z-[100]" onKeyDown={handleKeyDown}>
@@ -144,7 +148,7 @@ export function HelpModal() {
             </kbd>
           </div>
 
-          {query.trim() && !aiMode && (
+          {query.trim() && aiStatus === "idle" && (
             <div className="flex items-center gap-2 px-5 py-2.5 border-b border-border">
               <button
                 type="button"
@@ -173,12 +177,11 @@ export function HelpModal() {
             </div>
           )}
 
-          {aiMode && (
+          {aiStatus !== "idle" && (
             <AiAnswerPanel
+              status={aiStatus as Exclude<DocsAiStatus, "idle">}
               answer={aiAnswer}
               sources={aiSources}
-              loading={aiLoading}
-              streaming={aiStreaming}
               error={aiError}
               feedbackSent={feedbackSent}
               onRetry={() => {
@@ -198,7 +201,7 @@ export function HelpModal() {
               </div>
             )}
 
-            {loaded && query && results.length === 0 && !aiMode && (
+            {loaded && query && results.length === 0 && aiStatus === "idle" && (
               <div className="px-5 py-8 text-center text-sm text-text-dim">
                 No results for &ldquo;{query}&rdquo;
               </div>

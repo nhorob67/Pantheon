@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { AlertCircle, ThumbsUp, ThumbsDown, Sparkles } from "lucide-react";
 import { SimpleMarkdown } from "./simple-markdown";
+import type { DocsAiStatus } from "./use-docs-search-ai";
 
 interface AiSource {
   title: string;
@@ -10,10 +11,9 @@ interface AiSource {
 }
 
 interface AiAnswerPanelProps {
+  status: Exclude<DocsAiStatus, "idle">;
   answer: string;
   sources: AiSource[];
-  loading: boolean;
-  streaming: boolean;
   error: string | null;
   feedbackSent: boolean;
   onRetry: () => void;
@@ -22,16 +22,20 @@ interface AiAnswerPanelProps {
 }
 
 export function AiAnswerPanel({
+  status,
   answer,
   sources,
-  loading,
-  streaming,
   error,
   feedbackSent,
   onRetry,
   onFeedback,
   onSourceClick,
 }: AiAnswerPanelProps) {
+  const loading = status === "loading";
+  const streaming = status === "streaming";
+  const hasError = status === "error" && Boolean(error);
+  const answerReady = status === "ready" || status === "streaming";
+
   return (
     <div className="px-5 py-4 border-b border-border">
       {/* Header */}
@@ -43,7 +47,7 @@ export function AiAnswerPanel({
       </div>
 
       {/* Error state */}
-      {error && (
+      {hasError && error && (
         <div className="flex items-start gap-2.5">
           <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
           <div>
@@ -60,7 +64,7 @@ export function AiAnswerPanel({
       )}
 
       {/* Loading: typing indicator */}
-      {loading && !error && (
+      {loading && (
         <div
           className="flex items-center gap-1.5 py-1"
           role="status"
@@ -80,7 +84,7 @@ export function AiAnswerPanel({
       )}
 
       {/* Answer text */}
-      {answer && !error && (
+      {answerReady && answer && (
         <div
           className="max-h-56 overflow-y-auto pr-1 text-sm text-text-secondary leading-relaxed"
           role="status"
@@ -96,7 +100,7 @@ export function AiAnswerPanel({
       )}
 
       {/* Sources row */}
-      {sources.length > 0 && !streaming && !loading && (
+      {sources.length > 0 && status === "ready" && (
         <div className="flex flex-wrap items-center gap-1.5 mt-3">
           <span className="text-[11px] text-text-dim mr-0.5">Sources:</span>
           {sources.map((s) => (
@@ -116,7 +120,7 @@ export function AiAnswerPanel({
       )}
 
       {/* Feedback */}
-      {answer && !streaming && !loading && !error && (
+      {status === "ready" && answer && (
         <div className="flex items-center gap-2 mt-3">
           {feedbackSent ? (
             <span className="text-[11px] text-text-dim">Thanks for the feedback!</span>
