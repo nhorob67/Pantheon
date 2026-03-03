@@ -1,3 +1,7 @@
+// Security: Svix signature verification + idempotent event processing are the
+// primary controls. Flood/DDoS protection belongs at the edge layer
+// (Vercel/Cloudflare WAF), not in-app — serverless rate limiting of
+// unauthenticated webhook endpoints adds DB load without meaningful benefit.
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { verifySvixSignature } from "@/lib/email/webhook-signature";

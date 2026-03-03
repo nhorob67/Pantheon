@@ -1,4 +1,8 @@
-import { NextResponse } from "next/server";
+// Security: Stripe signature verification + idempotent event processing are the
+// primary controls. Flood/DDoS protection belongs at the edge layer
+// (Vercel/Cloudflare WAF), not in-app — serverless rate limiting of
+// unauthenticated webhook endpoints adds DB load without meaningful benefit.
+import { after, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getStripe } from "@/lib/stripe/client";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -206,7 +210,13 @@ export async function POST(request: Request) {
         break;
     }
 
-    await markStripeWebhookProcessed(event.id);
+    after(async () => {
+      try {
+        await markStripeWebhookProcessed(event.id);
+      } catch (err) {
+        console.error("[STRIPE_WEBHOOK] Failed to mark processed:", err);
+      }
+    });
   } catch (err) {
     await markStripeWebhookFailed(event.id, err);
     console.error("[STRIPE_WEBHOOK] Handler failed:", err);

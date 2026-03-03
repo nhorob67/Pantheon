@@ -3,7 +3,6 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { composioToolkitUpdateSchema } from "@/lib/validators/composio";
 import { COMPOSIO_TOOLKITS } from "@/lib/composio/toolkits";
-import { rebuildAndDeploy } from "@/lib/templates/rebuild-config";
 import { consumeComposioRateLimit } from "@/lib/security/user-rate-limit";
 
 export async function GET(
@@ -101,12 +100,6 @@ export async function PUT(
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  try {
-    await rebuildAndDeploy(id);
-  } catch {
-    // Not fatal
   }
 
   return NextResponse.json({ config });

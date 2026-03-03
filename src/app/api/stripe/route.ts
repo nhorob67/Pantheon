@@ -20,14 +20,17 @@ const CHECKOUT_NETWORK_WINDOW_SECONDS = 10 * 60;
 const CHECKOUT_NETWORK_MAX_ATTEMPTS = 20;
 
 function getClientNetworkKey(request: Request): string {
-  const forwardedFor = request.headers.get("x-forwarded-for");
-  if (forwardedFor) {
-    const candidate = forwardedFor.split(",")[0]?.trim();
-    if (candidate) return `ip:${candidate}`;
-  }
-
+  // Prefer x-real-ip: Vercel sets this to the actual connecting IP (not spoofable).
   const realIp = request.headers.get("x-real-ip")?.trim();
   if (realIp) return `ip:${realIp}`;
+
+  // Fall back to rightmost x-forwarded-for entry (proxy-appended, not client-controlled).
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  if (forwardedFor) {
+    const parts = forwardedFor.split(",");
+    const candidate = parts[parts.length - 1]?.trim();
+    if (candidate) return `ip:${candidate}`;
+  }
 
   const userAgent = request.headers.get("user-agent")?.trim();
   if (userAgent) return `ua:${userAgent.toLowerCase()}`;

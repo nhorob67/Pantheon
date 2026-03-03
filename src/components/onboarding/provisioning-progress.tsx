@@ -1,8 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { PROVISION_STEPS } from "@/types/instance";
 import { Check, Loader2, Rocket } from "lucide-react";
+
+const PROVISION_STEPS = [
+  { label: "Creating your workspace" },
+  { label: "Setting up farm profile" },
+  { label: "Configuring your assistant" },
+  { label: "Going live" },
+];
 
 export function ProvisioningProgress() {
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -16,7 +22,7 @@ export function ProvisioningProgress() {
         }
         return prev + 1;
       });
-    }, 1000);
+    }, 500);
 
     return () => clearInterval(interval);
   }, []);
@@ -37,7 +43,7 @@ export function ProvisioningProgress() {
       <p className="text-foreground/60 text-sm mb-8">
         {allDone
           ? "Your AI farm assistant is ready to go."
-          : "This usually takes about 30 seconds."}
+          : "Just a moment..."}
       </p>
 
       <div className="max-w-xs mx-auto space-y-3 text-left">

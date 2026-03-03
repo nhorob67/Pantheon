@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { safeErrorMessage } from "@/lib/security/safe-error";
+import { sanitizeSearchForOr } from "@/lib/security/postgrest-sanitize";
 import {
   WORKFLOW_PLAYBOOK_STATUSES,
   WORKFLOW_PLAYBOOK_VISIBILITIES,
@@ -123,13 +124,11 @@ function applySearchFilter(
     return;
   }
 
-  const trimmed = search.trim();
-  if (trimmed.length === 0) {
+  const escaped = sanitizeSearchForOr(search);
+  if (escaped.length === 0) {
     return;
   }
 
-  // Escape commas used by PostgREST disjunction syntax.
-  const escaped = trimmed.replace(/,/g, "\\,");
   query.or(`name.ilike.%${escaped}%,slug.ilike.%${escaped}%`);
 }
 

@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createMcpServerSchema } from "@/lib/validators/mcp-server";
-import { rebuildAndDeploy } from "@/lib/templates/rebuild-config";
 import { consumeConfigUpdateRateLimit } from "@/lib/security/user-rate-limit";
 
 export async function GET(
@@ -108,13 +107,6 @@ export async function POST(
       );
     }
     return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  // Rebuild config and restart container
-  try {
-    await rebuildAndDeploy(id);
-  } catch {
-    // Server was created, but deploy failed — not fatal
   }
 
   return NextResponse.json({ mcp_server: mcpServer }, { status: 201 });

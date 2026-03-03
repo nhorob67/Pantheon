@@ -28,10 +28,9 @@ export interface RemoteMcpServerDefinition {
 
 export type McpServerEntry = McpServerDefinition | RemoteMcpServerDefinition;
 
-export const MCP_PRESET_KEYS = ["filesystem", "sqlite", "memory"] as const;
+export const MCP_PRESET_KEYS = [] as const;
 export type McpPresetKey = (typeof MCP_PRESET_KEYS)[number];
-
-export const MCP_PRESET_INFO: Record<
+export const MCP_PRESET_INFO = {} as Record<
   McpPresetKey,
   {
     label: string;
@@ -39,23 +38,4 @@ export const MCP_PRESET_INFO: Record<
     command: string;
     args: string[];
   }
-> = {
-  filesystem: {
-    label: "Filesystem",
-    description: "Read and write files in the workspace directory",
-    command: "npx",
-    args: ["-y", "@modelcontextprotocol/server-filesystem", "/home/node/workspace"],
-  },
-  sqlite: {
-    label: "SQLite",
-    description: "Query and manage a local SQLite database",
-    command: "npx",
-    args: ["-y", "mcp-sqlite", "/home/node/data/farmclaw.db"],
-  },
-  memory: {
-    label: "Memory",
-    description: "Persistent key-value memory across conversations",
-    command: "npx",
-    args: ["-y", "@modelcontextprotocol/server-memory"],
-  },
-};
+>;

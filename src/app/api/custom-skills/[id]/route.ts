@@ -3,7 +3,6 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { updateCustomSkillSchema } from "@/lib/validators/custom-skill";
 import { sanitizeSkillMd, sanitizeReferences } from "@/lib/custom-skills/sanitizer";
-import { rebuildAndDeploy } from "@/lib/templates/rebuild-config";
 import { consumeConfigUpdateRateLimit } from "@/lib/security/user-rate-limit";
 import { safeErrorMessage } from "@/lib/security/safe-error";
 
@@ -159,28 +158,6 @@ export async function PUT(
     });
   }
 
-  // Rebuild if skill is active
-  if (updated.status === "active") {
-    try {
-      const { data: instance } = await admin
-        .from("instances")
-        .select("id")
-        .eq("customer_id", skill.customer_id)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .single();
-
-      if (instance) {
-        await rebuildAndDeploy(instance.id);
-      }
-    } catch {
-      return NextResponse.json({
-        skill: updated,
-        warning: "Skill updated but deploy failed. Try restarting your instance.",
-      });
-    }
-  }
-
   return NextResponse.json({ skill: updated });
 }
 
@@ -239,22 +216,6 @@ export async function DELETE(
       }
     }
 
-    // Rebuild
-    try {
-      const { data: instance } = await admin
-        .from("instances")
-        .select("id")
-        .eq("customer_id", skill.customer_id)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .single();
-
-      if (instance) {
-        await rebuildAndDeploy(instance.id);
-      }
-    } catch {
-      // Skill archived but deploy failed
-    }
   }
 
   return NextResponse.json({ success: true });

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { consumeConfigUpdateRateLimit } from "@/lib/security/user-rate-limit";
 import {
   EmailIdentityConflictError,
   EmailIdentityNotFoundError,
@@ -98,6 +99,20 @@ export async function POST() {
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const rateLimit = await consumeConfigUpdateRateLimit(user.id);
+  if (rateLimit === "unavailable") {
+    return NextResponse.json(
+      { error: "Rate limiter unavailable. Please try again shortly." },
+      { status: 503 }
+    );
+  }
+  if (rateLimit === "blocked") {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      { status: 429 }
+    );
   }
 
   try {

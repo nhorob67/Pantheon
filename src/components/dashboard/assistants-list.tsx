@@ -13,14 +13,14 @@ import { Plus, Users } from "lucide-react";
 
 interface AssistantsListProps {
   initialAgents: Agent[];
-  instanceId: string;
+  tenantId: string;
   globalSkillConfigs: SkillConfig[];
   customSkills?: CustomSkill[];
 }
 
 export function AssistantsList({
   initialAgents,
-  instanceId,
+  tenantId,
   globalSkillConfigs,
   customSkills = [],
 }: AssistantsListProps) {
@@ -30,24 +30,29 @@ export function AssistantsList({
   const [deleteAgent, setDeleteAgent] = useState<Agent | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const refreshAgents = async () => {
-    const res = await fetch(`/api/instances/${instanceId}/agents`);
+  const refreshAgents = useCallback(async () => {
+    const res = await fetch(`/api/tenants/${tenantId}/agents`);
     if (res.ok) {
-      const data = await res.json();
-      setAgents(data.agents);
+      const payload = await res.json();
+      const nextAgents = Array.isArray(payload?.data?.agents)
+        ? payload.data.agents
+        : [];
+      setAgents(nextAgents as Agent[]);
     }
-  };
+  }, [tenantId]);
 
   const handleCreate = async (data: CreateAgentData) => {
-    const res = await fetch(`/api/instances/${instanceId}/agents`, {
+    const res = await fetch(`/api/tenants/${tenantId}/agents`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
 
     if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || "Failed to create agent");
+      const payload = await res.json();
+      throw new Error(
+        payload?.error?.message || payload?.error || "Failed to create agent"
+      );
     }
 
     await refreshAgents();
@@ -57,7 +62,7 @@ export function AssistantsList({
     if (!editAgent) return;
 
     const res = await fetch(
-      `/api/instances/${instanceId}/agents/${editAgent.id}`,
+      `/api/tenants/${tenantId}/agents/${editAgent.id}`,
       {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -66,8 +71,10 @@ export function AssistantsList({
     );
 
     if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || "Failed to update agent");
+      const payload = await res.json();
+      throw new Error(
+        payload?.error?.message || payload?.error || "Failed to update agent"
+      );
     }
 
     await refreshAgents();
@@ -79,13 +86,15 @@ export function AssistantsList({
 
     try {
       const res = await fetch(
-        `/api/instances/${instanceId}/agents/${deleteAgent.id}`,
+        `/api/tenants/${tenantId}/agents/${deleteAgent.id}`,
         { method: "DELETE" }
       );
 
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Failed to delete agent");
+        const payload = await res.json();
+        throw new Error(
+          payload?.error?.message || payload?.error || "Failed to delete agent"
+        );
       }
 
       await refreshAgents();
@@ -159,7 +168,7 @@ export function AssistantsList({
 
           <div className="w-full max-w-lg mb-6">
             <AgentPresetsPicker
-              instanceId={instanceId}
+              tenantId={tenantId}
               onDeployed={refreshAgents}
             />
           </div>

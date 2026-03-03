@@ -4,6 +4,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireDashboardCustomer, getCustomerInstance } from "@/lib/auth/dashboard-session";
+import { formatDateTime } from "@/lib/utils/format";
 import { getWorkflowRunDetail, listWorkflowRuns } from "@/lib/queries/workflow-runs";
 import { listWorkflowRunsQuerySchema } from "@/lib/validators/workflow";
 import { RunTimelineLazy } from "@/components/workflows/run-timeline-lazy";
@@ -34,12 +35,7 @@ function parseRunId(value: string | undefined): string | null {
 }
 
 function formatTimestamp(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return date.toLocaleString();
+  return formatDateTime(value);
 }
 
 function statusTone(status: WorkflowRunStatus): string {

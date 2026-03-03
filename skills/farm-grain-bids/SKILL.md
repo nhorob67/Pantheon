@@ -75,6 +75,15 @@ When the farmer asks to compare elevators:
 2. Show a side-by-side comparison sorted by best price per commodity.
 3. Highlight the best bid for each commodity.
 
+## Cached Bids
+
+Before scraping elevator websites, check for recent cached bids using the `tenant_grain_bid_query` tool. This can provide faster responses when bids have been recently fetched by the background scraper.
+
+- Use `tenant_grain_bid_query` with `max_age_hours: 4` for reasonably fresh data
+- If cached bids are available and recent, present them to the farmer
+- If cached bids are stale or unavailable, fall back to live scraping via the browser
+- Always note the data source (cached vs live) and timestamp when presenting bids
+
 ## Important Notes
 
 - Cash grain bids change daily. Always fetch fresh data — never use cached or

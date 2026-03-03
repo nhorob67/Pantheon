@@ -37,7 +37,7 @@ const ALERT_CRON_MESSAGES = {
   "price-alert-check": (thresholdCents: number) =>
     `Run the grain bids skill and compare current cash bids to the last known prices in memory (keys like last_bids:elevator:crop). If any crop's price has moved more than ${thresholdCents} cents per bushel, alert me with the details. Store the new prices in memory for next time. If no significant changes, do NOT send any message.`,
   "ticket-anomaly-check":
-    "Query today's scale tickets from the database. Check for anomalies: net weight more than 2 standard deviations from the 30-day average for that crop, moisture outside normal range, or duplicate tickets (same elevator, crop, and similar weight on the same day). If anomalies found, summarize them. If everything looks normal, do NOT send any message.",
+    "Use the tenant_scale_ticket_query tool to query today's scale tickets. Check for anomalies: net weight more than 2 standard deviations from the 30-day average for that crop, moisture outside normal range, or duplicate tickets (same elevator, crop, and similar weight on the same day). If anomalies found, summarize them. If everything looks normal, do NOT send any message.",
 } as const;
 
 function buildAlertCronEntries(
@@ -156,27 +156,7 @@ export function buildOpenClawConfig(
   );
   Object.assign(cron, alertCrons);
 
-  // Auto-include sqlite MCP server when scale-tickets is enabled
-  const effectiveMcpConfigs = [...mcpConfigs];
-  if (scaleTicketsEnabled && !effectiveMcpConfigs.some((c) => c.server_key === "sqlite")) {
-    effectiveMcpConfigs.push({
-      id: "",
-      instance_id: "",
-      customer_id: "",
-      server_key: "sqlite",
-      display_name: "SQLite",
-      command: "npx",
-      args: ["-y", "mcp-sqlite", "/home/node/data/farmclaw.db"],
-      env_vars: {},
-      scope: "instance",
-      agent_id: null,
-      enabled: true,
-      created_at: "",
-      updated_at: "",
-    });
-  }
-
-  const mcpServers = buildMcpServersBlock(effectiveMcpConfigs, remoteMcpServers);
+  const mcpServers = buildMcpServersBlock(mcpConfigs, remoteMcpServers);
 
   const config: Record<string, unknown> = {
     name: "FarmClaw",
@@ -246,7 +226,6 @@ export function buildOpenClawConfig(
         "farm-scale-tickets": {
           enabled: scaleTicketsEnabled,
           config: {
-            db_path: "/home/node/data/farmclaw.db",
             crops: profile.primary_crops,
             elevators: profile.elevators,
           },
@@ -309,27 +288,7 @@ export function buildMultiAgentOpenClawConfig(
   const weatherEnabled = allSkills.has("farm-weather");
   const scaleTicketsEnabled = allSkills.has("farm-scale-tickets");
 
-  // Auto-include sqlite MCP server when scale-tickets is enabled
-  const effectiveMcpConfigs = [...mcpConfigs];
-  if (scaleTicketsEnabled && !effectiveMcpConfigs.some((c) => c.server_key === "sqlite")) {
-    effectiveMcpConfigs.push({
-      id: "",
-      instance_id: "",
-      customer_id: "",
-      server_key: "sqlite",
-      display_name: "SQLite",
-      command: "npx",
-      args: ["-y", "mcp-sqlite", "/home/node/data/farmclaw.db"],
-      env_vars: {},
-      scope: "instance",
-      agent_id: null,
-      enabled: true,
-      created_at: "",
-      updated_at: "",
-    });
-  }
-
-  const mcpServers = buildMcpServersBlock(effectiveMcpConfigs, remoteMcpServers);
+  const mcpServers = buildMcpServersBlock(mcpConfigs, remoteMcpServers);
 
   // Build per-agent cron entries
   const cron: Record<string, unknown> = {};
@@ -469,7 +428,6 @@ export function buildMultiAgentOpenClawConfig(
         "farm-scale-tickets": {
           enabled: scaleTicketsEnabled,
           config: {
-            db_path: "/home/node/data/farmclaw.db",
             crops: profile.primary_crops,
             elevators: profile.elevators,
           },

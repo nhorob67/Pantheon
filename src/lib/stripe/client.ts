@@ -1,4 +1,5 @@
 import Stripe from "stripe";
+import { STRIPE_CONFIG } from "./config";
 
 let _stripe: Stripe | null = null;
 
@@ -16,7 +17,10 @@ export async function createCheckoutSession(email: string) {
   const session = await stripe.checkout.sessions.create({
     customer_email: email,
     mode: "subscription",
-    line_items: [{ price: process.env.STRIPE_PRICE_ID!, quantity: 1 }],
+    line_items: [
+      { price: process.env.STRIPE_PRICE_ID!, quantity: 1 },
+      { price: STRIPE_CONFIG.meteredPriceId },
+    ],
     success_url: `${process.env.NEXT_PUBLIC_APP_URL}/onboarding?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/signup`,
     metadata: { customer_email: email },

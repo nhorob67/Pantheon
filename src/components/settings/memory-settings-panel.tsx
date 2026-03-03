@@ -20,7 +20,7 @@ interface MemorySettingsInput {
 }
 
 interface MemorySettingsPanelProps {
-  instanceId: string;
+  tenantId: string;
   initialSettings: MemorySettingsInput;
 }
 
@@ -60,7 +60,7 @@ const CAPTURE_LEVEL_OPTIONS: {
 ];
 
 export function MemorySettingsPanel({
-  instanceId,
+  tenantId,
   initialSettings,
 }: MemorySettingsPanelProps) {
   const [settings, setSettings] = useState<MemorySettingsInput>(initialSettings);
@@ -105,7 +105,7 @@ export function MemorySettingsPanel({
     const nextExclude = normalizeExcludeInput(excludeInput);
 
     try {
-      const res = await fetch(`/api/instances/${instanceId}/memory/settings`, {
+      const res = await fetch(`/api/tenants/${tenantId}/memory/settings`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -119,19 +119,30 @@ export function MemorySettingsPanel({
       });
 
       const payload = (await res.json()) as {
+        data?: {
+          settings?: MemorySettingsInput;
+          rebuild?: { attempted: boolean; succeeded: boolean };
+        };
         settings?: MemorySettingsInput;
         rebuild?: { attempted: boolean; succeeded: boolean };
-        error?: string;
+        error?: { message?: string } | string;
       };
 
-      if (!res.ok || !payload.settings) {
-        throw new Error(payload.error || "Failed to save memory settings");
+      const settings_ = payload?.data?.settings ?? payload?.settings;
+      const rebuild_ = payload?.data?.rebuild ?? payload?.rebuild;
+      const errorMsg =
+        typeof payload?.error === "object"
+          ? payload.error?.message
+          : payload?.error;
+
+      if (!res.ok || !settings_) {
+        throw new Error(errorMsg || "Failed to save memory settings");
       }
 
-      setSettings(payload.settings);
-      setExcludeInput(payload.settings.exclude_categories.join(", "));
+      setSettings(settings_);
+      setExcludeInput(settings_.exclude_categories.join(", "));
 
-      if (payload.rebuild?.attempted && !payload.rebuild.succeeded) {
+      if (rebuild_?.attempted && !rebuild_.succeeded) {
         setNotice("Settings saved, but instance rebuild did not complete.");
       } else {
         setNotice("Memory settings saved.");
@@ -149,7 +160,7 @@ export function MemorySettingsPanel({
     setNotice(null);
 
     try {
-      const res = await fetch(`/api/instances/${instanceId}/memory/${operation}`, {
+      const res = await fetch(`/api/tenants/${tenantId}/memory/${operation}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -158,12 +169,19 @@ export function MemorySettingsPanel({
       });
 
       const payload = (await res.json()) as {
+        data?: { operation?: { id: string; status: string } };
         operation?: { id: string; status: string };
-        error?: string;
+        error?: { message?: string } | string;
       };
 
-      if (!res.ok || !payload.operation) {
-        throw new Error(payload.error || `Failed to queue ${operation}`);
+      const operation_ = payload?.data?.operation ?? payload?.operation;
+      const errorMsg =
+        typeof payload?.error === "object"
+          ? payload.error?.message
+          : payload?.error;
+
+      if (!res.ok || !operation_) {
+        throw new Error(errorMsg || `Failed to queue ${operation}`);
       }
 
       setNotice(`${operation === "checkpoint" ? "Checkpoint" : "Compress"} queued.`);

@@ -1,16 +1,33 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { rebuildAndDeploy } from "@/lib/templates/rebuild-config";
 import { consumeConfigUpdateRateLimit } from "@/lib/security/user-rate-limit";
 import { knowledgeUpdateSchema } from "@/lib/validators/knowledge";
 import { KNOWLEDGE_META_COLUMNS } from "@/types/knowledge";
+import { resolveRequestTraceIdFromHeaders } from "@/lib/runtime/request-trace";
+import {
+  shouldBridgeInstanceWrite,
+  withInstanceBridgeHeaders,
+} from "@/lib/runtime/instance-bridge";
+import { resolveTenantRuntimeGateState } from "@/lib/runtime/tenant-runtime-gates";
+import {
+  resolveTenantIdForInstance,
+  TenantAgentServiceError,
+} from "@/lib/runtime/tenant-agents";
+import {
+  archiveTenantKnowledgeFile,
+  buildTenantKnowledgeContext,
+  TenantKnowledgeServiceError,
+  toLegacyKnowledgeFileMeta,
+  updateTenantKnowledgeFileAssignment,
+} from "@/lib/runtime/tenant-knowledge";
 
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string; fileId: string }> }
 ) {
   const { id, fileId } = await params;
+  const requestTraceId = resolveRequestTraceIdFromHeaders(request.headers);
   const supabase = await createClient();
   const {
     data: { user },
@@ -56,8 +73,50 @@ export async function PUT(
   }
 
   const admin = createAdminClient();
+  const runtimeGates = await resolveTenantRuntimeGateState(
+    admin,
+    instance.customer_id
+  );
 
-  // Validate agent_id if provided
+  const tenantId = runtimeGates.writes_enabled
+    ? await resolveTenantIdForInstance(admin, id)
+    : null;
+  if (shouldBridgeInstanceWrite(runtimeGates, tenantId)) {
+    try {
+      const context = buildTenantKnowledgeContext(
+        tenantId,
+        instance.customer_id,
+        id
+      );
+      const tenantFile = await updateTenantKnowledgeFileAssignment(
+        admin,
+        context,
+        fileId,
+        parsed.data.agent_id ?? null
+      );
+
+      const response = NextResponse.json({
+        file: toLegacyKnowledgeFileMeta(tenantFile, id),
+      });
+      return withInstanceBridgeHeaders(response, tenantId, requestTraceId);
+    } catch (error) {
+      if (
+        error instanceof TenantKnowledgeServiceError ||
+        error instanceof TenantAgentServiceError
+      ) {
+        return NextResponse.json(
+          { error: error.message, details: error.details },
+          { status: error.status }
+        );
+      }
+
+      return NextResponse.json(
+        { error: "Failed to update bridged tenant knowledge file" },
+        { status: 500 }
+      );
+    }
+  }
+
   if (parsed.data.agent_id) {
     const { data: agent } = await admin
       .from("agents")
@@ -87,20 +146,15 @@ export async function PUT(
     );
   }
 
-  try {
-    await rebuildAndDeploy(id);
-  } catch {
-    // Updated but deploy failed — not fatal
-  }
-
   return NextResponse.json({ file });
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string; fileId: string }> }
 ) {
   const { id, fileId } = await params;
+  const requestTraceId = resolveRequestTraceIdFromHeaders(request.headers);
   const supabase = await createClient();
   const {
     data: { user },
@@ -136,8 +190,43 @@ export async function DELETE(
   }
 
   const admin = createAdminClient();
+  const runtimeGates = await resolveTenantRuntimeGateState(
+    admin,
+    instance.customer_id
+  );
 
-  // Soft-delete: archive the file (raw file preserved in storage for recovery)
+  const tenantId = runtimeGates.writes_enabled
+    ? await resolveTenantIdForInstance(admin, id)
+    : null;
+  if (shouldBridgeInstanceWrite(runtimeGates, tenantId)) {
+    try {
+      const context = buildTenantKnowledgeContext(
+        tenantId,
+        instance.customer_id,
+        id
+      );
+      await archiveTenantKnowledgeFile(admin, context, fileId);
+
+      const response = NextResponse.json({ success: true });
+      return withInstanceBridgeHeaders(response, tenantId, requestTraceId);
+    } catch (error) {
+      if (
+        error instanceof TenantKnowledgeServiceError ||
+        error instanceof TenantAgentServiceError
+      ) {
+        return NextResponse.json(
+          { error: error.message, details: error.details },
+          { status: error.status }
+        );
+      }
+
+      return NextResponse.json(
+        { error: "Failed to archive bridged tenant knowledge file" },
+        { status: 500 }
+      );
+    }
+  }
+
   const { error } = await admin
     .from("knowledge_files")
     .update({ status: "archived" })
@@ -146,12 +235,6 @@ export async function DELETE(
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  try {
-    await rebuildAndDeploy(id);
-  } catch {
-    // Archived but deploy failed — not fatal
   }
 
   return NextResponse.json({ success: true });

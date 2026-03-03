@@ -24,13 +24,13 @@ const SKILL_INFO: Record<string, { label: string; description: string; icon: typ
 interface SkillToggleCardProps {
   skillName: string;
   enabled: boolean;
-  instanceId: string;
+  tenantId: string;
 }
 
 export function SkillToggleCard({
   skillName,
   enabled: initialEnabled,
-  instanceId,
+  tenantId,
 }: SkillToggleCardProps) {
   const [enabled, setEnabled] = useState(initialEnabled);
   const [toggling, setToggling] = useState(false);
@@ -48,7 +48,7 @@ export function SkillToggleCard({
     setEnabled(newVal);
 
     try {
-      const res = await fetch(`/api/instances/${instanceId}/update-skills`, {
+      const res = await fetch(`/api/tenants/${tenantId}/update-skills`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ skill: skillName, enabled: newVal }),

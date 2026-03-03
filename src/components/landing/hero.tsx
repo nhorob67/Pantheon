@@ -4,13 +4,13 @@ export function Hero() {
   return (
     <section className="hero">
       <div className="hero-badge">
-        <span className="dot" />
-        Powered by OpenClaw
+        <span className="dot" style={{ background: "var(--green-bright)" }} />
+        Your morning bids. Tomorrow.
       </div>
-      <h1>Text it anything.<br /><em>About your farm.</em></h1>
-      <p className="hero-sub">Grain bids from your elevators at 9 AM. Weather briefing at 6 AM. Spray windows, market analysis, and anything else — right in your farm&apos;s Discord server, on any device.</p>
+      <h1>Your elevators, your weather, your farm.<br /><em>One conversation.</em></h1>
+      <p className="hero-sub">CHS, ADM, Cargill — whatever elevators you sell to, FarmClaw pulls their cash bids every morning at 9 AM and posts them in your Discord. Weather at 6 AM. Spray windows, basis trends, scale tickets, and anything else your operation throws at it.</p>
       <div className="hero-actions">
-        <Link href="/signup" className="btn-primary">Set Up My Farm Assistant</Link>
+        <Link href="/signup" className="btn-primary">Start My Free Trial</Link>
         <Link href="#skills" className="btn-secondary">See What It Can Do</Link>
       </div>
     </section>

@@ -3,7 +3,6 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { enableComposioSchema, updateComposioSchema } from "@/lib/validators/composio";
 import { getComposioClient } from "@/lib/composio/client";
-import { rebuildAndDeploy } from "@/lib/templates/rebuild-config";
 import { consumeComposioRateLimit } from "@/lib/security/user-rate-limit";
 
 async function authorizeInstance(id: string) {
@@ -117,13 +116,6 @@ export async function POST(
     return NextResponse.json({ error: insertError.message }, { status: 500 });
   }
 
-  // Rebuild config to include Composio MCP server
-  try {
-    await rebuildAndDeploy(id);
-  } catch {
-    // Config was created, but deploy failed — not fatal
-  }
-
   return NextResponse.json({ config }, { status: 201 });
 }
 
@@ -171,13 +163,6 @@ export async function PUT(
     return NextResponse.json({ error: updateError.message }, { status: 500 });
   }
 
-  // Rebuild config when enabled state changes
-  try {
-    await rebuildAndDeploy(id);
-  } catch {
-    // Not fatal
-  }
-
   return NextResponse.json({ config });
 }
 
@@ -212,13 +197,6 @@ export async function DELETE(
 
   if (deleteError) {
     return NextResponse.json({ error: deleteError.message }, { status: 500 });
-  }
-
-  // Rebuild config to remove Composio MCP server
-  try {
-    await rebuildAndDeploy(id);
-  } catch {
-    // Not fatal
   }
 
   return NextResponse.json({ success: true });

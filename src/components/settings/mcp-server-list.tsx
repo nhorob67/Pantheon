@@ -9,12 +9,12 @@ import { Plus, Server } from "lucide-react";
 
 interface McpServerListProps {
   initialServers: McpServerConfig[];
-  instanceId: string;
+  tenantId: string;
 }
 
 export function McpServerList({
   initialServers,
-  instanceId,
+  tenantId,
 }: McpServerListProps) {
   const [servers, setServers] = useState<McpServerConfig[]>(initialServers);
   const [formOpen, setFormOpen] = useState(false);
@@ -23,10 +23,10 @@ export function McpServerList({
   const [deleting, setDeleting] = useState(false);
 
   const refreshServers = async () => {
-    const res = await fetch(`/api/instances/${instanceId}/mcp-servers`);
+    const res = await fetch(`/api/tenants/${tenantId}/mcp-servers`);
     if (res.ok) {
       const data = await res.json();
-      setServers(data.mcp_servers);
+      setServers(data?.data?.mcp_servers ?? data?.mcp_servers);
     }
   };
 
@@ -38,7 +38,7 @@ export function McpServerList({
     env_vars: Record<string, string>;
     enabled: boolean;
   }) => {
-    const res = await fetch(`/api/instances/${instanceId}/mcp-servers`, {
+    const res = await fetch(`/api/tenants/${tenantId}/mcp-servers`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -46,7 +46,8 @@ export function McpServerList({
 
     if (!res.ok) {
       const err = await res.json();
-      throw new Error(err.error || "Failed to create MCP server");
+      const msg = typeof err?.error === "object" ? err.error?.message : err?.error;
+      throw new Error(msg || "Failed to create MCP server");
     }
 
     await refreshServers();
@@ -63,7 +64,7 @@ export function McpServerList({
     if (!editServer) return;
 
     const res = await fetch(
-      `/api/instances/${instanceId}/mcp-servers/${editServer.id}`,
+      `/api/tenants/${tenantId}/mcp-servers/${editServer.id}`,
       {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -73,7 +74,8 @@ export function McpServerList({
 
     if (!res.ok) {
       const err = await res.json();
-      throw new Error(err.error || "Failed to update MCP server");
+      const msg = typeof err?.error === "object" ? err.error?.message : err?.error;
+      throw new Error(msg || "Failed to update MCP server");
     }
 
     await refreshServers();
@@ -81,7 +83,7 @@ export function McpServerList({
 
   const handleToggle = async (server: McpServerConfig, enabled: boolean) => {
     const res = await fetch(
-      `/api/instances/${instanceId}/mcp-servers/${server.id}`,
+      `/api/tenants/${tenantId}/mcp-servers/${server.id}`,
       {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -100,13 +102,14 @@ export function McpServerList({
 
     try {
       const res = await fetch(
-        `/api/instances/${instanceId}/mcp-servers/${deleteServer.id}`,
+        `/api/tenants/${tenantId}/mcp-servers/${deleteServer.id}`,
         { method: "DELETE" }
       );
 
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error || "Failed to delete MCP server");
+        const msg = typeof err?.error === "object" ? err.error?.message : err?.error;
+        throw new Error(msg || "Failed to delete MCP server");
       }
 
       await refreshServers();
@@ -158,8 +161,8 @@ export function McpServerList({
             No MCP servers configured
           </h4>
           <p className="text-sm text-foreground/50 max-w-xs mb-4">
-            Add an MCP server to give your assistant access to tools like
-            filesystem, SQLite, or persistent memory.
+            Add an MCP server to give your assistant access to additional
+            tools beyond the built-in farm tools.
           </p>
           <button
             type="button"

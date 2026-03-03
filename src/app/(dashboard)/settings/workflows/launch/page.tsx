@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireDashboardCustomer, getCustomerInstance } from "@/lib/auth/dashboard-session";
+import { formatDateTime } from "@/lib/utils/format";
 import { workflowLaunchReadinessQuerySchema } from "@/lib/validators/workflow";
 import { isWorkflowBuilderEnabledForCustomer } from "@/lib/workflows/feature-gate";
 import {
@@ -59,12 +60,7 @@ function formatGateValue(value: number | null, unit: "ms" | "score"): string {
 }
 
 function formatSnapshotTimestamp(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return date.toLocaleString();
+  return formatDateTime(value);
 }
 
 export default async function WorkflowLaunchReadinessPage({

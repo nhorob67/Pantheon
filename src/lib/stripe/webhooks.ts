@@ -1,6 +1,6 @@
 import Stripe from "stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { deprovisionInstance } from "@/lib/infra/deprovision";
+import { getStripe } from "./client";
 
 function getInvoiceSubscriptionId(invoice: Stripe.Invoice): string | null {
   const parent = invoice.parent;
@@ -28,15 +28,30 @@ export async function handleCheckoutCompleted(
   const email = session.metadata?.customer_email;
   if (!email) return;
 
+  // Extract metered subscription item ID from the new subscription
+  let meteredItemId: string | null = null;
+  const subscriptionId = session.subscription as string;
+  if (subscriptionId) {
+    const stripe = getStripe();
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
+      expand: ["items.data"],
+    });
+    const meteredItem = subscription.items.data.find(
+      (i) => i.price.recurring?.usage_type === "metered"
+    );
+    meteredItemId = meteredItem?.id ?? null;
+  }
+
   const { data: customer, error } = await supabase
     .from("customers")
     .upsert(
       {
         email,
         stripe_customer_id: session.customer as string,
-        stripe_subscription_id: session.subscription as string,
+        stripe_subscription_id: subscriptionId,
         subscription_status: "active",
         plan: "standard",
+        stripe_metered_item_id: meteredItemId,
       },
       { onConflict: "email" }
     )
@@ -57,11 +72,21 @@ export async function handleSubscriptionUpdated(
 ) {
   const supabase = createAdminClient();
 
+  // Extract metered item ID if present in webhook payload
+  const meteredItem = subscription.items?.data.find(
+    (i) => i.price.recurring?.usage_type === "metered"
+  );
+
+  const updateData: Record<string, unknown> = {
+    subscription_status: subscription.status,
+  };
+  if (meteredItem) {
+    updateData.stripe_metered_item_id = meteredItem.id;
+  }
+
   const { error } = await supabase
     .from("customers")
-    .update({
-      subscription_status: subscription.status,
-    })
+    .update(updateData)
     .eq("stripe_subscription_id", subscription.id);
 
   if (error) {
@@ -79,26 +104,8 @@ export async function handleSubscriptionDeleted(
     .update({ subscription_status: "canceled" })
     .eq("stripe_subscription_id", subscription.id);
 
-  // Deprovision the customer's instance (dedicated VPS cleanup)
-  const { data: customer } = await supabase
-    .from("customers")
-    .select("id")
-    .eq("stripe_subscription_id", subscription.id)
-    .single();
-
-  if (customer) {
-    const { data: instance } = await supabase
-      .from("instances")
-      .select("id, status")
-      .eq("customer_id", customer.id)
-      .single();
-
-    if (instance && instance.status !== "deprovisioned" && instance.status !== "deprovisioning") {
-      await deprovisionInstance(instance.id).catch((err) => {
-        console.error(`Deprovision failed for instance ${instance.id}:`, err);
-      });
-    }
-  }
+  // TODO: In multi-tenant SaaS model, subscription cancellation disables
+  // the tenant's access. Per-instance VPS deprovisioning is no longer needed.
 }
 
 export async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getComposioClient } from "@/lib/composio/client";
+import { escapeHtml } from "@/lib/security/escape-html";
 import type { ComposioConnectedApp } from "@/types/composio";
 
 export async function GET(
@@ -75,16 +76,17 @@ export async function GET(
 }
 
 function callbackPage(message: string, success: boolean): string {
+  const safeMessage = escapeHtml(message);
   return `<!DOCTYPE html>
 <html>
 <head><title>FarmClaw - Composio</title></head>
 <body style="font-family:sans-serif;text-align:center;padding:60px 20px;background:#0f1209;color:#f0ece4">
   <h2>${success ? "Connected" : "Error"}</h2>
-  <p>${message}</p>
+  <p>${safeMessage}</p>
   <p style="color:#888;font-size:14px">This window will close automatically.</p>
   <script>
     if (window.opener) {
-      window.opener.postMessage({ type: "composio-oauth-complete", success: ${success} }, "*");
+      window.opener.postMessage({ type: "composio-oauth-complete", success: ${success} }, window.location.origin);
     }
     setTimeout(() => window.close(), 2000);
   </script>

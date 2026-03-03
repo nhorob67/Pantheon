@@ -14,7 +14,11 @@ import {
   Brain,
   Bell,
   GitBranch,
+  Download,
   HelpCircle,
+  MessageCircle,
+  Sun,
+  Activity,
   type LucideIcon,
 } from "lucide-react";
 import { useHelp } from "./help-provider";
@@ -22,6 +26,7 @@ import type { SettingsNavItem } from "@/lib/navigation/settings";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/conversations", label: "Conversations", icon: MessageCircle },
   { href: "/usage", label: "Usage", icon: BarChart3 },
   { href: "/alerts", label: "Alerts", icon: Bell },
 ];
@@ -31,7 +36,10 @@ const settingsIconsByHref: Record<string, LucideIcon> = {
   "/settings/channels": Users,
   "/settings/workflows": GitBranch,
   "/settings/skills": Zap,
+  "/settings/briefings": Sun,
+  "/settings/activity": Activity,
   "/settings/memory": Brain,
+  "/settings/exports": Download,
   "/settings/mcp-servers": Wrench,
   "/settings/alerts": Bell,
   "/settings/billing": CreditCard,

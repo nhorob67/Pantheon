@@ -8,6 +8,8 @@ export interface Customer {
   plan: string;
   spending_cap_cents: number | null;
   spending_cap_auto_pause: boolean;
+  stripe_metered_item_id: string | null;
+  spending_paused_at: string | null;
   alert_email: string | null;
   created_at: string;
   updated_at: string;
@@ -40,28 +42,10 @@ export interface ElevatorEntry {
 export interface Instance {
   id: string;
   customer_id: string;
-  coolify_uuid: string | null;
-  container_id: string | null;
-  server_ip: string | null;
-  status:
-    | "provisioning"
-    | "provisioning_server"
-    | "provisioning_coolify"
-    | "running"
-    | "stopped"
-    | "error"
-    | "deprovisioning"
-    | "deprovisioned";
-  openclaw_version: string | null;
-  last_health_check: string | null;
+  status: "provisioning" | "active" | "paused" | "error";
   channel_type: "discord";
   channel_config: Record<string, unknown>;
-  api_key_hash: string | null;
   webhook_secret_encrypted: string | null;
-  hetzner_server_id: number | null;
-  coolify_server_uuid: string | null;
-  hetzner_action_id: number | null;
-  hetzner_location: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -149,33 +133,6 @@ export interface EmailInboundAttachment {
   metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;
-}
-
-export interface UpgradeOperation {
-  id: string;
-  target_version: string;
-  docker_image: string;
-  status: "pending" | "in_progress" | "completed" | "failed" | "canceled";
-  total_instances: number;
-  completed_instances: number;
-  failed_instances: number;
-  concurrency: number;
-  initiated_by: string;
-  started_at: string | null;
-  completed_at: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface UpgradeInstanceLog {
-  id: string;
-  upgrade_id: string;
-  instance_id: string;
-  status: "pending" | "in_progress" | "completed" | "failed" | "skipped";
-  error_message: string | null;
-  started_at: string | null;
-  completed_at: string | null;
-  created_at: string;
 }
 
 export interface WorkflowDefinitionRow {
@@ -496,3 +453,31 @@ export type {
   WorkflowValidationError,
   WorkflowValidationResult,
 } from "./workflow";
+export type {
+  TenantStatus,
+  TenantRole,
+  TenantMemberStatus,
+  TenantSessionKind,
+  TenantSessionStatus,
+  TenantToolStatus,
+  TenantApprovalStatus,
+  Tenant,
+  TenantRoleDefinition,
+  TenantMember,
+  TenantIntegration,
+  TenantAgent,
+  TenantSession,
+  TenantMessage,
+  TenantTool,
+  TenantToolPolicy,
+  TenantApproval,
+  TenantKnowledgeItem,
+  TenantMemoryRecord,
+  TenantExport,
+  TenantExportFile,
+  TenantExportJob,
+  InstanceTenantMapping,
+  TenantRuntimeRunKind,
+  TenantRuntimeRunStatus,
+  TenantRuntimeRun,
+} from "./tenant-runtime";

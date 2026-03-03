@@ -1,14 +1,17 @@
-import { requireDashboardCustomer, getCustomerInstance } from "@/lib/auth/dashboard-session";
+import type { Metadata } from "next";
+import { requireDashboardCustomer, getCustomerTenant } from "@/lib/auth/dashboard-session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ComposioIntegrationPanel } from "@/components/settings/composio/composio-integration-panel";
 import type { ComposioConfig, ComposioConnectedApp } from "@/types/composio";
 
+export const metadata: Metadata = { title: "Integrations" };
+
 export default async function IntegrationsSettingsPage() {
   const { customerId } = await requireDashboardCustomer();
 
-  const instance = await getCustomerInstance(customerId);
+  const tenant = await getCustomerTenant(customerId);
 
-  if (!instance) {
+  if (!tenant) {
     return (
       <div>
         <div className="mb-6">
@@ -16,7 +19,7 @@ export default async function IntegrationsSettingsPage() {
             Integrations
           </h3>
           <p className="text-foreground/60 text-sm">
-            Provision your instance first to configure integrations.
+            Tenant workspace setup is required before configuring integrations.
           </p>
         </div>
       </div>
@@ -27,7 +30,7 @@ export default async function IntegrationsSettingsPage() {
   const { data: composioRow } = await admin
     .from("composio_configs")
     .select("*")
-    .eq("instance_id", instance.id)
+    .eq("customer_id", customerId)
     .maybeSingle();
 
   const composioConfig: ComposioConfig | null = composioRow
@@ -49,7 +52,7 @@ export default async function IntegrationsSettingsPage() {
         </p>
       </div>
       <ComposioIntegrationPanel
-        instanceId={instance.id}
+        tenantId={tenant.id}
         initialConfig={composioConfig}
       />
     </div>

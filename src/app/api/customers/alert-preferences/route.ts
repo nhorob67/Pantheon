@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { alertPreferencesSchema } from "@/lib/validators/alerts";
-import { rebuildAndDeploy } from "@/lib/templates/rebuild-config";
+import { consumeConfigUpdateRateLimit } from "@/lib/security/user-rate-limit";
 
 export async function GET() {
   const supabase = await createClient();
@@ -55,6 +55,20 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const rateLimit = await consumeConfigUpdateRateLimit(user.id);
+  if (rateLimit === "unavailable") {
+    return NextResponse.json(
+      { error: "Rate limiter unavailable. Please try again shortly." },
+      { status: 503 }
+    );
+  }
+  if (rateLimit === "blocked") {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      { status: 429 }
+    );
+  }
+
   const body = await request.json();
   const parsed = alertPreferencesSchema.safeParse(body);
   if (!parsed.success) {
@@ -83,22 +97,6 @@ export async function PUT(request: Request) {
     },
     { onConflict: "customer_id" }
   );
-
-  // Rebuild instance config to inject/remove alert cron jobs
-  const { data: instance } = await admin
-    .from("instances")
-    .select("id")
-    .eq("customer_id", customer.id)
-    .eq("status", "running")
-    .maybeSingle();
-
-  if (instance) {
-    try {
-      await rebuildAndDeploy(instance.id);
-    } catch {
-      // Non-fatal: prefs are saved even if rebuild fails
-    }
-  }
 
   return NextResponse.json({ status: "ok" });
 }

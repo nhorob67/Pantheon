@@ -10,11 +10,24 @@ import { ComposioConnectedAccounts } from "./composio-connected-accounts";
 import { ComposioTrustDisclosure } from "./composio-trust-disclosure";
 
 interface Props {
-  instanceId: string;
+  tenantId: string;
   initialConfig: ComposioConfig | null;
 }
 
-export function ComposioIntegrationPanel({ instanceId, initialConfig }: Props) {
+function extractError(payload: Record<string, unknown>): string | undefined {
+  const inner = payload?.data as Record<string, unknown> | undefined;
+  const err = payload?.error ?? inner?.error;
+  return typeof err === "object" && err !== null
+    ? (err as { message?: string }).message
+    : (err as string | undefined);
+}
+
+function extractField<T>(payload: Record<string, unknown>, key: string): T | undefined {
+  const inner = payload?.data as Record<string, unknown> | undefined;
+  return ((inner?.[key] ?? payload?.[key]) as T | undefined);
+}
+
+export function ComposioIntegrationPanel({ tenantId, initialConfig }: Props) {
   const { toast } = useToast();
   const [config, setConfig] = useState<ComposioConfig | null>(initialConfig);
   const [loading, setLoading] = useState(false);
@@ -31,14 +44,14 @@ export function ComposioIntegrationPanel({ instanceId, initialConfig }: Props) {
   const handleEnable = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/instances/${instanceId}/composio`, {
+      const res = await fetch(`/api/tenants/${tenantId}/composio`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ instance_id: instanceId }),
+        body: JSON.stringify({}),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      setConfig(data.config);
+      if (!res.ok) throw new Error(extractError(data) || "Failed to enable integration");
+      setConfig(extractField<ComposioConfig>(data, "config") ?? null);
       toast("Composio integration enabled", "success");
     } catch (err) {
       toast(
@@ -48,19 +61,19 @@ export function ComposioIntegrationPanel({ instanceId, initialConfig }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [instanceId, toast]);
+  }, [tenantId, toast]);
 
   const handleDisable = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/instances/${instanceId}/composio`, {
+      const res = await fetch(`/api/tenants/${tenantId}/composio`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ enabled: false }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      setConfig(data.config);
+      if (!res.ok) throw new Error(extractError(data) || "Failed to disable integration");
+      setConfig(extractField<ComposioConfig>(data, "config") ?? null);
       toast("Composio integration disabled", "success");
     } catch (err) {
       toast(
@@ -70,19 +83,19 @@ export function ComposioIntegrationPanel({ instanceId, initialConfig }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [instanceId, toast]);
+  }, [tenantId, toast]);
 
   const handleReEnable = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/instances/${instanceId}/composio`, {
+      const res = await fetch(`/api/tenants/${tenantId}/composio`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ enabled: true }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      setConfig(data.config);
+      if (!res.ok) throw new Error(extractError(data) || "Failed to enable integration");
+      setConfig(extractField<ComposioConfig>(data, "config") ?? null);
       toast("Composio integration enabled", "success");
     } catch (err) {
       toast(
@@ -92,7 +105,7 @@ export function ComposioIntegrationPanel({ instanceId, initialConfig }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [instanceId, toast]);
+  }, [tenantId, toast]);
 
   const handleToggle = useCallback(
     (checked: boolean) => {
@@ -113,7 +126,7 @@ export function ComposioIntegrationPanel({ instanceId, initialConfig }: Props) {
     setSavingToolkits(true);
     try {
       const res = await fetch(
-        `/api/instances/${instanceId}/composio/toolkits`,
+        `/api/tenants/${tenantId}/composio/toolkits`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -121,8 +134,8 @@ export function ComposioIntegrationPanel({ instanceId, initialConfig }: Props) {
         }
       );
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      setConfig(data.config);
+      if (!res.ok) throw new Error(extractError(data) || "Failed to save toolkits");
+      setConfig(extractField<ComposioConfig>(data, "config") ?? null);
       toast("Toolkits saved and config updated", "success");
     } catch (err) {
       toast(
@@ -132,13 +145,13 @@ export function ComposioIntegrationPanel({ instanceId, initialConfig }: Props) {
     } finally {
       setSavingToolkits(false);
     }
-  }, [instanceId, selectedToolkits, toast]);
+  }, [tenantId, selectedToolkits, toast]);
 
   const handleConnect = useCallback(
     async (appId: string) => {
       try {
         const res = await fetch(
-          `/api/instances/${instanceId}/composio/connect`,
+          `/api/tenants/${tenantId}/composio/connect`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -146,18 +159,20 @@ export function ComposioIntegrationPanel({ instanceId, initialConfig }: Props) {
           }
         );
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error);
+        if (!res.ok) throw new Error(extractError(data) || "Failed to start connection");
+
+        const redirectUrl = extractField<string>(data, "redirect_url");
 
         // Open OAuth in popup
         const popup = window.open(
-          data.redirect_url,
+          redirectUrl,
           "composio-oauth",
           "width=600,height=700,scrollbars=yes"
         );
 
         if (!popup) {
           // Popup blocked — fall back to redirect
-          window.location.href = data.redirect_url;
+          if (redirectUrl) window.location.href = redirectUrl;
           return;
         }
       } catch (err) {
@@ -167,22 +182,22 @@ export function ComposioIntegrationPanel({ instanceId, initialConfig }: Props) {
         );
       }
     },
-    [instanceId, toast]
+    [tenantId, toast]
   );
 
   const refreshConnections = useCallback(async () => {
     try {
       const res = await fetch(
-        `/api/instances/${instanceId}/composio/connections`
+        `/api/tenants/${tenantId}/composio/connections`
       );
       const data = await res.json();
       if (res.ok) {
-        setConnections(data.connections);
+        setConnections(extractField<ComposioConnectedApp[]>(data, "connections") ?? []);
       }
     } catch {
       // Silent refresh failure
     }
-  }, [instanceId]);
+  }, [tenantId]);
 
   const handleDisconnect = useCallback(
     async (appId: string) => {
@@ -191,11 +206,11 @@ export function ComposioIntegrationPanel({ instanceId, initialConfig }: Props) {
 
       try {
         const res = await fetch(
-          `/api/instances/${instanceId}/composio/connections?connection_id=${appId}`,
+          `/api/tenants/${tenantId}/composio/connections?connection_id=${appId}`,
           { method: "DELETE" }
         );
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error);
+        if (!res.ok) throw new Error(extractError(data) || "Failed to disconnect");
         toast("Service disconnected", "success");
         refreshConnections();
       } catch (err) {
@@ -205,7 +220,7 @@ export function ComposioIntegrationPanel({ instanceId, initialConfig }: Props) {
         );
       }
     },
-    [instanceId, connections, toast, refreshConnections]
+    [tenantId, connections, toast, refreshConnections]
   );
 
   // Listen for OAuth popup completion

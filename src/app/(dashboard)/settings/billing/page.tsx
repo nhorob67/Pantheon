@@ -1,28 +1,11 @@
-"use client";
-
-import { useState } from "react";
-import { CreditCard, ExternalLink, Loader2 } from "lucide-react";
-import { isValidStripeUrl } from "@/lib/security/validate-redirect";
+import type { Metadata } from "next";
+import { CreditCard } from "lucide-react";
+import { ManageBillingButton } from "@/components/settings/manage-billing-button";
 import { SpendingCapForm } from "@/components/settings/spending-cap-form";
 
+export const metadata: Metadata = { title: "Billing" };
+
 export default function BillingSettingsPage() {
-  const [loading, setLoading] = useState(false);
-
-  const handleManageBilling = async () => {
-    setLoading(true);
-    const res = await fetch("/api/stripe", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "create-portal" }),
-    });
-
-    const { url } = await res.json();
-    if (url && isValidStripeUrl(url)) {
-      window.location.href = url;
-    }
-    setLoading(false);
-  };
-
   return (
     <div className="space-y-6">
       <div className="bg-card rounded-xl border border-border shadow-sm p-6">
@@ -37,8 +20,9 @@ export default function BillingSettingsPage() {
             <div>
               <p className="font-medium text-sm">FarmClaw Standard</p>
               <p className="text-xs text-foreground/50">
-                <span className="font-display text-lg font-bold text-foreground">$40</span>
+                <span className="font-display text-lg font-bold text-foreground">$50</span>
                 /month
+                <span className="ml-2 text-primary">includes $25 API credit</span>
               </p>
             </div>
           </div>
@@ -47,18 +31,7 @@ export default function BillingSettingsPage() {
           </span>
         </div>
 
-        <button
-          onClick={handleManageBilling}
-          disabled={loading}
-          className="bg-energy hover:bg-amber-600 text-white font-semibold rounded-full px-6 py-3 transition-colors flex items-center gap-2 disabled:opacity-50"
-        >
-          {loading ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <ExternalLink className="w-4 h-4" />
-          )}
-          Manage Billing
-        </button>
+        <ManageBillingButton />
       </div>
 
       <SpendingCapForm />

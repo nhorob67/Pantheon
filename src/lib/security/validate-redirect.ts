@@ -23,6 +23,41 @@ export function safeRedirectPath(
 }
 
 /**
+ * Validates that a target URL's origin matches the request origin or the
+ * configured NEXT_PUBLIC_APP_URL. Use this for OAuth redirect_url params
+ * to prevent open-redirect attacks.
+ */
+export function validateSameOriginUrl(
+  targetUrl: string,
+  requestUrl: string
+): boolean {
+  try {
+    const target = new URL(targetUrl);
+    const request = new URL(requestUrl);
+
+    if (target.origin === request.origin) {
+      return true;
+    }
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+    if (appUrl) {
+      try {
+        const app = new URL(appUrl);
+        if (target.origin === app.origin) {
+          return true;
+        }
+      } catch {
+        // Invalid NEXT_PUBLIC_APP_URL — fall through to reject
+      }
+    }
+
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Validates that a URL points to a legitimate Stripe domain.
  */
 export function isValidStripeUrl(url: string): boolean {

@@ -1,20 +1,18 @@
 "use client";
 
-import { useInstanceStatus } from "@/hooks/use-instance-status";
-import { formatUptime } from "@/lib/utils/format";
+import { useTenantContextStatus } from "@/hooks/use-tenant-context-status";
 import {
   Activity,
   RefreshCw,
   Square,
-  Loader2,
 } from "lucide-react";
 
 interface InstanceStatusCardProps {
-  instanceId: string;
+  tenantId: string;
 }
 
-export function InstanceStatusCard({ instanceId }: InstanceStatusCardProps) {
-  const { status, loading } = useInstanceStatus(instanceId);
+export function InstanceStatusCard({ tenantId }: InstanceStatusCardProps) {
+  const { status, loading } = useTenantContextStatus(tenantId);
 
   if (loading) {
     return (
@@ -34,46 +32,42 @@ export function InstanceStatusCard({ instanceId }: InstanceStatusCardProps) {
   }
 
   const statusConfig = {
-    running: {
+    active: {
       color: "text-primary",
       bg: "bg-primary/10",
       icon: Activity,
       pulse: true,
     },
-    stopped: {
+    paused: {
       color: "text-amber-700",
       bg: "bg-energy/10",
       icon: Square,
       pulse: false,
     },
-    error: {
+    archived: {
       color: "text-destructive",
       bg: "bg-destructive/10",
       icon: RefreshCw,
       pulse: false,
     },
-    provisioning: {
-      color: "text-intelligence",
-      bg: "bg-intelligence/10",
-      icon: Loader2,
-      pulse: true,
-    },
   };
 
-  const cfgKey = status.status.startsWith("provisioning") ? "provisioning" : status.status;
-  const cfg = statusConfig[cfgKey as keyof typeof statusConfig] || statusConfig.stopped;
+  const cfg = statusConfig[status.tenant.status as keyof typeof statusConfig] || statusConfig.paused;
   const Icon = cfg.icon;
+  const ingressState = status.runtime_gates.discord_ingress_paused
+    ? "paused"
+    : "active";
 
   return (
     <div className="bg-card rounded-xl border border-border shadow-sm p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-headline text-sm font-semibold text-foreground/60 uppercase tracking-wider">
-          Instance Status
+          Workspace Status
         </h3>
         <span
           className={`font-mono text-xs uppercase tracking-wider px-2.5 py-1 rounded-full ${cfg.bg} ${cfg.color}`}
         >
-          {status.status}
+          {status.tenant.status}
         </span>
       </div>
 
@@ -86,9 +80,7 @@ export function InstanceStatusCard({ instanceId }: InstanceStatusCardProps) {
           />
         </div>
         <div>
-          <p className="font-mono text-sm text-foreground/60">
-            Uptime: {formatUptime(status.uptime_seconds)}
-          </p>
+          <p className="font-mono text-sm text-foreground/60">Ingress: {ingressState}</p>
           <p className="text-xs text-foreground/40">
             Channel: Discord
           </p>

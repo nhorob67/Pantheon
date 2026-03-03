@@ -18,13 +18,13 @@ Proactive farm alerts delivered through the OpenClaw instance to the farmer's Di
 - **Memory keys:** `last_bids:{elevator_name}:{crop}` → price in cents
 
 ### 3. Scale Ticket Anomaly Alerts
-- **Source:** Scale tickets SQLite database
+- **Source:** Scale tickets (via `tenant_scale_ticket_query` tool)
 - **Schedule:** 6 PM, Monday–Friday
 - **Trigger:** Any of:
   - Net weight variance > 2 standard deviations from the 30-day average for that crop
   - Moisture percentage outside normal range for the crop (e.g., corn > 15.5%, soybeans > 13%)
   - Duplicate ticket detection (same elevator, crop, weight within 1% on the same day)
-- **Behavior:** Query today's scale tickets from SQLite. Run anomaly checks against historical data. If anomalies found, summarize and post to Discord. If no anomalies, do nothing.
+- **Behavior:** Query today's scale tickets using the `tenant_scale_ticket_query` tool. Run anomaly checks against historical data. If anomalies found, summarize and post to Discord. If no anomalies, do nothing.
 
 ## Architecture
 

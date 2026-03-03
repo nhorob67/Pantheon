@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { rebuildAndDeploy } from "@/lib/templates/rebuild-config";
 import { consumeConfigUpdateRateLimit } from "@/lib/security/user-rate-limit";
 
 const updateSkillSchema = z.object({
@@ -76,13 +75,6 @@ export async function POST(
   await admin.from("skill_configs").upsert(upsertData, {
     onConflict: "customer_id,skill_name",
   });
-
-  if (!instance.coolify_uuid) {
-    return NextResponse.json({ error: "No container" }, { status: 400 });
-  }
-
-  // Use rebuildAndDeploy to correctly handle both single-agent and multi-agent modes
-  await rebuildAndDeploy(id);
 
   return NextResponse.json({ success: true });
 }

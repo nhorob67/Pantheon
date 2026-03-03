@@ -4,6 +4,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireDashboardCustomer, getCustomerInstance } from "@/lib/auth/dashboard-session";
+import { formatDateTime } from "@/lib/utils/format";
 import { ApprovalInboxLazy } from "@/components/workflows/approval-inbox-lazy";
 import {
   WORKFLOW_APPROVAL_FILTER_STATUSES,
@@ -42,11 +43,7 @@ function formatTimestamp(value: string | null): string {
   if (!value) {
     return "-";
   }
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-  return date.toLocaleString();
+  return formatDateTime(value);
 }
 
 function statusTone(status: string): string {

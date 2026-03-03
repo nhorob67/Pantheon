@@ -21,7 +21,7 @@ The Filesystem MCP server gives your AI assistant the ability to read, write, an
 | **Scope** | Instance (available to all agents) |
 | **Workspace path** | `/home/node/workspace` |
 
-The Filesystem server is one of three curated presets available in FarmClaw. It is pre-configured during provisioning and can be added to your instance with a single click from the preset selector.
+The Filesystem server is a custom MCP server you can add to your instance if you need file read/write capabilities. It is not required for any built-in farm tools -- scale tickets, grain bids, weather, and memory all work without it.
 
 ## What it enables
 
@@ -45,7 +45,7 @@ The assistant will compile the data and write it to the specified path in the wo
 
 ### Exporting scale ticket data
 
-If you want a local copy of your scale ticket records beyond what the SQLite database holds:
+If you want a local copy of your scale ticket records:
 
 > "Export all corn deliveries from October as a CSV file."
 
@@ -99,6 +99,4 @@ You can toggle the Filesystem server on or off at any time using the switch on i
 
 ## What's next
 
-- [SQLite Server](/docs/mcp-servers/sqlite) -- Local database for scale tickets and structured data
-- [Memory Server](/docs/mcp-servers/memory) -- Persistent key-value storage for your assistant
 - [MCP Servers Overview](/docs/mcp-servers) -- Learn about custom MCP server configuration

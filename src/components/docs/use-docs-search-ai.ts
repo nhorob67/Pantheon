@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { getSearchIndex, type SearchIndexEntry } from "@/lib/docs/search-index";
+import { getSearchIndex, getFlexSearchIndex, type SearchIndexEntry } from "@/lib/docs/search-index";
 import type { DocsAskFeedbackSurface } from "@/lib/docs/ask-feedback-surface";
 
 const QUESTION_STARTERS =
@@ -98,27 +98,27 @@ export function useDocsSearchAi({
   const results = useMemo<SearchResult[]>(() => {
     if (!query.trim()) return [];
 
-    const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+    const index = getFlexSearchIndex(entries);
+    const matchedIndices = index.search(query, { limit: 15 }) as number[];
+
     const matched: SearchResult[] = [];
+    const seen = new Set<string>();
+    const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
 
-    for (const entry of entries) {
-      const text =
-        `${entry.title} ${entry.section} ${entry.body}`.toLowerCase();
-      const titleMatch = terms.every((term) =>
-        entry.title.toLowerCase().includes(term)
-      );
-      const bodyMatch = terms.every((term) => text.includes(term));
+    for (const idx of matchedIndices) {
+      const entry = entries[idx];
+      if (!entry || seen.has(entry.slug)) continue;
+      seen.add(entry.slug);
 
-      if (titleMatch || bodyMatch) {
-        matched.push({
-          slug: entry.slug,
-          title: entry.title,
-          section: entry.section,
-        });
-      }
+      matched.push({
+        slug: entry.slug,
+        title: entry.title,
+        section: entry.section,
+      });
 
+      // Check headings for anchor-level results
       for (const heading of entry.headings) {
-        if (terms.every((term) => heading.title.toLowerCase().includes(term))) {
+        if (terms.some((term) => heading.title.toLowerCase().includes(term))) {
           matched.push({
             slug: entry.slug,
             title: heading.title,

@@ -44,6 +44,7 @@ export interface MemoryOperation {
   input: Record<string, unknown>;
   result: Record<string, unknown>;
   error_message: string | null;
+  attempt_count: number;
   queued_at: string;
   started_at: string | null;
   completed_at: string | null;

@@ -1,0 +1,367 @@
+openapi: 3.1.0
+info:
+  title: FarmClaw Tenant Runtime API (Launch-Critical Slice)
+  version: "2026-02-24"
+  description: >
+    Typed contract snapshot for launch-critical tenant runtime routes.
+servers:
+  - url: https://app.farmclaw.com
+paths:
+  /api/tenants/{tenantId}/context:
+    get:
+      summary: Fetch tenant runtime context
+      parameters:
+        - $ref: "#/components/parameters/TenantIdParam"
+      responses:
+        "200":
+          description: Tenant context loaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantEnvelope"
+  /api/tenants/{tenantId}/data-governance:
+    get:
+      summary: Fetch tenant retention/deletion governance policy
+      parameters:
+        - $ref: "#/components/parameters/TenantIdParam"
+      responses:
+        "200":
+          description: Tenant data governance policy loaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantEnvelope"
+    put:
+      summary: Update tenant retention/deletion governance policy
+      parameters:
+        - $ref: "#/components/parameters/TenantIdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TenantDataGovernancePolicyUpdate"
+      responses:
+        "200":
+          description: Tenant data governance policy updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantEnvelope"
+  /api/tenants/{tenantId}/agents:
+    get:
+      summary: List tenant agents
+      parameters:
+        - $ref: "#/components/parameters/TenantIdParam"
+      responses:
+        "200":
+          description: Tenant agent list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantEnvelope"
+    post:
+      summary: Create tenant agent
+      parameters:
+        - $ref: "#/components/parameters/TenantIdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "201":
+          description: Tenant agent created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantEnvelope"
+  /api/tenants/{tenantId}/knowledge:
+    get:
+      summary: List tenant knowledge items
+      parameters:
+        - $ref: "#/components/parameters/TenantIdParam"
+      responses:
+        "200":
+          description: Tenant knowledge list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantEnvelope"
+    post:
+      summary: Create tenant knowledge item
+      parameters:
+        - $ref: "#/components/parameters/TenantIdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "201":
+          description: Tenant knowledge item created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantEnvelope"
+  /api/tenants/{tenantId}/memory/settings:
+    get:
+      summary: Get tenant memory settings
+      parameters:
+        - $ref: "#/components/parameters/TenantIdParam"
+      responses:
+        "200":
+          description: Tenant memory settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantEnvelope"
+    put:
+      summary: Update tenant memory settings
+      parameters:
+        - $ref: "#/components/parameters/TenantIdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Tenant memory settings updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantEnvelope"
+  /api/tenants/{tenantId}/approvals:
+    get:
+      summary: List tenant approvals
+      parameters:
+        - $ref: "#/components/parameters/TenantIdParam"
+      responses:
+        "200":
+          description: Tenant approvals list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantEnvelope"
+  /api/tenants/{tenantId}/export:
+    get:
+      summary: List tenant export jobs
+      parameters:
+        - $ref: "#/components/parameters/TenantIdParam"
+      responses:
+        "200":
+          description: Tenant exports loaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantEnvelope"
+    post:
+      summary: Queue tenant export job
+      parameters:
+        - $ref: "#/components/parameters/TenantIdParam"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTenantExportRequest"
+      responses:
+        "200":
+          description: Existing export reused
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantEnvelope"
+        "202":
+          description: Export queued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantEnvelope"
+  /api/tenants/{tenantId}/approvals/{approvalId}/decision:
+    post:
+      summary: Approve or reject a pending tenant approval
+      parameters:
+        - $ref: "#/components/parameters/TenantIdParam"
+        - $ref: "#/components/parameters/ApprovalIdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TenantApprovalDecisionRequest"
+      responses:
+        "200":
+          description: Approval decision accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantEnvelope"
+  /api/tenants/{tenantId}/discord/ingress:
+    post:
+      summary: Enqueue a production Discord runtime run
+      parameters:
+        - $ref: "#/components/parameters/TenantIdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DiscordIngressRequest"
+      responses:
+        "202":
+          description: Runtime run queued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantEnvelope"
+  /api/tenants/{tenantId}/export/{exportId}:
+    get:
+      summary: Fetch tenant export details
+      parameters:
+        - $ref: "#/components/parameters/TenantIdParam"
+        - $ref: "#/components/parameters/ExportIdParam"
+      responses:
+        "200":
+          description: Tenant export details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantEnvelope"
+  /api/tenants/{tenantId}/export/{exportId}/retry:
+    post:
+      summary: Retry a failed tenant export
+      parameters:
+        - $ref: "#/components/parameters/TenantIdParam"
+        - $ref: "#/components/parameters/ExportIdParam"
+      responses:
+        "202":
+          description: Retry accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantEnvelope"
+components:
+  parameters:
+    TenantIdParam:
+      in: path
+      name: tenantId
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ExportIdParam:
+      in: path
+      name: exportId
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ApprovalIdParam:
+      in: path
+      name: approvalId
+      required: true
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    TenantEnvelope:
+      type: object
+      required:
+        - version
+        - request_id
+        - idempotency_key
+        - idempotency_replayed
+        - data
+        - error
+      properties:
+        version:
+          type: string
+        request_id:
+          type: string
+        idempotency_key:
+          type:
+            - "string"
+            - "null"
+        idempotency_replayed:
+          type: boolean
+        data: {}
+        error:
+          oneOf:
+            - type: "null"
+            - type: object
+              required:
+                - message
+              properties:
+                message:
+                  type: string
+                details: {}
+    CreateTenantExportRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        export_scope:
+          type: string
+          enum: [full, knowledge_only, metadata_only]
+          default: full
+        format:
+          type: string
+          enum: [jsonl, csv]
+          default: jsonl
+        include_blobs:
+          type: boolean
+          default: true
+    TenantApprovalDecisionRequest:
+      type: object
+      required: [decision]
+      properties:
+        decision:
+          type: string
+          enum: [approved, rejected]
+        comment:
+          type: string
+          maxLength: 1000
+    DiscordIngressRequest:
+      type: object
+      required: [guild_id, channel_id, user_id, message_id, content]
+      properties:
+        guild_id:
+          type: string
+          minLength: 1
+          maxLength: 64
+        channel_id:
+          type: string
+          minLength: 1
+          maxLength: 64
+        user_id:
+          type: string
+          minLength: 1
+          maxLength: 64
+        message_id:
+          type: string
+          minLength: 1
+          maxLength: 128
+        content:
+          type: string
+          minLength: 1
+          maxLength: 4000
+    TenantDataGovernancePolicyUpdate:
+      type: object
+      additionalProperties: false
+      properties:
+        export_retention_days:
+          type: integer
+          minimum: 1
+          maximum: 30
+        memory_tombstone_retention_days:
+          type: integer
+          minimum: 7
+          maximum: 3650
+        deletion_guard_enabled:
+          type: boolean
+        hard_delete_requires_owner:
+          type: boolean

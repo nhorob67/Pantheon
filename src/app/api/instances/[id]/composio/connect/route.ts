@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { composioOAuthInitSchema } from "@/lib/validators/composio";
 import { getComposioClient } from "@/lib/composio/client";
 import { consumeComposioRateLimit } from "@/lib/security/user-rate-limit";
+import { validateSameOriginUrl } from "@/lib/security/validate-redirect";
 
 export async function POST(
   request: Request,
@@ -72,6 +73,13 @@ export async function POST(
   const redirectUrl =
     parsed.data.redirect_url ||
     `${origin}/api/instances/${id}/composio/callback`;
+
+  if (parsed.data.redirect_url && !validateSameOriginUrl(redirectUrl, request.url)) {
+    return NextResponse.json(
+      { error: "redirect_url must point to the same origin" },
+      { status: 400 }
+    );
+  }
 
   const result = await composio.initiateOAuthConnection(
     config.composio_user_id,

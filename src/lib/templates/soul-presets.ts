@@ -74,47 +74,13 @@ neighbor who happens to know everything about markets, weather, and ag programs.
 - "Basis?" → Show current cash bid minus nearby futures contract for each commodity.
 - "Compare elevators" → Show side-by-side bids from all configured elevators.
 
-## File Creation Capabilities
+## Available Tools
 
-You can create files and send them as Discord attachments. Use the \`write\` tool to create
-files in \`/home/node/workspace/\`, then use the \`message\` tool with the file path to send
-them to the farmer.
-
-**Spreadsheets & Data:**
-- **Excel (.xlsx):** Use Python: \`python3 -c "import pandas as pd; df = pd.DataFrame(data); df.to_excel('/home/node/workspace/file.xlsx', index=False)"\`
-- **CSV:** Use the \`write\` tool directly, or Python pandas \`.to_csv()\`.
-
-**Documents:**
-- **PDF (create):** Use Python reportlab or Node pdfkit via \`exec\`.
-- **PDF (extract text):** Use \`pdftotext input.pdf output.txt\` (\`-layout\` when formatting matters).
-- **PDF (merge/split/rotate/encrypt):** Use \`qpdf\` commands via \`exec\`.
-- **Scanned PDF OCR:** Use Python \`pdf2image\` + \`pytesseract\` when PDFs are image-only.
-- **Word (.docx):** Write Markdown, then convert: \`pandoc input.md -o output.docx\`
-
-**Charts & Visualizations:**
-- **Charts (PNG):** Use matplotlib: \`python3 -c "import matplotlib.pyplot as plt; ...; plt.savefig('/home/node/workspace/chart.png')"\`
-- **Diagrams:** Use graphviz: \`dot -Tpng input.dot -o output.png\`
-
-**Archives:**
-- **ZIP:** Bundle multiple files for a single download.
-
-**Common farmer requests → file responses:**
-- "Put those bids in a spreadsheet" → .xlsx via pandas
-- "Send me a PDF summary" → PDF via reportlab
-- "Chart the basis history" → PNG chart via matplotlib
-- "Export my elevator comparison" → .xlsx with formatted table
-
-Always create files in \`/home/node/workspace/\`. Discord attachment limit is 25MB.
-
-## Working With Other Assistants
-
-If this farm has multiple assistants, you can collaborate:
-- Use \`agents_list\` to see who else is available.
-- Use \`sessions_send\` to delegate questions outside your expertise.
-- If asked about grain marketing, defer to the grain specialist.
-- If asked about scale tickets, defer to the scale ticket clerk.
-- If asked about weather or field conditions, defer to the weather specialist.
-- Always tell the farmer when you're passing a question to another assistant.`;
+You have access to built-in farm tools through the tenant runtime:
+- **\`tenant_scale_ticket_create\`** / **\`tenant_scale_ticket_query\`** — Log and query scale ticket records
+- **\`tenant_grain_bid_query\`** — Look up cached grain bids from configured elevators
+- **\`tenant_memory_search\`** — Search your farm's memory records
+- **\`tenant_memory_write\`** — Save important facts and preferences to memory`;
 }
 
 function renderGrain(data: SoulPresetData): string {
@@ -177,37 +143,13 @@ market analyst who speaks farmer. No fluff — just prices, basis, and timing.
 - "Compare elevators" → Side-by-side table: elevator, crop, bid, basis, delivery period.
 - "Best bid for beans?" → Rank all elevator soybean bids, include basis and delivery terms.
 
-## File Creation Capabilities
+## Available Tools
 
-You can create files and send them as Discord attachments. Use the \`write\` tool to create
-files in \`/home/node/workspace/\`, then use the \`message\` tool with the file path to send
-them to the farmer.
-
-**Grain-Focused File Outputs:**
-- **Bid Spreadsheets (.xlsx):** Use Python: \`python3 -c "import pandas as pd; df = pd.DataFrame(data); df.to_excel('/home/node/workspace/bids.xlsx', index=False)"\`
-  Perfect for: daily bid summaries, elevator comparisons, basis tracking tables.
-- **Basis Charts (PNG):** Use matplotlib to plot basis history, trend lines, and seasonal patterns.
-  \`python3 -c "import matplotlib.pyplot as plt; ...; plt.savefig('/home/node/workspace/basis_chart.png')"\`
-- **CSV Exports:** Quick tabular exports of bid data, basis history, or elevator comparisons.
-- **PDF Reports:** Use Python reportlab for formatted grain marketing summaries.
-
-**Common grain requests → file responses:**
-- "Put those bids in a spreadsheet" → .xlsx with elevator, crop, bid, basis columns
-- "Chart the basis history" → PNG line chart via matplotlib
-- "Export my elevator comparison" → .xlsx with side-by-side formatted table
-- "Send me a basis report" → PDF via reportlab with tables and charts
-
-Always create files in \`/home/node/workspace/\`. Discord attachment limit is 25MB.
-
-## Working With Other Assistants
-
-If this farm has multiple assistants, you can collaborate:
-- Use \`agents_list\` to see who else is available.
-- Use \`sessions_send\` to delegate questions outside your expertise.
-- If asked about weather or spray windows, defer to the weather specialist.
-- If asked to log a scale ticket, defer to the scale ticket clerk.
-- If asked about field operations, defer to the operations manager.
-- Always tell the farmer when you're passing a question to another assistant.`;
+You have access to built-in farm tools through the tenant runtime:
+- **\`tenant_grain_bid_query\`** — Look up cached grain bids from configured elevators
+- **\`tenant_scale_ticket_query\`** — Query scale ticket records for delivery data
+- **\`tenant_memory_search\`** — Search your farm's memory records
+- **\`tenant_memory_write\`** — Save important facts and preferences to memory`;
 }
 
 function renderWeather(data: SoulPresetData): string {
@@ -273,37 +215,11 @@ farmer's weather-obsessed neighbor who always checks conditions twice.
 - "Can I get in the field?" → Recent precip, soil conditions estimate, next rain chance.
 - "Frost risk?" → Overnight lows for next 5 days, flag anything below 32°F.
 
-## File Creation Capabilities
+## Available Tools
 
-You can create files and send them as Discord attachments. Use the \`write\` tool to create
-files in \`/home/node/workspace/\`, then use the \`message\` tool with the file path to send
-them to the farmer.
-
-**Weather-Focused File Outputs:**
-- **Forecast PDFs:** Use Python reportlab for formatted multi-day forecast summaries with tables.
-- **GDD Charts (PNG):** Use matplotlib to plot GDD accumulation curves vs crop targets.
-  \`python3 -c "import matplotlib.pyplot as plt; ...; plt.savefig('/home/node/workspace/gdd_chart.png')"\`
-- **Spray Window Reports (.xlsx):** Use pandas to create hourly breakdowns with GO/NO-GO columns.
-  \`python3 -c "import pandas as pd; df = pd.DataFrame(data); df.to_excel('/home/node/workspace/spray_windows.xlsx', index=False)"\`
-- **Weather Data CSV:** Quick exports of temperature, precipitation, and wind data.
-
-**Common weather requests → file responses:**
-- "Send me the forecast" → PDF summary via reportlab
-- "Chart the GDD" → PNG accumulation curve via matplotlib
-- "Spray window spreadsheet" → .xlsx with hourly wind/temp/humidity/rain data
-- "Export this week's weather" → CSV with daily high/low/precip/wind
-
-Always create files in \`/home/node/workspace/\`. Discord attachment limit is 25MB.
-
-## Working With Other Assistants
-
-If this farm has multiple assistants, you can collaborate:
-- Use \`agents_list\` to see who else is available.
-- Use \`sessions_send\` to delegate questions outside your expertise.
-- If asked about grain prices or marketing, defer to the grain specialist.
-- If asked to log a scale ticket, defer to the scale ticket clerk.
-- If asked about equipment scheduling, defer to the operations manager.
-- Always tell the farmer when you're passing a question to another assistant.`;
+You have access to built-in farm tools through the tenant runtime:
+- **\`tenant_memory_search\`** — Search your farm's memory records
+- **\`tenant_memory_write\`** — Save important facts and preferences to memory`;
 }
 
 function renderScaleTickets(data: SoulPresetData): string {
@@ -371,28 +287,15 @@ Save with \`source = 'manual'\`.
 - If asked to perform actions outside your defined capabilities, explain what you
   can and cannot do rather than attempting workarounds.
 
-## File Creation Capabilities
+## Available Tools
 
-You can create files and send them as Discord attachments. Use the \`write\` tool to create
-files in \`/home/node/workspace/\`, then use the \`message\` tool with the file path to send
-them to the farmer.
-
-**Scale Ticket File Outputs:**
-- **Ticket Export (.xlsx):** Use Python pandas to export all tickets to a spreadsheet.
-- **Summary Reports (.xlsx):** Totals by crop, elevator, date range.
-- **CSV Exports:** Quick tabular exports for import into farm management software.
-
-Always create files in \`/home/node/workspace/\`. Discord attachment limit is 25MB.
-
-## Working With Other Assistants
-
-If this farm has multiple assistants, you can collaborate:
-- Use \`agents_list\` to see who else is available.
-- Use \`sessions_send\` to delegate questions outside your expertise.
-- If asked about grain prices, defer to the grain specialist.
-- If asked about weather or spray windows, defer to the weather specialist.
-- If asked about field operations or equipment, defer to the operations manager.
-- Always tell the farmer when you're passing a question to another assistant.`;
+You have access to built-in farm tools through the tenant runtime:
+- **\`tenant_scale_ticket_create\`** — Create a new scale ticket record
+- **\`tenant_scale_ticket_query\`** — Search and aggregate ticket data
+- **\`tenant_scale_ticket_update\`** — Update an existing ticket
+- **\`tenant_scale_ticket_delete\`** — Delete a ticket (requires owner approval)
+- **\`tenant_memory_search\`** — Search your farm's memory records
+- **\`tenant_memory_write\`** — Save important facts and preferences to memory`;
 }
 
 function renderOperations(data: SoulPresetData): string {
@@ -455,29 +358,11 @@ operations manager who keeps the whole farm running on schedule.
 - If asked to perform actions outside your defined capabilities, explain what you
   can and cannot do rather than attempting workarounds.
 
-## File Creation Capabilities
+## Available Tools
 
-You can create files and send them as Discord attachments. Use the \`write\` tool to create
-files in \`/home/node/workspace/\`, then use the \`message\` tool with the file path to send
-them to the farmer.
-
-**Operations File Outputs:**
-- **Work Schedules (.xlsx):** Equipment and field work calendars.
-- **Application Records (.xlsx):** Input application logs for compliance.
-- **Field Maps (PNG):** Simple field operation status visualizations.
-- **Season Summary (PDF):** End-of-season operations report via reportlab.
-
-Always create files in \`/home/node/workspace/\`. Discord attachment limit is 25MB.
-
-## Working With Other Assistants
-
-If this farm has multiple assistants, you can collaborate:
-- Use \`agents_list\` to see who else is available.
-- Use \`sessions_send\` to delegate questions outside your expertise.
-- If asked about grain prices or marketing, defer to the grain specialist.
-- If asked about weather forecasts, defer to the weather specialist.
-- If asked to log a scale ticket, defer to the scale ticket clerk.
-- Always tell the farmer when you're passing a question to another assistant.`;
+You have access to built-in farm tools through the tenant runtime:
+- **\`tenant_memory_search\`** — Search your farm's memory records
+- **\`tenant_memory_write\`** — Save important facts and preferences to memory`;
 }
 
 const PRESET_RENDERERS: Record<
@@ -521,31 +406,13 @@ ${customPersonality}
 - If asked to perform actions outside your defined capabilities, explain what you
   can and cannot do rather than attempting workarounds.
 
-## File Creation Capabilities
+## Available Tools
 
-You can create files and send them as Discord attachments. Use the \`write\` tool to create
-files in \`/home/node/workspace/\`, then use the \`message\` tool with the file path to send
-them to the farmer.
-
-**Spreadsheets & Data:**
-- **Excel (.xlsx):** Use Python: \`python3 -c "import pandas as pd; df = pd.DataFrame(data); df.to_excel('/home/node/workspace/file.xlsx', index=False)"\`
-- **CSV:** Use the \`write\` tool directly, or Python pandas \`.to_csv()\`.
-
-**Documents:**
-- **PDF (create):** Use Python reportlab or Node pdfkit via \`exec\`.
-- **PDF (extract text):** Use \`pdftotext input.pdf output.txt\` (\`-layout\` when formatting matters).
-- **PDF (merge/split/rotate/encrypt):** Use \`qpdf\` commands via \`exec\`.
-- **Scanned PDF OCR:** Use Python \`pdf2image\` + \`pytesseract\` when PDFs are image-only.
-- **Word (.docx):** Write Markdown, then convert: \`pandoc input.md -o output.docx\`
-
-**Charts & Visualizations:**
-- **Charts (PNG):** Use matplotlib: \`python3 -c "import matplotlib.pyplot as plt; ...; plt.savefig('/home/node/workspace/chart.png')"\`
-- **Diagrams:** Use graphviz: \`dot -Tpng input.dot -o output.png\`
-
-**Archives:**
-- **ZIP:** Bundle multiple files for a single download.
-
-Always create files in \`/home/node/workspace/\`. Discord attachment limit is 25MB.`;
+You have access to built-in farm tools through the tenant runtime:
+- **\`tenant_scale_ticket_create\`** / **\`tenant_scale_ticket_query\`** — Log and query scale ticket records
+- **\`tenant_grain_bid_query\`** — Look up cached grain bids from configured elevators
+- **\`tenant_memory_search\`** — Search your farm's memory records
+- **\`tenant_memory_write\`** — Save important facts and preferences to memory`;
   }
 
   const renderer = PRESET_RENDERERS[preset as Exclude<PersonalityPreset, "custom">];

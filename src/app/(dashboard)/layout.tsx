@@ -1,6 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireDashboardUser, getCustomerInstance } from "@/lib/auth/dashboard-session";
+import {
+  requireDashboardUser,
+  getCustomerTenant,
+  getCustomerTenants,
+} from "@/lib/auth/dashboard-session";
 import { HelpProvider } from "@/components/dashboard/help-provider";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Topbar } from "@/components/dashboard/topbar";
@@ -15,26 +19,34 @@ export default async function DashboardLayout({
   const { user, customerId } = await requireDashboardUser();
 
   let farmName: string | undefined;
-  let instanceStatus: string | undefined;
   let workflowBuilderEnabled = false;
+  let tenantOptions: Array<{
+    id: string;
+    slug: string;
+    name: string;
+    status: string;
+  }> = [];
+  let activeTenantId: string | null = null;
 
   if (customerId) {
     const supabase = await createClient();
     const admin = createAdminClient();
 
-    const [instance, workflowEnabled, { data: profile }] = await Promise.all([
-      getCustomerInstance(customerId),
+    const [workflowEnabled, { data: profile }, activeTenant, tenants] = await Promise.all([
       isWorkflowBuilderEnabledForCustomer(admin, customerId),
       supabase
         .from("farm_profiles")
         .select("farm_name")
         .eq("customer_id", customerId)
         .single(),
+      getCustomerTenant(customerId),
+      getCustomerTenants(customerId),
     ]);
 
     workflowBuilderEnabled = workflowEnabled;
-    instanceStatus = instance?.status || undefined;
     farmName = profile?.farm_name || undefined;
+    activeTenantId = activeTenant?.id || null;
+    tenantOptions = tenants;
   }
 
   return (
@@ -44,8 +56,9 @@ export default async function DashboardLayout({
         <div className="flex-1 flex flex-col">
           <Topbar
             farmName={farmName}
-            instanceStatus={instanceStatus}
             email={user.email}
+            tenantOptions={tenantOptions}
+            activeTenantId={activeTenantId}
           />
           <main className="flex-1 p-6">{children}</main>
         </div>

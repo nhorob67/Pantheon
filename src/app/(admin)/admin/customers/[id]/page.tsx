@@ -1,11 +1,9 @@
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { isAdmin } from "@/lib/auth/admin";
-import { redirect, notFound } from "next/navigation";
+import { requireAdmin } from "@/lib/auth/admin-session";
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { formatCents } from "@/lib/utils/format";
-import { CustomerInstanceActions } from "@/components/admin/customer-instance-actions";
 import type { ApiUsage, Customer, FarmProfile, Instance } from "@/types/database";
 
 function getFirstRelation<T extends object>(value: unknown): T | null {
@@ -40,15 +38,7 @@ export default async function CustomerDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user || !isAdmin(user.email)) {
-    redirect("/dashboard");
-  }
+  await requireAdmin();
 
   const admin = createAdminClient();
   const [{ data: customer }, { data: usage }] = await Promise.all([
@@ -152,37 +142,14 @@ export default async function CustomerDetailPage({
             Instance
           </h3>
           {instance ? (
-            <>
-              <dl className="space-y-3 text-sm mb-4">
-                <div className="flex justify-between">
-                  <dt className="text-foreground/50">Status</dt>
-                  <dd className="font-mono text-xs uppercase">
-                    {instance.status}
-                  </dd>
-                </div>
-                <div className="flex justify-between">
-                  <dt className="text-foreground/50">Version</dt>
-                  <dd className="font-mono text-xs">
-                    {instance.openclaw_version || "—"}
-                  </dd>
-                </div>
-                <div className="flex justify-between">
-                  <dt className="text-foreground/50">Last Health Check</dt>
-                  <dd className="text-xs text-foreground/80">
-                    {instance.last_health_check
-                      ? new Date(instance.last_health_check).toLocaleString()
-                      : "—"}
-                  </dd>
-                </div>
-                <div className="flex justify-between">
-                  <dt className="text-foreground/50">Coolify UUID</dt>
-                  <dd className="font-mono text-xs text-foreground/60 truncate max-w-[200px]">
-                    {instance.coolify_uuid || "—"}
-                  </dd>
-                </div>
-              </dl>
-              <CustomerInstanceActions instanceId={instance.id} />
-            </>
+            <dl className="space-y-3 text-sm">
+              <div className="flex justify-between">
+                <dt className="text-foreground/50">Status</dt>
+                <dd className="font-mono text-xs uppercase">
+                  {instance.status}
+                </dd>
+              </div>
+            </dl>
           ) : (
             <p className="text-foreground/40 text-sm">No instance provisioned</p>
           )}

@@ -31,21 +31,11 @@ export function Step5Review() {
     setError(null);
 
     try {
-      // Get customer ID from the API
-      const meRes = await fetch("/api/customers/me");
-
-      if (!meRes.ok) {
-        throw new Error("Could not load your account. Please try again.");
-      }
-
-      const { customer_id } = await meRes.json();
-
-      // Provision instance
-      const res = await fetch("/api/instances/provision", {
+      // Create tenant workspace
+      const res = await fetch("/api/tenants", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          customer_id,
           farm_profile: {
             farm_name: step1.farm_name,
             state: step1.state,
@@ -61,10 +51,7 @@ export function Step5Review() {
               TIMEZONES[step1.state as SupportedState] ||
               "America/Chicago",
           },
-          channel: {
-            type: "discord",
-            token: step4.channel_token,
-          },
+          discord_guild_id: step4.channel_token,
         }),
       });
 
@@ -74,7 +61,7 @@ export function Step5Review() {
       }
 
       // Wait for animation, then redirect
-      await new Promise((r) => setTimeout(r, 5000));
+      await new Promise((r) => setTimeout(r, 2000));
       reset();
       router.push("/dashboard");
     } catch (err) {

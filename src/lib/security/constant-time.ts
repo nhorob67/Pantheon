@@ -25,7 +25,11 @@ export function constantTimeTokenInSet(
     return false;
   }
 
-  return expectedTokens.some((expectedToken) =>
-    constantTimeTokenEquals(providedToken, expectedToken)
-  );
+  let found = false;
+  for (const expectedToken of expectedTokens) {
+    if (constantTimeTokenEquals(providedToken, expectedToken)) {
+      found = true;
+    }
+  }
+  return found;
 }

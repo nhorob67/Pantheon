@@ -75,7 +75,7 @@ function main() {
       title: data.title,
       section: data.section,
       headings: extractHeadings(content),
-      body: stripMdx(content).slice(0, 500),
+      body: stripMdx(content),
     });
   }
 

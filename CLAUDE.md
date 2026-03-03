@@ -101,7 +101,9 @@ npm run test       # Node native test runner (6 test files: webhook-signature, p
 - `api_usage` — Daily token metering per model
 - `skill_configs` — Per-customer skill toggles and configuration (JSONB)
 - `custom_skills` / `custom_skill_versions` — User-created skills with version history
-- `mcp_server_configs` — MCP server configs per instance (command, args, env, scope)
+- `tenant_scale_tickets` — Scale ticket delivery records per tenant (replaces per-instance SQLite)
+- `grain_bid_cache` — Shared cached grain bids from elevator scrapers
+- `mcp_server_configs` — Custom MCP server configs per instance (command, args, env, scope)
 - `email_identities` — Email addresses linked to instances
 - `email_inbound` / `email_inbound_attachments` — Inbound email processing pipeline
 - `email_webhook_events` — Webhook observability
@@ -174,12 +176,7 @@ Each instance supports multiple agents with:
 
 ### MCP (Model Context Protocol) Servers
 
-Instance-level MCP server configs stored in `mcp_server_configs` table. Three curated presets:
-- **Filesystem** — `@modelcontextprotocol/server-filesystem` (workspace access)
-- **SQLite** — `@modelcontextprotocol/server-sqlite` (local database)
-- **Memory** — `@modelcontextprotocol/server-memory` (persistent key-value)
-
-MCP servers are auto-included in OpenClaw config. SQLite server is auto-added when scale-tickets skill is enabled.
+Custom MCP server configs stored in `mcp_server_configs` table. Curated presets have been removed — built-in farm tools (scale tickets, grain bids, weather, memory) now use the tenant runtime instead of MCP sidecar servers. Custom MCP servers can still be added for advanced use cases.
 
 ### Custom Skills System
 
@@ -220,7 +217,7 @@ MCP servers are auto-included in OpenClaw config. SQLite server is auto-added wh
   - Photo OCR (Claude vision extracts fields from ticket images)
   - Voice/unstructured text (NLU parsing of dictated entries)
   - Multi-step structured entry (guided field-by-field input)
-  - Data stored in SQLite via MCP server, configurable visible/required fields
+  - Data stored in Postgres via tenant runtime tools, configurable visible/required fields
 - `farm-alerts/` — Alert management skill
 
 ### Extension Marketplace

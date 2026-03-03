@@ -7,8 +7,9 @@ export function Nav() {
       <div className="nav-links">
         <Link href="#skills">What It Does</Link>
         <Link href="#how">How It Works</Link>
+        <Link href="#trust">Your Data</Link>
         <Link href="#pricing">Pricing</Link>
-        <Link href="/signup" className="nav-cta">Get Started</Link>
+        <Link href="/signup" className="nav-cta">Start My Free Trial</Link>
       </div>
     </nav>
   );

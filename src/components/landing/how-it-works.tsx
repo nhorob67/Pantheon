@@ -4,9 +4,8 @@ import { useState } from "react";
 
 const steps = [
   { num: "01", title: "Tell us about your farm", desc: "State, county, crops, acres, and which elevators you sell to. Takes about 3 minutes. This is how we build an assistant that actually knows your operation." },
-  { num: "02", title: "Connect your Discord server", desc: "Create a free Discord server for your farm (or use one you already have). Add our bot with one click. Your assistant shows up ready to post in #grain-bids, #weather, and whatever other channels you set up." },
-  { num: "03", title: "We set up your assistant", desc: "We build a dedicated AI assistant configured for your farm — your elevators, your location, your crops. It's not shared. It's yours, running 24/7." },
-  { num: "04", title: "Start texting — grain bids at 9 AM tomorrow", desc: "Your assistant sends a weather briefing at 6 AM and cash bids at 9 AM. From there, ask it anything — it learns your preferences and gets better every day." },
+  { num: "02", title: "Add FarmClaw to Discord", desc: "Click the invite link and FarmClaw joins your Discord server. No bot tokens, no developer portal, no configuration. Just add and go." },
+  { num: "03", title: "Start asking — grain bids at 9 AM tomorrow", desc: "Your assistant is live instantly. It sends a weather briefing at 6 AM and cash bids at 9 AM. From there, ask it anything — it remembers your preferences and gets better over time." },
 ];
 
 function StepVisual1() {
@@ -39,49 +38,42 @@ function StepVisual1() {
 
 function StepVisual2() {
   return (
-    <div style={{ padding: "10px 0" }}>
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: 28 }}>
-        <div style={{ width: 80, height: 80, borderRadius: 20, background: "rgba(88, 101, 242, 0.1)", border: "2px solid rgba(88, 101, 242, 0.4)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, fontWeight: 700, color: "#5865F2" }}>#</div>
-      </div>
-      <div style={{ fontSize: 12, color: "var(--text-dim)", textAlign: "center" as const, marginBottom: 20 }}>Discord</div>
-      <div style={{ background: "var(--bg-dark)", borderRadius: 12, padding: 16, border: "1px solid var(--border)" }}>
-        <div style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 8 }}>YOUR SERVER</div>
-        <div style={{ display: "flex", flexDirection: "column" as const, gap: 6 }}>
-          {["# grain-bids", "# weather", "# equipment", "# general"].map((ch) => (
-            <div key={ch} style={{ fontSize: 14, color: "var(--text-secondary)", padding: "6px 8px", borderRadius: 6, background: "rgba(255,255,255,0.03)" }}>{ch}</div>
-          ))}
+    <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: "10px 0" }}>
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
+        <div style={{ width: 64, height: 64, borderRadius: 16, background: "rgba(88, 101, 242, 0.1)", border: "2px solid rgba(88, 101, 242, 0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, color: "#5865F2" }}>
+          <svg width="28" height="22" viewBox="0 0 28 22" fill="currentColor"><path d="M23.7 1.8A23 23 0 0 0 18 0a.1.1 0 0 0-.1 0 16 16 0 0 0-.7 1.5 21.4 21.4 0 0 0-6.4 0A14.7 14.7 0 0 0 10 0h-.1A23 23 0 0 0 4.3 1.8 24 24 0 0 0 .1 16.9a23.3 23.3 0 0 0 7.1 3.6.1.1 0 0 0 .1 0 16 16 0 0 0 1.4-2.3.1.1 0 0 0 0-.1 15.3 15.3 0 0 1-2.4-1.2.1.1 0 0 1 0-.2l.5-.4h.1a16.6 16.6 0 0 0 14.2 0h.1l.5.4a.1.1 0 0 1 0 .2 14.4 14.4 0 0 1-2.4 1.2.1.1 0 0 0 0 .1c.4.8.9 1.6 1.4 2.3h.1a23.2 23.2 0 0 0 7.1-3.6A23.8 23.8 0 0 0 23.7 1.8zM9.3 13.9c-1.4 0-2.5-1.3-2.5-2.8S8 8.2 9.4 8.2s2.5 1.3 2.5 2.8-1.1 2.9-2.5 2.9zm9.3 0c-1.4 0-2.5-1.3-2.5-2.8s1.1-2.9 2.5-2.9 2.5 1.3 2.5 2.8-1.1 2.9-2.5 2.9z" /></svg>
         </div>
       </div>
-      <div style={{ marginTop: 16, background: "var(--bg-dark)", borderRadius: 12, padding: 16, border: "1px solid var(--border)" }}>
-        <div style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 8 }}>PASTE YOUR BOT TOKEN</div>
-        <div style={{ fontFamily: "monospace", fontSize: 13, color: "var(--text-secondary)", background: "rgba(0,0,0,0.2)", padding: "10px 12px", borderRadius: 6 }}>MTIzNDU2Nzg5...</div>
+
+      <div style={{ background: "var(--bg-dark)", borderRadius: 12, padding: 20, border: "1px solid var(--border)" }}>
+        <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 12 }}>Add to Server</div>
+        <div style={{ fontSize: 12, color: "var(--text-dim)", marginBottom: 8, textTransform: "uppercase" as const, letterSpacing: 1 }}>SELECT A SERVER</div>
+        <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: 8, padding: "10px 14px", border: "1px solid var(--border-light)", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+          <span style={{ fontSize: 14, color: "var(--text-primary)" }}>Johnson Farms</span>
+          <span style={{ fontSize: 11, color: "var(--text-dim)" }}>▼</span>
+        </div>
+        <div style={{ fontSize: 12, color: "var(--text-dim)", marginBottom: 8, textTransform: "uppercase" as const, letterSpacing: 1 }}>PERMISSIONS</div>
+        <div style={{ display: "flex", flexDirection: "column" as const, gap: 6, marginBottom: 16 }}>
+          {["Send Messages", "Read Message History", "Embed Links"].map((p) => (
+            <div key={p} style={{ fontSize: 13, color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ color: "var(--green-bright)", fontSize: 14 }}>✓</span> {p}
+            </div>
+          ))}
+        </div>
+        <div style={{ background: "rgba(88, 101, 242, 0.9)", color: "#fff", textAlign: "center" as const, padding: "12px 0", borderRadius: 8, fontSize: 14, fontWeight: 600 }}>
+          Authorize
+        </div>
+      </div>
+
+      <div style={{ padding: 14, background: "var(--bg-dark)", borderRadius: 10, border: "1px solid var(--green-dim)", display: "flex", alignItems: "center", gap: 10 }}>
+        <span style={{ color: "var(--green-bright)", fontSize: 18 }}>✓</span>
+        <span style={{ fontSize: 13, color: "var(--green-bright)" }}>FarmClaw has been added to Johnson Farms</span>
       </div>
     </div>
   );
 }
 
 function StepVisual3() {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 14, padding: "10px 0" }}>
-      <div style={{ fontSize: 13, color: "var(--accent)", fontWeight: 600, letterSpacing: 1, textTransform: "uppercase" as const, marginBottom: 4 }}>Setting Up Your Assistant</div>
-      {["Server provisioned", "Farm profile loaded", "Skills installed: Grain Bids, Weather, Ag Intel", "Discord server connected"].map((text) => (
-        <div key={text} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ width: 28, height: 28, borderRadius: "50%", background: "var(--green-dim)", color: "var(--green-bright)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>✓</div>
-          <span style={{ fontSize: 14, color: "var(--text-secondary)" }}>{text}</span>
-        </div>
-      ))}
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <div style={{ width: 28, height: 28, borderRadius: "50%", background: "var(--accent-dim)", color: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, animation: "pulse 1.5s infinite", flexShrink: 0 }}>●</div>
-        <span style={{ fontSize: 14, color: "var(--accent)" }}>Running health checks...</span>
-      </div>
-      <div style={{ marginTop: 12, padding: 14, background: "var(--bg-dark)", borderRadius: 10, border: "1px solid var(--green-dim)" }}>
-        <span style={{ fontSize: 13, color: "var(--green-bright)" }}>Your assistant will be live in ~45 seconds</span>
-      </div>
-    </div>
-  );
-}
-
-function StepVisual4() {
   return (
     <div className="phone-mockup">
       <div className="phone-header">
@@ -101,7 +93,7 @@ function StepVisual4() {
   );
 }
 
-const visuals = [StepVisual1, StepVisual2, StepVisual3, StepVisual4];
+const visuals = [StepVisual1, StepVisual2, StepVisual3];
 
 export function HowItWorks() {
   const [activeStep, setActiveStep] = useState(0);
@@ -110,7 +102,7 @@ export function HowItWorks() {
   return (
     <section className="how-section" id="how">
       <div className="section-label">How It Works</div>
-      <h2 className="section-title">From signup to your first grain bid in under 10 minutes.</h2>
+      <h2 className="section-title">Sign up today. Get your first grain bids tomorrow morning.</h2>
 
       <div className="how-grid">
         <div className="how-steps">

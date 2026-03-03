@@ -1,6 +1,11 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { isAdmin } from "@/lib/auth/admin";
+import {
+  REQUEST_ID_HEADER,
+  resolveRequestTraceIdFromHeaders,
+  withRequestTraceHeader,
+} from "@/lib/runtime/request-trace";
 import { validateCsrfOrigin } from "@/lib/security/csrf";
 
 function buildCspHeader(nonce: string): string {
@@ -16,20 +21,27 @@ function buildCspHeader(nonce: string): string {
   ].join("; ");
 }
 
-function withCsp(response: NextResponse, csp: string): NextResponse {
+function withSecurityHeaders(
+  response: NextResponse,
+  csp: string,
+  requestTraceId: string
+): NextResponse {
   response.headers.set("Content-Security-Policy", csp);
-  return response;
+  return withRequestTraceHeader(response, requestTraceId);
 }
 
 export async function updateSession(request: NextRequest) {
   const nonce = crypto.randomUUID().replace(/-/g, "");
   const csp = buildCspHeader(nonce);
+  const requestTraceId = resolveRequestTraceIdFromHeaders(request.headers);
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set(REQUEST_ID_HEADER, requestTraceId);
 
-  let supabaseResponse = withCsp(
+  let supabaseResponse = withSecurityHeaders(
     NextResponse.next({ request: { headers: requestHeaders } }),
-    csp
+    csp,
+    requestTraceId
   );
 
   const supabase = createServerClient(
@@ -44,9 +56,10 @@ export async function updateSession(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
-          supabaseResponse = withCsp(
+          supabaseResponse = withSecurityHeaders(
             NextResponse.next({ request: { headers: requestHeaders } }),
-            csp
+            csp,
+            requestTraceId
           );
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
@@ -64,14 +77,10 @@ export async function updateSession(request: NextRequest) {
   const isApiRoute = pathname.startsWith("/api/");
   const isWebhookRoute = pathname.startsWith("/api/webhooks/");
   const isStripeRoute = pathname === "/api/stripe";
-  const isProcessInbound = pathname === "/api/admin/email/process-inbound";
-  const isBootKeyRoute = pathname === "/api/instances/boot-key";
   const isProtectedApiRoute =
     isApiRoute &&
     !isWebhookRoute &&
-    !isStripeRoute &&
-    !isProcessInbound &&
-    !isBootKeyRoute;
+    !isStripeRoute;
 
   // CSRF protection for mutating API calls
   const method = request.method;
@@ -82,21 +91,23 @@ export async function updateSession(request: NextRequest) {
   ) {
     const csrfError = validateCsrfOrigin(request);
     if (csrfError) {
-      return withCsp(
+      return withSecurityHeaders(
         NextResponse.json(
           { error: "CSRF validation failed" },
           { status: 403 }
         ),
-        csp
+        csp,
+        requestTraceId
       );
     }
   }
 
   // Defense-in-depth: require auth for all non-webhook API routes
   if (isProtectedApiRoute && !user) {
-    return withCsp(
+    return withSecurityHeaders(
       NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
-      csp
+      csp,
+      requestTraceId
     );
   }
 
@@ -113,25 +124,25 @@ export async function updateSession(request: NextRequest) {
   if (!user && isDashboardPage) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    return withCsp(NextResponse.redirect(url), csp);
+    return withSecurityHeaders(NextResponse.redirect(url), csp, requestTraceId);
   }
 
   if (!user && isAdminPage) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    return withCsp(NextResponse.redirect(url), csp);
+    return withSecurityHeaders(NextResponse.redirect(url), csp, requestTraceId);
   }
 
   if (user && isAdminPage && !isAdmin(user.email)) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
-    return withCsp(NextResponse.redirect(url), csp);
+    return withSecurityHeaders(NextResponse.redirect(url), csp, requestTraceId);
   }
 
   if (user && isAuthPage) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
-    return withCsp(NextResponse.redirect(url), csp);
+    return withSecurityHeaders(NextResponse.redirect(url), csp, requestTraceId);
   }
 
   return supabaseResponse;

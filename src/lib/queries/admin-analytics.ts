@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export interface FleetHealthData {
   total: number;
@@ -138,7 +139,7 @@ export async function getRevenueBreakdown(
     incomplete: toSafeNumber(row.incomplete),
   };
 
-  const mrr = breakdown.active * 4000;
+  const mrr = breakdown.active * 5000;
 
   return {
     mrr,
@@ -456,4 +457,20 @@ export async function getExtensibilityTelemetry(
     top_event_types: toBuckets(bucketByEventType),
     top_tools: toBuckets(bucketByTool),
   };
+}
+
+// ── Discord Token Migration Check ────────────────────────
+/**
+ * Count instances that still have a plaintext `token` field in `channel_config`.
+ * Used on the admin dashboard to confirm migration to encrypted storage is complete.
+ */
+export async function countPlaintextTokenInstances(): Promise<number> {
+  const admin = createAdminClient();
+  const { count, error } = await admin
+    .from("instances")
+    .select("id", { count: "exact", head: true })
+    .not("channel_config->token", "is", null);
+
+  if (error) throw new Error(error.message);
+  return count ?? 0;
 }

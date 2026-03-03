@@ -11,7 +11,7 @@ tags: [integrations, composio, google, oauth, third-party]
 
 Integrations let your AI assistant connect to external services like Google Sheets, Gmail, Google Calendar, Slack, and hundreds more. Instead of being limited to skills and local tools, your assistant can read spreadsheets, send emails, create calendar events, and interact with the services you already use on the farm.
 
-FarmClaw integrations are powered by [Composio](https://composio.dev), a platform that provides secure, authenticated access to 800+ third-party APIs through a single connection. Composio runs as a remote MCP server alongside your existing local MCP servers (filesystem, SQLite, memory).
+FarmClaw integrations are powered by [Composio](https://composio.dev), a platform that provides secure, authenticated access to 800+ third-party APIs through a single connection. Composio runs as a remote MCP server alongside your built-in farm tools.
 
 ## How it works
 
@@ -26,9 +26,10 @@ From that point, your assistant has access to the actions exposed by your select
 
 ```
 Instance
-├── Local MCP Servers
-│   ├── filesystem
-│   ├── sqlite
+├── Built-in Farm Tools
+│   ├── scale-tickets
+│   ├── grain-bids
+│   ├── weather
 │   └── memory
 └── Remote MCP Servers
     └── composio (SSE)
@@ -54,7 +55,7 @@ See [Connecting Services](/docs/integrations/connecting-services) for the full O
 
 ### Remote MCP servers
 
-Unlike your local MCP servers (filesystem, SQLite, memory) which run as sidecar processes on your instance, Composio runs as a remote MCP server over Server-Sent Events (SSE). Your assistant connects to Composio's hosted endpoint, which routes requests to the appropriate service API.
+Composio runs as a remote MCP server over Server-Sent Events (SSE). Your assistant connects to Composio's hosted endpoint, which routes requests to the appropriate service API.
 
 This means Composio does not consume resources on your instance. It runs entirely on Composio's infrastructure.
 
@@ -68,7 +69,7 @@ Here are some real examples of what farmers can ask once integrations are connec
 
 | Service | Example prompt | What happens |
 |---|---|---|
-| Google Sheets | "Add today's scale tickets to my harvest tracker spreadsheet" | Reads ticket data from SQLite, writes rows to your Google Sheet |
+| Google Sheets | "Add today's scale tickets to my harvest tracker spreadsheet" | Reads your ticket data, writes rows to your Google Sheet |
 | Google Sheets | "Pull my input costs from the planning sheet" | Reads specific cells/ranges from a spreadsheet |
 | Gmail | "Email the grain contract summary to my wife" | Composes and sends an email with delivery data |
 | Google Calendar | "Schedule spraying for next Tuesday at 6 AM" | Creates a calendar event with details |

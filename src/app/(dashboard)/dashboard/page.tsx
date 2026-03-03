@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -5,15 +6,22 @@ import { InstanceStatusCard } from "@/components/dashboard/instance-status-card"
 import { QuickStats } from "@/components/dashboard/quick-stats";
 import { MessageActivityChartLazy as MessageActivityChart } from "@/components/dashboard/message-activity-chart-lazy";
 import { SpendingAlertBanner } from "@/components/dashboard/spending-alert-banner";
+import { Skeleton } from "@/components/ui/skeleton";
 import { formatTokens, formatCents } from "@/lib/utils/format";
 import { SUBSCRIPTION_PRICE_CENTS } from "@/lib/utils/constants";
-import { requireDashboardCustomer, getCustomerInstance } from "@/lib/auth/dashboard-session";
+import type { Metadata } from "next";
+import {
+  requireDashboardCustomer,
+  getCustomerTenant,
+} from "@/lib/auth/dashboard-session";
+import { DashboardApprovals } from "./_components/dashboard-approvals";
+
+export const metadata: Metadata = { title: "Dashboard" };
 
 export default async function DashboardPage() {
   const { customerId } = await requireDashboardCustomer();
   const supabase = await createClient();
 
-  // Get usage stats for this month
   const startOfMonth = new Date();
   startOfMonth.setDate(1);
   startOfMonth.setHours(0, 0, 0, 0);
@@ -24,13 +32,13 @@ export default async function DashboardPage() {
   const sevenDaysAgoStr = sevenDaysAgo.toISOString().split("T")[0];
 
   const [
-    instance,
+    tenant,
     { data: emailIdentity },
     { data: usage },
     { data: conversationEvents },
     { data: customer },
   ] = await Promise.all([
-    getCustomerInstance(customerId),
+    getCustomerTenant(customerId),
     supabase
       .from("email_identities")
       .select("address")
@@ -55,7 +63,7 @@ export default async function DashboardPage() {
       .single(),
   ]);
 
-  if (!instance) {
+  if (!tenant) {
     redirect("/onboarding");
   }
 
@@ -68,7 +76,6 @@ export default async function DashboardPage() {
     0
   );
 
-  // Build 7-day chart data from real conversation events
   const eventsByDate = new Map<string, number>();
   for (const event of conversationEvents || []) {
     const existing = eventsByDate.get(event.date) || 0;
@@ -85,16 +92,13 @@ export default async function DashboardPage() {
     };
   });
 
-  // Messages today from real data
   const messagesToday = eventsByDate.get(today) || 0;
 
-  // Uptime: hours since start of month (rough proxy for instance uptime)
   const now = new Date();
   const uptimeHours = Math.floor(
     (now.getTime() - startOfMonth.getTime()) / (1000 * 60 * 60)
   );
 
-  // Spending cap data for alert banner
   const capCents = customer?.spending_cap_cents ?? null;
   const capPercentage =
     capCents && capCents > 0
@@ -126,6 +130,10 @@ export default async function DashboardPage() {
         tokensUsed={formatTokens(totalTokens)}
         monthlyCost={formatCents(totalCostCents + SUBSCRIPTION_PRICE_CENTS)}
       />
+
+      <Suspense fallback={<Skeleton className="h-28 rounded-xl" />}>
+        <DashboardApprovals tenantId={tenant.id} />
+      </Suspense>
 
       <div className="bg-card rounded-xl border border-border shadow-sm p-5">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -159,7 +167,7 @@ export default async function DashboardPage() {
           <MessageActivityChart data={chartData} />
         </div>
         <div>
-          <InstanceStatusCard instanceId={instance.id} />
+          <InstanceStatusCard tenantId={tenant.id} />
         </div>
       </div>
     </div>

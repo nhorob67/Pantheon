@@ -22,13 +22,13 @@ const ALL_FIELDS = [
 ] as const;
 
 interface ScaleTicketFieldsConfigProps {
-  instanceId: string;
+  tenantId: string;
   initialVisibleFields: string[];
   initialRequiredFields: string[];
 }
 
 export function ScaleTicketFieldsConfig({
-  instanceId,
+  tenantId,
   initialVisibleFields,
   initialRequiredFields,
 }: ScaleTicketFieldsConfigProps) {
@@ -59,7 +59,7 @@ export function ScaleTicketFieldsConfig({
   const handleSave = async () => {
     setSaving(true);
     try {
-      await fetch(`/api/instances/${instanceId}/update-skills`, {
+      await fetch(`/api/tenants/${tenantId}/update-skills`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

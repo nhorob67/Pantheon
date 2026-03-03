@@ -2,7 +2,20 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { consumeConfigUpdateRateLimit } from "@/lib/security/user-rate-limit";
+import { safeErrorMessage } from "@/lib/security/safe-error";
 import { memoryOperationRequestSchema } from "@/lib/validators/memory";
+import { resolveRequestTraceIdFromHeaders } from "@/lib/runtime/request-trace";
+import {
+  shouldBridgeInstanceWrite,
+  withInstanceBridgeHeaders,
+} from "@/lib/runtime/instance-bridge";
+import { resolveTenantRuntimeGateState } from "@/lib/runtime/tenant-runtime-gates";
+import { resolveTenantIdForInstance } from "@/lib/runtime/tenant-agents";
+import {
+  buildTenantMemoryContext,
+  queueTenantMemoryOperation,
+  TenantMemoryServiceError,
+} from "@/lib/runtime/tenant-memory";
 
 function getCustomerUserId(
   customers: { user_id: string } | { user_id: string }[] | null
@@ -23,6 +36,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const requestTraceId = resolveRequestTraceIdFromHeaders(request.headers);
   const supabase = await createClient();
   const {
     data: { user },
@@ -74,6 +88,52 @@ export async function POST(
   }
 
   const admin = createAdminClient();
+  const runtimeGates = await resolveTenantRuntimeGateState(
+    admin,
+    instance.customer_id
+  );
+
+  const tenantId = runtimeGates.writes_enabled
+    ? await resolveTenantIdForInstance(admin, id)
+    : null;
+  if (shouldBridgeInstanceWrite(runtimeGates, tenantId)) {
+    if (runtimeGates.memory_writes_paused) {
+      return NextResponse.json(
+        { error: "Tenant runtime memory writes are currently paused" },
+        { status: 409 }
+      );
+    }
+
+    try {
+      const context = buildTenantMemoryContext(
+        tenantId,
+        instance.customer_id,
+        id
+      );
+      const operation = await queueTenantMemoryOperation(
+        admin,
+        context,
+        "compress",
+        user.email || user.id,
+        parsed.data.reason
+      );
+      const response = NextResponse.json({ operation }, { status: 202 });
+      return withInstanceBridgeHeaders(response, tenantId, requestTraceId);
+    } catch (error) {
+      if (error instanceof TenantMemoryServiceError) {
+        return NextResponse.json(
+          { error: error.message, details: error.details },
+          { status: error.status }
+        );
+      }
+
+      return NextResponse.json(
+        { error: safeErrorMessage(error, "Failed to queue bridged tenant memory compression") },
+        { status: 500 }
+      );
+    }
+  }
+
   const { data: operation, error } = await admin
     .from("memory_operations")
     .insert({

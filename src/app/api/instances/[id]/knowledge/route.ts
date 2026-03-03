@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { rebuildAndDeploy } from "@/lib/templates/rebuild-config";
 import { consumeConfigUpdateRateLimit } from "@/lib/security/user-rate-limit";
 import { parseFile } from "@/lib/knowledge/parser";
+import { validateFileTypeMatchesMagicBytes } from "@/lib/knowledge/detect-file-type";
 import {
   MIME_TO_FILE_TYPE,
   MAX_RAW_FILE_SIZE,
@@ -12,12 +12,31 @@ import {
   KNOWLEDGE_META_COLUMNS,
 } from "@/types/knowledge";
 import type { KnowledgeFileType } from "@/types/knowledge";
+import { resolveRequestTraceIdFromHeaders } from "@/lib/runtime/request-trace";
+import {
+  shouldBridgeInstanceRead,
+  shouldBridgeInstanceWrite,
+  withInstanceBridgeHeaders,
+} from "@/lib/runtime/instance-bridge";
+import { resolveTenantRuntimeGateState } from "@/lib/runtime/tenant-runtime-gates";
+import {
+  resolveTenantIdForInstance,
+  TenantAgentServiceError,
+} from "@/lib/runtime/tenant-agents";
+import {
+  buildTenantKnowledgeContext,
+  createTenantKnowledgeFile,
+  listTenantKnowledgeFiles,
+  TenantKnowledgeServiceError,
+  toLegacyKnowledgeFileMeta,
+} from "@/lib/runtime/tenant-knowledge";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const requestTraceId = resolveRequestTraceIdFromHeaders(request.headers);
   const supabase = await createClient();
   const {
     data: { user },
@@ -38,6 +57,44 @@ export async function GET(
   }
 
   const admin = createAdminClient();
+  const runtimeGates = await resolveTenantRuntimeGateState(
+    admin,
+    instance.customer_id
+  );
+
+  const tenantId = runtimeGates.reads_enabled
+    ? await resolveTenantIdForInstance(admin, id)
+    : null;
+  if (shouldBridgeInstanceRead(runtimeGates, tenantId)) {
+    try {
+      const context = buildTenantKnowledgeContext(
+        tenantId,
+        instance.customer_id,
+        id
+      );
+      const tenantFiles = await listTenantKnowledgeFiles(admin, context);
+      const response = NextResponse.json({
+        files: tenantFiles.map((file) => toLegacyKnowledgeFileMeta(file, id)),
+      });
+      return withInstanceBridgeHeaders(response, tenantId, requestTraceId);
+    } catch (error) {
+      if (
+        error instanceof TenantKnowledgeServiceError ||
+        error instanceof TenantAgentServiceError
+      ) {
+        return NextResponse.json(
+          { error: error.message, details: error.details },
+          { status: error.status }
+        );
+      }
+
+      return NextResponse.json(
+        { error: "Failed to list bridged tenant knowledge files" },
+        { status: 500 }
+      );
+    }
+  }
+
   const { data: files } = await admin
     .from("knowledge_files")
     .select(KNOWLEDGE_META_COLUMNS)
@@ -53,6 +110,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const requestTraceId = resolveRequestTraceIdFromHeaders(request.headers);
   const supabase = await createClient();
   const {
     data: { user },
@@ -87,16 +145,65 @@ export async function POST(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  // Parse multipart form data
   const formData = await request.formData();
-  const file = formData.get("file") as File | null;
-  const agentId = (formData.get("agent_id") as string) || null;
+  const fileValue = formData.get("file");
+  const file = fileValue instanceof File ? fileValue : null;
+  const rawAgentId = formData.get("agent_id");
+  const agentId =
+    typeof rawAgentId === "string" && rawAgentId.trim().length > 0
+      ? rawAgentId
+      : null;
 
   if (!file) {
     return NextResponse.json({ error: "No file provided" }, { status: 400 });
   }
 
-  // Validate file type
+  const admin = createAdminClient();
+  const runtimeGates = await resolveTenantRuntimeGateState(
+    admin,
+    instance.customer_id
+  );
+
+  const tenantId = runtimeGates.writes_enabled
+    ? await resolveTenantIdForInstance(admin, id)
+    : null;
+  if (shouldBridgeInstanceWrite(runtimeGates, tenantId)) {
+    try {
+      const context = buildTenantKnowledgeContext(
+        tenantId,
+        instance.customer_id,
+        id
+      );
+      const tenantFile = await createTenantKnowledgeFile(
+        admin,
+        context,
+        file,
+        agentId
+      );
+
+      const response = NextResponse.json(
+        { file: toLegacyKnowledgeFileMeta(tenantFile, id) },
+        { status: 201 }
+      );
+      return withInstanceBridgeHeaders(response, tenantId, requestTraceId);
+    } catch (error) {
+      if (
+        error instanceof TenantKnowledgeServiceError ||
+        error instanceof TenantAgentServiceError
+      ) {
+        return NextResponse.json(
+          { error: error.message, details: error.details },
+          { status: error.status }
+        );
+      }
+
+      return NextResponse.json(
+        { error: "Failed to create bridged tenant knowledge file" },
+        { status: 500 }
+      );
+    }
+  }
+
   const fileType = MIME_TO_FILE_TYPE[file.type] as KnowledgeFileType | undefined;
   if (!fileType) {
     return NextResponse.json(
@@ -105,7 +212,6 @@ export async function POST(
     );
   }
 
-  // Validate file size
   if (file.size > MAX_RAW_FILE_SIZE) {
     return NextResponse.json(
       { error: "File exceeds 10 MB size limit." },
@@ -113,9 +219,6 @@ export async function POST(
     );
   }
 
-  const admin = createAdminClient();
-
-  // Check file count limit
   const { count } = await admin
     .from("knowledge_files")
     .select("id", { count: "exact", head: true })
@@ -129,7 +232,6 @@ export async function POST(
     );
   }
 
-  // Validate agent_id if provided
   if (agentId) {
     const { data: agent } = await admin
       .from("agents")
@@ -143,22 +245,39 @@ export async function POST(
     }
   }
 
-  // Parse file to markdown
   const buffer = Buffer.from(await file.arrayBuffer());
+
+  if (buffer.length > MAX_RAW_FILE_SIZE) {
+    return NextResponse.json(
+      { error: "File exceeds 10 MB size limit." },
+      { status: 400 }
+    );
+  }
+
+  if (!validateFileTypeMatchesMagicBytes(buffer, fileType)) {
+    return NextResponse.json(
+      { error: "File content does not match its declared type." },
+      { status: 400 }
+    );
+  }
+
   let parsedMarkdown: string;
 
   try {
     parsedMarkdown = await parseFile(buffer, fileType, file.name);
   } catch (err) {
     return NextResponse.json(
-      { error: `Failed to parse file: ${err instanceof Error ? err.message : "Unknown error"}` },
+      {
+        error: `Failed to parse file: ${
+          err instanceof Error ? err.message : "Unknown error"
+        }`,
+      },
       { status: 400 }
     );
   }
 
   const parsedSizeBytes = Buffer.byteLength(parsedMarkdown, "utf-8");
 
-  // Check total parsed size limit
   const { data: existingFiles } = await admin
     .from("knowledge_files")
     .select("parsed_size_bytes")
@@ -166,7 +285,7 @@ export async function POST(
     .eq("status", "active");
 
   const currentTotal = (existingFiles || []).reduce(
-    (sum, f) => sum + f.parsed_size_bytes,
+    (sum, knowledgeFile) => sum + knowledgeFile.parsed_size_bytes,
     0
   );
 
@@ -177,7 +296,6 @@ export async function POST(
     );
   }
 
-  // Upload raw file to Supabase Storage
   const fileId = crypto.randomUUID();
   const storagePath = `${instance.customer_id}/${id}/${fileId}-${file.name}`;
 
@@ -195,7 +313,6 @@ export async function POST(
     );
   }
 
-  // Insert metadata row
   const { data: knowledgeFile, error: insertError } = await admin
     .from("knowledge_files")
     .insert({
@@ -218,13 +335,6 @@ export async function POST(
       { error: insertError.message },
       { status: 500 }
     );
-  }
-
-  // Rebuild config and restart container
-  try {
-    await rebuildAndDeploy(id);
-  } catch {
-    // File was saved, but deploy failed — not fatal
   }
 
   return NextResponse.json({ file: knowledgeFile }, { status: 201 });

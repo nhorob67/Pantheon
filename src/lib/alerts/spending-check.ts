@@ -1,5 +1,4 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getCoolifyClient } from "@/lib/coolify/client";
 import { sendAlertEmail } from "./email-sender";
 import { formatCents } from "@/lib/utils/format";
 import {
@@ -140,27 +139,29 @@ export async function checkAllCustomerSpending(): Promise<CheckResult> {
       }
     }
 
-    // Circuit breaker: auto-pause at 100%+
+    // Circuit breaker: pause tenant AI processing when cap exceeded
     if (percentage >= 100 && customer.spending_cap_auto_pause) {
-      const { data: instances } = await admin
-        .from("instances")
-        .select("id, coolify_uuid, status")
-        .eq("customer_id", customer.id)
-        .eq("status", "running");
+      const { error: pauseError } = await admin
+        .from("customers")
+        .update({ spending_paused_at: new Date().toISOString() })
+        .eq("id", customer.id)
+        .is("spending_paused_at", null);
 
-      const coolify = getCoolifyClient();
-      for (const inst of instances || []) {
-        if (inst.coolify_uuid) {
-          try {
-            await coolify.stopApplication(inst.coolify_uuid);
-            await admin
-              .from("instances")
-              .update({ status: "stopped" })
-              .eq("id", inst.id);
-            result.paused++;
-          } catch {
-            // Best effort
-          }
+      if (!pauseError) {
+        result.paused++;
+
+        const alertEmailAddr = customer.alert_email || customer.email;
+        if (alertEmailAddr) {
+          await sendAlertEmail(
+            alertEmailAddr,
+            {
+              title: "AI assistant paused — spending cap reached",
+              message: `Your API usage (${formatCents(totalCostCents)}) has exceeded your ${formatCents(capCents)} monthly cap. Your assistant has been paused. Increase your cap in Settings to resume.`,
+              severity: "critical",
+            },
+            totalCostCents,
+            capCents
+          );
         }
       }
     }

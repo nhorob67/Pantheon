@@ -12,6 +12,7 @@ export function SpendingCapForm() {
   const [alertEmail, setAlertEmail] = useState("");
   const [currentCents, setCurrentCents] = useState(0);
   const [percentage, setPercentage] = useState<number | null>(null);
+  const [paused, setPaused] = useState(false);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
@@ -25,6 +26,7 @@ export function SpendingCapForm() {
         setAlertEmail(data.alert_email || "");
         setCurrentCents(data.current_cents || 0);
         setPercentage(data.percentage);
+        setPaused(!!data.spending_paused_at);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -62,6 +64,17 @@ export function SpendingCapForm() {
         <Shield className="w-5 h-5 text-primary" />
         <h3 className="font-headline text-lg font-semibold">Spending Cap</h3>
       </div>
+
+      {paused && (
+        <div className="mb-4 bg-destructive/10 border border-destructive/30 rounded-lg p-3">
+          <p className="text-sm font-semibold text-destructive">
+            Assistant Paused
+          </p>
+          <p className="text-xs text-destructive/80 mt-0.5">
+            Your spending cap has been reached. Increase your cap below to resume your assistant.
+          </p>
+        </div>
+      )}
 
       {percentage !== null && (
         <div className="mb-4">
@@ -108,7 +121,7 @@ export function SpendingCapForm() {
           <div>
             <p className="text-sm font-medium">Auto-pause at cap</p>
             <p className="text-xs text-foreground/50">
-              Stop your instance when spending exceeds the cap
+              Pause your assistant when spending exceeds the cap
             </p>
           </div>
           <button

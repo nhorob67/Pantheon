@@ -6,7 +6,6 @@ import { safeErrorMessage } from "@/lib/security/safe-error";
 import { auditLog } from "@/lib/security/audit";
 import { validateWorkflowGraph } from "@/lib/validators/workflow";
 import { normalizeWorkflowDefinitionRow } from "@/lib/queries/workflows";
-import { rebuildAndDeploy } from "@/lib/templates/rebuild-config";
 import { ensurePublishedWorkflowRuntimeFreshness } from "@/lib/workflows/publish-runtime-freshness";
 import {
   isWorkflowBuilderEnabledForCustomer,
@@ -156,7 +155,7 @@ export async function POST(
   );
 
   const freshnessResult = await ensurePublishedWorkflowRuntimeFreshness({
-    deploy: () => rebuildAndDeploy(id),
+    deploy: () => Promise.resolve(),
     rollbackPublishedState: async () => {
       const { error: rollbackError } = await admin
         .from("workflow_definitions")

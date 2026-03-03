@@ -16,6 +16,9 @@ export interface UsageByDay {
 export interface CostBreakdown {
   subscription_cents: number;
   api_usage_cents: number;
+  api_credit_cents: number;
+  overage_cents: number;
+  overage_units: number;
   total_cents: number;
   period_start: string;
   period_end: string;

@@ -1,3 +1,5 @@
+import { Index as FlexSearchIndex } from "flexsearch";
+
 export interface SearchIndexEntry {
   slug: string;
   title: string;
@@ -38,4 +40,34 @@ export async function getSearchIndex(
 
 export function resetSearchIndexCacheForTests() {
   searchIndexPromise = null;
+  flexSearchInstance = null;
+}
+
+// --- FlexSearch integration ---
+
+let flexSearchInstance: FlexSearchIndex | null = null;
+let flexSearchEntries: SearchIndexEntry[] = [];
+
+/**
+ * Build and return a FlexSearch index from the search entries.
+ * Uses forward tokenization for prefix matching (e.g., "gran" matches "grain").
+ */
+export function getFlexSearchIndex(entries: SearchIndexEntry[]): FlexSearchIndex {
+  if (flexSearchInstance && flexSearchEntries === entries) {
+    return flexSearchInstance;
+  }
+
+  flexSearchInstance = new FlexSearchIndex({
+    tokenize: "forward",
+    resolution: 9,
+  });
+
+  for (let i = 0; i < entries.length; i++) {
+    const entry = entries[i];
+    const text = `${entry.title} ${entry.section} ${entry.headings.map(h => h.title).join(" ")} ${entry.body}`;
+    flexSearchInstance.add(i, text);
+  }
+
+  flexSearchEntries = entries;
+  return flexSearchInstance;
 }

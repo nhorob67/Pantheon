@@ -1,11 +1,18 @@
 import type { Metadata } from "next";
-import type { CSSProperties } from "react";
+import { Plus_Jakarta_Sans, Outfit } from "next/font/google";
 import "./globals.css";
 
-const bodyStyle = {
-  "--font-headline": "\"Segoe UI\", \"Helvetica Neue\", Arial, sans-serif",
-  "--font-sans": "\"Segoe UI\", \"Helvetica Neue\", Arial, sans-serif",
-} as CSSProperties;
+const headline = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-headline",
+  display: "swap",
+});
+
+const body = Outfit({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: {
@@ -23,7 +30,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased" style={bodyStyle}>
+      <body className={`${headline.variable} ${body.variable} antialiased`}>
         {children}
       </body>
     </html>

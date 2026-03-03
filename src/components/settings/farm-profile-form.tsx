@@ -10,10 +10,10 @@ import { Loader2, Save } from "lucide-react";
 
 interface FarmProfileFormProps {
   profile: FarmProfile;
-  instanceId: string | null;
+  tenantId: string;
 }
 
-export function FarmProfileForm({ profile, instanceId }: FarmProfileFormProps) {
+export function FarmProfileForm({ profile, tenantId }: FarmProfileFormProps) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +53,7 @@ export function FarmProfileForm({ profile, instanceId }: FarmProfileFormProps) {
     setError(null);
 
     try {
-      const res = await fetch(`/api/instances/${instanceId}/config`, {
+      const res = await fetch(`/api/tenants/${tenantId}/config`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),

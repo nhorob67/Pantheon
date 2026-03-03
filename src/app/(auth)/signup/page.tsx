@@ -57,7 +57,7 @@ export default function SignupPage() {
           Get Started
         </h1>
         <p className="mt-2 text-text-secondary">
-          $40/month — your AI farm assistant, always on.
+          $50/month — your AI farm assistant, always on.
         </p>
       </div>
 

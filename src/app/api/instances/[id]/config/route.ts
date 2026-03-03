@@ -1,14 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getCoolifyClient } from "@/lib/coolify/client";
-import {
-  buildOpenClawConfig,
-  encodeConfigForEnv,
-} from "@/lib/templates/openclaw-config";
-import { renderSoulTemplate } from "@/lib/templates/soul";
 import { farmProfileSchema } from "@/lib/validators/farm-profile";
-import { getDiscordTokenFromChannelConfig } from "@/lib/channel-token";
 import { consumeConfigUpdateRateLimit } from "@/lib/security/user-rate-limit";
 
 export async function PUT(
@@ -89,45 +82,9 @@ export async function PUT(
     );
   }
 
-  // Fetch skill configs for this customer
-  const { data: skillConfigs } = await admin
-    .from("skill_configs")
-    .select("skill_name, enabled")
-    .eq("customer_id", instance.customer_id);
-
-  // Rebuild configs
-  const channelToken = getDiscordTokenFromChannelConfig(instance.channel_config);
-  const openclawConfig = buildOpenClawConfig(
-    profile,
-    {
-      type: "discord",
-      token: channelToken,
-    },
-    process.env.OPENROUTER_API_KEY!,
-    skillConfigs || []
-  );
-
-  const soulMd = renderSoulTemplate({
-    farm_name: profile.farm_name || "My Farm",
-    state: profile.state,
-    county: profile.county || "",
-    acres: profile.acres || 0,
-    crops_list: profile.primary_crops.join(", "),
-    elevator_names: profile.elevators.join(", "),
-    timezone: profile.timezone,
-  });
-
-  // Update env vars and restart
-  if (instance.coolify_uuid) {
-    const coolify = getCoolifyClient();
-    await coolify.updateEnvVars(instance.coolify_uuid, {
-      OPENCLAW_CONFIG: encodeConfigForEnv(openclawConfig),
-      SOUL_MD: Buffer.from(soulMd).toString("base64"),
-    });
-    await coolify.restartApplication(instance.coolify_uuid);
-  }
-
-  await admin.from("instances").update({ status: "running" }).eq("id", id);
+  // TODO: In multi-tenant SaaS model, config updates are applied via the
+  // tenant runtime layer (system prompts from soul-presets, skill configs
+  // from DB) rather than pushing env vars to a Coolify container.
 
   return NextResponse.json({ success: true });
 }

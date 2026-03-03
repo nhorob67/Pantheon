@@ -19,7 +19,7 @@ The current built-in tool set includes three skills:
 |---|---|---|---|
 | [Grain Bids](/docs/skills/grain-bids) | `farm-grain-bids` | Visits your configured elevator pages and extracts current cash bids. | Price checks, cross-elevator comparisons, and finding the best bid by commodity |
 | [Weather Forecasts](/docs/skills/weather-forecasts) | `farm-weather` | Pulls forecast and alert data for your farm location, then adds ag-focused interpretation. | Morning weather briefings, spray-window checks, and short-term field planning |
-| [Scale Tickets](/docs/skills/scale-tickets) | `farm-scale-tickets` | Records delivery tickets from photo, voice, or manual entry and stores them in SQLite. | Harvest logging, load history, bushel totals, and export-ready records |
+| [Scale Tickets](/docs/skills/scale-tickets) | `farm-scale-tickets` | Records delivery tickets from photo, voice, or manual entry and stores them in your farm's database. | Harvest logging, load history, bushel totals, and export-ready records |
 
 <Callout variant="info" title="Source of truth for available tools">
 These tool IDs are the same IDs used in FarmClaw configuration and agent assignment (`farm-grain-bids`, `farm-weather`, `farm-scale-tickets`).
@@ -38,7 +38,7 @@ This mirrors OpenClaw's docs pattern: an explicit inventory of tools plus clear 
 
 - [Skills Overview](/docs/skills) -- Detailed behavior and configuration for each built-in skill
 - [Skills & Scheduling](/docs/agents/skills-per-agent) -- Assign tools per agent and configure cron jobs
-- [MCP Servers](/docs/mcp-servers) -- Additional runtime tools like filesystem and SQLite servers
+- [MCP Servers](/docs/mcp-servers) -- Custom tool servers for advanced use cases
 - [Visual Workflow Builder](/docs/tools/workflow-builder) -- Guided automation authoring walkthrough
 - [Workflow Builder Rollout Rings](/docs/tools/workflow-builder-rollout) -- Canary/standard/delayed release controls
 - [Workflow KPI Review Cadence](/docs/tools/workflow-builder-kpi-review) -- Weekly launch readiness review workflow

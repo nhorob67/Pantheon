@@ -2,9 +2,9 @@ export function ConversationShowcase() {
   return (
     <section className="showcase" id="skills">
       <div className="showcase-header">
-        <div className="section-label">What You Can Ask</div>
+        <div className="section-label">See It In Action</div>
         <h2 className="section-title">One assistant. Every question your farm throws at you.</h2>
-        <p className="section-sub">FarmClaw doesn&apos;t have a fixed menu. Ask it whatever you need — it figures out how to help.</p>
+        <p className="section-sub">No menus. No apps to switch between. Just type what you need.</p>
       </div>
 
       <div className="convo-grid">
@@ -41,7 +41,7 @@ export function ConversationShowcase() {
         </div>
 
         <div className="convo-card">
-          <div className="convo-category"><span className="icon">⛅</span> Weather</div>
+          <div className="convo-category"><span className="icon">⛅</span> Weather / Spray Windows</div>
           <div className="convo-message user">
             <div className="sender">You</div>
             <div className="bubble">Spray window tomorrow?</div>
@@ -60,47 +60,20 @@ export function ConversationShowcase() {
         </div>
 
         <div className="convo-card">
-          <div className="convo-category"><span className="icon">📋</span> Programs &amp; Deadlines</div>
+          <div className="convo-category"><span className="icon">🧾</span> Scale Tickets</div>
           <div className="convo-message user">
             <div className="sender">You</div>
-            <div className="bubble">When&apos;s the ARC/PLC signup deadline?</div>
+            <div className="bubble">Just dropped off a load at CHS</div>
+            <div className="attachment">📎 scale-ticket.jpg</div>
           </div>
           <div className="convo-message assistant">
             <div className="sender">FarmClaw</div>
             <div className="bubble">
-              ARC/PLC enrollment for the 2026 crop year closes <strong>March 15, 2026</strong>. Your county FSA office in Cass County has walk-in hours Tues-Thurs. Want me to remind you a week before?
-            </div>
-          </div>
-        </div>
-
-        <div className="convo-card">
-          <div className="convo-category"><span className="icon">📊</span> Market Intel</div>
-          <div className="convo-message user">
-            <div className="sender">You</div>
-            <div className="bubble">How has my basis trended this month?</div>
-          </div>
-          <div className="convo-message assistant">
-            <div className="sender">FarmClaw</div>
-            <div className="bubble">
-              Corn basis at CHS Fargo over the last 14 days:<br /><br />
-              Feb 1: <strong>-42</strong> → Feb 11: <strong>-35</strong><br /><br />
-              That&apos;s a 7¢ improvement. Basis has tightened steadily since the Feb WASDE showed lower carry-out estimates. If you&apos;re sitting on grain, this trend is favorable.
-            </div>
-          </div>
-        </div>
-
-        <div className="convo-card">
-          <div className="convo-category"><span className="icon">🚜</span> Operations</div>
-          <div className="convo-message user">
-            <div className="sender">You</div>
-            <div className="bubble">Draft a message to Dale about the land rent payment being 2 weeks late</div>
-          </div>
-          <div className="convo-message assistant">
-            <div className="sender">FarmClaw</div>
-            <div className="bubble">
-              Here&apos;s a draft:<br /><br />
-              <em>&ldquo;Hi Dale — wanted to give you a heads up that the rent payment for the NE quarter will be about two weeks behind this year. Waiting on a couple grain settlements to clear. Should have it to you by the 25th. Let me know if that&apos;s an issue. Thanks.&rdquo;</em><br /><br />
-              Want me to adjust the tone or send it?
+              Got it. Here&apos;s what I pulled from the ticket:<br /><br />
+              <strong>Corn</strong> — CHS Fargo, Feb 12<br />
+              Gross: 67,240 lbs / Tare: 33,100 lbs / <strong>Net: 610.0 bu</strong> @ 56 lb<br />
+              Moisture: 14.2% · Test weight: 57.8 lb/bu · Dockage: 0.3%<br /><br />
+              Want me to log this?
             </div>
           </div>
         </div>

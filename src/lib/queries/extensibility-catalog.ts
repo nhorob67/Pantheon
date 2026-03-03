@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { safeErrorMessage } from "@/lib/security/safe-error";
+import { sanitizeSearchForOr } from "@/lib/security/postgrest-sanitize";
 import type {
   ExtensionCatalogFilters,
 } from "@/lib/validators/extensibility";
@@ -18,10 +19,6 @@ export interface ExtensionCatalogListResult {
   per_page: number;
 }
 
-function sanitizeSearchTerm(value: string): string {
-  return value.replace(/[%_.,()\\]/g, "").trim();
-}
-
 export async function listExtensionCatalog(
   filters: ExtensionCatalogFilters
 ): Promise<ExtensionCatalogListResult> {
@@ -38,7 +35,7 @@ export async function listExtensionCatalog(
     .range(offset, offset + per_page - 1);
 
   if (search) {
-    const sanitized = sanitizeSearchTerm(search);
+    const sanitized = sanitizeSearchForOr(search);
     if (sanitized.length > 0) {
       query = query.or(
         `slug.ilike.%${sanitized}%,display_name.ilike.%${sanitized}%`

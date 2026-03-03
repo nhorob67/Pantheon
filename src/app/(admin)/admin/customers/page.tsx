@@ -1,8 +1,9 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { isAdmin } from "@/lib/auth/admin";
+import type { Metadata } from "next";
+import { requireAdmin } from "@/lib/auth/admin-session";
 import { customerFiltersSchema } from "@/lib/validators/admin";
 import { getAdminCustomers } from "@/lib/queries/admin-lists";
+
+export const metadata: Metadata = { title: "Customers" };
 import { CustomerTable } from "@/components/admin/customer-table";
 
 interface CustomersPageProps {
@@ -20,14 +21,7 @@ function normalizeSearchParams(
 }
 
 export default async function CustomersPage({ searchParams }: CustomersPageProps) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user || !isAdmin(user.email)) {
-    redirect("/dashboard");
-  }
+  await requireAdmin();
 
   const parsed = customerFiltersSchema.safeParse(
     normalizeSearchParams(await searchParams)

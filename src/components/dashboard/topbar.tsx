@@ -9,12 +9,24 @@ import { useHelp } from "./help-provider";
 
 interface TopbarProps {
   farmName?: string;
-  instanceStatus?: string;
   email?: string;
+  activeTenantId?: string | null;
+  tenantOptions?: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    status: string;
+  }>;
 }
 
-export function Topbar({ farmName, instanceStatus, email }: TopbarProps) {
+export function Topbar({
+  farmName,
+  email,
+  activeTenantId,
+  tenantOptions = [],
+}: TopbarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [switchingTenant, setSwitchingTenant] = useState(false);
   const router = useRouter();
   const {
     actions: { openHelp },
@@ -25,6 +37,32 @@ export function Topbar({ farmName, instanceStatus, email }: TopbarProps) {
     await supabase.auth.signOut();
     router.push("/login");
   };
+
+  const handleTenantChange = async (tenantId: string) => {
+    if (!tenantId || tenantId === activeTenantId) {
+      return;
+    }
+
+    setSwitchingTenant(true);
+    try {
+      await fetch("/api/tenants/select", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ tenant_id: tenantId }),
+      });
+      router.refresh();
+    } finally {
+      setSwitchingTenant(false);
+    }
+  };
+
+  const showTenantSwitcher = tenantOptions.length > 1;
+  const activeTenantName =
+    tenantOptions.find((tenant) => tenant.id === activeTenantId)?.name
+    || tenantOptions[0]?.name
+    || null;
 
   return (
     <header className="h-16 border-b border-border bg-card flex items-center justify-between px-6">
@@ -37,24 +75,34 @@ export function Topbar({ farmName, instanceStatus, email }: TopbarProps) {
             {farmName || "My Farm"}
           </h1>
         </div>
-        {instanceStatus && (
-          <span
-            className={`font-mono text-xs uppercase tracking-wider px-2.5 py-1 rounded-full ${
-              instanceStatus === "running"
-                ? "bg-primary/10 text-primary"
-                : instanceStatus === "stopped"
-                  ? "bg-energy/10 text-amber-700"
-                  : instanceStatus === "error"
-                    ? "bg-destructive/10 text-destructive"
-                    : "bg-muted text-foreground/60"
-            }`}
-          >
-            {instanceStatus}
-          </span>
-        )}
       </div>
 
       <div className="flex items-center gap-4">
+        {showTenantSwitcher ? (
+          <label className="hidden md:flex items-center gap-2 text-xs text-foreground/60">
+            Workspace
+            <select
+              className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
+              value={activeTenantId || tenantOptions[0]?.id || ""}
+              onChange={(event) => {
+                void handleTenantChange(event.target.value);
+              }}
+              disabled={switchingTenant}
+            >
+              {tenantOptions.map((tenant) => (
+                <option key={tenant.id} value={tenant.id}>
+                  {tenant.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : (
+          activeTenantName && (
+            <span className="hidden md:inline-flex text-xs rounded-full border border-border px-2 py-1 text-foreground/60">
+              Workspace: {activeTenantName}
+            </span>
+          )
+        )}
         <button
           onClick={openHelp}
           className="md:hidden text-foreground/60 hover:text-foreground transition-colors"

@@ -1,19 +1,38 @@
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { SkillToggleCard } from "@/components/settings/skill-toggle-card";
-import { requireDashboardCustomer, getCustomerInstance } from "@/lib/auth/dashboard-session";
+import { requireDashboardCustomer, getCustomerTenant } from "@/lib/auth/dashboard-session";
 import Link from "next/link";
 import { Anvil, Plus } from "lucide-react";
 
+export const metadata: Metadata = { title: "Skills" };
+
 export default async function SkillsSettingsPage() {
   const { customerId } = await requireDashboardCustomer();
+  const tenant = await getCustomerTenant(customerId);
+
+  if (!tenant) {
+    return (
+      <div>
+        <div className="mb-6">
+          <h3 className="font-headline text-lg font-semibold mb-1">
+            Built-in Skills
+          </h3>
+          <p className="text-foreground/60 text-sm">
+            Tenant workspace setup is required before managing skills.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const supabase = await createClient();
 
-  const [{ data: skillConfigs }, instance, { data: customSkills }] = await Promise.all([
+  const [{ data: skillConfigs }, { data: customSkills }] = await Promise.all([
     supabase
       .from("skill_configs")
       .select("*")
       .eq("customer_id", customerId),
-    getCustomerInstance(customerId),
     supabase
       .from("custom_skills")
       .select("id, display_name, slug, status")
@@ -43,7 +62,7 @@ export default async function SkillsSettingsPage() {
                 key={skillName}
                 skillName={skillName}
                 enabled={config?.enabled ?? true}
-                instanceId={instance?.id || ""}
+                tenantId={tenant.id}
               />
             );
           })}

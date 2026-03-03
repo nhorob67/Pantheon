@@ -1,16 +1,9 @@
 "use client";
 
+import { escapeHtml } from "@/lib/security/escape-html";
+
 interface SkillPreviewProps {
   skillMd: string;
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
 }
 
 function parseFrontmatter(md: string): { frontmatter: Record<string, string>; body: string } {

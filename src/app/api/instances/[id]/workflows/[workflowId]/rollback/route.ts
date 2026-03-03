@@ -9,7 +9,6 @@ import {
   validateWorkflowGraph,
   workflowRollbackRequestSchema,
 } from "@/lib/validators/workflow";
-import { rebuildAndDeploy } from "@/lib/templates/rebuild-config";
 import {
   isWorkflowBuilderEnabledForCustomer,
   WORKFLOW_BUILDER_DISABLED_MESSAGE,
@@ -262,71 +261,6 @@ export async function POST(
           "Workflow publish state changed during rollback. Refresh and retry.",
       },
       { status: 409 }
-    );
-  }
-
-  try {
-    await rebuildAndDeploy(id);
-  } catch (deployError) {
-    const { error: rollbackError } = await admin
-      .from("workflow_definitions")
-      .update({
-        status: workflow.status,
-        published_version: currentPublishedVersion,
-        updated_by: user.id,
-      })
-      .eq("id", workflowId)
-      .eq("instance_id", id)
-      .eq("customer_id", instance.customer_id)
-      .eq("published_version", targetVersion);
-
-    if (rollbackError) {
-      auditLog({
-        action: "workflow.rollback.deploy_failed_rollback_failed",
-        actor: user.email || user.id,
-        resource_type: "workflow",
-        resource_id: workflowId,
-        details: {
-          customer_id: instance.customer_id,
-          instance_id: id,
-          previous_published_version: currentPublishedVersion,
-          target_published_version: targetVersion,
-          rollback_error: safeErrorMessage(rollbackError, "Rollback failed"),
-        },
-      });
-
-      return NextResponse.json(
-        {
-          error:
-            "Workflow rollback failed during runtime deploy and automatic recovery failed. Verify publish state before retrying.",
-          code: "WORKFLOW_DEPLOY_FAILED_ROLLBACK_FAILED",
-        },
-        { status: 500 }
-      );
-    }
-
-    auditLog({
-      action: "workflow.rollback.deploy_failed_rolled_back",
-      actor: user.email || user.id,
-      resource_type: "workflow",
-      resource_id: workflowId,
-      details: {
-        customer_id: instance.customer_id,
-        instance_id: id,
-        previous_published_version: currentPublishedVersion,
-        target_published_version: targetVersion,
-      },
-    });
-
-    return NextResponse.json(
-      {
-        error: safeErrorMessage(
-          deployError,
-          "Workflow rollback failed during runtime deploy. Rollback was reverted."
-        ),
-        code: "WORKFLOW_DEPLOY_FAILED",
-      },
-      { status: 503 }
     );
   }
 

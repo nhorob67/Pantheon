@@ -1,0 +1,20 @@
+[
+  {
+    "name": "operator-safe-tools",
+    "role": "operator",
+    "required_tools": ["echo", "time", "hash"],
+    "transcript": "User: can you help?\n/tool echo {\"message\":\"hello from transcript\"}\nSome free text\n/tool time {}\n/tool hash {\"value\":\"farmclaw\"}\n"
+  },
+  {
+    "name": "viewer-safe-tools",
+    "role": "viewer",
+    "required_tools": ["echo", "time"],
+    "transcript": "/tool echo {\"message\":\"viewer run\"}\n/tool time {}\n/tool uuid {}\n/tool base64_encode {\"value\":\"viewer hello\"}\n/tool base64_decode {\"base64\":\"dmlld2VyIGhlbGxv\"}\n"
+  },
+  {
+    "name": "unsupported-tool-detected",
+    "role": "admin",
+    "required_tools": ["echo"],
+    "transcript": "/tool echo {\"message\":\"still works\"}\n/tool non_existing_tool {}\n"
+  }
+]

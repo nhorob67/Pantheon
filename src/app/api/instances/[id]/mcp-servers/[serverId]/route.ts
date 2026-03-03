@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { updateMcpServerSchema } from "@/lib/validators/mcp-server";
-import { rebuildAndDeploy } from "@/lib/templates/rebuild-config";
 
 export async function PUT(
   request: Request,
@@ -55,12 +54,6 @@ export async function PUT(
     );
   }
 
-  try {
-    await rebuildAndDeploy(id);
-  } catch {
-    // Updated but deploy failed — not fatal
-  }
-
   return NextResponse.json({ mcp_server: mcpServer });
 }
 
@@ -98,12 +91,6 @@ export async function DELETE(
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  try {
-    await rebuildAndDeploy(id);
-  } catch {
-    // Deleted but deploy failed — not fatal
   }
 
   return NextResponse.json({ success: true });

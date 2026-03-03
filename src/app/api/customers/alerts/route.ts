@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { sanitizeOrFilterValue } from "@/lib/security/postgrest-sanitize";
 
 const MAX_LIMIT = 100;
 const DEFAULT_LIMIT = 20;
@@ -112,8 +113,10 @@ export async function GET(request: Request) {
     .order("id", { ascending: false });
 
   if (cursor) {
+    const safeCreatedAt = sanitizeOrFilterValue(cursor.createdAt);
+    const safeId = sanitizeOrFilterValue(cursor.id);
     alertsQuery = alertsQuery.or(
-      `created_at.lt.${cursor.createdAt},and(created_at.eq.${cursor.createdAt},id.lt.${cursor.id})`
+      `created_at.lt.${safeCreatedAt},and(created_at.eq.${safeCreatedAt},id.lt.${safeId})`
     );
   }
 

@@ -5,8 +5,6 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Users,
-  Server,
-  ArrowUpCircle,
   BarChart3,
   ArrowLeft,
 } from "lucide-react";
@@ -14,8 +12,6 @@ import {
 const navItems = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
   { href: "/admin/customers", label: "Customers", icon: Users },
-  { href: "/admin/instances", label: "Fleet", icon: Server },
-  { href: "/admin/upgrades", label: "Upgrades", icon: ArrowUpCircle },
   { href: "/admin/usage", label: "Usage & Revenue", icon: BarChart3 },
 ];
 

@@ -5,7 +5,7 @@ export async function proxy(request: NextRequest) {
   return await updateSession(request);
 }
 
-export const config = {
+export const proxyConfig = {
   matcher: [
     "/((?!_next/static|_next/image|favicon.ico|images|api/webhooks).*)",
   ],

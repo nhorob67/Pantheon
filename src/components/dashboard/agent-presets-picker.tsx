@@ -8,12 +8,12 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Sparkles } from "lucide-react";
 
 interface AgentPresetsPickerProps {
-  instanceId: string;
+  tenantId: string;
   onDeployed: () => void;
 }
 
 export function AgentPresetsPicker({
-  instanceId,
+  tenantId,
   onDeployed,
 }: AgentPresetsPickerProps) {
   const [deploying, setDeploying] = useState<string | null>(null);
@@ -29,15 +29,17 @@ export function AgentPresetsPicker({
     try {
       // Create all agents sequentially (order matters for default agent)
       for (const agentConfig of setup.agents) {
-        const res = await fetch(`/api/instances/${instanceId}/agents`, {
+        const res = await fetch(`/api/tenants/${tenantId}/agents`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(agentConfig),
         });
 
         if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.error || "Failed to create agent");
+          const payload = await res.json();
+          throw new Error(
+            payload?.error?.message || payload?.error || "Failed to create agent"
+          );
         }
       }
 

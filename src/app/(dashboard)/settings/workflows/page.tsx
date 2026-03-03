@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireDashboardCustomer, getCustomerInstance } from "@/lib/auth/dashboard-session";
+import { formatDateTime } from "@/lib/utils/format";
 import { WORKFLOW_STATUSES, type WorkflowStatus } from "@/types/workflow";
 import { isWorkflowBuilderEnabledForCustomer } from "@/lib/workflows/feature-gate";
 import { WorkflowPerformanceBeacon } from "@/components/workflows/workflow-performance-beacon";
@@ -76,12 +77,7 @@ function buildWorkflowsHref(input: {
 }
 
 function formatRelativeTimestamp(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return date.toLocaleString();
+  return formatDateTime(value);
 }
 
 export default async function WorkflowsSettingsPage({

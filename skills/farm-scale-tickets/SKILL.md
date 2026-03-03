@@ -2,36 +2,13 @@
 
 You manage scale ticket records for this farming operation. Scale tickets are the official weight receipts from grain deliveries to elevators. You support three entry methods and provide query/reporting capabilities.
 
-## SQLite Database
+## Data Storage
 
-On first use, initialize the database at the configured `db_path` (default: `/home/node/data/farmclaw.db`):
-
-```sql
-CREATE TABLE IF NOT EXISTS scale_tickets (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  date TEXT NOT NULL,
-  elevator TEXT,
-  crop TEXT NOT NULL,
-  gross_weight REAL,
-  tare_weight REAL,
-  net_weight REAL NOT NULL,
-  moisture_pct REAL,
-  test_weight REAL,
-  dockage_pct REAL,
-  price_per_bushel REAL,
-  grade TEXT,
-  truck_number TEXT,
-  load_number TEXT,
-  field_name TEXT,
-  notes TEXT,
-  source TEXT DEFAULT 'manual',
-  raw_ocr_text TEXT,
-  created_at TEXT DEFAULT (datetime('now')),
-  updated_at TEXT DEFAULT (datetime('now'))
-);
-```
-
-Use the `sqlite` MCP server tool to run all queries against this database.
+Scale ticket data is stored securely in your farm's cloud database and accessed through the tenant runtime tools:
+- **`tenant_scale_ticket_create`** — Create a new scale ticket record
+- **`tenant_scale_ticket_query`** — Search and aggregate ticket data
+- **`tenant_scale_ticket_update`** — Update an existing ticket
+- **`tenant_scale_ticket_delete`** — Delete a ticket (requires owner approval)
 
 ## Bushel Conversion Table
 
@@ -56,7 +33,7 @@ When displaying totals, always show both pounds and bushels.
 
 ## Entry Method 1: Photo OCR
 
-When a user posts an image in the channel:
+When a user posts an image of a scale ticket:
 
 1. Use your vision capability to examine the image
 2. Look for typical scale ticket fields: date, elevator name, commodity, gross/tare/net weights, moisture, test weight, dockage, price, grade, truck #, load #
@@ -76,7 +53,7 @@ When a user posts an image in the channel:
 
    Does this look correct? Reply "save" to record, or tell me what to change.
    ```
-5. On confirmation, save with `source = 'ocr'` and store the raw extracted text in `raw_ocr_text`
+5. On confirmation, save using `tenant_scale_ticket_create` with `source: "ocr"`
 6. If the image is unclear, tell the user which fields you couldn't read and ask them to fill in the gaps
 
 ## Entry Method 2: Voice / Unstructured Text
@@ -89,7 +66,7 @@ When a user types or dictates something like:
 1. Parse the natural language to extract all recognizable fields
 2. Infer fields when possible (e.g., today's date if not mentioned, convert bushels to weight)
 3. Present the parsed data for confirmation (same format as OCR)
-4. Save with `source = 'voice'`
+4. Save using `tenant_scale_ticket_create` with `source: "voice"`
 
 **Parsing tips:**
 - "k" or "K" after a number means thousands (48k = 48,000)
@@ -129,7 +106,7 @@ Ask for: Price/bu, Grade, Truck #, Load #, Field name, Notes
 - All optional unless in required_fields
 - Can skip entirely
 
-After all groups, present the complete ticket for confirmation, then save with `source = 'manual'`.
+After all groups, present the complete ticket for confirmation, then save using `tenant_scale_ticket_create` with `source: "manual"`.
 
 ## Field Configuration
 
@@ -141,34 +118,19 @@ If a field is not in `visible_fields`, don't ask for it during structured entry,
 
 ## Queries & Reports
 
-Support these query patterns:
-- **"show today's tickets"** — List all tickets from today
-- **"show tickets from [date]"** — List tickets from a specific date
-- **"total bushels of corn"** — Sum net weight of corn, convert to bushels
-- **"how many loads this week"** — Count tickets in current week
-- **"total by crop"** — Breakdown of total bushels and loads per crop
-- **"total by elevator"** — Breakdown of total bushels and loads per elevator
-- **"average moisture for corn"** — Average moisture % for corn tickets
-- **"export tickets"** — Generate a .xlsx spreadsheet of all tickets
-
-For exports, use Python pandas:
-```python
-python3 -c "
-import pandas as pd
-import sqlite3
-conn = sqlite3.connect('/home/node/data/farmclaw.db')
-df = pd.read_sql_query('SELECT * FROM scale_tickets ORDER BY date DESC', conn)
-df.to_excel('/home/node/workspace/scale_tickets.xlsx', index=False)
-conn.close()
-"
-```
-
-Then send the file via Discord message with the file path.
+Support these query patterns using `tenant_scale_ticket_query`:
+- **"show today's tickets"** — Query with `date_from` and `date_to` set to today
+- **"show tickets from [date]"** — Query with specific date range
+- **"total bushels of corn"** — Query with `crop: "corn"` and `aggregation: "sum_by_crop"`
+- **"how many loads this week"** — Query with date range for current week, `aggregation: "count"`
+- **"total by crop"** — Query with `aggregation: "sum_by_crop"`
+- **"total by elevator"** — Query with `aggregation: "sum_by_elevator"`
+- **"average moisture for corn"** — Query corn tickets, calculate average moisture from results
 
 ## Editing & Deleting
 
-- **"edit ticket #5"** — Show ticket 5 and ask what to change
-- **"delete ticket #5"** — Confirm deletion, then remove
-- **"update moisture on last ticket to 15.8"** — Update specific field on most recent ticket
+- **"edit ticket #5"** — Use `tenant_scale_ticket_query` to find the ticket, show it, ask what to change, then use `tenant_scale_ticket_update`
+- **"delete ticket #5"** — Use `tenant_scale_ticket_query` to find the ticket, confirm deletion, then use `tenant_scale_ticket_delete`
+- **"update moisture on last ticket to 15.8"** — Query most recent ticket, update with `tenant_scale_ticket_update`
 
 Always confirm before deleting. Show the ticket details before confirming deletion.

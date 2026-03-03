@@ -32,7 +32,7 @@ interface AgentOption {
 
 interface KnowledgePanelProps {
   files: KnowledgeFileMeta[];
-  instanceId: string;
+  tenantId: string;
   agents: AgentOption[];
 }
 
@@ -57,9 +57,114 @@ function fileIcon(type: string) {
   }
 }
 
+interface KnowledgeFileCardProps {
+  file: KnowledgeFileMeta;
+  agents: AgentOption[];
+  agentLabel: string;
+  agentAccentClass: string;
+  deleting: boolean;
+  reassigning: boolean;
+  onDelete: (fileId: string) => void;
+  onReassign: (fileId: string, agentId: string | null) => void;
+}
+
+function KnowledgeFileCard({
+  file,
+  agents,
+  agentLabel,
+  agentAccentClass,
+  deleting,
+  reassigning,
+  onDelete,
+  onReassign,
+}: KnowledgeFileCardProps) {
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  return (
+    <div
+      className={`bg-card rounded-xl border border-border border-l-4 ${agentAccentClass} shadow-sm p-4 flex items-center justify-between gap-3`}
+    >
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="text-foreground/50 shrink-0">
+          {fileIcon(file.file_type)}
+        </div>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-sm font-medium text-foreground truncate">
+              {file.file_name}
+            </p>
+            <Badge variant="neutral">
+              {file.file_type.toUpperCase()}
+            </Badge>
+            <span className="text-xs text-foreground/40">
+              {formatBytes(file.file_size_bytes)}
+            </span>
+          </div>
+          <p className="text-xs text-foreground/50 mt-0.5">{agentLabel}</p>
+        </div>
+      </div>
+
+      <div className="relative shrink-0">
+        <button
+          type="button"
+          onClick={() => setMenuOpen((current) => !current)}
+          className="p-1.5 rounded-lg hover:bg-muted transition-colors text-foreground/50 hover:text-foreground cursor-pointer"
+        >
+          <MoreVertical className="w-4 h-4" />
+        </button>
+
+        {menuOpen && (
+          <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-lg py-1 z-10 w-48">
+            <div className="px-3 py-1.5">
+              <div className="flex items-center gap-2 text-xs text-foreground/50 mb-1.5">
+                <ArrowRightLeft className="w-3 h-3" />
+                Reassign
+              </div>
+              <select
+                value={file.agent_id || ""}
+                disabled={reassigning}
+                onChange={(e) => {
+                  const newAgentId = e.target.value || null;
+                  onReassign(file.id, newAgentId);
+                  setMenuOpen(false);
+                }}
+                className="w-full border border-border rounded bg-background px-2 py-1 text-xs text-foreground outline-none"
+              >
+                <option value="">
+                  All Agents (Shared)
+                </option>
+                {agents.map((agent) => (
+                  <option
+                    key={agent.id}
+                    value={agent.id}
+                  >
+                    {agent.display_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <hr className="border-border my-1" />
+
+            <button
+              type="button"
+              disabled={deleting}
+              onClick={() => onDelete(file.id)}
+              className="w-full text-left px-3 py-1.5 text-xs text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50"
+            >
+              <Trash2 className="w-3 h-3" />
+              {deleting ? "Removing..." : "Delete"}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function KnowledgePanel({
   files: initialFiles,
-  instanceId,
+  tenantId,
   agents,
 }: KnowledgePanelProps) {
   const [files, setFiles] = useState<KnowledgeFileMeta[]>(initialFiles);
@@ -69,7 +174,6 @@ export function KnowledgePanel({
   const [notice, setNotice] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [reassigningId, setReassigningId] = useState<string | null>(null);
-  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [uploadAgentId, setUploadAgentId] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -102,19 +206,25 @@ export function KnowledgePanel({
 
       try {
         const res = await fetch(
-          `/api/instances/${instanceId}/knowledge`,
+          `/api/tenants/${tenantId}/knowledge`,
           { method: "POST", body: formData }
         );
         const payload = (await res.json()) as {
+          data?: { file?: KnowledgeFileMeta };
           file?: KnowledgeFileMeta;
-          error?: string;
+          error?: string | { message?: string };
         };
+        const nextFile = payload?.data?.file || payload?.file;
+        const errorMessage =
+          typeof payload?.error === "string"
+            ? payload.error
+            : payload?.error?.message;
 
-        if (!res.ok || !payload.file) {
-          throw new Error(payload.error || "Upload failed");
+        if (!res.ok || !nextFile) {
+          throw new Error(errorMessage || "Upload failed");
         }
 
-        setFiles((prev) => [payload.file!, ...prev]);
+        setFiles((prev) => [nextFile, ...prev]);
         setNotice(`${file.name} uploaded successfully.`);
       } catch (err) {
         setError(
@@ -124,7 +234,7 @@ export function KnowledgePanel({
         setUploading(false);
       }
     },
-    [instanceId, uploadAgentId]
+    [tenantId, uploadAgentId]
   );
 
   const handleDrop = useCallback(
@@ -154,16 +264,22 @@ export function KnowledgePanel({
 
     try {
       const res = await fetch(
-        `/api/instances/${instanceId}/knowledge/${fileId}`,
+        `/api/tenants/${tenantId}/knowledge/${fileId}`,
         { method: "DELETE" }
       );
       const payload = (await res.json()) as {
+        data?: { success?: boolean };
         success?: boolean;
-        error?: string;
+        error?: string | { message?: string };
       };
+      const success = payload?.data?.success ?? payload?.success;
+      const errorMessage =
+        typeof payload?.error === "string"
+          ? payload.error
+          : payload?.error?.message;
 
-      if (!res.ok || !payload.success) {
-        throw new Error(payload.error || "Delete failed");
+      if (!res.ok || !success) {
+        throw new Error(errorMessage || "Delete failed");
       }
 
       setFiles((prev) => prev.filter((f) => f.id !== fileId));
@@ -174,7 +290,6 @@ export function KnowledgePanel({
       );
     } finally {
       setDeletingId(null);
-      setMenuOpenId(null);
     }
   };
 
@@ -188,7 +303,7 @@ export function KnowledgePanel({
 
     try {
       const res = await fetch(
-        `/api/instances/${instanceId}/knowledge/${fileId}`,
+        `/api/tenants/${tenantId}/knowledge/${fileId}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -196,16 +311,22 @@ export function KnowledgePanel({
         }
       );
       const payload = (await res.json()) as {
+        data?: { file?: KnowledgeFileMeta };
         file?: KnowledgeFileMeta;
-        error?: string;
+        error?: string | { message?: string };
       };
+      const nextFile = payload?.data?.file || payload?.file;
+      const errorMessage =
+        typeof payload?.error === "string"
+          ? payload.error
+          : payload?.error?.message;
 
-      if (!res.ok || !payload.file) {
-        throw new Error(payload.error || "Reassignment failed");
+      if (!res.ok || !nextFile) {
+        throw new Error(errorMessage || "Reassignment failed");
       }
 
       setFiles((prev) =>
-        prev.map((f) => (f.id === fileId ? payload.file! : f))
+        prev.map((f) => (f.id === fileId ? nextFile : f))
       );
       setNotice("File reassigned.");
     } catch (err) {
@@ -318,99 +439,17 @@ export function KnowledgePanel({
       {activeFiles.length > 0 ? (
         <div className="space-y-3">
           {activeFiles.map((file) => (
-            <div
+            <KnowledgeFileCard
               key={file.id}
-              className={`bg-card rounded-xl border border-border border-l-4 ${getAgentAccent(
-                file.agent_id
-              )} shadow-sm p-4 flex items-center justify-between gap-3`}
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="text-foreground/50 shrink-0">
-                  {fileIcon(file.file_type)}
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-sm font-medium text-foreground truncate">
-                      {file.file_name}
-                    </p>
-                    <Badge variant="neutral">
-                      {file.file_type.toUpperCase()}
-                    </Badge>
-                    <span className="text-xs text-foreground/40">
-                      {formatBytes(file.file_size_bytes)}
-                    </span>
-                  </div>
-                  <p className="text-xs text-foreground/50 mt-0.5">
-                    {getAgentLabel(file.agent_id)}
-                  </p>
-                </div>
-              </div>
-
-              {/* Actions menu */}
-              <div className="relative shrink-0">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setMenuOpenId(
-                      menuOpenId === file.id ? null : file.id
-                    )
-                  }
-                  className="p-1.5 rounded-lg hover:bg-muted transition-colors text-foreground/50 hover:text-foreground cursor-pointer"
-                >
-                  <MoreVertical className="w-4 h-4" />
-                </button>
-
-                {menuOpenId === file.id && (
-                  <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-lg py-1 z-10 w-48">
-                    {/* Reassign option */}
-                    <div className="px-3 py-1.5">
-                      <div className="flex items-center gap-2 text-xs text-foreground/50 mb-1.5">
-                        <ArrowRightLeft className="w-3 h-3" />
-                        Reassign
-                      </div>
-                      <select
-                        value={file.agent_id || ""}
-                        disabled={reassigningId === file.id}
-                        onChange={(e) => {
-                          const newAgentId =
-                            e.target.value || null;
-                          reassignFile(file.id, newAgentId);
-                          setMenuOpenId(null);
-                        }}
-                        className="w-full border border-border rounded bg-background px-2 py-1 text-xs text-foreground outline-none"
-                      >
-                        <option value="">
-                          All Agents (Shared)
-                        </option>
-                        {agents.map((agent) => (
-                          <option
-                            key={agent.id}
-                            value={agent.id}
-                          >
-                            {agent.display_name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <hr className="border-border my-1" />
-
-                    {/* Delete */}
-                    <button
-                      type="button"
-                      disabled={deletingId === file.id}
-                      onClick={() => deleteFile(file.id)}
-                      className="w-full text-left px-3 py-1.5 text-xs text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                      {deletingId === file.id
-                        ? "Removing..."
-                        : "Delete"}
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
+              file={file}
+              agents={agents}
+              agentLabel={getAgentLabel(file.agent_id)}
+              agentAccentClass={getAgentAccent(file.agent_id)}
+              deleting={deletingId === file.id}
+              reassigning={reassigningId === file.id}
+              onDelete={deleteFile}
+              onReassign={reassignFile}
+            />
           ))}
         </div>
       ) : (
