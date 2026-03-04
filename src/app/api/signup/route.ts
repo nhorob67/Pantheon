@@ -128,22 +128,39 @@ async function handleCreateSubscription(body: unknown, request: Request) {
 
   // Encrypt password and upsert pending signup
   const passwordEncrypted = encrypt(password);
+  const now = new Date().toISOString();
+  const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
 
-  const { error: upsertError } = await admin
+  // Partial unique index can't be used with ON CONFLICT, so do select + insert/update
+  const { data: existing } = await admin
     .from("pending_signups")
-    .upsert(
-      {
-        email,
-        password_encrypted: passwordEncrypted,
-        status: "pending",
-        expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "email" }
-    );
+    .select("id")
+    .eq("email", email)
+    .in("status", ["pending", "payment_processing"])
+    .maybeSingle();
 
-  if (upsertError) {
-    console.error("[SIGNUP] Failed to upsert pending signup:", upsertError);
+  const upsertResult = existing
+    ? await admin
+        .from("pending_signups")
+        .update({
+          password_encrypted: passwordEncrypted,
+          status: "pending",
+          expires_at: expiresAt,
+          updated_at: now,
+        })
+        .eq("id", existing.id)
+    : await admin
+        .from("pending_signups")
+        .insert({
+          email,
+          password_encrypted: passwordEncrypted,
+          status: "pending",
+          expires_at: expiresAt,
+          updated_at: now,
+        });
+
+  if (upsertResult.error) {
+    console.error("[SIGNUP] Failed to upsert pending signup:", upsertResult.error);
     return NextResponse.json(
       { error: "Unable to process signup. Please try again." },
       { status: 500 }
