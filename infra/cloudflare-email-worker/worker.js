@@ -27,22 +27,39 @@ function parseBlockedSenders(raw) {
   );
 }
 
-function buildForwardHeaders(message, localPart) {
-  const headers = new Headers();
-  headers.set("X-FarmClaw-Original-To", normalizeAddress(message.to));
-  headers.set("X-FarmClaw-Original-From", normalizeAddress(message.from));
-  headers.set("X-FarmClaw-Original-Localpart", localPart);
-  headers.set("X-FarmClaw-Forwarded-At", new Date().toISOString());
+async function signPayload(payload, secret) {
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const signature = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    encoder.encode(payload)
+  );
+  return btoa(String.fromCharCode(...new Uint8Array(signature)));
+}
+
+function parseHeaders(message) {
+  const headers = {};
+  for (const [key, value] of message.headers) {
+    headers[key.toLowerCase()] = value;
+  }
   return headers;
 }
 
 const worker = {
   async email(message, env) {
     const rootDomain = normalizeAddress(env.ROOT_DOMAIN || "farmclaw.com");
-    const forwardTo = normalizeAddress(env.FORWARD_TO);
+    const webhookUrl = env.WEBHOOK_URL;
+    const webhookSecret = env.WEBHOOK_SECRET;
 
-    if (!forwardTo) {
-      message.setReject("Routing destination is not configured");
+    if (!webhookUrl || !webhookSecret) {
+      message.setReject("Webhook destination is not configured");
       return;
     }
 
@@ -69,13 +86,57 @@ const worker = {
       return;
     }
 
+    // Read the raw email body
+    const rawEmail = await new Response(message.raw).arrayBuffer();
+    const rawEmailBase64 = btoa(
+      String.fromCharCode(...new Uint8Array(rawEmail))
+    );
+
+    const eventId = crypto.randomUUID();
+    const timestamp = Math.floor(Date.now() / 1000).toString();
+    const headers = parseHeaders(message);
+
+    const payload = JSON.stringify({
+      event_id: eventId,
+      type: "email.received",
+      timestamp,
+      data: {
+        to: recipient.normalized,
+        from: sender,
+        local_part: recipient.localPart,
+        subject: headers["subject"] || null,
+        message_id: headers["message-id"] || null,
+        headers,
+        raw_email: rawEmailBase64,
+      },
+    });
+
+    const signature = await signPayload(`${eventId}.${timestamp}.${payload}`, webhookSecret);
+
     try {
-      await message.forward(
-        forwardTo,
-        buildForwardHeaders(message, recipient.localPart)
-      );
+      const response = await fetch(webhookUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-FarmClaw-Signature": `v1,${signature}`,
+          "X-FarmClaw-Event-Id": eventId,
+          "X-FarmClaw-Timestamp": timestamp,
+        },
+        body: payload,
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        console.error("Webhook delivery failed", {
+          status: response.status,
+          body: text.slice(0, 200),
+          to: recipient.normalized,
+          from: sender,
+        });
+        message.setReject("Temporary mail processing failure");
+      }
     } catch (error) {
-      console.error("Forward failed", {
+      console.error("Webhook request failed", {
         to: recipient.normalized,
         from: sender,
         error: String(error),
