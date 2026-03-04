@@ -15,7 +15,7 @@ function buildCspHeader(nonce: string): string {
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
     "font-src 'self'",
-    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://js.stripe.com https://r.stripe.com https://m.stripe.network",
     "frame-src https://js.stripe.com https://hooks.stripe.com",
     "frame-ancestors 'none'",
   ].join("; ");
