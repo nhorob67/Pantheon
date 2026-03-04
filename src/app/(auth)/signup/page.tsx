@@ -250,7 +250,7 @@ function SignupPageInner() {
       {step === "payment" && clientSecret && (
         <Elements
           stripe={getStripePromise()}
-          options={{ clientSecret, appearance: STRIPE_APPEARANCE }}
+          options={{ clientSecret, appearance: STRIPE_APPEARANCE, loader: "always" }}
         >
           <PaymentStep
             onSuccess={() => setStep("processing")}
@@ -313,10 +313,11 @@ function PaymentStep({
   const stripe = useStripe();
   const elements = useElements();
   const [loading, setLoading] = useState(false);
+  const [ready, setReady] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!stripe || !elements) return;
+    if (!stripe || !elements || !ready) return;
 
     setLoading(true);
     onError("");
@@ -348,13 +349,23 @@ function PaymentStep({
         <Lock className="w-3 h-3 ml-auto" />
       </div>
 
-      <PaymentElement />
+      <div className="min-h-[200px]">
+        <PaymentElement
+          onReady={() => setReady(true)}
+          onLoadError={(e) =>
+            onError(
+              e.error?.message ||
+                "Unable to load payment form. Please refresh and try again."
+            )
+          }
+        />
+      </div>
 
       {error && <p className="text-red-500 text-sm">{error}</p>}
 
       <button
         type="submit"
-        disabled={loading || !stripe || !elements}
+        disabled={loading || !stripe || !elements || !ready}
         className="w-full bg-accent hover:bg-accent-light text-bg-deep font-semibold rounded-full px-6 py-3 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
       >
         {loading ? (
