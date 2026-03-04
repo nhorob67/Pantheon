@@ -196,9 +196,8 @@ async function handleCreateSubscription(body: unknown, request: Request) {
     });
   } catch (err) {
     console.error("[SIGNUP] Stripe subscription creation failed:", err);
-    const msg = err instanceof Error ? err.message : String(err);
     return NextResponse.json(
-      { error: "Unable to set up subscription. Please try again.", debug: msg },
+      { error: "Unable to set up subscription. Please try again." },
       { status: 500 }
     );
   }
