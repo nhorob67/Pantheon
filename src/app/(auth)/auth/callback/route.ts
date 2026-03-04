@@ -12,8 +12,7 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      const redirectTo = next === "checkout" ? "/checkout" : safeRedirectPath(next);
-      return NextResponse.redirect(`${origin}${redirectTo}`);
+      return NextResponse.redirect(`${origin}${safeRedirectPath(next)}`);
     }
   }
 

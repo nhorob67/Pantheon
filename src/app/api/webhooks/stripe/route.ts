@@ -10,6 +10,7 @@ import {
   handleCheckoutCompleted,
   handleSubscriptionUpdated,
   handleSubscriptionDeleted,
+  handleInvoicePaymentSucceeded,
   handleInvoicePaymentFailed,
 } from "@/lib/stripe/webhooks";
 
@@ -203,6 +204,11 @@ export async function POST(request: Request) {
       case "customer.subscription.deleted":
         await handleSubscriptionDeleted(
           event.data.object as Stripe.Subscription
+        );
+        break;
+      case "invoice.payment_succeeded":
+        await handleInvoicePaymentSucceeded(
+          event.data.object as Stripe.Invoice
         );
         break;
       case "invoice.payment_failed":

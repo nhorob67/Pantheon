@@ -77,10 +77,12 @@ export async function updateSession(request: NextRequest) {
   const isApiRoute = pathname.startsWith("/api/");
   const isWebhookRoute = pathname.startsWith("/api/webhooks/");
   const isStripeRoute = pathname === "/api/stripe";
+  const isSignupApiRoute = pathname === "/api/signup";
   const isProtectedApiRoute =
     isApiRoute &&
     !isWebhookRoute &&
-    !isStripeRoute;
+    !isStripeRoute &&
+    !isSignupApiRoute;
 
   // CSRF protection for mutating API calls
   const method = request.method;
@@ -118,8 +120,7 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/dashboard") ||
     request.nextUrl.pathname.startsWith("/onboarding") ||
     request.nextUrl.pathname.startsWith("/settings") ||
-    request.nextUrl.pathname.startsWith("/usage") ||
-    request.nextUrl.pathname.startsWith("/checkout");
+    request.nextUrl.pathname.startsWith("/usage");
   const isAdminPage = request.nextUrl.pathname.startsWith("/admin");
 
   if (!user && isDashboardPage) {

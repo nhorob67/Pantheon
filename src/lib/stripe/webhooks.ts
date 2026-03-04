@@ -113,6 +113,81 @@ export async function handleSubscriptionDeleted(
   // the tenant's access. Per-instance VPS deprovisioning is no longer needed.
 }
 
+export async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
+  const supabase = createAdminClient();
+
+  const subscriptionId = getInvoiceSubscriptionId(invoice);
+  if (!subscriptionId) return;
+
+  // Check if this is a new signup (pending_signups row exists)
+  const { data: signup } = await supabase
+    .from("pending_signups")
+    .select("id, email, password_encrypted")
+    .eq("stripe_subscription_id", subscriptionId)
+    .eq("status", "payment_processing")
+    .single();
+
+  if (!signup) {
+    // This is a renewal invoice for an existing customer — nothing to do
+    return;
+  }
+
+  // Decrypt password and create Supabase auth user
+  const { decrypt } = await import("@/lib/crypto");
+  const password = decrypt(signup.password_encrypted);
+
+  const { data: authData, error: authError } =
+    await supabase.auth.admin.createUser({
+      email: signup.email,
+      password,
+      email_confirm: true,
+    });
+
+  if (authError || !authData.user) {
+    throw new Error(
+      `Failed to create auth user: ${authError?.message ?? "unknown error"}`
+    );
+  }
+
+  // Retrieve subscription to extract metered item ID
+  const stripe = getStripe();
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
+    expand: ["items.data"],
+  });
+  const meteredItem = subscription.items.data.find(
+    (i) => i.price.recurring?.usage_type === "metered"
+  );
+
+  // Upsert customer record
+  const customerId =
+    typeof subscription.customer === "string"
+      ? subscription.customer
+      : subscription.customer.id;
+
+  const { error: customerError } = await supabase.from("customers").upsert(
+    {
+      user_id: authData.user.id,
+      email: signup.email,
+      stripe_customer_id: customerId,
+      stripe_subscription_id: subscriptionId,
+      stripe_metered_item_id: meteredItem?.id ?? null,
+      subscription_status: "active",
+      plan: "standard",
+    },
+    { onConflict: "email" }
+  );
+
+  if (customerError) {
+    throw new Error(`Failed to upsert customer: ${customerError.message}`);
+  }
+
+  // Mark signup as completed
+  await supabase
+    .from("pending_signups")
+    .update({ status: "completed", updated_at: new Date().toISOString() })
+    .eq("id", signup.id);
+}
+
 export async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
   const supabase = createAdminClient();
 
