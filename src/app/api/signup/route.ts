@@ -61,6 +61,7 @@ export async function POST(request: Request) {
 }
 
 async function handleCreateSubscription(body: unknown, request: Request) {
+  try {
   const parsed = createSubscriptionSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
@@ -162,7 +163,7 @@ async function handleCreateSubscription(body: unknown, request: Request) {
   if (upsertResult.error) {
     console.error("[SIGNUP] Failed to upsert pending signup:", upsertResult.error);
     return NextResponse.json(
-      { error: "Unable to process signup. Please try again." },
+      { error: "Unable to process signup. Please try again.", debug: upsertResult.error },
       { status: 500 }
     );
   }
@@ -222,6 +223,13 @@ async function handleCreateSubscription(body: unknown, request: Request) {
     clientSecret: paymentIntent.client_secret,
     subscriptionId: subscription.id,
   });
+  } catch (err) {
+    console.error("[SIGNUP] Unhandled error:", err);
+    return NextResponse.json(
+      { error: "Internal server error", debug: err instanceof Error ? err.message : String(err) },
+      { status: 500 }
+    );
+  }
 }
 
 async function handleCheckStatus(body: unknown) {
