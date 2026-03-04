@@ -5,13 +5,13 @@ export function Hero() {
     <section className="hero">
       <div className="hero-badge">
         <span className="dot" style={{ background: "var(--green-bright)" }} />
-        Your morning bids. Tomorrow.
+        AI that works your farm
       </div>
-      <h1>Your elevators, your weather, your farm.<br /><em>One conversation.</em></h1>
-      <p className="hero-sub">CHS, ADM, Cargill — whatever elevators you sell to, FarmClaw pulls their cash bids every morning at 9 AM and posts them in your Discord. Weather at 6 AM. Spray windows, basis trends, scale tickets, and anything else your operation throws at it.</p>
+      <h1>An AI team that actually knows<br /><em>your operation.</em></h1>
+      <p className="hero-sub">FarmClaw gives your farm a team of AI assistants — configured around your crops, your county, your elevators, and whatever else your operation needs to stay on top of. Grain bids, weather, agronomy, compliance, equipment — just ask.</p>
       <div className="hero-actions">
         <Link href="/signup" className="btn-primary">Start My Free Trial</Link>
-        <Link href="#skills" className="btn-secondary">See What It Can Do</Link>
+        <Link href="#how" className="btn-secondary">See How It Works</Link>
       </div>
     </section>
   );

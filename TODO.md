@@ -58,20 +58,42 @@ Copy `.env.local.example` → `.env.local` and fill in values.
 
 ### 1b. Production — Vercel (Next.js SaaS)
 
-Set these in **Vercel → Project → Settings → Environment Variables**. All variables from 1a apply, with these changes:
+Set **all** of the following in **Vercel → Project → Settings → Environment Variables**.
 
 | Variable | Production Value |
 |----------|-----------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Same as dev — Project Settings → API → Project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Same as dev — Project Settings → API → `anon` `public` key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Same as dev — Project Settings → API → `service_role` key |
 | `NEXT_PUBLIC_APP_URL` | `https://farmclaw.com` (your production domain) |
 | `STRIPE_SECRET_KEY` | Live key `sk_live_...` (switch from test) |
 | `STRIPE_WEBHOOK_SECRET` | Create a production webhook endpoint in Stripe dashboard pointing to `https://farmclaw.com/api/webhooks/stripe` |
 | `STRIPE_PRICE_ID` | Live price ID for $40/mo subscription |
 | `STRIPE_METERED_PRICE_ID` | Live price ID for metered usage |
-| `NODE_ENV` | `production` (set automatically by Vercel) |
-
-**Vercel Cron**: If using Vercel Cron for minute-level scheduling, the `CRON_SECRET` is also used to authenticate cron route calls. Set it in Vercel env vars.
-
-**Trigger.dev**: After connecting your Trigger.dev project, set `TRIGGER_SECRET_KEY` (auto-provided by the Trigger.dev Vercel integration) and `TRIGGER_PROJECT_REF`.
+| `ANTHROPIC_API_KEY` | Same as dev — console.anthropic.com → API Keys |
+| `OPENAI_API_KEY` | Same as dev — platform.openai.com → API Keys |
+| `OPENROUTER_API_KEY` | Same as dev — openrouter.ai → Keys |
+| `DISCORD_BOT_TOKEN` | Same as dev — discord.com/developers → Bot → Token |
+| `FARMCLAW_BOT_SECRET` | Same as dev — must match the value in Fly.io |
+| `ENCRYPTION_KEY` | Same as dev (or generate a new one for prod) |
+| `ENCRYPTION_KEY_PREVIOUS` | Only needed during key rotation — leave blank normally |
+| `ADMIN_EMAILS` | Your email address (comma-separated for multiple) |
+| `FARMCLAW_EMAIL_DOMAIN` | `farmclaw.com` |
+| `AGENTMAIL_API_KEY` | Same as dev — agentmail.to dashboard |
+| `AGENTMAIL_WEBHOOK_SECRET` | Same as dev — AgentMail webhook settings |
+| `AGENTMAIL_API_BASE_URL` | `https://api.agentmail.to` |
+| `EMAIL_RESEND_INGRESS_ENABLED` | `true` to keep Resend fallback, `false` to disable |
+| `RESEND_API_KEY` | Same as dev — resend.com dashboard (transitional) |
+| `RESEND_WEBHOOK_SECRET` | Same as dev — Resend webhook settings |
+| `CRON_SECRET` | Same as dev — used to authenticate cron route calls |
+| `TENANT_RUNTIME_PROCESSOR_TOKEN` | Same as dev (or generate new for prod) |
+| `WORKFLOW_RUN_PROCESSOR_TOKEN` | Same as dev (or generate new for prod) |
+| `TENANT_EXPORT_PROCESSOR_TOKEN` | Same as dev (or generate new for prod) |
+| `TENANT_EXPORT_STORAGE_BUCKET` | `tenant-exports` |
+| `COMPOSIO_API_URL` | Optional — `https://api.composio.dev` |
+| `COMPOSIO_API_KEY` | Optional — composio.dev dashboard |
+| `TRIGGER_PROJECT_REF` | Project settings → Project ref (`proj_...`) |
+| `TRIGGER_SECRET_KEY` | Auto-provided by Trigger.dev Vercel integration |
 
 ### 1c. Production — Fly.io (Discord Bot)
 

@@ -94,8 +94,8 @@ export function TeamSection() {
     <section className="team-section">
       <div style={{ textAlign: "center" as const }}>
         <div className="section-label">Your Team, Your Way</div>
-        <h2 className="section-title" style={{ margin: "0 auto" }}>Build the team your operation needs.</h2>
-        <p className="section-sub" style={{ margin: "16px auto 0" }}>Start with one assistant. Add specialists when you&apos;re ready. Each agent has its own personality, skills, and Discord channel.</p>
+        <h2 className="section-title" style={{ margin: "0 auto" }}>Start simple. Add specialists when you&apos;re ready.</h2>
+        <p className="section-sub" style={{ margin: "16px auto 0" }}>Every farm is different. Start with a single assistant that handles everything, or build a team of specialists — each with its own focus, skills, and Discord channel. You decide what your operation needs.</p>
       </div>
 
       <div className="team-tabs">

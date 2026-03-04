@@ -1,15 +1,15 @@
 import Link from "next/link";
 
 const features = [
-  "AI assistant configured for your farm, always on",
-  "Discord for your whole team — free, unlimited users",
+  "AI team configured for your operation, always on",
+  "Discord for your whole crew — free, unlimited users",
   "Daily grain bids from your elevators",
-  "Morning weather briefing at 6 AM",
-  "Spray window analysis",
-  "Scale ticket logging (photo, voice, or manual)",
+  "Morning weather and spray window briefings",
+  "Scale ticket logging (photo, voice, or typed)",
+  "Research, drafting, and analysis on demand",
   "Farm-specific memory that improves over time",
   "$25 of AI usage included each month",
-  "Every update ships to your farm automatically",
+  "New capabilities added automatically",
   "Export your data anytime — CSV, JSON, your choice",
   "Cancel anytime, no contracts",
 ];

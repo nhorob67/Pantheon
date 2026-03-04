@@ -3,9 +3,9 @@
 import { useState } from "react";
 
 const steps = [
-  { num: "01", title: "Tell us about your farm", desc: "State, county, crops, acres, and which elevators you sell to. Takes about 3 minutes. This is how we build an assistant that actually knows your operation." },
+  { num: "01", title: "Tell us about your operation", desc: "Crops, county, elevators, acres — and what you want your team to focus on. Takes about 3 minutes. This is how we build a team that actually knows your farm." },
   { num: "02", title: "Add FarmClaw to Discord", desc: "Click the invite link and FarmClaw joins your Discord server. No bot tokens, no developer portal, no configuration. Just add and go." },
-  { num: "03", title: "Start asking — grain bids at 9 AM tomorrow", desc: "Your assistant is live instantly. It sends a weather briefing at 6 AM and cash bids at 9 AM. From there, ask it anything — it remembers your preferences and gets better over time." },
+  { num: "03", title: "Your team goes to work", desc: "Weather briefings, grain bids, and answers to whatever you ask — your team is live instantly. It learns your preferences and gets sharper over time." },
 ];
 
 function StepVisual1() {
@@ -102,7 +102,7 @@ export function HowItWorks() {
   return (
     <section className="how-section" id="how">
       <div className="section-label">How It Works</div>
-      <h2 className="section-title">Sign up today. Get your first grain bids tomorrow morning.</h2>
+      <h2 className="section-title">Three minutes to set up. Your AI team starts tomorrow.</h2>
 
       <div className="how-grid">
         <div className="how-steps">

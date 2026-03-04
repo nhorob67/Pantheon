@@ -22,7 +22,7 @@ export function TrustSection() {
       <div style={{ textAlign: "center" as const }}>
         <div className="section-label">Your Data, Your Farm</div>
         <h2 className="section-title" style={{ margin: "0 auto" }}>Your neighbor can&apos;t see your bids. And we can&apos;t lock you in.</h2>
-        <p className="section-sub" style={{ margin: "16px auto 0" }}>FarmClaw runs on shared infrastructure, but your data is completely isolated. Every query, every scale ticket, every conversation is separated at the database level.</p>
+        <p className="section-sub" style={{ margin: "16px auto 0" }}>FarmClaw runs on shared infrastructure, but your data is completely isolated. Every query, every record, every conversation is separated at the database level.</p>
       </div>
 
       <div className="trust-grid">

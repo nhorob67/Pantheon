@@ -3,8 +3,8 @@ export function ConversationShowcase() {
     <section className="showcase" id="skills">
       <div className="showcase-header">
         <div className="section-label">See It In Action</div>
-        <h2 className="section-title">One assistant. Every question your farm throws at you.</h2>
-        <p className="section-sub">No menus. No apps to switch between. Just type what you need.</p>
+        <h2 className="section-title">One team. Every question your operation throws at it.</h2>
+        <p className="section-sub">No dashboards. No apps to switch between. Just ask what you need — your team handles the rest.</p>
       </div>
 
       <div className="convo-grid">
@@ -88,7 +88,7 @@ export function ConversationShowcase() {
             <div className="sender">FarmClaw</div>
             <div className="bubble">
               I&apos;ll look at the county benchmarks and run the comparison...<br /><br />
-              Your assistant can research, calculate, and draft — just ask.
+              Crop insurance deadlines, equipment costs, landlord letters, agronomy questions — your team handles whatever you throw at it.
             </div>
           </div>
         </div>
