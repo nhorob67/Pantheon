@@ -17,24 +17,14 @@ import {
 } from "@/lib/auth/dashboard-session";
 
 export default async function ChannelsSettingsPage() {
-  const { customerId } = await requireDashboardCustomer();
-  const supabase = await createClient();
-
-  const [instance, tenant] = await Promise.all([
-    getCustomerInstance(customerId),
-    getCustomerTenant(customerId),
+  const [{ customerId }, supabase] = await Promise.all([
+    requireDashboardCustomer(),
+    createClient(),
   ]);
 
-  if (!tenant) redirect("/onboarding");
-
-  // Fetch tenant-first agents, then fall back to legacy agents only if tenant rows are absent.
-  const [{ data: tenantAgents }, { data: skillConfigs }, { data: customSkills }, { data: emailIdentity }] = await Promise.all([
-    supabase
-      .from("tenant_agents")
-      .select("id, customer_id, legacy_agent_id, agent_key, display_name, is_default, skills, sort_order, created_at, updated_at, config")
-      .eq("tenant_id", tenant.id)
-      .neq("status", "archived")
-      .order("sort_order", { ascending: true }),
+  const [instance, tenant, { data: skillConfigs }, { data: customSkills }, { data: emailIdentity }] = await Promise.all([
+    getCustomerInstance(customerId),
+    getCustomerTenant(customerId),
     supabase
       .from("skill_configs")
       .select("*")
@@ -50,6 +40,16 @@ export default async function ChannelsSettingsPage() {
       .eq("is_active", true)
       .maybeSingle(),
   ]);
+
+  if (!tenant) redirect("/onboarding");
+
+  // Fetch tenant-first agents (needs tenant.id)
+  const { data: tenantAgents } = await supabase
+    .from("tenant_agents")
+    .select("id, customer_id, legacy_agent_id, agent_key, display_name, is_default, skills, sort_order, created_at, updated_at, config")
+    .eq("tenant_id", tenant.id)
+    .neq("status", "archived")
+    .order("sort_order", { ascending: true });
 
   const tenantBackedAgents: Agent[] = Array.isArray(tenantAgents)
     ? tenantAgents.map((row) => {

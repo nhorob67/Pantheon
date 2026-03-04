@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -16,19 +16,11 @@ import {
 } from "lucide-react";
 import type { KnowledgeFileMeta } from "@/types/knowledge";
 import {
-  MAX_RAW_FILE_SIZE,
   MAX_FILES_PER_INSTANCE,
   MAX_TOTAL_PARSED_SIZE,
 } from "@/types/knowledge";
-import type { PersonalityPreset } from "@/types/agent";
-import { PRESET_INFO } from "@/types/agent";
-
-interface AgentOption {
-  id: string;
-  agent_key: string;
-  display_name: string;
-  personality_preset: PersonalityPreset;
-}
+import { useKnowledgeManager } from "@/hooks/use-knowledge-manager";
+import type { AgentOption } from "@/hooks/use-knowledge-manager";
 
 interface KnowledgePanelProps {
   files: KnowledgeFileMeta[];
@@ -167,190 +159,19 @@ export function KnowledgePanel({
   tenantId,
   agents,
 }: KnowledgePanelProps) {
-  const [files, setFiles] = useState<KnowledgeFileMeta[]>(initialFiles);
-  const [uploading, setUploading] = useState(false);
-  const [dragOver, setDragOver] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [reassigningId, setReassigningId] = useState<string | null>(null);
-  const [uploadAgentId, setUploadAgentId] = useState<string>("");
+  const km = useKnowledgeManager({ initialFiles, tenantId, agents });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const activeFiles = files.filter((f) => f.status === "active");
-  const totalParsedBytes = activeFiles.reduce(
-    (sum, f) => sum + f.parsed_size_bytes,
-    0
-  );
-  const usagePercent = Math.round(
-    (totalParsedBytes / MAX_TOTAL_PARSED_SIZE) * 100
-  );
-
-  const uploadFile = useCallback(
-    async (file: File) => {
-      setUploading(true);
-      setError(null);
-      setNotice(null);
-
-      if (file.size > MAX_RAW_FILE_SIZE) {
-        setError("File exceeds 10 MB size limit.");
-        setUploading(false);
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append("file", file);
-      if (uploadAgentId) {
-        formData.append("agent_id", uploadAgentId);
-      }
-
-      try {
-        const res = await fetch(
-          `/api/tenants/${tenantId}/knowledge`,
-          { method: "POST", body: formData }
-        );
-        const payload = (await res.json()) as {
-          data?: { file?: KnowledgeFileMeta };
-          file?: KnowledgeFileMeta;
-          error?: string | { message?: string };
-        };
-        const nextFile = payload?.data?.file || payload?.file;
-        const errorMessage =
-          typeof payload?.error === "string"
-            ? payload.error
-            : payload?.error?.message;
-
-        if (!res.ok || !nextFile) {
-          throw new Error(errorMessage || "Upload failed");
-        }
-
-        setFiles((prev) => [nextFile, ...prev]);
-        setNotice(`${file.name} uploaded successfully.`);
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Upload failed"
-        );
-      } finally {
-        setUploading(false);
-      }
-    },
-    [tenantId, uploadAgentId]
-  );
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      setDragOver(false);
-      const droppedFile = e.dataTransfer.files[0];
-      if (droppedFile) uploadFile(droppedFile);
-    },
-    [uploadFile]
-  );
-
-  const handleFileSelect = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const selected = e.target.files?.[0];
-      if (selected) uploadFile(selected);
-      // Reset so the same file can be selected again
-      e.target.value = "";
-    },
-    [uploadFile]
-  );
-
-  const deleteFile = async (fileId: string) => {
-    setDeletingId(fileId);
-    setError(null);
-    setNotice(null);
-
-    try {
-      const res = await fetch(
-        `/api/tenants/${tenantId}/knowledge/${fileId}`,
-        { method: "DELETE" }
-      );
-      const payload = (await res.json()) as {
-        data?: { success?: boolean };
-        success?: boolean;
-        error?: string | { message?: string };
-      };
-      const success = payload?.data?.success ?? payload?.success;
-      const errorMessage =
-        typeof payload?.error === "string"
-          ? payload.error
-          : payload?.error?.message;
-
-      if (!res.ok || !success) {
-        throw new Error(errorMessage || "Delete failed");
-      }
-
-      setFiles((prev) => prev.filter((f) => f.id !== fileId));
-      setNotice("File removed.");
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Delete failed"
-      );
-    } finally {
-      setDeletingId(null);
-    }
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const droppedFile = e.dataTransfer.files[0];
+    if (droppedFile) km.uploadFile(droppedFile);
   };
 
-  const reassignFile = async (
-    fileId: string,
-    agentId: string | null
-  ) => {
-    setReassigningId(fileId);
-    setError(null);
-    setNotice(null);
-
-    try {
-      const res = await fetch(
-        `/api/tenants/${tenantId}/knowledge/${fileId}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ agent_id: agentId }),
-        }
-      );
-      const payload = (await res.json()) as {
-        data?: { file?: KnowledgeFileMeta };
-        file?: KnowledgeFileMeta;
-        error?: string | { message?: string };
-      };
-      const nextFile = payload?.data?.file || payload?.file;
-      const errorMessage =
-        typeof payload?.error === "string"
-          ? payload.error
-          : payload?.error?.message;
-
-      if (!res.ok || !nextFile) {
-        throw new Error(errorMessage || "Reassignment failed");
-      }
-
-      setFiles((prev) =>
-        prev.map((f) => (f.id === fileId ? nextFile : f))
-      );
-      setNotice("File reassigned.");
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Reassignment failed"
-      );
-    } finally {
-      setReassigningId(null);
-    }
-  };
-
-  const getAgentLabel = (agentId: string | null) => {
-    if (!agentId) return "Shared · All agents";
-    const agent = agents.find((a) => a.id === agentId);
-    return agent ? agent.display_name : "Unknown agent";
-  };
-
-  const getAgentAccent = (agentId: string | null) => {
-    if (!agentId) return "border-l-accent";
-    const agent = agents.find((a) => a.id === agentId);
-    if (!agent) return "border-l-border";
-    const presetInfo = PRESET_INFO[agent.personality_preset];
-    // Map text color to border color
-    return presetInfo?.accent?.replace("text-", "border-l-") || "border-l-accent";
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files?.[0];
+    if (selected) km.uploadFile(selected);
+    e.target.value = "";
   };
 
   return (
@@ -370,29 +191,21 @@ export function KnowledgePanel({
         <div className="flex items-center justify-between text-xs text-foreground/50">
           <span>Knowledge Storage</span>
           <span>
-            {formatBytes(totalParsedBytes)} / {formatBytes(MAX_TOTAL_PARSED_SIZE)}
+            {formatBytes(km.totalParsedBytes)} / {formatBytes(MAX_TOTAL_PARSED_SIZE)}
           </span>
         </div>
-        <Progress value={usagePercent} />
+        <Progress value={km.usagePercent} />
         <p className="text-xs text-foreground/40">
-          {activeFiles.length} of {MAX_FILES_PER_INSTANCE} files
+          {km.activeFiles.length} of {MAX_FILES_PER_INSTANCE} files
         </p>
       </div>
 
       {/* Upload zone */}
       <div
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDragOver(true);
-        }}
-        onDragLeave={() => setDragOver(false)}
+        onDragOver={(e) => e.preventDefault()}
         onDrop={handleDrop}
-        onClick={() => !uploading && fileInputRef.current?.click()}
-        className={`border border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
-          dragOver
-            ? "border-accent bg-accent/10"
-            : "border-border hover:border-accent/50 hover:bg-accent/5"
-        } ${uploading ? "opacity-50 pointer-events-none" : ""}`}
+        onClick={() => !km.uploading && fileInputRef.current?.click()}
+        className={`border border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors border-border hover:border-accent/50 hover:bg-accent/5 ${km.uploading ? "opacity-50 pointer-events-none" : ""}`}
       >
         <input
           ref={fileInputRef}
@@ -401,13 +214,9 @@ export function KnowledgePanel({
           onChange={handleFileSelect}
           className="hidden"
         />
-        <FileUp
-          className={`w-8 h-8 mx-auto mb-3 text-accent ${
-            dragOver ? "animate-pulse" : ""
-          }`}
-        />
+        <FileUp className="w-8 h-8 mx-auto mb-3 text-accent" />
         <p className="text-sm text-foreground/70 mb-1">
-          {uploading
+          {km.uploading
             ? "Uploading..."
             : "Drop files here or click to browse"}
         </p>
@@ -421,8 +230,8 @@ export function KnowledgePanel({
           onClick={(e) => e.stopPropagation()}
         >
           <select
-            value={uploadAgentId}
-            onChange={(e) => setUploadAgentId(e.target.value)}
+            value={km.uploadAgentId}
+            onChange={(e) => km.setUploadAgentId(e.target.value)}
             className="border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg bg-background px-3 py-2 outline-none transition-colors text-foreground text-sm"
           >
             <option value="">All Agents (Shared)</option>
@@ -436,19 +245,19 @@ export function KnowledgePanel({
       </div>
 
       {/* File list */}
-      {activeFiles.length > 0 ? (
+      {km.activeFiles.length > 0 ? (
         <div className="space-y-3">
-          {activeFiles.map((file) => (
+          {km.activeFiles.map((file) => (
             <KnowledgeFileCard
               key={file.id}
               file={file}
               agents={agents}
-              agentLabel={getAgentLabel(file.agent_id)}
-              agentAccentClass={getAgentAccent(file.agent_id)}
-              deleting={deletingId === file.id}
-              reassigning={reassigningId === file.id}
-              onDelete={deleteFile}
-              onReassign={reassignFile}
+              agentLabel={km.getAgentLabel(file.agent_id)}
+              agentAccentClass={km.getAgentAccent(file.agent_id)}
+              deleting={km.deletingId === file.id}
+              reassigning={km.reassigningId === file.id}
+              onDelete={km.deleteFile}
+              onReassign={km.reassignFile}
             />
           ))}
         </div>
@@ -466,12 +275,12 @@ export function KnowledgePanel({
       )}
 
       {/* Failed files */}
-      {files.filter((f) => f.status === "failed").length > 0 && (
+      {km.files.filter((f) => f.status === "failed").length > 0 && (
         <div className="space-y-2">
           <h4 className="text-sm font-medium text-foreground/60">
             Failed Uploads
           </h4>
-          {files
+          {km.files
             .filter((f) => f.status === "failed")
             .map((file) => (
               <div
@@ -490,8 +299,8 @@ export function KnowledgePanel({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={() => deleteFile(file.id)}
-                  loading={deletingId === file.id}
+                  onClick={() => km.deleteFile(file.id)}
+                  loading={km.deletingId === file.id}
                 >
                   <Trash2 className="w-3 h-3" />
                 </Button>
@@ -501,15 +310,15 @@ export function KnowledgePanel({
       )}
 
       {/* Status messages */}
-      {notice && (
+      {km.notice && (
         <div className="rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm text-primary">
-          {notice}
+          {km.notice}
         </div>
       )}
 
-      {error && (
+      {km.error && (
         <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">
-          {error}
+          {km.error}
         </div>
       )}
     </div>

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Outfit } from "next/font/google";
+import { Plus_Jakarta_Sans, Outfit, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 
 const headline = Plus_Jakarta_Sans({
@@ -11,6 +11,12 @@ const headline = Plus_Jakarta_Sans({
 const body = Outfit({
   subsets: ["latin"],
   variable: "--font-sans",
+  display: "swap",
+});
+
+const display = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-display",
   display: "swap",
 });
 
@@ -30,7 +36,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${headline.variable} ${body.variable} antialiased`}>
+      <body className={`${headline.variable} ${body.variable} ${display.variable} antialiased`}>
         {children}
       </body>
     </html>

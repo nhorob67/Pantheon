@@ -1,3 +1,7 @@
+"use client";
+
+import { m, LazyMotion, domAnimation } from "motion/react";
+
 const tickerItems = [
   "What's corn at CHS today?",
   "Spray window tomorrow morning?",
@@ -18,12 +22,20 @@ const tickerItems = [
 
 export function ScrollingTicker() {
   return (
-    <div className="ticker-section">
-      <div className="ticker-track">
-        {[...tickerItems, ...tickerItems].map((item, i) => (
-          <span key={i} className="ticker-item">{item}</span>
-        ))}
-      </div>
-    </div>
+    <LazyMotion features={domAnimation}>
+      <m.div
+        className="ticker-section"
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6 }}
+      >
+        <div className="ticker-track">
+          {[...tickerItems, ...tickerItems].map((item, i) => (
+            <span key={i} className="ticker-item">{item}</span>
+          ))}
+        </div>
+      </m.div>
+    </LazyMotion>
   );
 }

@@ -118,7 +118,8 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/dashboard") ||
     request.nextUrl.pathname.startsWith("/onboarding") ||
     request.nextUrl.pathname.startsWith("/settings") ||
-    request.nextUrl.pathname.startsWith("/usage");
+    request.nextUrl.pathname.startsWith("/usage") ||
+    request.nextUrl.pathname.startsWith("/checkout");
   const isAdminPage = request.nextUrl.pathname.startsWith("/admin");
 
   if (!user && isDashboardPage) {

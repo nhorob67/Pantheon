@@ -7,8 +7,10 @@ import type { AlertEvent } from "@/types/alerts";
 export const metadata: Metadata = { title: "Alerts" };
 
 export default async function AlertsPage() {
-  const { customerId } = await requireDashboardCustomer();
-  const supabase = await createClient();
+  const [{ customerId }, supabase] = await Promise.all([
+    requireDashboardCustomer(),
+    createClient(),
+  ]);
 
   const [{ data: alerts }, { count: total }] = await Promise.all([
     supabase

@@ -42,19 +42,24 @@ export async function handleCheckoutCompleted(
     meteredItemId = meteredItem?.id ?? null;
   }
 
+  const upsertData: Record<string, unknown> = {
+    email,
+    stripe_customer_id: session.customer as string,
+    stripe_subscription_id: subscriptionId,
+    subscription_status: "active",
+    plan: "standard",
+    stripe_metered_item_id: meteredItemId,
+  };
+
+  // Link to Supabase auth user if present (embedded checkout flow)
+  const userId = session.metadata?.user_id;
+  if (userId) {
+    upsertData.user_id = userId;
+  }
+
   const { data: customer, error } = await supabase
     .from("customers")
-    .upsert(
-      {
-        email,
-        stripe_customer_id: session.customer as string,
-        stripe_subscription_id: subscriptionId,
-        subscription_status: "active",
-        plan: "standard",
-        stripe_metered_item_id: meteredItemId,
-      },
-      { onConflict: "email" }
-    )
+    .upsert(upsertData, { onConflict: "email" })
     .select("id, email")
     .single();
 

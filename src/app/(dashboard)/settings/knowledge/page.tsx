@@ -13,8 +13,10 @@ import type { KnowledgeFileMeta } from "@/types/knowledge";
 import type { PersonalityPreset } from "@/types/agent";
 
 export default async function KnowledgeSettingsPage() {
-  const { customerId } = await requireDashboardCustomer();
-  const supabase = await createClient();
+  const [{ customerId }, supabase] = await Promise.all([
+    requireDashboardCustomer(),
+    createClient(),
+  ]);
   const [instance, tenant] = await Promise.all([
     getCustomerInstance(customerId),
     getCustomerTenant(customerId),

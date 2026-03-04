@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { m, LazyMotion, domAnimation, AnimatePresence } from "motion/react";
 
 const steps = [
   { num: "01", title: "Tell us about your operation", desc: "Crops, county, elevators, acres — and what you want your team to focus on. Takes about 3 minutes. This is how we build a team that actually knows your farm." },
@@ -19,14 +20,14 @@ function StepVisual1() {
       <div style={{ background: "var(--bg-dark)", borderRadius: 10, padding: "14px 16px", border: "1px solid var(--border)" }}>
         <div style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 4 }}>CROPS</div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
-          <span style={{ background: "var(--green-dim)", color: "var(--green-bright)", padding: "4px 12px", borderRadius: 100, fontSize: 13 }}>🌽 Corn</span>
-          <span style={{ background: "var(--green-dim)", color: "var(--green-bright)", padding: "4px 12px", borderRadius: 100, fontSize: 13 }}>🫘 Soybeans</span>
-          <span style={{ background: "var(--green-dim)", color: "var(--green-bright)", padding: "4px 12px", borderRadius: 100, fontSize: 13 }}>🌾 Spring Wheat</span>
+          <span style={{ background: "var(--green-dim)", color: "var(--green-bright)", padding: "4px 12px", borderRadius: 100, fontSize: 13 }}>Corn</span>
+          <span style={{ background: "var(--green-dim)", color: "var(--green-bright)", padding: "4px 12px", borderRadius: 100, fontSize: 13 }}>Soybeans</span>
+          <span style={{ background: "var(--green-dim)", color: "var(--green-bright)", padding: "4px 12px", borderRadius: 100, fontSize: 13 }}>Spring Wheat</span>
         </div>
       </div>
       <div style={{ background: "var(--bg-dark)", borderRadius: 10, padding: "14px 16px", border: "1px solid var(--border)" }}>
         <div style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 4 }}>ELEVATORS</div>
-        <div style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.7 }}>CHS Fargo · ADM Casselton · Cargill West Fargo</div>
+        <div style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.7 }}>CHS Fargo &middot; ADM Casselton &middot; Cargill West Fargo</div>
       </div>
       <div style={{ background: "var(--bg-dark)", borderRadius: 10, padding: "14px 16px", border: "1px solid var(--border)" }}>
         <div style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 4 }}>TOTAL ACRES</div>
@@ -50,13 +51,13 @@ function StepVisual2() {
         <div style={{ fontSize: 12, color: "var(--text-dim)", marginBottom: 8, textTransform: "uppercase" as const, letterSpacing: 1 }}>SELECT A SERVER</div>
         <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: 8, padding: "10px 14px", border: "1px solid var(--border-light)", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
           <span style={{ fontSize: 14, color: "var(--text-primary)" }}>Johnson Farms</span>
-          <span style={{ fontSize: 11, color: "var(--text-dim)" }}>▼</span>
+          <span style={{ fontSize: 11, color: "var(--text-dim)" }}>&#x25BC;</span>
         </div>
         <div style={{ fontSize: 12, color: "var(--text-dim)", marginBottom: 8, textTransform: "uppercase" as const, letterSpacing: 1 }}>PERMISSIONS</div>
         <div style={{ display: "flex", flexDirection: "column" as const, gap: 6, marginBottom: 16 }}>
           {["Send Messages", "Read Message History", "Embed Links"].map((p) => (
             <div key={p} style={{ fontSize: 13, color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ color: "var(--green-bright)", fontSize: 14 }}>✓</span> {p}
+              <span style={{ color: "var(--green-bright)", fontSize: 14 }}>&#x2713;</span> {p}
             </div>
           ))}
         </div>
@@ -66,7 +67,7 @@ function StepVisual2() {
       </div>
 
       <div style={{ padding: 14, background: "var(--bg-dark)", borderRadius: 10, border: "1px solid var(--green-dim)", display: "flex", alignItems: "center", gap: 10 }}>
-        <span style={{ color: "var(--green-bright)", fontSize: 18 }}>✓</span>
+        <span style={{ color: "var(--green-bright)", fontSize: 18 }}>&#x2713;</span>
         <span style={{ fontSize: 13, color: "var(--green-bright)" }}>FarmClaw has been added to Johnson Farms</span>
       </div>
     </div>
@@ -77,15 +78,15 @@ function StepVisual3() {
   return (
     <div className="phone-mockup">
       <div className="phone-header">
-        <div className="phone-avatar">🌾</div>
+        <div className="phone-avatar">&#x1F33E;</div>
         <div>
           <div className="phone-name">FarmClaw</div>
           <div className="phone-status">online</div>
         </div>
       </div>
       <div className="phone-messages">
-        <div className="phone-msg in">☀️ <strong>Morning Weather — Fargo, ND</strong><br />Today: Sunny, High 34°F, Wind NW 8mph. No precip. Clear week ahead.</div>
-        <div className="phone-msg in">📊 <strong>Cash Bids — Feb 12</strong><br />🌽 Best corn: Cargill $4.55 (-32)<br />🫘 Best beans: ADM $10.22 (-48)</div>
+        <div className="phone-msg in"><strong>Morning Weather — Fargo, ND</strong><br />Today: Sunny, High 34F, Wind NW 8mph. No precip. Clear week ahead.</div>
+        <div className="phone-msg in"><strong>Cash Bids — Mar 3</strong><br />Best corn: Cargill $4.55 (-32)<br />Best beans: ADM $10.22 (-48)</div>
         <div className="phone-msg out">What&apos;s wheat looking like?</div>
         <div className="phone-msg in">Spring wheat bids:<br />CHS Fargo: <strong>$6.18</strong> (basis -22 Mar)<br />Cargill: <strong>$6.14</strong> (basis -26 Mar)</div>
       </div>
@@ -97,32 +98,61 @@ const visuals = [StepVisual1, StepVisual2, StepVisual3];
 
 export function HowItWorks() {
   const [activeStep, setActiveStep] = useState(0);
-  const ActiveVisual = visuals[activeStep];
 
   return (
-    <section className="how-section" id="how">
-      <div className="section-label">How It Works</div>
-      <h2 className="section-title">Three minutes to set up. Your AI team starts tomorrow.</h2>
+    <LazyMotion features={domAnimation}>
+      <m.section
+        className="how-section"
+        id="how"
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-80px" }}
+        transition={{ duration: 0.7 }}
+      >
+        <div className="section-label">How It Works</div>
+        <h2 className="section-title-display">Three minutes to set up. Your AI team starts tomorrow.</h2>
 
-      <div className="how-grid">
-        <div className="how-steps">
-          {steps.map((step, i) => (
-            <div key={step.num} className={`how-step ${activeStep === i ? "active" : ""}`} onClick={() => setActiveStep(i)}>
-              <div className="how-step-header">
-                <div className="how-step-num">{step.num}</div>
-                <div className="how-step-title">{step.title}</div>
+        <div className="how-grid">
+          <div className="how-steps">
+            {steps.map((step, i) => (
+              <div key={step.num} className={`how-step ${activeStep === i ? "active" : ""}`} onClick={() => setActiveStep(i)}>
+                <div className="how-step-header">
+                  <div className="how-step-num">{step.num}</div>
+                  <div className="how-step-title">{step.title}</div>
+                </div>
+                <AnimatePresence>
+                  {activeStep === i && (
+                    <m.div
+                      className="how-step-desc"
+                      initial={{ maxHeight: 0, opacity: 0 }}
+                      animate={{ maxHeight: 200, opacity: 1, marginTop: 12 }}
+                      exit={{ maxHeight: 0, opacity: 0, marginTop: 0 }}
+                      transition={{ duration: 0.4 }}
+                      style={{ overflow: "hidden", paddingLeft: 68 }}
+                    >
+                      {step.desc}
+                    </m.div>
+                  )}
+                </AnimatePresence>
               </div>
-              <div className="how-step-desc">{step.desc}</div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
 
-        <div className="how-visual">
-          <div key={activeStep} style={{ animation: "fadeIn 0.4s ease" }}>
-            <ActiveVisual />
+          <div className="how-visual">
+            <AnimatePresence mode="wait">
+              <m.div
+                key={activeStep}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.35 }}
+              >
+                {(() => { const V = visuals[activeStep]; return <V />; })()}
+              </m.div>
+            </AnimatePresence>
           </div>
         </div>
-      </div>
-    </section>
+      </m.section>
+    </LazyMotion>
   );
 }

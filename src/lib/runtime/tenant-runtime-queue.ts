@@ -175,6 +175,66 @@ export async function enqueueDiscordCanaryRun(
   });
 }
 
+export interface EnqueueEmailRuntimeRunInput {
+  tenantId: string;
+  customerId: string;
+  requestTraceId: string;
+  idempotencyKey: string;
+  payload: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
+}
+
+export async function enqueueEmailRuntimeRun(
+  admin: SupabaseClient,
+  input: EnqueueEmailRuntimeRunInput
+): Promise<TenantRuntimeRun> {
+  const { data, error } = await admin
+    .from("tenant_runtime_runs")
+    .insert({
+      tenant_id: input.tenantId,
+      customer_id: input.customerId,
+      run_kind: "email_runtime",
+      source: "email_ingress",
+      status: "queued",
+      idempotency_key: input.idempotencyKey,
+      request_trace_id: input.requestTraceId,
+      correlation_id: input.idempotencyKey,
+      payload: input.payload,
+      metadata: input.metadata || {},
+      queued_at: new Date().toISOString(),
+    })
+    .select(TENANT_RUNTIME_RUN_SELECT)
+    .single();
+
+  if (error && (error as { code?: string }).code === "23505") {
+    const { data: existing, error: existingError } = await admin
+      .from("tenant_runtime_runs")
+      .select(TENANT_RUNTIME_RUN_SELECT)
+      .eq("tenant_id", input.tenantId)
+      .eq("run_kind", "email_runtime")
+      .eq("idempotency_key", input.idempotencyKey)
+      .maybeSingle();
+
+    if (existingError || !existing) {
+      throw new TenantRuntimeQueueError(
+        500,
+        safeErrorMessage(existingError, "Failed to resolve duplicate email runtime run")
+      );
+    }
+
+    return mapRuntimeRunRow(existing as unknown as Record<string, unknown>);
+  }
+
+  if (error || !data) {
+    throw new TenantRuntimeQueueError(
+      500,
+      safeErrorMessage(error, "Failed to enqueue email runtime run")
+    );
+  }
+
+  return mapRuntimeRunRow(data as unknown as Record<string, unknown>);
+}
+
 export async function claimTenantRuntimeRuns(
   admin: SupabaseClient,
   input: ClaimTenantRuntimeRunsInput

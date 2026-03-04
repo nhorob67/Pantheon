@@ -16,6 +16,7 @@ export const TENANT_SESSION_KIND_VALUES = [
   "dm",
   "thread",
   "system",
+  "email",
 ] as const;
 export type TenantSessionKind = (typeof TENANT_SESSION_KIND_VALUES)[number];
 
@@ -286,6 +287,7 @@ export interface InstanceTenantMapping {
 export const TENANT_RUNTIME_RUN_KIND_VALUES = [
   "discord_canary",
   "discord_runtime",
+  "email_runtime",
 ] as const;
 export type TenantRuntimeRunKind = (typeof TENANT_RUNTIME_RUN_KIND_VALUES)[number];
 
@@ -304,7 +306,7 @@ export interface TenantRuntimeRun {
   tenant_id: string;
   customer_id: string;
   run_kind: TenantRuntimeRunKind;
-  source: "discord_ingress" | "api" | "system";
+  source: "discord_ingress" | "api" | "system" | "email_ingress";
   status: TenantRuntimeRunStatus;
   attempt_count: number;
   max_attempts: number;

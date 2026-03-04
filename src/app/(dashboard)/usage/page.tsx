@@ -11,8 +11,10 @@ import { requireDashboardCustomer } from "@/lib/auth/dashboard-session";
 import { projectMonthlyCost } from "@/lib/utils/cost-projection";
 
 export default async function UsagePage() {
-  const { customerId } = await requireDashboardCustomer();
-  const supabase = await createClient();
+  const [{ customerId }, supabase] = await Promise.all([
+    requireDashboardCustomer(),
+    createClient(),
+  ]);
 
   // Fetch this month's usage
   const startOfMonth = new Date();

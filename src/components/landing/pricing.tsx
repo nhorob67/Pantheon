@@ -1,58 +1,62 @@
 import Link from "next/link";
+import { Check, Shield } from "lucide-react";
 
 const features = [
-  "AI team configured for your operation, always on",
-  "Discord for your whole crew — free, unlimited users",
+  "AI team configured for your operation",
+  "$25/mo AI usage included — most farms stay under",
+  "Discord for your crew — unlimited users",
   "Daily grain bids from your elevators",
-  "Morning weather and spray window briefings",
-  "Scale ticket logging (photo, voice, or typed)",
-  "Research, drafting, and analysis on demand",
-  "Farm-specific memory that improves over time",
-  "$25 of AI usage included each month",
+  "Morning weather & spray briefings",
+  "Scale ticket logging (photo/voice/typed)",
+  "Research & analysis on demand",
+  "Farm-specific memory that improves",
   "New capabilities added automatically",
-  "Export your data anytime — CSV, JSON, your choice",
+  "Export data anytime — CSV or JSON",
   "Cancel anytime, no contracts",
 ];
 
-function UsageTransparency() {
-  return (
-    <div className="usage-transparency">
-      <h3>How usage billing works</h3>
-      <p>
-        Your $50/month covers your farm&apos;s AI assistant, all skills and automations,
-        and $25 of AI usage — enough for most farmers&apos; daily questions,
-        weather checks, and grain bid lookups.
-      </p>
-      <p>
-        If you go beyond that, overage is billed in $20 increments at the end of the month.
-        Each message costs roughly a penny or two. There&apos;s no throttling — your
-        assistant keeps working, and you see the exact usage in your dashboard.
-      </p>
-      <p>
-        Most farmers who stick to daily briefings and a handful of questions land
-        right around $50. Heavier users who run multiple agents or log scale
-        tickets throughout the day typically see $60–75.
-      </p>
-    </div>
-  );
-}
-
 export function Pricing() {
   return (
-    <section className="pricing-section" id="pricing">
+    <section
+      className="pricing-section"
+      id="pricing"
+    >
       <div className="section-label">Simple Pricing</div>
-      <h2 className="section-title" style={{ margin: "0 auto" }}>The cheapest hire on your farm.</h2>
+      <h2 className="section-title-display" style={{ margin: "0 auto" }}>The cheapest hire on your farm.</h2>
 
       <div className="pricing-card">
-        <div className="pricing-amount">$50<span>/month</span></div>
+        <div className="pricing-amount">$50</div>
+        <div className="pricing-per-month">/month</div>
         <div className="pricing-desc">$1.67 a day for an assistant that never calls in sick.</div>
         <div className="pricing-divider" />
         <ul className="pricing-features">
           {features.map((feature) => (
-            <li key={feature}><span className="check">&#x2713;</span> {feature}</li>
+            <li key={feature}><span className="check"><Check size={16} /></span> {feature}</li>
           ))}
         </ul>
-        <Link href="/signup" className="btn-primary pricing-cta">Start My Free Trial</Link>
+
+        <div className="pricing-usage-note">
+          <p>
+            <strong>Most farmers pay $50.</strong> Your plan includes $25 of AI
+            usage — enough for daily briefings, grain bids, and regular questions.
+          </p>
+          <p>
+            Go beyond that and overage is billed in $20 blocks at month-end.
+            That rate includes a small service fee that covers the infrastructure
+            keeping your assistant available 24/7. Most heavy users (multiple
+            agents, frequent scale tickets) land around $60–75/mo.
+          </p>
+          <div className="pricing-control-note">
+            <Shield size={16} />
+            <span>
+              <strong>You set the limit.</strong> Add a spending cap in your
+              dashboard — your assistant pauses if you hit it. No surprise
+              charges, ever.
+            </span>
+          </div>
+        </div>
+
+        <Link href="/signup" className="btn-primary pricing-cta">Get Started</Link>
       </div>
 
       <div className="pricing-value-note">
@@ -60,8 +64,6 @@ export function Pricing() {
         timing a sale right — pays for a full year. Your assistant watches the markets every single day
         so you don&apos;t have to.
       </div>
-
-      <UsageTransparency />
     </section>
   );
 }

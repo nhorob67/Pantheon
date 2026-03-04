@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
-import { ArrowRight, Loader2, Wheat } from "lucide-react";
-import { isValidStripeUrl } from "@/lib/security/validate-redirect";
+import { Mail, ArrowRight, Loader2, Wheat } from "lucide-react";
 
 export default function SignupPage() {
   const [email, setEmail] = useState("");
+  const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -15,36 +16,20 @@ export default function SignupPage() {
     setLoading(true);
     setError(null);
 
-    try {
-      // Create Stripe checkout session via API (customer record created server-side)
-      const res = await fetch("/api/stripe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "create-checkout",
-          email,
-        }),
-      });
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=checkout`,
+      },
+    });
 
-      const { url, error: checkoutError } = await res.json();
-
-      if (checkoutError) {
-        setError(checkoutError);
-        setLoading(false);
-        return;
-      }
-
-      // Redirect to Stripe checkout (validate URL to prevent open redirect)
-      if (!isValidStripeUrl(url)) {
-        setError("Invalid checkout URL. Please try again.");
-        setLoading(false);
-        return;
-      }
-      window.location.href = url;
-    } catch {
-      setError("Something went wrong. Please try again.");
-      setLoading(false);
+    if (error) {
+      setError(error.message);
+    } else {
+      setSent(true);
     }
+    setLoading(false);
   };
 
   return (
@@ -61,42 +46,57 @@ export default function SignupPage() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label
-            htmlFor="email"
-            className="block text-sm text-text-secondary mb-1.5"
-          >
-            Email address
-          </label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@farm.com"
-            required
-            className="w-full border border-border focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-lg bg-bg-dark px-4 py-3 text-text-primary placeholder:text-text-dim outline-none transition-colors"
-          />
+      {sent ? (
+        <div className="text-center py-4">
+          <div className="mx-auto w-12 h-12 rounded-full bg-accent-dim flex items-center justify-center mb-4">
+            <Mail className="w-6 h-6 text-accent" />
+          </div>
+          <h2 className="font-headline text-lg font-semibold mb-2">
+            Check your email
+          </h2>
+          <p className="text-text-secondary text-sm">
+            We sent a magic link to <strong>{email}</strong>. Click it to
+            continue to payment.
+          </p>
         </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label
+              htmlFor="email"
+              className="block text-sm text-text-secondary mb-1.5"
+            >
+              Email address
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@farm.com"
+              required
+              className="w-full border border-border focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-lg bg-bg-dark px-4 py-3 text-text-primary placeholder:text-text-dim outline-none transition-colors"
+            />
+          </div>
 
-        {error && <p className="text-red-500 text-sm">{error}</p>}
+          {error && <p className="text-red-500 text-sm">{error}</p>}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-accent hover:bg-accent-light text-bg-deep font-semibold rounded-full px-6 py-3 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
-        >
-          {loading ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
-          ) : (
-            <>
-              Continue to Payment
-              <ArrowRight className="w-4 h-4" />
-            </>
-          )}
-        </button>
-      </form>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-accent hover:bg-accent-light text-bg-deep font-semibold rounded-full px-6 py-3 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+          >
+            {loading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <>
+                Continue
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
+          </button>
+        </form>
+      )}
 
       <p className="mt-6 text-center text-sm text-text-dim">
         Already have an account?{" "}

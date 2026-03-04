@@ -19,8 +19,10 @@ import { DashboardApprovals } from "./_components/dashboard-approvals";
 export const metadata: Metadata = { title: "Dashboard" };
 
 export default async function DashboardPage() {
-  const { customerId } = await requireDashboardCustomer();
-  const supabase = await createClient();
+  const [{ customerId }, supabase] = await Promise.all([
+    requireDashboardCustomer(),
+    createClient(),
+  ]);
 
   const startOfMonth = new Date();
   startOfMonth.setDate(1);

@@ -10,39 +10,21 @@ import { SocialProof } from "@/components/landing/testimonials";
 import { Pricing } from "@/components/landing/pricing";
 import { FinalCTA } from "@/components/landing/cta";
 import { Footer } from "@/components/landing/footer";
-import { FadeInObserver } from "@/components/landing/fade-in-observer";
 
 export default function LandingPage() {
   return (
     <>
-      <FadeInObserver />
       <Nav />
       <Hero />
       <ScrollingTicker />
-      <div className="fade-in">
-        <ConversationShowcase />
-      </div>
-      <div className="fade-in">
-        <HowItWorks />
-      </div>
-      <div className="fade-in">
-        <TeamSection />
-      </div>
-      <div className="fade-in">
-        <Channels />
-      </div>
-      <div className="fade-in">
-        <TrustSection />
-      </div>
-      <div className="fade-in">
-        <SocialProof />
-      </div>
-      <div className="fade-in">
-        <Pricing />
-      </div>
-      <div className="fade-in">
-        <FinalCTA />
-      </div>
+      <ConversationShowcase />
+      <HowItWorks />
+      <TeamSection />
+      <Channels />
+      <TrustSection />
+      <SocialProof />
+      <Pricing />
+      <FinalCTA />
       <Footer />
     </>
   );

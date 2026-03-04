@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createCheckoutSession, createPortalSession } from "@/lib/stripe/client";
+import {
+  createCheckoutSession,
+  createEmbeddedCheckoutSession,
+  createPortalSession,
+} from "@/lib/stripe/client";
 import { consumeDurableRateLimit } from "@/lib/security/durable-rate-limit";
 
 const createCheckoutSchema = z.object({
@@ -85,8 +89,56 @@ export async function POST(request: Request) {
       }
 
       // Pre-auth: user is signing up, no session yet
-      const session = await createCheckoutSession(parsed.data.email);
-      return NextResponse.json({ url: session.url });
+      try {
+        const session = await createCheckoutSession(parsed.data.email);
+        return NextResponse.json({ url: session.url });
+      } catch (err) {
+        console.error("[Stripe] Checkout session creation failed:", err);
+        return NextResponse.json(
+          { error: "Unable to create checkout session. Please try again." },
+          { status: 500 }
+        );
+      }
+    }
+
+    if ((body as { action?: string }).action === "create-embedded-checkout") {
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      // Guard against duplicate subscriptions
+      const adminSupabase = createAdminClient();
+      const { data: existing } = await adminSupabase
+        .from("customers")
+        .select("subscription_status")
+        .eq("user_id", user.id)
+        .single();
+
+      if (existing?.subscription_status === "active") {
+        return NextResponse.json(
+          { error: "already_subscribed" },
+          { status: 409 }
+        );
+      }
+
+      try {
+        const session = await createEmbeddedCheckoutSession(
+          user.email!,
+          user.id
+        );
+        return NextResponse.json({ clientSecret: session.client_secret });
+      } catch (err) {
+        console.error("[Stripe] Embedded checkout session creation failed:", err);
+        return NextResponse.json(
+          { error: "Unable to create checkout session. Please try again." },
+          { status: 500 }
+        );
+      }
     }
 
     if ((body as { action?: string }).action === "create-portal") {

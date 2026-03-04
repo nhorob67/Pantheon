@@ -16,6 +16,7 @@ import {
   GitBranch,
   Download,
   HelpCircle,
+  Mail,
   MessageCircle,
   Sun,
   Activity,
@@ -27,6 +28,7 @@ import type { SettingsNavItem } from "@/lib/navigation/settings";
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/conversations", label: "Conversations", icon: MessageCircle },
+  { href: "/email", label: "Email", icon: Mail },
   { href: "/usage", label: "Usage", icon: BarChart3 },
   { href: "/alerts", label: "Alerts", icon: Bell },
 ];
