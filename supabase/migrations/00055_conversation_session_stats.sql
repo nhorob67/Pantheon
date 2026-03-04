@@ -10,7 +10,7 @@ AS $$
   SELECT
     m.session_id,
     count(*)::bigint AS message_count,
-    (array_agg(m.content ORDER BY m.created_at DESC))[1],
+    (array_agg(m.content_text ORDER BY m.created_at DESC))[1],
     (array_agg(m.direction ORDER BY m.created_at DESC))[1]
   FROM tenant_messages m
   WHERE m.session_id = ANY(p_session_ids)

@@ -139,7 +139,7 @@ async function handleCreateSubscription(body: unknown, request: Request) {
         expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
         updated_at: new Date().toISOString(),
       },
-      { onConflict: "idx_pending_signups_email_active" }
+      { onConflict: "email" }
     );
 
   if (upsertError) {
