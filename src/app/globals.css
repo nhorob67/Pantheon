@@ -1838,6 +1838,9 @@ body::before {
 }
 
 /* ===== ONBOARDING ANIMATIONS ===== */
+/* Hide scrollbar utility */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+
 @keyframes contour-drift {
   from { transform: translate(0, 0); }
   to { transform: translate(-40px, -20px); }

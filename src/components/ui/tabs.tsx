@@ -17,8 +17,9 @@ interface TabsProps {
 function Tabs({ tabs, activeTab, onChange, className = "" }: TabsProps) {
   return (
     <div
-      className={`bg-muted rounded-full p-1 inline-flex ${className}`}
+      className={`flex gap-1 overflow-x-auto scrollbar-hide border-b border-border-light ${className}`}
       role="tablist"
+      style={{ scrollbarWidth: "none" }}
     >
       {tabs.map((tab) => {
         const isActive = tab.value === activeTab;
@@ -30,14 +31,16 @@ function Tabs({ tabs, activeTab, onChange, className = "" }: TabsProps) {
             type="button"
             aria-selected={isActive}
             onClick={() => onChange(tab.value)}
-            className={[
-              "px-4 py-2 rounded-full font-body text-sm transition-all duration-150 cursor-pointer",
+            className={`relative shrink-0 px-3 pb-2.5 pt-1 text-[13px] tracking-wide transition-colors whitespace-nowrap cursor-pointer ${
               isActive
-                ? "bg-card shadow-sm font-semibold text-foreground"
-                : "text-foreground/50 hover:text-foreground",
-            ].join(" ")}
+                ? "text-accent-light font-semibold"
+                : "text-text-secondary hover:text-text-primary"
+            }`}
           >
             {tab.label}
+            {isActive && (
+              <span className="absolute bottom-0 left-1.5 right-1.5 h-[2px] rounded-full bg-accent" />
+            )}
           </button>
         );
       })}

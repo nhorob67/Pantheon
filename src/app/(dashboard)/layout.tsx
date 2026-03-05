@@ -6,6 +6,7 @@ import {
   getCustomerTenants,
 } from "@/lib/auth/dashboard-session";
 import { HelpProvider } from "@/components/dashboard/help-provider";
+import { ToastProvider } from "@/components/ui/toast";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Topbar } from "@/components/dashboard/topbar";
 import { isWorkflowBuilderEnabledForCustomer } from "@/lib/workflows/feature-gate";
@@ -50,20 +51,22 @@ export default async function DashboardLayout({
   }
 
   return (
-    <HelpProvider>
-      <div className="flex min-h-screen bg-background">
-        <Sidebar settingsItems={buildSidebarSettingsItems(workflowBuilderEnabled)} />
-        <div className="flex-1 flex flex-col">
-          <Topbar
-            farmName={farmName}
-            email={user.email}
-            tenantOptions={tenantOptions}
-            activeTenantId={activeTenantId}
-            settingsItems={buildSidebarSettingsItems(workflowBuilderEnabled)}
-          />
-          <main className="flex-1 p-6">{children}</main>
+    <ToastProvider>
+      <HelpProvider>
+        <div className="flex min-h-screen bg-background">
+          <Sidebar settingsItems={buildSidebarSettingsItems(workflowBuilderEnabled)} />
+          <div className="flex-1 flex flex-col">
+            <Topbar
+              farmName={farmName}
+              email={user.email}
+              tenantOptions={tenantOptions}
+              activeTenantId={activeTenantId}
+              settingsItems={buildSidebarSettingsItems(workflowBuilderEnabled)}
+            />
+            <main className="flex-1 p-6">{children}</main>
+          </div>
         </div>
-      </div>
-    </HelpProvider>
+      </HelpProvider>
+    </ToastProvider>
   );
 }
