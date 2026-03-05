@@ -5,6 +5,7 @@ import { getStripe } from "@/lib/stripe/client";
 import { STRIPE_CONFIG } from "@/lib/stripe/config";
 import { encrypt } from "@/lib/crypto";
 import { consumeDurableRateLimit } from "@/lib/security/durable-rate-limit";
+import { completePendingSignup } from "@/lib/stripe/complete-pending-signup";
 
 const createSubscriptionSchema = z.object({
   action: z.literal("create-subscription"),
@@ -15,6 +16,12 @@ const createSubscriptionSchema = z.object({
 const checkStatusSchema = z.object({
   action: z.literal("check-status"),
   subscriptionId: z.string().min(1),
+});
+
+const completeSignupSchema = z.object({
+  action: z.literal("complete-signup"),
+  subscriptionId: z.string().min(1),
+  email: z.string().trim().toLowerCase().email().max(320),
 });
 
 const SIGNUP_EMAIL_WINDOW_SECONDS = 60 * 60;
@@ -55,6 +62,10 @@ export async function POST(request: Request) {
 
   if (action === "check-status") {
     return handleCheckStatus(body);
+  }
+
+  if (action === "complete-signup") {
+    return handleCompleteSignup(body);
   }
 
   return NextResponse.json({ error: "Unknown action" }, { status: 400 });
@@ -264,6 +275,85 @@ async function handleCheckStatus(body: unknown) {
   }
 
   return NextResponse.json({ status: "processing" });
+}
+
+const COMPLETE_SIGNUP_WINDOW_SECONDS = 5 * 60;
+const COMPLETE_SIGNUP_MAX_ATTEMPTS = 10;
+
+async function handleCompleteSignup(body: unknown) {
+  const parsed = completeSignupSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Invalid request", details: parsed.error.flatten() },
+      { status: 400 }
+    );
+  }
+
+  const { subscriptionId, email } = parsed.data;
+
+  // Rate limit by email
+  const allowed = await consumeDurableRateLimit({
+    action: "complete_signup",
+    key: email,
+    windowSeconds: COMPLETE_SIGNUP_WINDOW_SECONDS,
+    maxAttempts: COMPLETE_SIGNUP_MAX_ATTEMPTS,
+  }).catch(() => null);
+
+  if (allowed === null) {
+    return NextResponse.json(
+      { error: "Rate limiter unavailable" },
+      { status: 503 }
+    );
+  }
+
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      { status: 429 }
+    );
+  }
+
+  const admin = createAdminClient();
+
+  const { data: signup } = await admin
+    .from("pending_signups")
+    .select("id, email, password_encrypted, stripe_subscription_id, status")
+    .eq("stripe_subscription_id", subscriptionId)
+    .single();
+
+  if (!signup) {
+    return NextResponse.json({ status: "processing" });
+  }
+
+  if (signup.status === "completed") {
+    return NextResponse.json({ status: "complete" });
+  }
+
+  // Verify the email matches the stored signup (prevents hijacking)
+  if (signup.email !== email) {
+    return NextResponse.json({ status: "processing" });
+  }
+
+  // Verify payment succeeded by checking subscription status with Stripe
+  try {
+    const stripe = getStripe();
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+
+    if (
+      subscription.status !== "active" &&
+      subscription.status !== "trialing"
+    ) {
+      // Payment hasn't completed yet — tell client to keep waiting
+      return NextResponse.json({ status: "processing" });
+    }
+
+    // Payment verified — complete the signup synchronously
+    await completePendingSignup(signup);
+    return NextResponse.json({ status: "complete" });
+  } catch (err) {
+    console.error("[SIGNUP] complete-signup error:", err);
+    return NextResponse.json({ status: "processing" });
+  }
 }
 
 // Import Stripe types for inline use

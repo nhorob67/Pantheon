@@ -286,14 +286,22 @@ function SignupPageInner() {
         <div className="text-center py-4">
           <p className="text-text-secondary text-sm mb-4">
             {error ||
-              "Your payment was received but account setup is taking longer than expected. Check your email for a confirmation."}
+              "Your payment was received but account setup is taking longer than expected. Please try signing in."}
           </p>
-          <button
-            onClick={() => router.push("/login")}
-            className="text-accent hover:text-accent-light font-medium text-sm cursor-pointer"
-          >
-            Go to Sign In
-          </button>
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={() => router.push("/login")}
+              className="text-accent hover:text-accent-light font-medium text-sm cursor-pointer"
+            >
+              Go to Sign In
+            </button>
+            <a
+              href="mailto:support@farmclaw.com"
+              className="text-text-dim hover:text-text-secondary text-sm"
+            >
+              Contact support@farmclaw.com
+            </a>
+          </div>
         </div>
       )}
 
@@ -406,16 +414,22 @@ function ProcessingStep({
   const pollAndSignIn = useCallback(async () => {
     const MAX_POLLS = 15;
     const POLL_INTERVAL = 2000;
+    // First 3 polls use check-status (gives webhook a chance — fast path)
+    // Remaining polls use complete-signup (synchronous path — verifies with Stripe directly)
+    const CHECK_STATUS_POLLS = 3;
 
     for (let i = 0; i < MAX_POLLS; i++) {
       try {
+        const action = i < CHECK_STATUS_POLLS ? "check-status" : "complete-signup";
+        const body: Record<string, string> =
+          action === "check-status"
+            ? { action, subscriptionId }
+            : { action, subscriptionId, email };
+
         const res = await fetch("/api/signup", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action: "check-status",
-            subscriptionId,
-          }),
+          body: JSON.stringify(body),
         });
 
         const data = await res.json();
@@ -455,7 +469,7 @@ function ProcessingStep({
 
     // Polling exhausted
     onError(
-      "Your payment was received. We're setting up your account — check your email shortly."
+      "Your payment was received but account setup is taking longer than expected. Please try signing in, or contact support@farmclaw.com for help."
     );
   }, [subscriptionId, email, password, onComplete, onError]);
 
