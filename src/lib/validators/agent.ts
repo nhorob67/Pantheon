@@ -26,6 +26,7 @@ export const createAgentSchema = z
     is_default: z.boolean(),
     skills: z.array(skillSlugSchema),
     cron_jobs: z.record(z.string().max(80), z.boolean()),
+    composio_toolkits: z.array(z.string().max(80)).max(50).optional(),
   })
   .refine(
     (data) => {
@@ -65,6 +66,7 @@ export const updateAgentSchema = z
     cron_jobs: z
       .record(z.string().max(80), z.boolean())
       .optional(),
+    composio_toolkits: z.array(z.string().max(80)).max(50).optional(),
   })
   .refine(
     (data) => {

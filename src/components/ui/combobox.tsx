@@ -30,7 +30,6 @@ export function Combobox({
   debounceMs = 300,
   minChars = 2,
   className,
-  onFallback,
 }: ComboboxProps) {
   const [options, setOptions] = useState<ComboboxOption[]>([]);
   const [open, setOpen] = useState(false);
@@ -42,7 +41,9 @@ export function Combobox({
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const fetchRef = useRef(fetchSuggestions);
-  fetchRef.current = fetchSuggestions;
+  useEffect(() => {
+    fetchRef.current = fetchSuggestions;
+  }, [fetchSuggestions]);
 
   const doFetch = useCallback(
     (query: string) => {

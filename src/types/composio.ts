@@ -1,4 +1,5 @@
 export interface ComposioConnectedApp {
+  id: string;
   app_id: string;
   app_name: string;
   status: "connected" | "disconnected" | "expired" | "pending";

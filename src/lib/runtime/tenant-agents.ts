@@ -57,6 +57,7 @@ interface TenantAgentConfig {
   discord_channel_id: string | null;
   discord_channel_name: string | null;
   cron_jobs: Record<string, boolean>;
+  composio_toolkits: string[];
 }
 
 interface TenantAgentConfigPatch {
@@ -65,6 +66,7 @@ interface TenantAgentConfigPatch {
   discord_channel_id?: string | null;
   discord_channel_name?: string | null;
   cron_jobs?: Record<string, boolean>;
+  composio_toolkits?: string[];
 }
 
 export interface TenantRuntimeAgent {
@@ -81,6 +83,7 @@ export interface TenantRuntimeAgent {
   is_default: boolean;
   skills: string[];
   cron_jobs: Record<string, boolean>;
+  composio_toolkits: string[];
   sort_order: number;
   created_at: string;
   updated_at: string;
@@ -149,6 +152,7 @@ function parseTenantAgentConfig(config: unknown): TenantAgentConfig {
       discord_channel_id: null,
       discord_channel_name: null,
       cron_jobs: {},
+      composio_toolkits: [],
     };
   }
 
@@ -166,6 +170,9 @@ function parseTenantAgentConfig(config: unknown): TenantAgentConfig {
       ? config["discord_channel_name"]
       : null;
   const cronJobs = isBooleanRecord(config["cron_jobs"]) ? config["cron_jobs"] : {};
+  const composioToolkits = Array.isArray(config["composio_toolkits"])
+    ? (config["composio_toolkits"] as unknown[]).filter((v): v is string => typeof v === "string")
+    : [];
 
   return {
     personality_preset: personalityPreset,
@@ -173,6 +180,7 @@ function parseTenantAgentConfig(config: unknown): TenantAgentConfig {
     discord_channel_id: discordChannelId,
     discord_channel_name: discordChannelName,
     cron_jobs: cronJobs,
+    composio_toolkits: composioToolkits,
   };
 }
 
@@ -197,6 +205,7 @@ function buildTenantAgentConfig(
         ? patch.discord_channel_name
         : current.discord_channel_name,
     cron_jobs: patch.cron_jobs ?? current.cron_jobs,
+    composio_toolkits: patch.composio_toolkits ?? current.composio_toolkits,
   };
 }
 
@@ -639,6 +648,7 @@ function mapTenantAgentRow(row: TenantAgentRow): TenantRuntimeAgent {
     is_default: row.is_default,
     skills: row.skills,
     cron_jobs: config.cron_jobs,
+    composio_toolkits: config.composio_toolkits,
     sort_order: row.sort_order,
     created_at: row.created_at,
     updated_at: row.updated_at,
@@ -755,6 +765,7 @@ export async function createTenantRuntimeAgent(
     discord_channel_id: data.discord_channel_id || null,
     discord_channel_name: data.discord_channel_name || null,
     cron_jobs: data.cron_jobs,
+    composio_toolkits: data.composio_toolkits || [],
   });
 
   const { data: insertedTenant, error: insertTenantError } = await admin
@@ -866,6 +877,9 @@ export async function updateTenantRuntimeAgent(
   }
   if (data.cron_jobs !== undefined) {
     configPatch.cron_jobs = data.cron_jobs;
+  }
+  if (data.composio_toolkits !== undefined) {
+    configPatch.composio_toolkits = data.composio_toolkits;
   }
 
   if (Object.keys(configPatch).length > 0) {

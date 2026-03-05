@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ComposioClient, ComposioOAuthResult } from "@/lib/composio/client";
+import { buildComposioUserId } from "@/lib/composio/user-id";
 import { safeErrorMessage } from "@/lib/security/safe-error";
 import type { ComposioConfig, ComposioConnectedApp } from "@/types/composio";
 
@@ -67,11 +68,17 @@ function normalizeConnectedApps(value: unknown): ComposioConnectedApp[] {
 
   const apps: ComposioConnectedApp[] = [];
   for (const entry of value) {
-    if (!isRecord(entry) || typeof entry.app_id !== "string" || typeof entry.app_name !== "string") {
+    if (
+      !isRecord(entry) ||
+      typeof entry.id !== "string" ||
+      typeof entry.app_id !== "string" ||
+      typeof entry.app_name !== "string"
+    ) {
       continue;
     }
 
     apps.push({
+      id: entry.id,
       app_id: entry.app_id,
       app_name: entry.app_name,
       status: mapConnectedStatus(entry.status),
@@ -172,7 +179,7 @@ export async function enableTenantComposioIntegration(
     );
   }
 
-  const composioUserId = `farmclaw_${context.customerId}`;
+  const composioUserId = buildComposioUserId(context.customerId);
   let mcpServer: { server_id: string; url: string };
 
   try {
@@ -339,6 +346,7 @@ export async function syncTenantComposioConnections(
   }
 
   const connectedApps: ComposioConnectedApp[] = accounts.map((account) => ({
+    id: account.id,
     app_id: account.app_id,
     app_name: account.app_name,
     status: mapAccountStatus(account.status),
@@ -375,6 +383,26 @@ export async function disconnectTenantComposioConnection(
   composio: ComposioClient,
   connectionId: string
 ): Promise<void> {
+  const config = await fetchComposioConfig(admin, context);
+  if (!config) {
+    throw new TenantComposioServiceError(404, "Composio integration not enabled");
+  }
+
+  let accounts: Awaited<ReturnType<ComposioClient["getConnectedAccounts"]>>;
+  try {
+    accounts = await composio.getConnectedAccounts(config.composio_user_id);
+  } catch (error) {
+    throw new TenantComposioServiceError(
+      502,
+      safeErrorMessage(error, "Failed to verify Composio account ownership")
+    );
+  }
+
+  const ownsConnection = accounts.some((account) => account.id === connectionId);
+  if (!ownsConnection) {
+    throw new TenantComposioServiceError(404, "Composio connection not found");
+  }
+
   try {
     await composio.disconnectApp(connectionId);
   } catch (error) {

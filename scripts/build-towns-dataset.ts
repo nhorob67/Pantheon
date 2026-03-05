@@ -7,7 +7,7 @@
  * GeoNames data is CC BY 4.0: https://www.geonames.org/
  */
 
-import { mkdirSync, existsSync, unlinkSync, createReadStream, statSync } from "fs";
+import { mkdirSync, unlinkSync, createReadStream, statSync } from "fs";
 import { writeFile } from "fs/promises";
 import { createInterface } from "readline";
 import { join } from "path";

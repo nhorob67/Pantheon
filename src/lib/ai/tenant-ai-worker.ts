@@ -24,6 +24,7 @@ import type {
   TenantRuntimeWorkerContext,
   TenantRuntimeWorkerResult,
 } from "@/lib/runtime/tenant-runtime-worker";
+import type { TenantRole } from "@/types/tenant-runtime";
 
 const CIRCUIT_FAILURE_THRESHOLD = 3;
 const CIRCUIT_COOLDOWN_MS = 30_000;
@@ -36,6 +37,14 @@ function getDiscordBotToken(): string {
     throw new Error("DISCORD_BOT_TOKEN environment variable is not set");
   }
   return token;
+}
+
+function resolveActorRole(payload: Record<string, unknown>): TenantRole {
+  const value = payload.actor_role;
+  if (value === "owner" || value === "admin" || value === "operator" || value === "viewer") {
+    return value;
+  }
+  return "viewer";
 }
 
 const CRON_PROMPTS: Record<string, string> = {
@@ -134,6 +143,7 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           typeof payload.user_id === "string" ? payload.user_id : "unknown";
         const guildId =
           typeof payload.guild_id === "string" ? payload.guild_id : null;
+        const actorRole = resolveActorRole(payload);
 
         if (!channelId) {
           return {
@@ -181,30 +191,44 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           messageId: inboundMessageId,
           isDm: !guildId,
           imageUrls: imageAttachments.map((a) => a.url),
+          runtimeRun: context.run,
+          actorRole,
+          actorId: userId,
         });
 
         // Custom cron jobs can scope tools to a subset
         let resolvedTools = assembled.tools;
-        if (isCron && Array.isArray(payload.custom_tools) && payload.custom_tools.length > 0) {
-          const allowedSkills = new Set(payload.custom_tools as string[]);
-          // Map skill names to tool prefixes
-          const SKILL_TOOL_PREFIXES: Record<string, string[]> = {
-            "farm-weather": ["weather_"],
-            "farm-grain-bids": ["grain_bid_"],
-            "farm-scale-tickets": ["scale_ticket_"],
-          };
-          const allowedPrefixes = Array.from(allowedSkills).flatMap(
-            (s) => SKILL_TOOL_PREFIXES[s] || []
-          );
-          // Always keep memory and schedule tools
+        if (isCron) {
+          // Exclude Composio tools from cron runs — they require interactive OAuth context
+          const BUILT_IN_PREFIXES = ["weather_", "grain_bid_", "scale_ticket_", "memory_", "schedule_"];
           const filtered: typeof resolvedTools = {};
-          for (const [name, tool] of Object.entries(resolvedTools)) {
-            const isAlwaysAvailable = name.startsWith("memory_") || name.startsWith("schedule_");
-            const matchesSkill = allowedPrefixes.some((p) => name.startsWith(p));
-            if (isAlwaysAvailable || matchesSkill) {
-              filtered[name] = tool;
+
+          if (Array.isArray(payload.custom_tools) && payload.custom_tools.length > 0) {
+            const allowedSkills = new Set(payload.custom_tools as string[]);
+            const SKILL_TOOL_PREFIXES: Record<string, string[]> = {
+              "farm-weather": ["weather_"],
+              "farm-grain-bids": ["grain_bid_"],
+              "farm-scale-tickets": ["scale_ticket_"],
+            };
+            const allowedPrefixes = Array.from(allowedSkills).flatMap(
+              (s) => SKILL_TOOL_PREFIXES[s] || []
+            );
+            for (const [name, tool] of Object.entries(resolvedTools)) {
+              const isAlwaysAvailable = name.startsWith("memory_") || name.startsWith("schedule_");
+              const matchesSkill = allowedPrefixes.some((p) => name.startsWith(p));
+              if (isAlwaysAvailable || matchesSkill) {
+                filtered[name] = tool;
+              }
+            }
+          } else {
+            // For standard cron runs, keep all built-in tools but exclude Composio tools
+            for (const [name, tool] of Object.entries(resolvedTools)) {
+              if (BUILT_IN_PREFIXES.some((p) => name.startsWith(p))) {
+                filtered[name] = tool;
+              }
             }
           }
+
           resolvedTools = filtered;
         }
 

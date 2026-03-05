@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ModelMessage, Tool } from "ai";
-import type { TenantAgent } from "@/types/tenant-runtime";
+import type { TenantAgent, TenantRole, TenantRuntimeRun } from "@/types/tenant-runtime";
 import { resolveAgentForChannel } from "./agent-resolver";
 import { resolveSession } from "./session-resolver";
 import { storeInboundMessage } from "./message-store";
@@ -40,6 +40,9 @@ interface AssembleInput {
   messageId: string | null;
   isDm: boolean;
   imageUrls?: string[];
+  runtimeRun?: TenantRuntimeRun;
+  actorRole?: TenantRole;
+  actorId?: string | null;
 }
 
 export async function assembleContext(
@@ -152,8 +155,30 @@ export async function assembleContext(
     farmTimezone = profile?.timezone ?? "America/Chicago";
   }
 
+  // Resolve effective Composio toolkits for this agent
+  let composioToolkits: string[] = [];
+  let composioUserId: string | null = null;
+  if (agent) {
+    const agentToolkits = (agent.config?.composio_toolkits ?? []) as string[];
+    if (agentToolkits.length > 0) {
+      const { data: composioRow } = await admin
+        .from("composio_configs")
+        .select("enabled, selected_toolkits, composio_user_id")
+        .eq("customer_id", agent.customer_id)
+        .maybeSingle();
+
+      if (composioRow?.enabled && Array.isArray(composioRow.selected_toolkits)) {
+        const globalSet = new Set(composioRow.selected_toolkits as string[]);
+        composioToolkits = agentToolkits.filter((t) => globalSet.has(t));
+        if (typeof composioRow.composio_user_id === "string") {
+          composioUserId = composioRow.composio_user_id;
+        }
+      }
+    }
+  }
+
   const tools = agent
-    ? resolveToolsForAgent({
+    ? await resolveToolsForAgent({
         admin,
         tenantId: input.tenantId,
         customerId: input.customerId,
@@ -164,6 +189,11 @@ export async function assembleContext(
         memoryExcludeCategories: excludeCategories,
         channelId: input.channelId,
         timezone: farmTimezone,
+        composioToolkits,
+        composioUserId: composioUserId || undefined,
+        runtimeRun: input.runtimeRun,
+        actorRole: input.actorRole,
+        actorId: input.actorId,
       })
     : {};
 

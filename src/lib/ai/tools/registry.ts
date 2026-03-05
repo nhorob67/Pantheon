@@ -1,12 +1,14 @@
 import type { Tool } from "ai";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { TenantAgent } from "@/types/tenant-runtime";
+import type { TenantRole, TenantRuntimeRun } from "@/types/tenant-runtime";
 import type { MemoryCaptureLevel } from "@/types/memory";
 import { createWeatherTools } from "./weather";
 import { createScaleTicketTools } from "./scale-tickets";
 import { createGrainBidTools } from "./grain-bids";
 import { createMemoryTools } from "./memory";
 import { createScheduleTools } from "./schedules";
+import { createComposioTools } from "./composio";
 
 type ToolMap = Record<string, Tool>;
 
@@ -21,6 +23,11 @@ export interface ToolRegistryInput {
   memoryExcludeCategories?: string[];
   channelId?: string;
   timezone?: string;
+  composioToolkits?: string[];
+  composioUserId?: string;
+  runtimeRun?: TenantRuntimeRun;
+  actorRole?: TenantRole;
+  actorId?: string | null;
 }
 
 function buildMemoryTools(input: ToolRegistryInput): ToolMap {
@@ -40,7 +47,7 @@ const SKILL_TO_TOOLS: Record<string, (input: ToolRegistryInput) => ToolMap> = {
   "farm-memory": (input) => buildMemoryTools(input),
 };
 
-export function resolveToolsForAgent(input: ToolRegistryInput): ToolMap {
+export async function resolveToolsForAgent(input: ToolRegistryInput): Promise<ToolMap> {
   const tools: ToolMap = {};
   const skills = input.agent.skills || [];
 
@@ -71,6 +78,27 @@ export function resolveToolsForAgent(input: ToolRegistryInput): ToolMap {
         timezone
       )
     );
+  }
+
+  // Composio third-party integration tools
+  if (
+    input.composioToolkits &&
+    input.composioToolkits.length > 0 &&
+    input.composioUserId &&
+    input.runtimeRun &&
+    input.actorRole
+  ) {
+    const composioTools = await createComposioTools({
+      admin: input.admin,
+      tenantId: input.tenantId,
+      customerId: input.customerId,
+      composioUserId: input.composioUserId,
+      toolkitIds: input.composioToolkits,
+      runtimeRun: input.runtimeRun,
+      actorRole: input.actorRole,
+      actorId: input.actorId ?? null,
+    });
+    Object.assign(tools, composioTools);
   }
 
   return tools;

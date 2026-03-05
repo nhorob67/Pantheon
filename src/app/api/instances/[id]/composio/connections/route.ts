@@ -45,6 +45,7 @@ export async function GET(
   const accounts = await composio.getConnectedAccounts(config.composio_user_id);
 
   const connectedApps: ComposioConnectedApp[] = accounts.map((a) => ({
+    id: a.id,
     app_id: a.app_id,
     app_name: a.app_name,
     status: a.status === "ACTIVE" ? "connected" : "disconnected",
@@ -113,10 +114,6 @@ export async function DELETE(
     );
   }
 
-  const composio = getComposioClient();
-  await composio.disconnectApp(connectionId);
-
-  // Refresh connections
   const admin = createAdminClient();
   const { data: config } = await admin
     .from("composio_configs")
@@ -124,24 +121,43 @@ export async function DELETE(
     .eq("instance_id", id)
     .single();
 
-  if (config) {
-    const accounts = await composio.getConnectedAccounts(config.composio_user_id);
-    const connectedApps: ComposioConnectedApp[] = accounts.map((a) => ({
-      app_id: a.app_id,
-      app_name: a.app_name,
-      status: a.status === "ACTIVE" ? "connected" : "disconnected",
-      account_identifier: a.account_identifier,
-      connected_at: a.created_at,
-    }));
-
-    await admin
-      .from("composio_configs")
-      .update({
-        connected_apps: connectedApps,
-        last_sync_at: new Date().toISOString(),
-      })
-      .eq("instance_id", id);
+  if (!config) {
+    return NextResponse.json(
+      { error: "Composio integration not enabled" },
+      { status: 404 }
+    );
   }
+
+  const composio = getComposioClient();
+  const existingAccounts = await composio.getConnectedAccounts(config.composio_user_id);
+  const ownsConnection = existingAccounts.some((account) => account.id === connectionId);
+
+  if (!ownsConnection) {
+    return NextResponse.json(
+      { error: "Composio connection not found" },
+      { status: 404 }
+    );
+  }
+
+  await composio.disconnectApp(connectionId);
+
+  const accounts = await composio.getConnectedAccounts(config.composio_user_id);
+  const connectedApps: ComposioConnectedApp[] = accounts.map((a) => ({
+    id: a.id,
+    app_id: a.app_id,
+    app_name: a.app_name,
+    status: a.status === "ACTIVE" ? "connected" : "disconnected",
+    account_identifier: a.account_identifier,
+    connected_at: a.created_at,
+  }));
+
+  await admin
+    .from("composio_configs")
+    .update({
+      connected_apps: connectedApps,
+      last_sync_at: new Date().toISOString(),
+    })
+    .eq("instance_id", id);
 
   return NextResponse.json({ success: true });
 }

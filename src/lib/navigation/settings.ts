@@ -21,7 +21,6 @@ const SETTINGS_TABS_BASE: SettingsNavItem[] = [
   { href: "/settings/extensions", label: "Extensions" },
   { href: "/settings/exports", label: "Exports" },
   { href: "/settings/mcp-servers", label: "Tools" },
-  { href: "/settings/integrations", label: "Integrations" },
   { href: "/settings/billing", label: "Billing" },
 ];
 

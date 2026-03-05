@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import type { Agent } from "@/types/agent";
 import type { SkillConfig } from "@/types/database";
 import type { CustomSkill } from "@/types/custom-skill";
+import type { ComposioConfig } from "@/types/composio";
 import type { CreateAgentData } from "@/lib/validators/agent";
 import { AgentCard } from "./agent-card";
 import { AgentForm } from "./agent-form";
@@ -16,6 +17,7 @@ interface AssistantsListProps {
   tenantId: string;
   globalSkillConfigs: SkillConfig[];
   customSkills?: CustomSkill[];
+  composioConfig?: ComposioConfig | null;
 }
 
 export function AssistantsList({
@@ -23,6 +25,7 @@ export function AssistantsList({
   tenantId,
   globalSkillConfigs,
   customSkills = [],
+  composioConfig = null,
 }: AssistantsListProps) {
   const [agents, setAgents] = useState<Agent[]>(initialAgents);
   const [formOpen, setFormOpen] = useState(false);
@@ -198,6 +201,7 @@ export function AssistantsList({
         editAgent={editAgent}
         globalSkillConfigs={globalSkillConfigs}
         customSkills={customSkills}
+        composioConfig={composioConfig}
       />
 
       {/* Delete Confirmation Dialog */}

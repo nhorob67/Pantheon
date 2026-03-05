@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { enableComposioSchema, updateComposioSchema } from "@/lib/validators/composio";
 import { getComposioClient } from "@/lib/composio/client";
+import { buildComposioUserId } from "@/lib/composio/user-id";
 import { consumeComposioRateLimit } from "@/lib/security/user-rate-limit";
 
 async function authorizeInstance(id: string) {
@@ -78,7 +79,7 @@ export async function POST(
 
   const admin = createAdminClient();
   const customerId = instance.customers.id as string;
-  const composioUserId = `farmclaw_${customerId}`;
+  const composioUserId = buildComposioUserId(customerId);
 
   // Check if config already exists
   const { data: existing } = await admin

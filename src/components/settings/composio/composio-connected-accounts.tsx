@@ -151,7 +151,7 @@ export function ComposioConnectedAccounts({
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => onDisconnect(toolkit.id)}
+                          onClick={() => onDisconnect(connection.id)}
                         >
                           Disconnect
                         </Button>

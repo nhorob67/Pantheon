@@ -14,6 +14,7 @@ import type {
 } from "@/types/agent";
 import type { CustomSkill } from "@/types/custom-skill";
 import type { SkillConfig } from "@/types/database";
+import type { ComposioConfig } from "@/types/composio";
 import { Dialog } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { useState, useEffect, useMemo } from "react";
@@ -21,6 +22,7 @@ import { Loader2 } from "lucide-react";
 import { PresetGrid } from "./preset-grid";
 import { SkillToggles } from "./skill-toggles";
 import { CronToggles } from "./cron-toggles";
+import { ComposioToolkitToggles } from "./composio-toolkit-toggles";
 
 interface AgentFormProps {
   open: boolean;
@@ -29,6 +31,7 @@ interface AgentFormProps {
   editAgent?: Agent | null;
   globalSkillConfigs: SkillConfig[];
   customSkills?: CustomSkill[];
+  composioConfig?: ComposioConfig | null;
 }
 
 export function AgentForm({
@@ -38,6 +41,7 @@ export function AgentForm({
   editAgent,
   globalSkillConfigs,
   customSkills = [],
+  composioConfig = null,
 }: AgentFormProps) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,6 +63,7 @@ export function AgentForm({
             is_default: editAgent.is_default,
             skills: editAgent.skills as CreateAgentData["skills"],
             cron_jobs: (editAgent.cron_jobs || {}) as CreateAgentData["cron_jobs"],
+            composio_toolkits: editAgent.composio_toolkits ?? [],
           }
         : {
             display_name: "",
@@ -71,6 +76,7 @@ export function AgentForm({
             cron_jobs: Object.fromEntries(
               PRESET_DEFAULT_CRONS.general.map((c) => [c, true])
             ) as CreateAgentData["cron_jobs"],
+            composio_toolkits: [],
           },
     [editAgent]
   );
@@ -90,6 +96,7 @@ export function AgentForm({
   const personalityPreset = useWatch({ control, name: "personality_preset" });
   const skills = useWatch({ control, name: "skills" }) || [];
   const cronJobs = useWatch({ control, name: "cron_jobs" }) || {};
+  const composioToolkits = useWatch({ control, name: "composio_toolkits" }) || [];
 
   useEffect(() => {
     if (open) {
@@ -128,6 +135,25 @@ export function AgentForm({
       { shouldValidate: true }
     );
   };
+
+  const toggleComposioToolkit = (id: string) => {
+    const current = composioToolkits as string[];
+    const next = current.includes(id)
+      ? current.filter((t) => t !== id)
+      : [...current, id];
+    setValue("composio_toolkits", next, { shouldValidate: true });
+  };
+
+  const composioEnabled = composioConfig?.enabled && (composioConfig.selected_toolkits?.length ?? 0) > 0;
+  const connectedAppIds = useMemo(
+    () =>
+      new Set(
+        (composioConfig?.connected_apps ?? [])
+          .filter((a) => a.status === "connected")
+          .map((a) => a.app_id)
+      ),
+    [composioConfig]
+  );
 
   const doSubmit = async (data: CreateAgentData) => {
     setSaving(true);
@@ -229,6 +255,16 @@ export function AgentForm({
           isGloballyDisabled={isGloballyDisabled}
           onToggle={toggleSkill}
         />
+
+        {/* Connected Integrations (Composio) */}
+        {composioEnabled && (
+          <ComposioToolkitToggles
+            enabledToolkits={composioConfig!.selected_toolkits}
+            connectedAppIds={connectedAppIds}
+            selected={composioToolkits as string[]}
+            onToggle={toggleComposioToolkit}
+          />
+        )}
 
         {/* Scheduled Messages */}
         <CronToggles

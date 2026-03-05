@@ -171,7 +171,7 @@ Sign off as ${agentName}.`;
   }
 
   const tools = agent
-    ? resolveToolsForAgent({
+    ? await resolveToolsForAgent({
         admin,
         tenantId: input.tenantId,
         customerId: input.customerId,

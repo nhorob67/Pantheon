@@ -54,6 +54,7 @@ export async function GET(
   const accounts = await composio.getConnectedAccounts(config.composio_user_id);
 
   const connectedApps: ComposioConnectedApp[] = accounts.map((a) => ({
+    id: a.id,
     app_id: a.app_id,
     app_name: a.app_name,
     status: a.status === "ACTIVE" ? "connected" : "disconnected",

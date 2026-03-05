@@ -13,6 +13,7 @@ export interface Agent {
   is_default: boolean;
   skills: string[];
   cron_jobs: Record<string, boolean>;
+  composio_toolkits?: string[];
   sort_order: number;
   created_at: string;
   updated_at: string;

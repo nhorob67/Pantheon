@@ -39,6 +39,148 @@ export interface TenantToolInvocationOutcome {
   errorMessage?: string;
 }
 
+export async function executeTenantExternalToolInvocation(
+  admin: SupabaseClient,
+  input: {
+    run: TenantRuntimeRun;
+    toolRequest: ToolRequest;
+    actorRole: TenantRole;
+    actorId: string | null;
+    executeAllowedTool: () => Promise<Record<string, unknown>>;
+  }
+): Promise<TenantToolInvocationOutcome> {
+  const policy = await evaluateTenantToolPolicy(admin, {
+    tenantId: input.run.tenant_id,
+    customerId: input.run.customer_id,
+    toolKey: input.toolRequest.toolKey,
+    actorRole: input.actorRole,
+  });
+
+  const requestPayload = {
+    args: input.toolRequest.args,
+    actor_role: input.actorRole,
+    actor_id: input.actorId,
+  };
+
+  if (policy.decision === "denied") {
+    await insertToolInvocation(admin, {
+      run: input.run,
+      toolId: policy.toolId,
+      toolKey: input.toolRequest.toolKey,
+      policyDecision: "denied",
+      status: "rejected",
+      requestPayload,
+      resultPayload: {
+        reason: policy.reason,
+      },
+      errorMessage: "Tool invocation denied by policy",
+    });
+
+    return {
+      outcome: "failed",
+      errorMessage: "Tool invocation denied by tenant policy",
+      result: {
+        tool_key: input.toolRequest.toolKey,
+        policy_decision: "denied",
+        reason: policy.reason,
+      },
+    };
+  }
+
+  if (policy.decision === "requires_approval") {
+    const invocation = await insertToolInvocation(admin, {
+      run: input.run,
+      toolId: policy.toolId,
+      toolKey: input.toolRequest.toolKey,
+      policyDecision: "requires_approval",
+      status: "pending",
+      requestPayload,
+      resultPayload: {
+        reason: policy.reason,
+      },
+      continuationToken: null,
+    });
+
+    const approval = await enqueueApproval(admin, {
+      run: input.run,
+      toolId: policy.toolId,
+      toolKey: input.toolRequest.toolKey,
+      requiredRole: policy.requiredRole,
+      requestPayload,
+      invocationId: invocation.id,
+      continuationToken: null,
+    });
+
+    return {
+      outcome: "awaiting_approval",
+      result: {
+        tool_key: input.toolRequest.toolKey,
+        approval_id: approval.approvalId,
+        invocation_id: invocation.id,
+        policy_decision: "requires_approval",
+      },
+    };
+  }
+
+  const invocation = await insertToolInvocation(admin, {
+    run: input.run,
+    toolId: policy.toolId,
+    toolKey: input.toolRequest.toolKey,
+    policyDecision: "allowed",
+    status: "approved",
+    requestPayload,
+  });
+
+  try {
+    const executed = await input.executeAllowedTool();
+    const { error: updateError } = await admin
+      .from("tenant_tool_invocations")
+      .update({
+        status: "completed",
+        result_payload: executed,
+        completed_at: new Date().toISOString(),
+      })
+      .eq("id", invocation.id);
+
+    if (updateError) {
+      throw new Error(safeErrorMessage(updateError, "Failed to update tool invocation"));
+    }
+
+    return {
+      outcome: "completed",
+      result: {
+        tool_key: input.toolRequest.toolKey,
+        invocation_id: invocation.id,
+        policy_decision: "allowed",
+        tool_output: executed,
+      },
+    };
+  } catch (error) {
+    const { error: updateError } = await admin
+      .from("tenant_tool_invocations")
+      .update({
+        status: "failed",
+        error_message: safeErrorMessage(error, "Tool execution failed"),
+        completed_at: new Date().toISOString(),
+      })
+      .eq("id", invocation.id);
+
+    if (updateError) {
+      throw new Error(safeErrorMessage(updateError, "Failed to record tool failure"));
+    }
+
+    return {
+      outcome: "failed",
+      errorMessage: safeErrorMessage(error, "Tool execution failed"),
+      result: {
+        tool_key: input.toolRequest.toolKey,
+        invocation_id: invocation.id,
+        policy_decision: "allowed",
+      },
+    };
+  }
+}
+
 interface ToolContinuationTokenPayload {
   invocation_id: string;
   token: string;

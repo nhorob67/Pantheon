@@ -10,11 +10,14 @@ import type { Agent } from "@/types/agent";
 import type { PersonalityPreset } from "@/types/agent";
 import type { SkillConfig } from "@/types/database";
 import type { CustomSkill } from "@/types/custom-skill";
+import type { ComposioConfig, ComposioConnectedApp } from "@/types/composio";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   requireDashboardCustomer,
   getCustomerInstance,
   getCustomerTenant,
 } from "@/lib/auth/dashboard-session";
+import { DiscordSetupBanner } from "@/components/dashboard/discord-setup-banner";
 
 export default async function ChannelsSettingsPage() {
   const [{ customerId }, supabase] = await Promise.all([
@@ -22,7 +25,8 @@ export default async function ChannelsSettingsPage() {
     createClient(),
   ]);
 
-  const [instance, tenant, { data: skillConfigs }, { data: customSkills }, { data: emailIdentity }] = await Promise.all([
+  const admin = createAdminClient();
+  const [instance, tenant, { data: skillConfigs }, { data: customSkills }, { data: emailIdentity }, { data: composioRow }] = await Promise.all([
     getCustomerInstance(customerId),
     getCustomerTenant(customerId),
     supabase
@@ -39,9 +43,21 @@ export default async function ChannelsSettingsPage() {
       .eq("customer_id", customerId)
       .eq("is_active", true)
       .maybeSingle(),
+    admin
+      .from("composio_configs")
+      .select("*")
+      .eq("customer_id", customerId)
+      .maybeSingle(),
   ]);
 
   if (!tenant) redirect("/onboarding");
+
+  const composioConfig: ComposioConfig | null = composioRow
+    ? {
+        ...composioRow,
+        connected_apps: (composioRow.connected_apps || []) as ComposioConnectedApp[],
+      }
+    : null;
 
   // Fetch tenant-first agents (needs tenant.id)
   const { data: tenantAgents } = await supabase
@@ -77,6 +93,9 @@ export default async function ChannelsSettingsPage() {
           config.cron_jobs && typeof config.cron_jobs === "object" && !Array.isArray(config.cron_jobs)
             ? (config.cron_jobs as Record<string, boolean>)
             : {};
+        const composioToolkits = Array.isArray(config.composio_toolkits)
+          ? (config.composio_toolkits as string[])
+          : [];
 
         return {
           id: row.legacy_agent_id || row.id,
@@ -91,6 +110,7 @@ export default async function ChannelsSettingsPage() {
           is_default: row.is_default,
           skills: Array.isArray(row.skills) ? (row.skills as string[]) : [],
           cron_jobs: cronJobs,
+          composio_toolkits: composioToolkits,
           sort_order: row.sort_order,
           created_at: row.created_at,
           updated_at: row.updated_at,
@@ -112,6 +132,7 @@ export default async function ChannelsSettingsPage() {
   const typedCustomSkills = (customSkills || [])
     .filter((skill) => skill.status === "active") as CustomSkill[];
   const emailStatus = emailIdentity?.address || "Not enabled";
+  const hasLinkedChannels = typedAgents.some((a) => !!a.discord_channel_id);
 
   return (
     <div className="space-y-6">
@@ -125,6 +146,8 @@ export default async function ChannelsSettingsPage() {
           can have its own personality, skills, and scheduled messages.
         </p>
       </div>
+
+      <DiscordSetupBanner hasLinkedChannels={hasLinkedChannels} />
 
       <div className="bg-bg-card rounded-xl border border-border shadow-sm p-5">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -164,6 +187,7 @@ export default async function ChannelsSettingsPage() {
           tenantId={tenant.id}
           globalSkillConfigs={typedSkillConfigs}
           customSkills={typedCustomSkills}
+          composioConfig={composioConfig}
         />
       </div>
     </div>

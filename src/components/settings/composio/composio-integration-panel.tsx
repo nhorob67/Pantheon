@@ -199,14 +199,20 @@ export function ComposioIntegrationPanel({ tenantId, initialConfig }: Props) {
     }
   }, [tenantId]);
 
+  useEffect(() => {
+    if (enabled) {
+      void refreshConnections();
+    }
+  }, [enabled, refreshConnections]);
+
   const handleDisconnect = useCallback(
-    async (appId: string) => {
-      const connection = connections.find((c) => c.app_id === appId);
+    async (connectionId: string) => {
+      const connection = connections.find((c) => c.id === connectionId);
       if (!connection) return;
 
       try {
         const res = await fetch(
-          `/api/tenants/${tenantId}/composio/connections?connection_id=${appId}`,
+          `/api/tenants/${tenantId}/composio/connections?connection_id=${connectionId}`,
           { method: "DELETE" }
         );
         const data = await res.json();
