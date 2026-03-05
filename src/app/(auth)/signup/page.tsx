@@ -55,6 +55,15 @@ function SignupPageInner() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Detect Stripe load failure (e.g. missing or malformed publishable key)
+  useEffect(() => {
+    if (step === "payment") {
+      getStripePromise().then((s) => {
+        if (!s) setError("Payment system failed to load. Please refresh the page.");
+      });
+    }
+  }, [step]);
+
   // Handle 3DS return — detect payment_intent query param
   useEffect(() => {
     const paymentIntent = searchParams.get("payment_intent");
