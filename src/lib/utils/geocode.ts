@@ -5,21 +5,27 @@ interface GeocodeResult {
 }
 
 export async function geocodeLocation(
-  query: string
+  query: string,
+  countryCode: string = "us"
 ): Promise<GeocodeResult | null> {
-  // Use Census Bureau geocoder (free, no API key)
-  const url = `https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${encodeURIComponent(query)}&benchmark=Public_AR_Current&format=json`;
+  const cc = countryCode.toLowerCase() === "ca" ? "ca" : "us";
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&countrycodes=${cc}&limit=1`;
 
   try {
-    const res = await fetch(url);
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent": "FarmClaw/1.0 (https://farmclaw.com)",
+        Accept: "application/json",
+      },
+    });
     const data = await res.json();
-    const match = data?.result?.addressMatches?.[0];
+    const match = data?.[0];
 
     if (match) {
       return {
-        lat: parseFloat(match.coordinates.y),
-        lng: parseFloat(match.coordinates.x),
-        display_name: match.matchedAddress,
+        lat: parseFloat(match.lat),
+        lng: parseFloat(match.lon),
+        display_name: match.display_name,
       };
     }
     return null;

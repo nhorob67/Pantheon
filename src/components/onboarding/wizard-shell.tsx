@@ -1,15 +1,14 @@
 "use client";
 
 import { useOnboarding } from "@/hooks/use-onboarding";
-import { Check } from "lucide-react";
+import { Building2, MapPin, MessageSquare, Check } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { OnboardingBackground } from "./onboarding-background";
 
 const STEPS = [
-  { num: 0, label: "Template" },
-  { num: 1, label: "Farm Profile" },
-  { num: 2, label: "Grain Marketing" },
-  { num: 3, label: "Weather & Location" },
-  { num: 4, label: "Connect Channel" },
-  { num: 5, label: "Review & Launch" },
+  { num: 0, label: "Operation", icon: Building2, accent: "var(--accent)" },
+  { num: 1, label: "Weather", icon: MapPin, accent: "var(--green-bright)" },
+  { num: 2, label: "Discord", icon: MessageSquare, accent: "#5865F2" },
 ];
 
 interface WizardShellProps {
@@ -20,59 +19,90 @@ export function WizardShell({ children }: WizardShellProps) {
   const { currentStep } = useOnboarding();
 
   return (
-    <div className="max-w-2xl mx-auto">
-      {/* Stepper */}
-      <div className="flex items-center justify-between mb-8">
-        {STEPS.map((step, i) => (
-          <div key={step.num} className="flex items-center">
-            <div className="flex flex-col items-center">
-              <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
-                  currentStep > step.num
-                    ? "bg-primary text-white"
-                    : currentStep === step.num
-                      ? "bg-energy text-white"
-                      : "bg-muted text-foreground/40"
-                }`}
-              >
-                {currentStep > step.num ? (
-                  <Check className="w-5 h-5" />
-                ) : (
-                  step.num + 1
-                )}
-              </div>
-              <span
-                className={`text-xs mt-1.5 hidden sm:block ${
-                  currentStep >= step.num
-                    ? "text-foreground"
-                    : "text-foreground/40"
-                }`}
-              >
-                {step.label}
-              </span>
-            </div>
-            {i < STEPS.length - 1 && (
-              <div
-                className={`h-0.5 w-6 sm:w-12 mx-1 sm:mx-2 ${
-                  currentStep > step.num ? "bg-primary" : "bg-border"
-                }`}
-              />
-            )}
-          </div>
-        ))}
-      </div>
+    <div className="relative min-h-screen flex flex-col">
+      <OnboardingBackground />
 
       {/* Progress bar */}
-      <div className="bg-muted rounded-full h-2 mb-8">
-        <div
-          className="bg-energy rounded-full h-2 transition-all duration-500"
-          style={{ width: `${(currentStep / 5) * 100}%` }}
-        />
+      <div className="relative z-10 w-full max-w-3xl mx-auto px-6 pt-8">
+        <div className="flex items-center gap-1">
+          {STEPS.map((step, i) => {
+            const isCompleted = currentStep > step.num;
+            const isActive = currentStep === step.num;
+            const Icon = step.icon;
+
+            return (
+              <div key={step.num} className="flex items-center flex-1">
+                <div className="flex items-center gap-2.5 flex-shrink-0">
+                  <div
+                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 ${
+                      isCompleted
+                        ? "bg-[var(--green-bright)] text-white"
+                        : isActive
+                          ? "border-2 shadow-[0_0_12px_rgba(217,140,46,0.3)]"
+                          : "border border-[var(--border)] text-[var(--text-dim)]"
+                    }`}
+                    style={
+                      isActive
+                        ? {
+                            borderColor: step.accent,
+                            color: step.accent,
+                            backgroundColor: `color-mix(in srgb, ${step.accent} 10%, transparent)`,
+                          }
+                        : undefined
+                    }
+                  >
+                    {isCompleted ? (
+                      <Check className="w-4 h-4" />
+                    ) : (
+                      <Icon className="w-4 h-4" />
+                    )}
+                  </div>
+                  <span
+                    className={`text-xs font-medium hidden sm:block transition-colors ${
+                      isActive
+                        ? "text-[var(--text-primary)]"
+                        : isCompleted
+                          ? "text-[var(--green-bright)]"
+                          : "text-[var(--text-dim)]"
+                    }`}
+                  >
+                    {step.label}
+                  </span>
+                </div>
+
+                {i < STEPS.length - 1 && (
+                  <div className="flex-1 mx-3 h-0.5 rounded-full overflow-hidden bg-[var(--border)]">
+                    <div
+                      className="h-full rounded-full transition-all duration-500 bg-[var(--green-bright)]"
+                      style={{ width: isCompleted ? "100%" : "0%" }}
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Step content */}
-      <div className="bg-card rounded-xl border border-border shadow-sm p-8">
-        {children}
+      <div className="relative z-10 flex-1 flex items-start justify-center px-6 py-12">
+        <div className="w-full max-w-2xl">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentStep}
+              initial={{ opacity: 0, x: 40 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -40 }}
+              transition={{
+                type: "spring",
+                stiffness: 300,
+                damping: 30,
+              }}
+            >
+              {children}
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </div>
     </div>
   );

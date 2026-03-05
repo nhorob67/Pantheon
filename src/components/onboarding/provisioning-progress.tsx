@@ -1,17 +1,20 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Check, Loader2, Rocket } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
+import { motion } from "motion/react";
+import { useRouter } from "next/navigation";
 
 const PROVISION_STEPS = [
   { label: "Creating your workspace" },
   { label: "Setting up farm profile" },
-  { label: "Configuring your assistant" },
+  { label: "Configuring weather intelligence" },
   { label: "Going live" },
 ];
 
 export function ProvisioningProgress() {
   const [currentIdx, setCurrentIdx] = useState(0);
+  const router = useRouter();
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -22,69 +25,182 @@ export function ProvisioningProgress() {
         }
         return prev + 1;
       });
-    }, 500);
+    }, 600);
 
     return () => clearInterval(interval);
   }, []);
 
   const allDone = currentIdx >= PROVISION_STEPS.length - 1;
 
+  useEffect(() => {
+    if (allDone) {
+      const timer = setTimeout(() => {
+        router.push("/dashboard");
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [allDone, router]);
+
   return (
-    <div className="text-center py-8">
-      <div className="mx-auto w-16 h-16 rounded-full bg-energy/10 flex items-center justify-center mb-6">
-        <Rocket
-          className={`w-8 h-8 text-energy ${allDone ? "" : "animate-bounce"}`}
-        />
-      </div>
+    <div className="fixed inset-0 z-50 bg-[var(--bg-deep)] flex items-center justify-center">
+      <div className="text-center max-w-md mx-auto px-6">
+        {/* Seedling animation */}
+        <motion.div
+          className="mx-auto w-24 h-24 mb-8 relative"
+          initial={{ scale: 0.5, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 200, damping: 20 }}
+        >
+          <svg
+            viewBox="0 0 96 96"
+            className="w-full h-full"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            {/* Stem */}
+            <motion.line
+              x1="48"
+              y1="80"
+              x2="48"
+              y2="35"
+              stroke="var(--green-bright)"
+              strokeWidth="3"
+              strokeLinecap="round"
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ duration: 1, delay: 0.3 }}
+            />
+            {/* Left leaf */}
+            <motion.path
+              d="M48 55C48 55 30 50 28 38C28 38 42 36 48 55Z"
+              fill="var(--green-bright)"
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.8, type: "spring" }}
+              style={{ transformOrigin: "48px 55px" }}
+            />
+            {/* Right leaf */}
+            <motion.path
+              d="M48 45C48 45 66 40 68 28C68 28 54 26 48 45Z"
+              fill="var(--green-bright)"
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 1.0, type: "spring" }}
+              style={{ transformOrigin: "48px 45px" }}
+            />
+            {/* Wheat head */}
+            <motion.ellipse
+              cx="48"
+              cy="28"
+              rx="6"
+              ry="10"
+              fill="var(--accent)"
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 1.2, type: "spring" }}
+            />
+          </svg>
 
-      <h2 className="font-headline text-xl font-semibold mb-2">
-        {allDone ? "You're live!" : "Launching your FarmClaw..."}
-      </h2>
-      <p className="text-foreground/60 text-sm mb-8">
-        {allDone
-          ? "Your AI farm assistant is ready to go."
-          : "Just a moment..."}
-      </p>
+          {/* Glow */}
+          {allDone && (
+            <motion.div
+              className="absolute inset-0 rounded-full"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0, 0.6, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              style={{
+                background:
+                  "radial-gradient(circle, rgba(217,140,46,0.2) 0%, transparent 70%)",
+              }}
+            />
+          )}
+        </motion.div>
 
-      <div className="max-w-xs mx-auto space-y-3 text-left">
-        {PROVISION_STEPS.map((step, i) => {
-          const status =
-            i < currentIdx
-              ? "complete"
-              : i === currentIdx
-                ? "active"
-                : "pending";
-          return (
-            <div key={step.label} className="flex items-center gap-3">
-              <div
-                className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  status === "complete"
-                    ? "bg-primary text-white"
-                    : status === "active"
-                      ? "bg-energy text-white"
-                      : "bg-muted text-foreground/30"
-                }`}
+        <motion.h2
+          className="font-headline text-2xl font-bold text-[var(--text-primary)] mb-2"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          {allDone ? "You're live!" : "Growing your FarmClaw..."}
+        </motion.h2>
+        <motion.p
+          className="text-sm text-[var(--text-secondary)] mb-10"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+        >
+          {allDone
+            ? "Your AI farm assistant is ready to go."
+            : "Just a moment..."}
+        </motion.p>
+
+        {/* Checklist */}
+        <div className="max-w-xs mx-auto space-y-3 text-left">
+          {PROVISION_STEPS.map((step, i) => {
+            const status =
+              i < currentIdx
+                ? "complete"
+                : i === currentIdx
+                  ? "active"
+                  : "pending";
+            return (
+              <motion.div
+                key={step.label}
+                className="flex items-center gap-3"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 * i + 0.3 }}
               >
-                {status === "complete" ? (
-                  <Check className="w-4 h-4" />
-                ) : status === "active" ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <span className="text-xs">{i + 1}</span>
-                )}
-              </div>
-              <span
-                className={`text-sm ${
-                  status === "pending"
-                    ? "text-foreground/30"
-                    : "text-foreground"
-                }`}
-              >
-                {step.label}
-              </span>
-            </div>
-          );
-        })}
+                <div
+                  className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
+                    status === "complete"
+                      ? "bg-[var(--green-bright)] text-white"
+                      : status === "active"
+                        ? "bg-[var(--accent)] text-white"
+                        : "bg-[var(--bg-card)] text-[var(--text-dim)] border border-[var(--border)]"
+                  }`}
+                >
+                  {status === "complete" ? (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 400 }}
+                    >
+                      <Check className="w-4 h-4" />
+                    </motion.div>
+                  ) : status === "active" ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <span className="text-xs">{i + 1}</span>
+                  )}
+                </div>
+                <span
+                  className={`text-sm transition-colors ${
+                    status === "pending"
+                      ? "text-[var(--text-dim)]"
+                      : "text-[var(--text-primary)]"
+                  }`}
+                >
+                  {step.label}
+                </span>
+              </motion.div>
+            );
+          })}
+        </div>
+
+        {/* CTA after completion */}
+        {allDone && (
+          <motion.button
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            onClick={() => router.push("/dashboard")}
+            className="mt-10 bg-gradient-to-r from-[var(--accent)] to-[var(--accent-light)] text-[var(--bg-deep)] font-semibold py-3 px-8 rounded-full transition-all hover:shadow-[0_4px_20px_rgba(217,140,46,0.3)] hover:-translate-y-0.5"
+          >
+            Go to Dashboard
+          </motion.button>
+        )}
       </div>
     </div>
   );

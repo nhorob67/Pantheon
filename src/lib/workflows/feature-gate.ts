@@ -14,15 +14,20 @@ export async function isWorkflowBuilderEnabledForCustomer(
     return false;
   }
 
-  const baseFlagEnabled = await isFeatureFlagEnabledOrDefaultTrue(
-    admin,
-    customerId,
-    WORKFLOW_BUILDER_FEATURE_FLAG_KEY
-  );
+  try {
+    const baseFlagEnabled = await isFeatureFlagEnabledOrDefaultTrue(
+      admin,
+      customerId,
+      WORKFLOW_BUILDER_FEATURE_FLAG_KEY
+    );
 
-  if (!baseFlagEnabled) {
-    return false;
+    if (!baseFlagEnabled) {
+      return false;
+    }
+
+    return isWorkflowBuilderRolledOutToCustomer(customerId);
+  } catch {
+    // Feature flag check should never crash the page — fail open to default (true)
+    return true;
   }
-
-  return isWorkflowBuilderRolledOutToCustomer(customerId);
 }

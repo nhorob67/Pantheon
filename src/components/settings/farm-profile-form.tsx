@@ -3,7 +3,7 @@
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { farmProfileSchema, type FarmProfileFormData } from "@/lib/validators/farm-profile";
-import { SUPPORTED_STATES, CROPS } from "@/types/farm";
+import { US_STATES, CA_PROVINCES, CROPS } from "@/types/farm";
 import type { FarmProfile } from "@/types/database";
 import { useState } from "react";
 import { Loader2, Save } from "lucide-react";
@@ -28,7 +28,7 @@ export function FarmProfileForm({ profile, tenantId }: FarmProfileFormProps) {
     resolver: zodResolver(farmProfileSchema),
     defaultValues: {
       farm_name: profile.farm_name || "",
-      state: profile.state as FarmProfileFormData["state"],
+      state: profile.state || "",
       county: profile.county || "",
       primary_crops: (profile.primary_crops || []) as FarmProfileFormData["primary_crops"],
       acres: profile.acres || undefined,
@@ -94,9 +94,16 @@ export function FarmProfileForm({ profile, tenantId }: FarmProfileFormProps) {
             {...register("state")}
             className="w-full border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg bg-white px-4 py-3 outline-none transition-colors"
           >
-            {SUPPORTED_STATES.map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
+            <optgroup label="United States">
+              {US_STATES.map((s) => (
+                <option key={s.code} value={s.code}>{s.name}</option>
+              ))}
+            </optgroup>
+            <optgroup label="Canada">
+              {CA_PROVINCES.map((p) => (
+                <option key={p.code} value={p.code}>{p.name}</option>
+              ))}
+            </optgroup>
           </select>
         </div>
         <div>

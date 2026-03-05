@@ -1786,3 +1786,14 @@ body::before {
 .ai-cursor-blink {
   animation: ai-cursor-blink 0.8s step-end infinite;
 }
+
+/* ===== ONBOARDING ANIMATIONS ===== */
+@keyframes contour-drift {
+  from { transform: translate(0, 0); }
+  to { transform: translate(-40px, -20px); }
+}
+
+@keyframes glow-pulse-success {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(90, 138, 60, 0.4); }
+  50% { box-shadow: 0 0 20px 6px rgba(90, 138, 60, 0.15); }
+}

@@ -42,16 +42,36 @@ export default function SignupPage() {
   );
 }
 
+function get3DSReturnState(searchParams: ReturnType<typeof useSearchParams>) {
+  if (typeof window === "undefined") return null;
+  const paymentIntent = searchParams.get("payment_intent");
+  const redirectStatus = searchParams.get("redirect_status");
+  if (!paymentIntent || redirectStatus !== "succeeded") return null;
+
+  const storedSubId = sessionStorage.getItem("fc_signup_sub_id");
+  const storedEmail = sessionStorage.getItem("fc_signup_email");
+  const storedPassword = sessionStorage.getItem("fc_signup_password");
+  if (!storedSubId || !storedEmail || !storedPassword) return null;
+
+  return { subscriptionId: storedSubId, email: storedEmail, password: storedPassword };
+}
+
 function SignupPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [step, setStep] = useState<Step>("credentials");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+
+  // Detect 3DS return and hydrate initial state in a single pass
+  const [returnState] = useState(() => get3DSReturnState(searchParams));
+
+  const [step, setStep] = useState<Step>(returnState ? "processing" : "credentials");
+  const [email, setEmail] = useState(returnState?.email ?? "");
+  const [password, setPassword] = useState(returnState?.password ?? "");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [subscriptionId, setSubscriptionId] = useState<string | null>(null);
+  const [subscriptionId, setSubscriptionId] = useState<string | null>(
+    returnState?.subscriptionId ?? null
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,24 +83,6 @@ function SignupPageInner() {
       });
     }
   }, [step]);
-
-  // Handle 3DS return — detect payment_intent query param
-  useEffect(() => {
-    const paymentIntent = searchParams.get("payment_intent");
-    const redirectStatus = searchParams.get("redirect_status");
-    if (paymentIntent && redirectStatus === "succeeded") {
-      // Returning from 3DS redirect — go straight to processing
-      const storedSubId = sessionStorage.getItem("fc_signup_sub_id");
-      const storedEmail = sessionStorage.getItem("fc_signup_email");
-      const storedPassword = sessionStorage.getItem("fc_signup_password");
-      if (storedSubId && storedEmail && storedPassword) {
-        setSubscriptionId(storedSubId);
-        setEmail(storedEmail);
-        setPassword(storedPassword);
-        setStep("processing");
-      }
-    }
-  }, [searchParams]);
 
   const handleCredentialsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

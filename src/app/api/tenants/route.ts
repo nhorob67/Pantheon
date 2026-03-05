@@ -6,17 +6,22 @@ import { createAdminClient } from "@/lib/supabase/admin";
 const createTenantSchema = z.object({
   farm_profile: z.object({
     farm_name: z.string().min(1),
+    country: z.string().default("US"),
     state: z.string().min(1),
-    county: z.string().min(1),
-    primary_crops: z.array(z.string()),
-    acres: z.number().positive(),
-    elevators: z.array(
-      z.object({
-        name: z.string(),
-        url: z.string(),
-        crops: z.array(z.string()),
-      })
-    ),
+    county: z.string().optional(),
+    business_type: z.string().optional(),
+    primary_crops: z.array(z.string()).optional().default([]),
+    acres: z.number().positive().nullable().optional(),
+    elevators: z
+      .array(
+        z.object({
+          name: z.string(),
+          url: z.string(),
+          crops: z.array(z.string()),
+        })
+      )
+      .optional()
+      .default([]),
     weather_location: z.string(),
     weather_lat: z.number(),
     weather_lng: z.number(),
@@ -85,10 +90,12 @@ export async function POST(request: Request) {
     {
       customer_id: customerId,
       farm_name: farm_profile.farm_name,
+      country: farm_profile.country,
       state: farm_profile.state,
-      county: farm_profile.county,
+      county: farm_profile.county || null,
+      business_type: farm_profile.business_type || null,
       primary_crops: farm_profile.primary_crops,
-      acres: farm_profile.acres,
+      acres: farm_profile.acres ?? null,
       elevators: farm_profile.elevators,
       weather_location: farm_profile.weather_location,
       weather_lat: farm_profile.weather_lat,
