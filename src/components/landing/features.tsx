@@ -128,6 +128,8 @@ const scenarios: { label: string; frames: ConversationFrame[] }[] = [
 function StreamingText({ text, onDone }: { text: string; onDone?: () => void }) {
   const [count, setCount] = useState(0);
   const words = text.split(" ");
+  const onDoneRef = useRef(onDone);
+  onDoneRef.current = onDone;
 
   useEffect(() => {
     let i = 0;
@@ -136,11 +138,11 @@ function StreamingText({ text, onDone }: { text: string; onDone?: () => void }) 
       setCount(i);
       if (i >= words.length) {
         clearInterval(interval);
-        onDone?.();
+        onDoneRef.current?.();
       }
     }, 40);
     return () => clearInterval(interval);
-  }, [words.length, onDone]);
+  }, [words.length]);
 
   return (
     <>
@@ -152,6 +154,8 @@ function StreamingText({ text, onDone }: { text: string; onDone?: () => void }) 
 
 function UserTyping({ text, onDone }: { text: string; onDone: () => void }) {
   const [chars, setChars] = useState(0);
+  const onDoneRef = useRef(onDone);
+  onDoneRef.current = onDone;
 
   useEffect(() => {
     let i = 0;
@@ -160,11 +164,11 @@ function UserTyping({ text, onDone }: { text: string; onDone: () => void }) {
       setChars(i);
       if (i >= text.length) {
         clearInterval(interval);
-        setTimeout(onDone, 300);
+        setTimeout(() => onDoneRef.current(), 300);
       }
     }, 45);
     return () => clearInterval(interval);
-  }, [text, onDone]);
+  }, [text]);
 
   return (
     <div className="terminal-user">
