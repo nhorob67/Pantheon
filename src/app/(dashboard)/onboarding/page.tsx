@@ -1,13 +1,13 @@
 "use client";
 
-import { useOnboarding } from "@/hooks/use-onboarding";
+import { useOnboardingStep } from "@/hooks/use-onboarding";
 import { WizardShell } from "@/components/onboarding/wizard-shell";
 import { Step1Operation } from "@/components/onboarding/step1-operation";
 import { Step2Location } from "@/components/onboarding/step2-location";
 import { Step3Discord } from "@/components/onboarding/step3-discord";
 
 export default function OnboardingPage() {
-  const { currentStep } = useOnboarding();
+  const currentStep = useOnboardingStep();
 
   return (
     <WizardShell>

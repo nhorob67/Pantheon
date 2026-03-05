@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Bell } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { AlertEvent } from "@/types/alerts";
 
 export function AlertBell() {
@@ -10,20 +11,32 @@ export function AlertBell() {
   const [unacknowledged, setUnacknowledged] = useState(0);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+  const isOnboarding = pathname === "/onboarding" || pathname.startsWith("/onboarding/");
 
   useEffect(() => {
+    if (isOnboarding) {
+      return;
+    }
+
+    let cancelled = false;
+
     fetch("/api/customers/alerts?limit=5")
       .then((r) => {
         if (!r.ok) return null;
         return r.json();
       })
       .then((data) => {
-        if (!data) return;
+        if (!data || cancelled) return;
         setAlerts(data.alerts || []);
         setUnacknowledged(data.unacknowledged || 0);
       })
       .catch(() => {});
-  }, []);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOnboarding]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -42,6 +55,10 @@ export function AlertBell() {
     );
     setUnacknowledged((prev) => Math.max(0, prev - 1));
   };
+
+  if (isOnboarding) {
+    return null;
+  }
 
   return (
     <div ref={ref} className="relative">

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { sanitizeOrFilterValue } from "@/lib/security/postgrest-sanitize";
+import { safeErrorMessage } from "@/lib/security/safe-error";
 
 const MAX_LIMIT = 100;
 const DEFAULT_LIMIT = 20;
@@ -73,6 +74,15 @@ function encodeCreatedAtIdCursor(row: { created_at: string; id: string }): strin
   return `${normalizedCreatedAt}${CREATED_AT_ID_CURSOR_DELIMITER}${row.id}`;
 }
 
+function emptyAlertsResponse() {
+  return NextResponse.json({
+    alerts: [],
+    total: 0,
+    unacknowledged: 0,
+    next_cursor: null,
+  });
+}
+
 export async function GET(request: Request) {
   const supabase = await createClient();
   const {
@@ -82,14 +92,21 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: customer } = await supabase
+  const { data: customer, error: customerError } = await supabase
     .from("customers")
     .select("id")
     .eq("user_id", user.id)
-    .single();
+    .maybeSingle();
+
+  if (customerError) {
+    return NextResponse.json(
+      { error: safeErrorMessage(customerError, "Failed to load alerts") },
+      { status: 500 }
+    );
+  }
 
   if (!customer) {
-    return NextResponse.json({ error: "Customer not found" }, { status: 404 });
+    return emptyAlertsResponse();
   }
 
   const url = new URL(request.url);
@@ -140,7 +157,14 @@ export async function GET(request: Request) {
   ]);
 
   if (alertsError || totalError || unacknowledgedError) {
-    return NextResponse.json({ error: "Failed to load alerts" }, { status: 500 });
+    console.error(
+      "[alerts] Falling back to empty alerts response:",
+      safeErrorMessage(
+        alertsError || totalError || unacknowledgedError,
+        "Failed to load alerts"
+      )
+    );
+    return emptyAlertsResponse();
   }
 
   const alertRows = alerts || [];

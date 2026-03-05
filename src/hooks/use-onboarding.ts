@@ -69,13 +69,19 @@ export const useOnboardingStep = () => useOnboarding((s) => s.currentStep);
 export const useOnboardingOperation = () => useOnboarding((s) => s.operation);
 export const useOnboardingLocation = () => useOnboarding((s) => s.location);
 export const useOnboardingDiscord = () => useOnboarding((s) => s.discord);
+export const useOnboardingSetCurrentStep = () =>
+  useOnboarding((s) => s.setCurrentStep);
+export const useOnboardingSetOperation = () => useOnboarding((s) => s.setOperation);
+export const useOnboardingSetLocation = () => useOnboarding((s) => s.setLocation);
+export const useOnboardingSetDiscord = () => useOnboarding((s) => s.setDiscord);
+export const useOnboardingReset = () => useOnboarding((s) => s.reset);
 
-// Action-only selector — stable reference, never triggers re-render
-export const useOnboardingActions = () =>
-  useOnboarding((s) => ({
-    setCurrentStep: s.setCurrentStep,
-    setOperation: s.setOperation,
-    setLocation: s.setLocation,
-    setDiscord: s.setDiscord,
-    reset: s.reset,
-  }));
+export function useOnboardingActions() {
+  return {
+    setCurrentStep: useOnboardingSetCurrentStep(),
+    setOperation: useOnboardingSetOperation(),
+    setLocation: useOnboardingSetLocation(),
+    setDiscord: useOnboardingSetDiscord(),
+    reset: useOnboardingReset(),
+  };
+}
