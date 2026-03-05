@@ -20,6 +20,7 @@ import {
   MessageCircle,
   Sun,
   Activity,
+  CalendarClock,
   type LucideIcon,
 } from "lucide-react";
 import { useHelp } from "./help-provider";
@@ -39,6 +40,7 @@ const settingsIconsByHref: Record<string, LucideIcon> = {
   "/settings/workflows": GitBranch,
   "/settings/skills": Zap,
   "/settings/briefings": Sun,
+  "/settings/schedules": CalendarClock,
   "/settings/activity": Activity,
   "/settings/memory": Brain,
   "/settings/exports": Download,

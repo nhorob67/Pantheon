@@ -6,10 +6,11 @@ import { createWeatherTools } from "./weather";
 import { createScaleTicketTools } from "./scale-tickets";
 import { createGrainBidTools } from "./grain-bids";
 import { createMemoryTools } from "./memory";
+import { createScheduleTools } from "./schedules";
 
 type ToolMap = Record<string, Tool>;
 
-interface ToolRegistryInput {
+export interface ToolRegistryInput {
   admin: SupabaseClient;
   tenantId: string;
   customerId: string;
@@ -18,6 +19,8 @@ interface ToolRegistryInput {
   farmLng: number | null;
   memoryCaptureLevel?: MemoryCaptureLevel;
   memoryExcludeCategories?: string[];
+  channelId?: string;
+  timezone?: string;
 }
 
 function buildMemoryTools(input: ToolRegistryInput): ToolMap {
@@ -51,6 +54,23 @@ export function resolveToolsForAgent(input: ToolRegistryInput): ToolMap {
   // Memory tools are always available
   if (!skills.includes("farm-memory")) {
     Object.assign(tools, buildMemoryTools(input));
+  }
+
+  // Schedule tools are always available
+  const channelId = input.channelId || "";
+  const timezone = input.timezone || "America/Chicago";
+  if (channelId) {
+    Object.assign(
+      tools,
+      createScheduleTools(
+        input.admin,
+        input.tenantId,
+        input.customerId,
+        input.agent.id,
+        channelId,
+        timezone
+      )
+    );
   }
 
   return tools;

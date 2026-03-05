@@ -13,8 +13,12 @@ export function AlertBell() {
 
   useEffect(() => {
     fetch("/api/customers/alerts?limit=5")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) return null;
+        return r.json();
+      })
       .then((data) => {
+        if (!data) return;
         setAlerts(data.alerts || []);
         setUnacknowledged(data.unacknowledged || 0);
       })

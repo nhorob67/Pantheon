@@ -140,14 +140,16 @@ export async function assembleContext(
   // 6. Resolve tools for this agent
   let farmLat: number | null = null;
   let farmLng: number | null = null;
+  let farmTimezone = "America/Chicago";
   if (agent) {
     const { data: profile } = await admin
       .from("farm_profiles")
-      .select("weather_lat, weather_lng")
+      .select("weather_lat, weather_lng, timezone")
       .eq("customer_id", agent.customer_id)
       .maybeSingle();
     farmLat = profile?.weather_lat ?? null;
     farmLng = profile?.weather_lng ?? null;
+    farmTimezone = profile?.timezone ?? "America/Chicago";
   }
 
   const tools = agent
@@ -160,6 +162,8 @@ export async function assembleContext(
         farmLng,
         memoryCaptureLevel: captureLevel,
         memoryExcludeCategories: excludeCategories,
+        channelId: input.channelId,
+        timezone: farmTimezone,
       })
     : {};
 

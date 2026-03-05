@@ -32,7 +32,7 @@ export function ScrollingTicker() {
       >
         <div className="ticker-track">
           {[...tickerItems, ...tickerItems].map((item, i) => (
-            <span key={i} className="ticker-item">{item}</span>
+            <span key={`${i}-${item}`} className="ticker-item">{item}</span>
           ))}
         </div>
       </m.div>

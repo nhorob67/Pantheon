@@ -80,7 +80,19 @@ You have access to built-in farm tools through the tenant runtime:
 - **\`tenant_scale_ticket_create\`** / **\`tenant_scale_ticket_query\`** — Log and query scale ticket records
 - **\`tenant_grain_bid_query\`** — Look up cached grain bids from configured elevators
 - **\`tenant_memory_search\`** — Search your farm's memory records
-- **\`tenant_memory_write\`** — Save important facts and preferences to memory`;
+- **\`tenant_memory_write\`** — Save important facts and preferences to memory
+- **\`schedule_create\`** — Create a recurring scheduled task
+- **\`schedule_list\`** — List all scheduled tasks
+- **\`schedule_toggle\`** — Enable or disable a schedule
+- **\`schedule_delete\`** — Delete a custom schedule
+
+## Schedule Management
+
+When a farmer asks for a recurring task ("remind me every Tuesday at 7am to..."):
+1. Parse their request into a cron expression and generate an optimized prompt
+2. Show them a confirmation: what will happen, when, how often
+3. Create the schedule only after they confirm
+4. Let them know they can view/edit schedules on the dashboard`;
 }
 
 function renderGrain(data: SoulPresetData): string {
@@ -149,7 +161,19 @@ You have access to built-in farm tools through the tenant runtime:
 - **\`tenant_grain_bid_query\`** — Look up cached grain bids from configured elevators
 - **\`tenant_scale_ticket_query\`** — Query scale ticket records for delivery data
 - **\`tenant_memory_search\`** — Search your farm's memory records
-- **\`tenant_memory_write\`** — Save important facts and preferences to memory`;
+- **\`tenant_memory_write\`** — Save important facts and preferences to memory
+- **\`schedule_create\`** — Create a recurring scheduled task
+- **\`schedule_list\`** — List all scheduled tasks
+- **\`schedule_toggle\`** — Enable or disable a schedule
+- **\`schedule_delete\`** — Delete a custom schedule
+
+## Schedule Management
+
+When a farmer asks for a recurring task ("remind me every Tuesday at 7am to..."):
+1. Parse their request into a cron expression and generate an optimized prompt
+2. Show them a confirmation: what will happen, when, how often
+3. Create the schedule only after they confirm
+4. Let them know they can view/edit schedules on the dashboard`;
 }
 
 function renderWeather(data: SoulPresetData): string {
@@ -219,7 +243,19 @@ farmer's weather-obsessed neighbor who always checks conditions twice.
 
 You have access to built-in farm tools through the tenant runtime:
 - **\`tenant_memory_search\`** — Search your farm's memory records
-- **\`tenant_memory_write\`** — Save important facts and preferences to memory`;
+- **\`tenant_memory_write\`** — Save important facts and preferences to memory
+- **\`schedule_create\`** — Create a recurring scheduled task
+- **\`schedule_list\`** — List all scheduled tasks
+- **\`schedule_toggle\`** — Enable or disable a schedule
+- **\`schedule_delete\`** — Delete a custom schedule
+
+## Schedule Management
+
+When a farmer asks for a recurring task ("remind me every Tuesday at 7am to..."):
+1. Parse their request into a cron expression and generate an optimized prompt
+2. Show them a confirmation: what will happen, when, how often
+3. Create the schedule only after they confirm
+4. Let them know they can view/edit schedules on the dashboard`;
 }
 
 function renderScaleTickets(data: SoulPresetData): string {
@@ -295,7 +331,19 @@ You have access to built-in farm tools through the tenant runtime:
 - **\`tenant_scale_ticket_update\`** — Update an existing ticket
 - **\`tenant_scale_ticket_delete\`** — Delete a ticket (requires owner approval)
 - **\`tenant_memory_search\`** — Search your farm's memory records
-- **\`tenant_memory_write\`** — Save important facts and preferences to memory`;
+- **\`tenant_memory_write\`** — Save important facts and preferences to memory
+- **\`schedule_create\`** — Create a recurring scheduled task
+- **\`schedule_list\`** — List all scheduled tasks
+- **\`schedule_toggle\`** — Enable or disable a schedule
+- **\`schedule_delete\`** — Delete a custom schedule
+
+## Schedule Management
+
+When a farmer asks for a recurring task ("remind me every Tuesday at 7am to..."):
+1. Parse their request into a cron expression and generate an optimized prompt
+2. Show them a confirmation: what will happen, when, how often
+3. Create the schedule only after they confirm
+4. Let them know they can view/edit schedules on the dashboard`;
 }
 
 function renderOperations(data: SoulPresetData): string {
@@ -362,7 +410,19 @@ operations manager who keeps the whole farm running on schedule.
 
 You have access to built-in farm tools through the tenant runtime:
 - **\`tenant_memory_search\`** — Search your farm's memory records
-- **\`tenant_memory_write\`** — Save important facts and preferences to memory`;
+- **\`tenant_memory_write\`** — Save important facts and preferences to memory
+- **\`schedule_create\`** — Create a recurring scheduled task
+- **\`schedule_list\`** — List all scheduled tasks
+- **\`schedule_toggle\`** — Enable or disable a schedule
+- **\`schedule_delete\`** — Delete a custom schedule
+
+## Schedule Management
+
+When a farmer asks for a recurring task ("remind me every Tuesday at 7am to..."):
+1. Parse their request into a cron expression and generate an optimized prompt
+2. Show them a confirmation: what will happen, when, how often
+3. Create the schedule only after they confirm
+4. Let them know they can view/edit schedules on the dashboard`;
 }
 
 const PRESET_RENDERERS: Record<
@@ -412,7 +472,19 @@ You have access to built-in farm tools through the tenant runtime:
 - **\`tenant_scale_ticket_create\`** / **\`tenant_scale_ticket_query\`** — Log and query scale ticket records
 - **\`tenant_grain_bid_query\`** — Look up cached grain bids from configured elevators
 - **\`tenant_memory_search\`** — Search your farm's memory records
-- **\`tenant_memory_write\`** — Save important facts and preferences to memory`;
+- **\`tenant_memory_write\`** — Save important facts and preferences to memory
+- **\`schedule_create\`** — Create a recurring scheduled task
+- **\`schedule_list\`** — List all scheduled tasks
+- **\`schedule_toggle\`** — Enable or disable a schedule
+- **\`schedule_delete\`** — Delete a custom schedule
+
+## Schedule Management
+
+When a farmer asks for a recurring task ("remind me every Tuesday at 7am to..."):
+1. Parse their request into a cron expression and generate an optimized prompt
+2. Show them a confirmation: what will happen, when, how often
+3. Create the schedule only after they confirm
+4. Let them know they can view/edit schedules on the dashboard`;
   }
 
   const renderer = PRESET_RENDERERS[preset as Exclude<PersonalityPreset, "custom">];

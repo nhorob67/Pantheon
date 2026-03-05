@@ -5,6 +5,7 @@ import {
   use,
   useCallback,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 import { SearchModal } from "./search-modal";
@@ -90,21 +91,17 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  const actions = useMemo(
+    () => ({ openSearch, closeSearch, toggleSearch }),
+    [openSearch, closeSearch, toggleSearch]
+  );
+  const value = useMemo(
+    () => ({ state: { isOpen, canAskAi, authChecked }, actions }),
+    [isOpen, canAskAi, authChecked, actions]
+  );
+
   return (
-    <SearchContext
-      value={{
-        state: {
-          isOpen,
-          canAskAi,
-          authChecked,
-        },
-        actions: {
-          openSearch,
-          closeSearch,
-          toggleSearch,
-        },
-      }}
-    >
+    <SearchContext value={value}>
       {children}
       {isOpen && <SearchModal />}
     </SearchContext>

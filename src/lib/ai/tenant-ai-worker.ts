@@ -57,6 +57,14 @@ function buildCronPrompt(
   scheduleKey: string | null,
   payload?: Record<string, unknown>
 ): string {
+  // Custom schedules carry their own prompt
+  if (payload) {
+    const customPrompt = payload.custom_prompt;
+    if (typeof customPrompt === "string" && customPrompt.length > 0) {
+      return customPrompt;
+    }
+  }
+
   if (scheduleKey === "morning_briefing" && payload) {
     const sections = (payload.briefing_sections || {}) as BriefingSections;
     const parts: string[] = [];
@@ -175,14 +183,39 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           imageUrls: imageAttachments.map((a) => a.url),
         });
 
-        const hasTools = Object.keys(assembled.tools).length > 0;
+        // Custom cron jobs can scope tools to a subset
+        let resolvedTools = assembled.tools;
+        if (isCron && Array.isArray(payload.custom_tools) && payload.custom_tools.length > 0) {
+          const allowedSkills = new Set(payload.custom_tools as string[]);
+          // Map skill names to tool prefixes
+          const SKILL_TOOL_PREFIXES: Record<string, string[]> = {
+            "farm-weather": ["weather_"],
+            "farm-grain-bids": ["grain_bid_"],
+            "farm-scale-tickets": ["scale_ticket_"],
+          };
+          const allowedPrefixes = Array.from(allowedSkills).flatMap(
+            (s) => SKILL_TOOL_PREFIXES[s] || []
+          );
+          // Always keep memory and schedule tools
+          const filtered: typeof resolvedTools = {};
+          for (const [name, tool] of Object.entries(resolvedTools)) {
+            const isAlwaysAvailable = name.startsWith("memory_") || name.startsWith("schedule_");
+            const matchesSkill = allowedPrefixes.some((p) => name.startsWith(p));
+            if (isAlwaysAvailable || matchesSkill) {
+              filtered[name] = tool;
+            }
+          }
+          resolvedTools = filtered;
+        }
+
+        const hasTools = Object.keys(resolvedTools).length > 0;
         const result = await generateText({
           model: farmclawModel,
           maxOutputTokens: AI_CONFIG.maxOutputTokens,
           temperature: AI_CONFIG.temperature,
           system: assembled.systemPrompt,
           messages: assembled.messages,
-          ...(hasTools ? { tools: assembled.tools, maxSteps: 5 } : {}),
+          ...(hasTools ? { tools: resolvedTools, maxSteps: 5 } : {}),
         });
 
         const responseText = result.text || "[FarmClaw] No response generated.";
@@ -239,7 +272,7 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           runId: context.run.id,
           agentId: assembled.agentId,
           agentName: assembled.agentDisplayName,
-          toolsAvailable: Object.keys(assembled.tools),
+          toolsAvailable: Object.keys(resolvedTools),
           toolsInvoked: toolCalls.map((tc) => ({
             name: tc.toolName,
             input_summary: JSON.stringify("args" in tc ? tc.args : {}).slice(0, 200),

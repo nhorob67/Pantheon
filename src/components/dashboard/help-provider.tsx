@@ -5,6 +5,7 @@ import {
   use,
   useCallback,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 import { HelpModal } from "./help-modal";
@@ -66,13 +67,17 @@ export function HelpProvider({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [toggleHelp]);
 
+  const actions = useMemo(
+    () => ({ openHelp, closeHelp, toggleHelp }),
+    [openHelp, closeHelp, toggleHelp]
+  );
+  const value = useMemo(
+    () => ({ state: { isOpen }, actions }),
+    [isOpen, actions]
+  );
+
   return (
-    <HelpContext
-      value={{
-        state: { isOpen },
-        actions: { openHelp, closeHelp, toggleHelp },
-      }}
-    >
+    <HelpContext value={value}>
       {children}
       {isOpen && <HelpModal />}
     </HelpContext>

@@ -20,6 +20,11 @@ export interface ScheduleActivityData {
   agent_name: string | null;
   agent_id: string;
   metadata: Record<string, unknown>;
+  schedule_type: string;
+  display_name: string | null;
+  prompt: string | null;
+  tools: string[];
+  created_by: string;
   healthStatus: HealthStatus;
   dayBuckets: DayBucket[];
   recentRuns: RecentRun[];
@@ -89,6 +94,11 @@ interface ScheduleRow {
   next_run_at: string | null;
   agent_id: string;
   metadata: Record<string, unknown>;
+  schedule_type: string | null;
+  display_name: string | null;
+  prompt: string | null;
+  tools: string[] | null;
+  created_by: string | null;
   tenant_agents: { name: string } | { name: string }[] | null;
 }
 
@@ -114,7 +124,7 @@ export async function fetchScheduleActivity(
     admin
       .from("tenant_scheduled_messages")
       .select(
-        "id, schedule_key, cron_expression, timezone, enabled, last_run_at, next_run_at, agent_id, metadata, tenant_agents(name)"
+        "id, schedule_key, cron_expression, timezone, enabled, last_run_at, next_run_at, agent_id, metadata, schedule_type, display_name, prompt, tools, created_by, tenant_agents(name)"
       )
       .eq("tenant_id", tenantId)
       .order("enabled", { ascending: false })
@@ -191,6 +201,11 @@ export async function fetchScheduleActivity(
       agent_name: agentName,
       agent_id: schedule.agent_id,
       metadata: (schedule.metadata || {}) as Record<string, unknown>,
+      schedule_type: schedule.schedule_type ?? "predefined",
+      display_name: schedule.display_name ?? null,
+      prompt: schedule.prompt ?? null,
+      tools: schedule.tools ?? [],
+      created_by: schedule.created_by ?? "system",
       healthStatus: computeHealthStatus(dayBuckets, schedule.enabled),
       dayBuckets,
       recentRuns,

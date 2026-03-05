@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireDashboardCustomer } from "@/lib/auth/dashboard-session";
 import { createClient } from "@/lib/supabase/server";
 import { resolveAuthorizedTenantContext } from "@/lib/runtime/tenant-auth";
+import { computeNextRun } from "@/lib/schedules/compute-next-run";
 
 export async function PATCH(
   request: Request,
@@ -58,44 +59,13 @@ export async function PATCH(
     );
   }
 
-  // Compute next_run_at when enabling
+  // Compute next_run_at when enabling using cron-parser
   let next_run_at: string | null = null;
   if (enabled) {
-    const metadata = (schedule.metadata || {}) as Record<string, unknown>;
-    const sendTime =
-      typeof metadata.send_time === "string" ? metadata.send_time : null;
     const tz = schedule.timezone || "America/Chicago";
-
-    if (sendTime) {
-      // Use same logic as briefing for computing next run
-      const [hours, minutes] = sendTime.split(":").map(Number);
-      const now = new Date();
-      const formatter = new Intl.DateTimeFormat("en-US", {
-        timeZone: tz,
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      });
-      const parts = formatter.formatToParts(now);
-      const get = (t: string) =>
-        parts.find((p) => p.type === t)?.value ?? "0";
-      const currentHour = parseInt(get("hour"), 10);
-      const currentMinute = parseInt(get("minute"), 10);
-      const isToday =
-        currentHour < hours ||
-        (currentHour === hours && currentMinute < minutes);
-
-      const target = new Date(now);
-      if (!isToday) target.setDate(target.getDate() + 1);
-
-      const localNow = new Date(
-        now.toLocaleString("en-US", { timeZone: tz })
-      );
-      const utcOffset = now.getTime() - localNow.getTime();
-      const localTarget = new Date(target);
-      localTarget.setHours(hours, minutes, 0, 0);
-      next_run_at = new Date(localTarget.getTime() + utcOffset).toISOString();
-    } else {
+    try {
+      next_run_at = computeNextRun(schedule.cron_expression, tz);
+    } catch {
       // Fallback: set next run to now + 1 hour
       next_run_at = new Date(Date.now() + 60 * 60 * 1000).toISOString();
     }

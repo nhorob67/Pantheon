@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { PERSONALITY_PRESETS, AVAILABLE_CRON_JOBS } from "@/types/agent";
+import { PERSONALITY_PRESETS } from "@/types/agent";
 
 /** Accepts built-in (farm-*) and custom (custom-*) skill slugs */
 const skillSlugSchema = z.string().regex(
@@ -25,7 +25,7 @@ export const createAgentSchema = z
     discord_channel_name: z.string().max(100).optional().or(z.literal("")),
     is_default: z.boolean(),
     skills: z.array(skillSlugSchema),
-    cron_jobs: z.record(z.enum(AVAILABLE_CRON_JOBS), z.boolean()),
+    cron_jobs: z.record(z.string().max(80), z.boolean()),
   })
   .refine(
     (data) => {
@@ -63,7 +63,7 @@ export const updateAgentSchema = z
     is_default: z.boolean().optional(),
     skills: z.array(skillSlugSchema).optional(),
     cron_jobs: z
-      .record(z.enum(AVAILABLE_CRON_JOBS), z.boolean())
+      .record(z.string().max(80), z.boolean())
       .optional(),
   })
   .refine(

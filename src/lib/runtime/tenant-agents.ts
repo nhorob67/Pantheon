@@ -3,6 +3,7 @@ import type { CreateAgentData, UpdateAgentData } from "@/lib/validators/agent";
 import { PERSONALITY_PRESETS, type PersonalityPreset } from "@/types/agent";
 import { safeErrorMessage } from "@/lib/security/safe-error";
 import { mapTenantAgentToLegacy } from "./bridge-parity";
+import { syncPredefinedSchedulesToTable } from "@/lib/schedules/sync-predefined-schedules";
 
 const TENANT_AGENT_SELECT =
   "id, tenant_id, customer_id, legacy_agent_id, agent_key, display_name, status, policy_profile, is_default, sort_order, skills, config, created_at, updated_at";
@@ -789,7 +790,23 @@ export async function createTenantRuntimeAgent(
     throw error;
   }
 
-  return mapTenantAgentRow(tenantRow);
+  const mapped = mapTenantAgentRow(tenantRow);
+
+  // Fire-and-forget: sync predefined cron toggles → scheduled_messages table
+  if (data.cron_jobs && Object.keys(data.cron_jobs).length > 0) {
+    syncPredefinedSchedulesToTable(
+      admin,
+      context.tenantId,
+      context.customerId,
+      mapped.id,
+      mapped.discord_channel_id,
+      data.cron_jobs
+    ).catch((err) => {
+      console.error("[create-agent] Schedule sync failed:", safeErrorMessage(err));
+    });
+  }
+
+  return mapped;
 }
 
 export async function updateTenantRuntimeAgent(
@@ -888,7 +905,23 @@ export async function updateTenantRuntimeAgent(
     refreshedTenant as TenantAgentRow
   );
 
-  return mapTenantAgentRow(synced);
+  const mappedUpdated = mapTenantAgentRow(synced);
+
+  // Fire-and-forget: sync predefined cron toggles → scheduled_messages table
+  if (data.cron_jobs !== undefined) {
+    syncPredefinedSchedulesToTable(
+      admin,
+      context.tenantId,
+      context.customerId,
+      mappedUpdated.id,
+      mappedUpdated.discord_channel_id,
+      mappedUpdated.cron_jobs
+    ).catch((err) => {
+      console.error("[update-agent] Schedule sync failed:", safeErrorMessage(err));
+    });
+  }
+
+  return mappedUpdated;
 }
 
 export async function deleteTenantRuntimeAgent(

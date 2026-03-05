@@ -28,6 +28,8 @@
     "@supabase/supabase-js": "^2.95.3",
     "@trigger.dev/sdk": "^4.4.0",
     "ai": "^6.0.97",
+    "cron-parser": "^5.5.0",
+    "cronstrue": "^3.13.0",
     "date-fns": "^4.1.0",
     "flexsearch": "^0.8.212",
     "gray-matter": "^4.0.3",
