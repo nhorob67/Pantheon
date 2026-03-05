@@ -9,6 +9,7 @@ import {
   isWorkflowApprovalTerminalStatus,
   type WorkflowApprovalRecord,
 } from "@/lib/workflows/approval-ui";
+import { StatusBadge } from "@/components/ui/status-badge";
 
 type DecisionAction = "approve" | "reject";
 
@@ -47,22 +48,6 @@ function formatDurationFromMs(durationMs: number): string {
     return `${hours}h ${minutes}m`;
   }
   return `${minutes}m`;
-}
-
-function statusBadgeClass(status: string): string {
-  switch (status) {
-    case "approved":
-      return "border border-green-500/30 bg-green-500/10 text-green-200";
-    case "rejected":
-      return "border border-red-500/30 bg-red-500/10 text-red-200";
-    case "expired":
-      return "border border-amber-500/30 bg-amber-500/10 text-amber-200";
-    case "canceled":
-      return "border border-slate-500/30 bg-slate-500/15 text-slate-300";
-    case "pending":
-    default:
-      return "border border-amber-500/30 bg-amber-500/10 text-amber-100";
-  }
 }
 
 function readBoolean(value: unknown): boolean {
@@ -239,13 +224,7 @@ export function ApprovalInbox({
           </h4>
           <p className="mt-1 text-xs text-text-dim">Approval ID: {approval.id}</p>
         </div>
-        <span
-          className={`rounded-full px-2.5 py-1 text-xs font-medium ${statusBadgeClass(
-            approval.status
-          )}`}
-        >
-          {formatWorkflowApprovalStatus(approval.status)}
-        </span>
+        <StatusBadge status={approval.status} />
       </div>
 
       <div className="mt-3 grid gap-2 text-xs text-text-secondary sm:grid-cols-2">

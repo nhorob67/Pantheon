@@ -2,13 +2,14 @@
 
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useOnboarding } from "@/hooks/use-onboarding";
+import { useOnboardingLocation, useOnboardingOperation, useOnboardingActions } from "@/hooks/use-onboarding";
 import {
   locationSchema,
   type LocationData,
 } from "@/lib/validators/onboarding";
 import { TIMEZONES } from "@/types/farm";
-import { geocodeLocation } from "@/lib/utils/geocode";
+import { geocodeLocation, isZipOrPostalCode } from "@/lib/utils/geocode";
+import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { WeatherPreview } from "./weather-preview";
 import {
   MapPin,
@@ -18,7 +19,7 @@ import {
   Loader2,
   CheckCircle2,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { motion } from "motion/react";
 
 function toDMS(decimal: number, isLat: boolean): string {
@@ -36,8 +37,18 @@ function toDMS(decimal: number, isLat: boolean): string {
   return `${d}\u00B0${m}'${s}"${dir}`;
 }
 
+interface TownResult {
+  name: string;
+  state: string;
+  lat: number;
+  lng: number;
+  population: number;
+}
+
 export function Step2Location() {
-  const { location, operation, setLocation, setCurrentStep } = useOnboarding();
+  const location = useOnboardingLocation();
+  const operation = useOnboardingOperation();
+  const { setLocation, setCurrentStep } = useOnboardingActions();
   const [locating, setLocating] = useState(false);
   const [geocoded, setGeocoded] = useState(
     !!(location.weather_lat && location.weather_lng)
@@ -45,7 +56,6 @@ export function Step2Location() {
   const [geocodeError, setGeocodeError] = useState<string | null>(null);
 
   const {
-    register,
     handleSubmit,
     setValue,
     control,
@@ -63,6 +73,56 @@ export function Step2Location() {
   const lat = useWatch({ control, name: "weather_lat" });
   const lng = useWatch({ control, name: "weather_lng" });
   const weatherLocation = useWatch({ control, name: "weather_location" });
+
+  const fetchSuggestions = useCallback(
+    async (query: string): Promise<ComboboxOption[]> => {
+      if (isZipOrPostalCode(query)) return [];
+
+      try {
+        const params = new URLSearchParams({
+          q: query,
+          country: operation.country ?? "US",
+        });
+        if (operation.state) params.set("state", operation.state);
+
+        const res = await fetch(`/api/towns/search?${params}`);
+        const data = await res.json();
+
+        if (data.fallback === "nominatim") return [];
+
+        return (data.results ?? []).map((t: TownResult) => ({
+          label: `${t.name}, ${t.state}`,
+          value: `${t.name}|${t.state}|${t.lat}|${t.lng}`,
+          description:
+            t.population > 0
+              ? `pop. ${t.population.toLocaleString()}`
+              : undefined,
+        }));
+      } catch {
+        return [];
+      }
+    },
+    [operation.country, operation.state]
+  );
+
+  const handleTownSelect = (option: ComboboxOption) => {
+    const [name, state, latStr, lngStr] = option.value.split("|");
+    setValue("weather_location", `${name}, ${state}`, { shouldValidate: true });
+    setValue("weather_lat", parseFloat(latStr), { shouldValidate: true });
+    setValue("weather_lng", parseFloat(lngStr), { shouldValidate: true });
+    setGeocoded(true);
+    setGeocodeError(null);
+  };
+
+  const handleLocationChange = (value: string) => {
+    setValue("weather_location", value, { shouldValidate: true });
+    if (geocoded) {
+      setGeocoded(false);
+      setValue("weather_lat", 0);
+      setValue("weather_lng", 0);
+    }
+    setGeocodeError(null);
+  };
 
   const handleGeocode = async () => {
     const query = weatherLocation;
@@ -121,20 +181,17 @@ export function Step2Location() {
           Nearest Town or Zip / Postal Code
         </label>
         <div className="flex gap-2">
-          <input
-            {...register("weather_location")}
+          <Combobox
+            value={weatherLocation}
+            onChange={handleLocationChange}
+            onSelect={handleTownSelect}
+            fetchSuggestions={fetchSuggestions}
             placeholder={
               operation.country === "CA"
                 ? "e.g. Saskatoon, SK or S7K 1J5"
                 : "e.g. Fargo, ND or 58102"
             }
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                handleGeocode();
-              }
-            }}
-            className="flex-1 bg-[var(--bg-card)] border border-[var(--border)] focus:border-[var(--green-bright)] focus:ring-2 focus:ring-[var(--green-dim)] rounded-xl px-4 py-3 text-[var(--text-primary)] placeholder:text-[var(--text-dim)] outline-none transition-all"
+            className="w-full bg-[var(--bg-card)] border border-[var(--border)] focus:border-[var(--green-bright)] focus:ring-2 focus:ring-[var(--green-dim)] rounded-xl px-4 py-3 text-[var(--text-primary)] placeholder:text-[var(--text-dim)] outline-none transition-all"
           />
           <button
             type="button"
@@ -194,7 +251,8 @@ export function Step2Location() {
           Timezone
         </label>
         <input
-          {...register("timezone")}
+          value={useWatch({ control, name: "timezone" })}
+          onChange={(e) => setValue("timezone", e.target.value)}
           className="w-full bg-[var(--bg-card)] border border-[var(--border)] focus:border-[var(--green-bright)] focus:ring-2 focus:ring-[var(--green-dim)] rounded-xl px-4 py-3 text-[var(--text-primary)] outline-none transition-all"
         />
         {errors.timezone && (

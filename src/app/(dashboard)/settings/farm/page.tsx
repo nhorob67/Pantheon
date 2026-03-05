@@ -7,7 +7,10 @@ import { requireDashboardCustomer, getCustomerTenant } from "@/lib/auth/dashboar
 export const metadata: Metadata = { title: "Farm Settings" };
 
 export default async function FarmSettingsPage() {
-  const { customerId } = await requireDashboardCustomer();
+  const [{ customerId }, supabase] = await Promise.all([
+    requireDashboardCustomer(),
+    createClient(),
+  ]);
   const tenant = await getCustomerTenant(customerId);
 
   if (!tenant) {
@@ -20,8 +23,6 @@ export default async function FarmSettingsPage() {
       </div>
     );
   }
-
-  const supabase = await createClient();
 
   const [{ data: profile }] = await Promise.all([
     supabase

@@ -8,9 +8,9 @@ import type {
   WorkflowRun,
   WorkflowRunArtifact,
   WorkflowRunStep,
-  WorkflowRunStatus,
   WorkflowRunStepStatus,
 } from "@/types/workflow";
+import { StatusBadge } from "@/components/ui/status-badge";
 
 interface RunTimelineProps {
   run: WorkflowRun | null;
@@ -71,33 +71,6 @@ function formatDuration(startedAt: string | null, completedAt: string | null): s
   }
 
   return `${seconds}s`;
-}
-
-function statusTone(status: WorkflowRunStatus): string {
-  switch (status) {
-    case "succeeded":
-      return "bg-green-500/10 text-green-200 border border-green-500/30";
-    case "failed":
-      return "bg-red-500/10 text-red-200 border border-red-500/30";
-    case "approval_rejected":
-      return "bg-rose-500/10 text-rose-200 border border-rose-500/30";
-    case "awaiting_approval":
-    case "paused_waiting_approval":
-      return "bg-amber-500/10 text-amber-200 border border-amber-500/30";
-    case "canceled":
-      return "bg-slate-500/15 text-slate-300 border border-slate-500/30";
-    case "cancel_requested":
-      return "bg-amber-500/10 text-amber-200 border border-amber-500/30";
-    case "running":
-      return "bg-blue-500/10 text-blue-200 border border-blue-500/30";
-    case "queued":
-    default:
-      return "bg-muted text-text-secondary border border-border";
-  }
-}
-
-function formatRunStatus(status: WorkflowRunStatus): string {
-  return status.replace(/_/g, " ");
 }
 
 function stepStatusTone(status: WorkflowRunStepStatus): string {
@@ -473,9 +446,7 @@ export function RunTimeline({
             </h4>
             <p className="mt-1 text-xs text-text-dim">Run ID: {activeRun.id}</p>
           </div>
-          <span className={`rounded-full px-2.5 py-1 text-xs ${statusTone(activeRun.status)}`}>
-            {formatRunStatus(activeRun.status)}
-          </span>
+          <StatusBadge status={activeRun.status} />
         </div>
 
         <div className="mt-3 flex flex-wrap items-center gap-2">

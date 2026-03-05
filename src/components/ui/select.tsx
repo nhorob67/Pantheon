@@ -34,8 +34,8 @@ function Select({ label, error, options, className = "", id, ref, ...rest }: Sel
           id={selectId}
           className={[
             "w-full appearance-none",
-            "border border-border focus:border-primary focus:ring-2 focus:ring-primary/20",
-            "rounded-lg bg-white px-4 py-3 pr-10 font-body text-foreground",
+            "border border-border-light focus:border-primary focus:ring-2 focus:ring-primary/20",
+            "rounded-lg bg-input px-4 py-3 pr-10 font-body text-foreground",
             "outline-none transition-colors duration-150",
             "disabled:opacity-50 disabled:cursor-not-allowed",
             error ? "border-destructive focus:border-destructive focus:ring-destructive/20" : "",
@@ -55,7 +55,7 @@ function Select({ label, error, options, className = "", id, ref, ...rest }: Sel
         {/* Chevron indicator */}
         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
           <svg
-            className="h-4 w-4 text-foreground/40"
+            className="h-4 w-4 text-foreground/60"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"

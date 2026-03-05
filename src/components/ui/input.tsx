@@ -26,10 +26,10 @@ function Input({ label, error, className = "", id, ref, ...rest }: InputProps) {
         ref={ref}
         id={inputId}
         className={[
-          "border border-border focus:border-primary focus:ring-2 focus:ring-primary/20",
-          "rounded-lg bg-white px-4 py-3 font-body text-foreground",
+          "border border-border-light focus:border-primary focus:ring-2 focus:ring-primary/20",
+          "rounded-lg bg-input px-4 py-3 font-body text-foreground",
           "outline-none transition-colors duration-150",
-          "placeholder:text-foreground/40",
+          "placeholder:text-foreground/50",
           "disabled:opacity-50 disabled:cursor-not-allowed",
           error ? "border-destructive focus:border-destructive focus:ring-destructive/20" : "",
           className,

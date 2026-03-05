@@ -1,3 +1,11 @@
+const ZIP_RE = /^\d{5}(-\d{4})?$/;
+const POSTAL_RE = /^[A-Za-z]\d[A-Za-z]\s?\d[A-Za-z]\d$/;
+
+export function isZipOrPostalCode(query: string): boolean {
+  const q = query.trim();
+  return ZIP_RE.test(q) || POSTAL_RE.test(q);
+}
+
 interface GeocodeResult {
   lat: number;
   lng: number;

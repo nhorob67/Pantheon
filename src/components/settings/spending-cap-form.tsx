@@ -3,17 +3,19 @@
 import { useState, useEffect } from "react";
 import { Loader2, Shield } from "lucide-react";
 import { formatCents } from "@/lib/utils/format";
+import { useAsyncFormState } from "@/hooks/use-async-form-state";
+import { useToast } from "@/components/ui/toast";
 
 export function SpendingCapForm() {
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const { saving, run } = useAsyncFormState();
+  const { toast } = useToast();
   const [capDollars, setCapDollars] = useState("");
   const [autoPause, setAutoPause] = useState(false);
   const [alertEmail, setAlertEmail] = useState("");
   const [currentCents, setCurrentCents] = useState(0);
   const [percentage, setPercentage] = useState<number | null>(null);
   const [paused, setPaused] = useState(false);
-  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     fetch("/api/customers/spending-cap")
@@ -32,24 +34,25 @@ export function SpendingCapForm() {
       .catch(() => setLoading(false));
   }, []);
 
-  const handleSave = async () => {
-    setSaving(true);
-    setSaved(false);
-    const capCents = capDollars ? Math.round(parseFloat(capDollars) * 100) : null;
+  const handleSave = () => {
+    run(async () => {
+      const capCents = capDollars ? Math.round(parseFloat(capDollars) * 100) : null;
 
-    await fetch("/api/customers/spending-cap", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        spending_cap_cents: capCents,
-        spending_cap_auto_pause: autoPause,
-        alert_email: alertEmail || null,
-      }),
+      const res = await fetch("/api/customers/spending-cap", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          spending_cap_cents: capCents,
+          spending_cap_auto_pause: autoPause,
+          alert_email: alertEmail || null,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to save spending cap");
+      }
+      toast("Spending cap saved", "success");
     });
-
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
   };
 
   if (loading) {
@@ -110,9 +113,9 @@ export function SpendingCapForm() {
             value={capDollars}
             onChange={(e) => setCapDollars(e.target.value)}
             placeholder="e.g. 50"
-            className="w-full border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg bg-white px-4 py-2.5 outline-none transition-colors text-sm"
+            className="w-full border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg bg-input px-4 py-2.5 outline-none transition-colors text-sm"
           />
-          <p className="text-xs text-foreground/40 mt-1">
+          <p className="text-xs text-foreground/60 mt-1">
             Leave empty to disable. Alerts at 50%, 80%, and 100%.
           </p>
         </div>
@@ -150,7 +153,7 @@ export function SpendingCapForm() {
             value={alertEmail}
             onChange={(e) => setAlertEmail(e.target.value)}
             placeholder="alerts@yourfarm.com"
-            className="w-full border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg bg-white px-4 py-2.5 outline-none transition-colors text-sm"
+            className="w-full border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg bg-input px-4 py-2.5 outline-none transition-colors text-sm"
           />
         </div>
 
@@ -160,7 +163,7 @@ export function SpendingCapForm() {
           className="bg-energy hover:bg-amber-600 text-white font-semibold rounded-full px-6 py-2.5 transition-colors flex items-center gap-2 disabled:opacity-50 text-sm"
         >
           {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-          {saved ? "Saved!" : "Save Spending Cap"}
+          Save Spending Cap
         </button>
       </div>
     </div>

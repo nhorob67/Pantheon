@@ -2,7 +2,7 @@
 
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useOnboarding } from "@/hooks/use-onboarding";
+import { useOnboardingOperation, useOnboardingActions } from "@/hooks/use-onboarding";
 import {
   operationSchema,
   type OperationData,
@@ -13,8 +13,8 @@ import { Building2, ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
 
 export function Step1Operation() {
-  const { operation, setOperation, setLocation, setCurrentStep } =
-    useOnboarding();
+  const operation = useOnboardingOperation();
+  const { setOperation, setLocation, setCurrentStep } = useOnboardingActions();
 
   const {
     register,

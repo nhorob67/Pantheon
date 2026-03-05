@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
+import { useAsyncFormState } from "@/hooks/use-async-form-state";
 import { SCHEDULE_TEMPLATES, type ScheduleTemplate } from "@/lib/schedules/schedule-templates";
 
 interface AgentOption {
@@ -98,8 +99,7 @@ export function ScheduleFormDialog({
     return agents[0]?.discord_channel_id ?? "";
   });
   const [tools, setTools] = useState<string[]>(editSchedule?.tools ?? []);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { saving, error, run } = useAsyncFormState();
 
   const isCustomCron = frequencyIdx === FREQUENCY_PRESETS.length - 1;
   const cronExpression = isCustomCron
@@ -131,12 +131,9 @@ export function ScheduleFormDialog({
     }
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
-    setSaving(true);
-
-    try {
+    run(async () => {
       if (isEditing) {
         const res = await fetch(
           `/api/tenants/${tenantId}/schedules/${editSchedule.id}`,
@@ -178,11 +175,7 @@ export function ScheduleFormDialog({
 
       router.refresh();
       onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
-    } finally {
-      setSaving(false);
-    }
+    });
   }
 
   return (

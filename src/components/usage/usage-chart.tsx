@@ -10,6 +10,10 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import type { UsageByDay } from "@/types/billing";
+import { CHART_TOOLTIP_STYLE, CHART_AXIS_TICK, formatCostTooltip } from "@/components/charts/chart-styles";
+
+/* Matches --color-chart-4 CSS variable */
+const CHART_BLUE = "#5a7394";
 
 interface UsageChartProps {
   data: UsageByDay[];
@@ -35,36 +39,35 @@ export function UsageChart({ data }: UsageChartProps) {
           <AreaChart data={formatted}>
             <defs>
               <linearGradient id="colorTokens" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#5a7394" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#5a7394" stopOpacity={0} />
+                <stop offset="5%" stopColor={CHART_BLUE} stopOpacity={0.3} />
+                <stop offset="95%" stopColor={CHART_BLUE} stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#d4c4a8" opacity={0.3} />
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="rgba(240, 236, 228, 0.08)"
+              opacity={0.5}
+            />
             <XAxis
               dataKey="date"
-              tick={{ fontSize: 12, fill: "#3d352a", opacity: 0.5 }}
+              tick={CHART_AXIS_TICK}
               tickLine={false}
               axisLine={false}
             />
             <YAxis
-              tick={{ fontSize: 12, fill: "#3d352a", opacity: 0.5 }}
+              tick={CHART_AXIS_TICK}
               tickLine={false}
               axisLine={false}
               tickFormatter={(v) => `$${v.toFixed(2)}`}
             />
             <Tooltip
-              contentStyle={{
-                backgroundColor: "#ffffff",
-                border: "1px solid #d4c4a8",
-                borderRadius: "8px",
-                fontSize: "13px",
-              }}
-              formatter={(value) => [`$${Number(value).toFixed(2)}`, "Cost"]}
+              contentStyle={CHART_TOOLTIP_STYLE}
+              formatter={formatCostTooltip}
             />
             <Area
               type="monotone"
               dataKey="cost"
-              stroke="#5a7394"
+              stroke={CHART_BLUE}
               strokeWidth={2}
               fillOpacity={1}
               fill="url(#colorTokens)"

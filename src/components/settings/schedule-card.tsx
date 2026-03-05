@@ -15,6 +15,7 @@ import { formatDistanceToNow } from "date-fns";
 import { CRON_JOB_INFO, type AvailableCronJob } from "@/types/agent";
 import type { ScheduleActivityData, RecentRun } from "@/lib/queries/schedule-activity";
 import { HeartbeatStrip } from "./heartbeat-strip";
+import { StatusBadge } from "@/components/ui/status-badge";
 
 const SCHEDULE_ICONS: Record<string, LucideIcon> = {
   "morning-weather": CloudSun,
@@ -39,35 +40,6 @@ function getScheduleDescription(key: string, cron: string): string {
   if (cronInfo) return cronInfo.description;
   if (key === "morning_briefing") return "Daily briefing delivered to Discord";
   return `Cron: ${cron}`;
-}
-
-function statusBadge(status: string) {
-  switch (status) {
-    case "completed":
-      return (
-        <span className="inline-flex items-center rounded-full bg-[#5a8a3c]/20 text-[#5a8a3c] px-2 py-0.5 text-xs font-medium">
-          Completed
-        </span>
-      );
-    case "failed":
-      return (
-        <span className="inline-flex items-center rounded-full bg-red-500/20 text-red-400 px-2 py-0.5 text-xs font-medium">
-          Failed
-        </span>
-      );
-    case "running":
-      return (
-        <span className="inline-flex items-center rounded-full bg-blue-500/20 text-blue-400 px-2 py-0.5 text-xs font-medium">
-          Running
-        </span>
-      );
-    default:
-      return (
-        <span className="inline-flex items-center rounded-full bg-muted text-foreground/60 px-2 py-0.5 text-xs font-medium">
-          {status}
-        </span>
-      );
-  }
 }
 
 function formatDuration(run: RecentRun): string {
@@ -184,7 +156,7 @@ export function ScheduleCard({ schedule, tenantId }: ScheduleCardProps) {
                 key={run.id}
                 className="flex items-center gap-3 text-xs px-2 py-1.5 rounded-lg bg-background"
               >
-                {statusBadge(run.status)}
+                <StatusBadge status={run.status} />
                 <span className="text-foreground/60">
                   {new Date(run.created_at).toLocaleString("en-US", {
                     month: "short",

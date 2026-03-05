@@ -63,3 +63,19 @@ export const useOnboarding = create<OnboardingState>()(
     }
   )
 );
+
+// Granular selectors — subscribe to minimal state
+export const useOnboardingStep = () => useOnboarding((s) => s.currentStep);
+export const useOnboardingOperation = () => useOnboarding((s) => s.operation);
+export const useOnboardingLocation = () => useOnboarding((s) => s.location);
+export const useOnboardingDiscord = () => useOnboarding((s) => s.discord);
+
+// Action-only selector — stable reference, never triggers re-render
+export const useOnboardingActions = () =>
+  useOnboarding((s) => ({
+    setCurrentStep: s.setCurrentStep,
+    setOperation: s.setOperation,
+    setLocation: s.setLocation,
+    setDiscord: s.setDiscord,
+    reset: s.reset,
+  }));

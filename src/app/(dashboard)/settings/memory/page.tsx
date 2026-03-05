@@ -10,7 +10,11 @@ import { MemoryDiagnosticsData } from "./_components/memory-diagnostics-data";
 export const metadata: Metadata = { title: "Memory" };
 
 export default async function MemorySettingsPage() {
-  const { customerId } = await requireDashboardCustomer();
+  const [{ customerId }, admin, supabase] = await Promise.all([
+    requireDashboardCustomer(),
+    Promise.resolve(createAdminClient()),
+    createClient(),
+  ]);
   const tenant = await getCustomerTenant(customerId);
 
   if (!tenant) {
@@ -25,8 +29,6 @@ export default async function MemorySettingsPage() {
       </div>
     );
   }
-
-  const admin = createAdminClient();
   const { data: mapping } = await admin
     .from("instance_tenant_mappings")
     .select("instance_id")
@@ -49,7 +51,6 @@ export default async function MemorySettingsPage() {
     );
   }
 
-  const supabase = await createClient();
   const { data: settings } = await supabase
     .from("instance_memory_settings")
     .select(

@@ -1,12 +1,16 @@
 import type { Metadata } from "next";
 import { requireDashboardCustomer, getCustomerTenant } from "@/lib/auth/dashboard-session";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { McpServerList } from "@/components/settings/mcp-server-list";
 import type { McpServerConfig } from "@/types/mcp";
 
 export const metadata: Metadata = { title: "MCP Servers" };
 
 export default async function McpServersSettingsPage() {
-  const { customerId } = await requireDashboardCustomer();
+  const [{ customerId }, admin] = await Promise.all([
+    requireDashboardCustomer(),
+    Promise.resolve(createAdminClient()),
+  ]);
 
   const tenant = await getCustomerTenant(customerId);
 
@@ -24,9 +28,6 @@ export default async function McpServersSettingsPage() {
       </div>
     );
   }
-
-  const { createAdminClient } = await import("@/lib/supabase/admin");
-  const admin = createAdminClient();
   const { data: mapping } = await admin
     .from("instance_tenant_mappings")
     .select("instance_id")

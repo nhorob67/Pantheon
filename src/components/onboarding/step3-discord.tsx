@@ -1,6 +1,6 @@
 "use client";
 
-import { useOnboarding } from "@/hooks/use-onboarding";
+import { useOnboardingOperation, useOnboardingLocation, useOnboardingDiscord, useOnboardingActions } from "@/hooks/use-onboarding";
 import { DiscordServerMockup } from "./discord-server-mockup";
 import {
   MessageSquare,
@@ -18,8 +18,10 @@ import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 
 export function Step3Discord() {
-  const { operation, location, discord, setDiscord, setCurrentStep } =
-    useOnboarding();
+  const operation = useOnboardingOperation();
+  const location = useOnboardingLocation();
+  const discord = useOnboardingDiscord();
+  const { setDiscord, setCurrentStep } = useOnboardingActions();
   const router = useRouter();
 
   const [showManual, setShowManual] = useState(false);

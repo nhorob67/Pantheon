@@ -4,12 +4,23 @@ import React, { type HTMLAttributes } from "react";
 /*  Card                                                                      */
 /* -------------------------------------------------------------------------- */
 
-type CardProps = HTMLAttributes<HTMLDivElement>;
+type CardVariant = "default" | "elevated" | "outlined" | "accent";
 
-function Card({ className = "", children, ...rest }: CardProps) {
+interface CardProps extends HTMLAttributes<HTMLDivElement> {
+  variant?: CardVariant;
+}
+
+const variantClasses: Record<CardVariant, string> = {
+  default: "bg-card rounded-xl border border-border shadow-sm",
+  elevated: "bg-bg-elevated rounded-xl border border-border shadow-md",
+  outlined: "bg-transparent rounded-xl border border-border-light",
+  accent: "bg-card rounded-xl border border-border shadow-sm border-l-4 border-l-accent",
+};
+
+function Card({ variant = "default", className = "", children, ...rest }: CardProps) {
   return (
     <div
-      className={`bg-card rounded-xl border border-border shadow-sm ${className}`}
+      className={`${variantClasses[variant]} ${className}`}
       {...rest}
     >
       {children}
@@ -71,6 +82,7 @@ export {
   CardTitle,
   CardContent,
   type CardProps,
+  type CardVariant,
   type CardHeaderProps,
   type CardTitleProps,
   type CardContentProps,

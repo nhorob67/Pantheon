@@ -127,22 +127,6 @@ function ToastProvider({ children }: { children: ReactNode }) {
         ))}
       </div>
 
-      {/* Slide-in animation */}
-      <style>{`
-        @keyframes slide-in-right {
-          from {
-            opacity: 0;
-            transform: translateX(100%);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-        .animate-slide-in-right {
-          animation: slide-in-right 0.3s ease-out;
-        }
-      `}</style>
     </ToastContext.Provider>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useOnboarding } from "@/hooks/use-onboarding";
+import { useOnboardingStep } from "@/hooks/use-onboarding";
 import { Building2, MapPin, MessageSquare, Check } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { OnboardingBackground } from "./onboarding-background";
@@ -16,7 +16,7 @@ interface WizardShellProps {
 }
 
 export function WizardShell({ children }: WizardShellProps) {
-  const { currentStep } = useOnboarding();
+  const currentStep = useOnboardingStep();
 
   return (
     <div className="relative min-h-screen flex flex-col">

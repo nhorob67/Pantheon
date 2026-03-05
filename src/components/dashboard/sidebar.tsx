@@ -76,6 +76,7 @@ export function Sidebar({ settingsItems }: SidebarProps) {
               <Link
                 key={item.href}
                 href={item.href}
+                aria-current={active ? "page" : undefined}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
                   active
                     ? "bg-primary/10 text-primary font-medium"
@@ -90,7 +91,7 @@ export function Sidebar({ settingsItems }: SidebarProps) {
         </nav>
 
         <div className="mt-8">
-          <h3 className="px-3 mb-2 font-headline text-xs font-semibold uppercase tracking-wider text-foreground/40">
+          <h3 className="px-3 mb-2 font-headline text-xs font-semibold uppercase tracking-wider text-foreground/60">
             <Settings className="w-3 h-3 inline mr-1.5" />
             Settings
           </h3>
@@ -103,6 +104,7 @@ export function Sidebar({ settingsItems }: SidebarProps) {
                 <Link
                   key={item.href}
                   href={item.href}
+                  aria-current={active ? "page" : undefined}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
                     active
                       ? "bg-primary/10 text-primary font-medium"
@@ -125,7 +127,7 @@ export function Sidebar({ settingsItems }: SidebarProps) {
         >
           <HelpCircle className="w-4 h-4" />
           Help
-          <kbd className="ml-auto text-[11px] font-mono bg-background border border-border rounded px-1.5 py-0.5 text-foreground/40">
+          <kbd className="ml-auto text-[11px] font-mono bg-background border border-border rounded px-1.5 py-0.5 text-foreground/60">
             ⌘/
           </kbd>
         </button>

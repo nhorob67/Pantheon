@@ -31,6 +31,8 @@
   --color-bg-dark: var(--bg-dark);
   --color-bg-card: var(--bg-card);
   --color-bg-card-hover: var(--bg-card-hover);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-bg-surface: var(--bg-surface);
   --color-accent: var(--accent);
   --color-accent-light: var(--accent-light);
   --color-accent-dim: var(--accent-dim);
@@ -43,10 +45,58 @@
   --color-border-light: var(--border-light);
   --font-headline: var(--font-headline);
   --font-sans: var(--font-sans);
+
+  /* Semantic tokens for Tailwind utility classes */
+  --color-background: var(--bg-deep);
+  --color-foreground: var(--text-primary);
+  --color-card: var(--bg-card);
+  --color-primary: var(--green-bright);
+  --color-muted: var(--bg-surface);
+  --color-destructive: #b24c3f;
+  --color-energy: var(--accent);
+  --color-intelligence: #4a7cb2;
+  --color-input: var(--bg-elevated);
+
+  /* Chart color tokens */
+  --color-chart-1: var(--green-bright);
+  --color-chart-2: var(--accent);
+  --color-chart-3: #b24c3f;
+  --color-chart-4: #5a7394;
 }
 
 @layer base {
   * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  a:focus-visible, button:focus-visible, [role="button"]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out;
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 html {

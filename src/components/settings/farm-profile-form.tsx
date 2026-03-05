@@ -5,7 +5,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { farmProfileSchema, type FarmProfileFormData } from "@/lib/validators/farm-profile";
 import { US_STATES, CA_PROVINCES, CROPS } from "@/types/farm";
 import type { FarmProfile } from "@/types/database";
-import { useState } from "react";
+import { useAsyncFormState } from "@/hooks/use-async-form-state";
+import { useToast } from "@/components/ui/toast";
 import { Loader2, Save } from "lucide-react";
 
 interface FarmProfileFormProps {
@@ -14,9 +15,8 @@ interface FarmProfileFormProps {
 }
 
 export function FarmProfileForm({ profile, tenantId }: FarmProfileFormProps) {
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { saving, error, run } = useAsyncFormState();
+  const { toast } = useToast();
 
   const {
     register,
@@ -47,12 +47,8 @@ export function FarmProfileForm({ profile, tenantId }: FarmProfileFormProps) {
     });
   };
 
-  const onSubmit = async (data: FarmProfileFormData) => {
-    setSaving(true);
-    setSaved(false);
-    setError(null);
-
-    try {
+  const onSubmit = (data: FarmProfileFormData) => {
+    run(async () => {
       const res = await fetch(`/api/tenants/${tenantId}/config`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -60,16 +56,10 @@ export function FarmProfileForm({ profile, tenantId }: FarmProfileFormProps) {
       });
 
       if (!res.ok) {
-        throw new Error("Failed to save changes");
+        throw new Error("Failed to save changes. Please try again.");
       }
-
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
-    } catch {
-      setError("Failed to save changes. Please try again.");
-    } finally {
-      setSaving(false);
-    }
+      toast("Farm profile saved", "success");
+    });
   };
 
   return (
@@ -80,7 +70,7 @@ export function FarmProfileForm({ profile, tenantId }: FarmProfileFormProps) {
         </label>
         <input
           {...register("farm_name")}
-          className="w-full border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg bg-white px-4 py-3 outline-none transition-colors"
+          className="w-full border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg bg-input px-4 py-3 outline-none transition-colors"
         />
         {errors.farm_name && (
           <p className="text-destructive text-sm mt-1">{errors.farm_name.message}</p>
@@ -92,7 +82,7 @@ export function FarmProfileForm({ profile, tenantId }: FarmProfileFormProps) {
           <label className="block text-sm text-foreground/70 mb-1.5">State</label>
           <select
             {...register("state")}
-            className="w-full border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg bg-white px-4 py-3 outline-none transition-colors"
+            className="w-full border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg bg-input px-4 py-3 outline-none transition-colors"
           >
             <optgroup label="United States">
               {US_STATES.map((s) => (
@@ -110,7 +100,7 @@ export function FarmProfileForm({ profile, tenantId }: FarmProfileFormProps) {
           <label className="block text-sm text-foreground/70 mb-1.5">County</label>
           <input
             {...register("county")}
-            className="w-full border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg bg-white px-4 py-3 outline-none transition-colors"
+            className="w-full border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg bg-input px-4 py-3 outline-none transition-colors"
           />
         </div>
       </div>
@@ -140,7 +130,7 @@ export function FarmProfileForm({ profile, tenantId }: FarmProfileFormProps) {
         <input
           type="number"
           {...register("acres")}
-          className="w-full border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg bg-white px-4 py-3 outline-none transition-colors"
+          className="w-full border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg bg-input px-4 py-3 outline-none transition-colors"
         />
       </div>
 
@@ -157,9 +147,6 @@ export function FarmProfileForm({ profile, tenantId }: FarmProfileFormProps) {
           )}
           Save Changes
         </button>
-        {saved && (
-          <span className="text-primary text-sm font-medium">Saved!</span>
-        )}
         {error && (
           <span className="text-destructive text-sm font-medium">{error}</span>
         )}

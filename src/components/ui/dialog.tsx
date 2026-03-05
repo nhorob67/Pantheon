@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useCallback, type ReactNode } from "react";
+import React, { useEffect, useCallback, useRef, type ReactNode } from "react";
 
 type DialogSize = "sm" | "md" | "lg";
 
@@ -19,9 +19,36 @@ interface DialogProps {
 }
 
 function Dialog({ open, onClose, title, size = "md", children }: DialogProps) {
+  const panelRef = useRef<HTMLDivElement>(null);
+
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+
+      if (e.key === "Tab" && panelRef.current) {
+        const focusable = panelRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      }
     },
     [onClose],
   );
@@ -30,6 +57,14 @@ function Dialog({ open, onClose, title, size = "md", children }: DialogProps) {
     if (open) {
       document.addEventListener("keydown", handleKeyDown);
       document.body.style.overflow = "hidden";
+
+      // Focus the first focusable element in the dialog
+      requestAnimationFrame(() => {
+        const focusable = panelRef.current?.querySelector<HTMLElement>(
+          'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        focusable?.focus();
+      });
     }
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
@@ -50,6 +85,7 @@ function Dialog({ open, onClose, title, size = "md", children }: DialogProps) {
 
       {/* Panel */}
       <div
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label={title}
@@ -66,7 +102,7 @@ function Dialog({ open, onClose, title, size = "md", children }: DialogProps) {
           <button
             type="button"
             onClick={onClose}
-            className="ml-auto inline-flex items-center justify-center rounded-full p-1.5 text-foreground/40 hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+            className="ml-auto inline-flex items-center justify-center rounded-full p-1.5 text-foreground/60 hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
             aria-label="Close"
           >
             <svg

@@ -31,7 +31,7 @@ export function AdminSidebar() {
 
       <Link
         href="/dashboard"
-        className="flex items-center gap-2 px-3 mb-8 text-xs text-foreground/40 hover:text-foreground/60 transition-colors"
+        className="flex items-center gap-2 px-3 mb-8 text-xs text-foreground/60 hover:text-foreground transition-colors"
       >
         <ArrowLeft className="w-3 h-3" />
         Back to dashboard
@@ -47,6 +47,7 @@ export function AdminSidebar() {
             <Link
               key={item.href}
               href={item.href}
+              aria-current={active ? "page" : undefined}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
                 active
                   ? "bg-primary/10 text-primary font-medium"

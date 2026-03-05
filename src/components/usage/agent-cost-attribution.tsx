@@ -10,6 +10,7 @@ import {
   Cell,
 } from "recharts";
 import { formatCents } from "@/lib/utils/format";
+import { CHART_AXIS_TICK_SMALL } from "@/components/charts/chart-styles";
 
 interface AgentCostData {
   agent_key: string;
@@ -30,6 +31,8 @@ const COLORS = [
   "#8b6cc4", // purple
 ];
 
+const BAR_CHART_MARGIN = { left: 0, right: 16 } as const;
+
 export function AgentCostAttribution({ data }: AgentCostAttributionProps) {
   if (data.length === 0) return null;
 
@@ -41,17 +44,17 @@ export function AgentCostAttribution({ data }: AgentCostAttributionProps) {
 
       <div className="h-48">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} layout="vertical" margin={{ left: 0, right: 16 }}>
+          <BarChart data={data} layout="vertical" margin={BAR_CHART_MARGIN}>
             <XAxis
               type="number"
               tickFormatter={(v) => formatCents(v)}
-              tick={{ fontSize: 11 }}
+              tick={CHART_AXIS_TICK_SMALL}
             />
             <YAxis
               type="category"
               dataKey="display_name"
               width={100}
-              tick={{ fontSize: 11 }}
+              tick={CHART_AXIS_TICK_SMALL}
             />
             <Tooltip
               formatter={(value) => formatCents(Number(value ?? 0))}

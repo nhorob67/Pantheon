@@ -8,6 +8,7 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
+import { CHART_TOOLTIP_STYLE } from "@/components/charts/chart-styles";
 
 interface HealthData {
   running: number;
@@ -15,7 +16,12 @@ interface HealthData {
   errored: number;
 }
 
-const COLORS = ["#4a7c59", "#c4842d", "#b24c3f"];
+/* Recharts SVG requires raw hex — these match the CSS variable values */
+const COLORS = ["#5a8a3c", "#D98C2E", "#b24c3f"];
+
+const legendFormatter = (value: string) => (
+  <span className="text-xs text-foreground/60">{value}</span>
+);
 
 export function FleetHealthChart({ data }: { data: HealthData }) {
   const chartData = [
@@ -30,7 +36,7 @@ export function FleetHealthChart({ data }: { data: HealthData }) {
         <h3 className="font-headline text-sm font-semibold text-foreground/60 uppercase tracking-wider mb-4">
           Fleet Health
         </h3>
-        <p className="text-foreground/40 text-sm">No instances</p>
+        <p className="text-foreground/60 text-sm">No instances</p>
       </div>
     );
   }
@@ -60,20 +66,9 @@ export function FleetHealthChart({ data }: { data: HealthData }) {
               ))}
             </Pie>
             <Tooltip
-              contentStyle={{
-                backgroundColor: "#ffffff",
-                border: "1px solid #d4c4a8",
-                borderRadius: "8px",
-                fontSize: "13px",
-              }}
+              contentStyle={CHART_TOOLTIP_STYLE}
             />
-            <Legend
-              formatter={(value) => (
-                <span style={{ fontSize: "12px", color: "#3d352a" }}>
-                  {value}
-                </span>
-              )}
-            />
+            <Legend formatter={legendFormatter} />
           </PieChart>
         </ResponsiveContainer>
       </div>

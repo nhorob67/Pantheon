@@ -9,7 +9,10 @@ import {
 } from "@/lib/queries/admin-analytics";
 
 export default async function AdminUsagePage() {
-  const supabase = await createClient();
+  const [supabase, admin] = await Promise.all([
+    createClient(),
+    Promise.resolve(createAdminClient()),
+  ]);
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -17,8 +20,6 @@ export default async function AdminUsagePage() {
   if (!user || !isAdmin(user.email)) {
     redirect("/dashboard");
   }
-
-  const admin = createAdminClient();
   const [usageData, revenueData] = await Promise.all([
     getUsageAnalytics(admin),
     getRevenueBreakdown(admin),

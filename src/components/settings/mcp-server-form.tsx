@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Dialog } from "@/components/ui/dialog";
 import type { McpServerConfig } from "@/types/mcp";
 import { Loader2 } from "lucide-react";
+import { useAsyncFormState } from "@/hooks/use-async-form-state";
 
 interface McpServerFormProps {
   open: boolean;
@@ -31,23 +32,19 @@ export function McpServerForm({
   const [argsStr, setArgsStr] = useState(
     editServer?.args?.join(" ") || ""
   );
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { saving, error, run, clearError } = useAsyncFormState();
 
   const resetForm = () => {
     setServerKey(editServer?.server_key || "");
     setDisplayName(editServer?.display_name || "");
     setCommand(editServer?.command || "");
     setArgsStr(editServer?.args?.join(" ") || "");
-    setError(null);
+    clearError();
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setSaving(true);
-    setError(null);
-
-    try {
+    run(async () => {
       const args = argsStr
         .trim()
         .split(/\s+/)
@@ -62,11 +59,7 @@ export function McpServerForm({
         enabled: true,
       });
       onClose();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong");
-    } finally {
-      setSaving(false);
-    }
+    });
   };
 
   return (

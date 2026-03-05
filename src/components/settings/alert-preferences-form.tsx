@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Loader2, Bell } from "lucide-react";
+import { useToast } from "@/components/ui/toast";
 
 interface ToggleRowProps {
   label: string;
@@ -39,7 +40,7 @@ function ToggleRow({ label, description, checked, onChange }: ToggleRowProps) {
 export function AlertPreferencesForm() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const { toast } = useToast();
   const [prefs, setPrefs] = useState({
     spending_alerts_enabled: true,
     spending_alert_email: true,
@@ -69,15 +70,13 @@ export function AlertPreferencesForm() {
 
   const handleSave = async () => {
     setSaving(true);
-    setSaved(false);
     await fetch("/api/customers/alert-preferences", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(prefs),
     });
     setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    toast("Alert preferences saved", "success");
   };
 
   if (loading) {
@@ -156,7 +155,7 @@ export function AlertPreferencesForm() {
                     parseInt(e.target.value, 10) || 10
                   )
                 }
-                className="w-24 border border-border rounded-lg bg-white px-3 py-1.5 text-sm outline-none focus:border-primary"
+                className="w-24 border border-border-light rounded-lg bg-input px-3 py-1.5 text-sm outline-none focus:border-primary"
               />
             </div>
           )}
@@ -175,7 +174,7 @@ export function AlertPreferencesForm() {
         className="bg-energy hover:bg-amber-600 text-white font-semibold rounded-full px-6 py-3 transition-colors flex items-center gap-2 disabled:opacity-50"
       >
         {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-        {saved ? "Saved!" : "Save Preferences"}
+        Save Preferences
       </button>
     </div>
   );

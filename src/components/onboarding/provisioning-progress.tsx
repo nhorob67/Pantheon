@@ -12,6 +12,22 @@ const PROVISION_STEPS = [
   { label: "Going live" },
 ];
 
+const SPRING_IN = {
+  initial: { scale: 0.5, opacity: 0 },
+  animate: { scale: 1, opacity: 1 },
+  transition: { type: "spring" as const, stiffness: 200, damping: 20 },
+};
+
+const FADE_UP = {
+  initial: { opacity: 0, y: 10 },
+  animate: { opacity: 1, y: 0 },
+};
+
+const FADE_IN = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+};
+
 export function ProvisioningProgress() {
   const [currentIdx, setCurrentIdx] = useState(0);
   const router = useRouter();
@@ -47,9 +63,7 @@ export function ProvisioningProgress() {
         {/* Seedling animation */}
         <motion.div
           className="mx-auto w-24 h-24 mb-8 relative"
-          initial={{ scale: 0.5, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 200, damping: 20 }}
+          {...SPRING_IN}
         >
           <svg
             viewBox="0 0 96 96"
@@ -118,16 +132,14 @@ export function ProvisioningProgress() {
 
         <motion.h2
           className="font-headline text-2xl font-bold text-[var(--text-primary)] mb-2"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
+          {...FADE_UP}
           transition={{ delay: 0.2 }}
         >
           {allDone ? "You're live!" : "Growing your FarmClaw..."}
         </motion.h2>
         <motion.p
           className="text-sm text-[var(--text-secondary)] mb-10"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          {...FADE_IN}
           transition={{ delay: 0.3 }}
         >
           {allDone
@@ -192,8 +204,7 @@ export function ProvisioningProgress() {
         {/* CTA after completion */}
         {allDone && (
           <motion.button
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
+            {...FADE_UP}
             transition={{ delay: 0.5 }}
             onClick={() => router.push("/dashboard")}
             className="mt-10 bg-gradient-to-r from-[var(--accent)] to-[var(--accent-light)] text-[var(--bg-deep)] font-semibold py-3 px-8 rounded-full transition-all hover:shadow-[0_4px_20px_rgba(217,140,46,0.3)] hover:-translate-y-0.5"

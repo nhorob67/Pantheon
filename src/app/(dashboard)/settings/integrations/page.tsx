@@ -7,7 +7,10 @@ import type { ComposioConfig, ComposioConnectedApp } from "@/types/composio";
 export const metadata: Metadata = { title: "Integrations" };
 
 export default async function IntegrationsSettingsPage() {
-  const { customerId } = await requireDashboardCustomer();
+  const [{ customerId }, admin] = await Promise.all([
+    requireDashboardCustomer(),
+    Promise.resolve(createAdminClient()),
+  ]);
 
   const tenant = await getCustomerTenant(customerId);
 
@@ -25,8 +28,6 @@ export default async function IntegrationsSettingsPage() {
       </div>
     );
   }
-
-  const admin = createAdminClient();
   const { data: composioRow } = await admin
     .from("composio_configs")
     .select("*")

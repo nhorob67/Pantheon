@@ -6,7 +6,10 @@ import { EmailInbox } from "@/components/email/email-inbox";
 export const metadata: Metadata = { title: "Email" };
 
 export default async function EmailPage() {
-  const { customerId } = await requireDashboardCustomer();
+  const [{ customerId }, admin] = await Promise.all([
+    requireDashboardCustomer(),
+    Promise.resolve(createAdminClient()),
+  ]);
   const tenant = await getCustomerTenant(customerId);
 
   if (!tenant) {
@@ -21,8 +24,6 @@ export default async function EmailPage() {
       </div>
     );
   }
-
-  const admin = createAdminClient();
 
   // Get email sessions
   const { data: sessions } = await admin
