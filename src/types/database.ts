@@ -29,6 +29,10 @@ export interface FarmProfile {
   weather_lat: number | null;
   weather_lng: number | null;
   timezone: string;
+  soil_ph: number | null;
+  soil_cec: number | null;
+  organic_matter_pct: number | null;
+  avg_annual_rainfall_in: number | null;
   created_at: string;
   updated_at: string;
 }

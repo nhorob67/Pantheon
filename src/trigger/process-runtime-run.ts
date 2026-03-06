@@ -2,6 +2,7 @@ import { task } from "@trigger.dev/sdk";
 import { createTriggerAdminClient } from "./lib/supabase";
 import { createTenantAiWorker } from "@/lib/ai/tenant-ai-worker";
 import { createEmailAiWorker } from "@/lib/ai/email-ai-worker";
+import { createHeartbeatAiWorker } from "@/lib/ai/heartbeat-ai-worker";
 import { resolveModels } from "@/lib/ai/model-resolver";
 import {
   getTenantRuntimeRunById,
@@ -58,7 +59,9 @@ export const processRuntimeRun = task({
     const resolvedModels = await resolveModels(admin, claimed.tenant_id);
     const worker = claimed.run_kind === "email_runtime"
       ? createEmailAiWorker(admin)
-      : createTenantAiWorker(admin);
+      : claimed.run_kind === "discord_heartbeat"
+        ? createHeartbeatAiWorker(admin)
+        : createTenantAiWorker(admin);
     const result = await worker.execute({
       run: claimed,
       requestTraceId: claimed.request_trace_id,

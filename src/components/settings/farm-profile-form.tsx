@@ -32,6 +32,10 @@ export function FarmProfileForm({ profile, tenantId }: FarmProfileFormProps) {
       county: profile.county || "",
       primary_crops: (profile.primary_crops || []) as FarmProfileFormData["primary_crops"],
       acres: profile.acres || undefined,
+      soil_ph: profile.soil_ph ?? undefined,
+      soil_cec: profile.soil_cec ?? undefined,
+      organic_matter_pct: profile.organic_matter_pct ?? undefined,
+      avg_annual_rainfall_in: profile.avg_annual_rainfall_in ?? undefined,
     },
   });
 
@@ -132,6 +136,76 @@ export function FarmProfileForm({ profile, tenantId }: FarmProfileFormProps) {
           {...register("acres")}
           className="w-full border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg bg-input px-4 py-3 outline-none transition-colors"
         />
+      </div>
+
+      {/* Soil Characteristics */}
+      <div>
+        <label className="block text-sm font-medium text-foreground/80 mb-1">
+          Soil Characteristics
+        </label>
+        <p className="text-xs text-foreground/50 mb-3">
+          These values help your Agronomy Advisor give more specific recommendations. Leave blank if unknown.
+        </p>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs text-foreground/60 mb-1">Soil pH (0–14)</label>
+            <input
+              type="number"
+              step="0.1"
+              min="0"
+              max="14"
+              {...register("soil_ph", { valueAsNumber: true })}
+              placeholder="e.g., 7.2"
+              className="w-full border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg bg-input px-4 py-3 outline-none transition-colors"
+            />
+            {errors.soil_ph && (
+              <p className="text-destructive text-xs mt-1">{errors.soil_ph.message}</p>
+            )}
+          </div>
+          <div>
+            <label className="block text-xs text-foreground/60 mb-1">CEC (meq/100g)</label>
+            <input
+              type="number"
+              step="0.1"
+              min="0"
+              {...register("soil_cec", { valueAsNumber: true })}
+              placeholder="e.g., 18.5"
+              className="w-full border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg bg-input px-4 py-3 outline-none transition-colors"
+            />
+            {errors.soil_cec && (
+              <p className="text-destructive text-xs mt-1">{errors.soil_cec.message}</p>
+            )}
+          </div>
+          <div>
+            <label className="block text-xs text-foreground/60 mb-1">Organic Matter %</label>
+            <input
+              type="number"
+              step="0.1"
+              min="0"
+              max="100"
+              {...register("organic_matter_pct", { valueAsNumber: true })}
+              placeholder="e.g., 3.8"
+              className="w-full border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg bg-input px-4 py-3 outline-none transition-colors"
+            />
+            {errors.organic_matter_pct && (
+              <p className="text-destructive text-xs mt-1">{errors.organic_matter_pct.message}</p>
+            )}
+          </div>
+          <div>
+            <label className="block text-xs text-foreground/60 mb-1">Avg Annual Rainfall (in)</label>
+            <input
+              type="number"
+              step="0.1"
+              min="0"
+              {...register("avg_annual_rainfall_in", { valueAsNumber: true })}
+              placeholder="e.g., 22"
+              className="w-full border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg bg-input px-4 py-3 outline-none transition-colors"
+            />
+            {errors.avg_annual_rainfall_in && (
+              <p className="text-destructive text-xs mt-1">{errors.avg_annual_rainfall_in.message}</p>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="flex items-center gap-3 pt-4">

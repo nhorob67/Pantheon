@@ -16,7 +16,7 @@ export function PresetGrid({ selected, onSelect }: PresetGridProps) {
       <label className="block text-sm text-text-secondary mb-2">
         Role
       </label>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {PERSONALITY_PRESETS.map((preset) => {
           const info = PRESET_INFO[preset];
           const isSelected = selected === preset;

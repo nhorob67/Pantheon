@@ -1,4 +1,4 @@
-export type PersonalityPreset = "general" | "grain" | "weather" | "scale-tickets" | "operations" | "custom";
+export type PersonalityPreset = "general" | "grain" | "weather" | "scale-tickets" | "operations" | "agronomy" | "equipment" | "custom";
 
 export interface Agent {
   id: string;
@@ -25,6 +25,8 @@ export const PERSONALITY_PRESETS = [
   "weather",
   "scale-tickets",
   "operations",
+  "agronomy",
+  "equipment",
   "custom",
 ] as const;
 
@@ -62,6 +64,18 @@ export const PRESET_INFO: Record<
     icon: "Tractor",
     accent: "text-emerald-500",
   },
+  agronomy: {
+    label: "Agronomy Advisor",
+    description: "Soil health, crop scouting, herbicide programs, and IPM",
+    icon: "Sprout",
+    accent: "text-lime-500",
+  },
+  equipment: {
+    label: "Equipment Advisor",
+    description: "Combine settings, maintenance, parts lookup, and diagnostics",
+    icon: "Wrench",
+    accent: "text-zinc-400",
+  },
   custom: {
     label: "Custom",
     description: "Define your own personality and focus area",
@@ -69,6 +83,15 @@ export const PRESET_INFO: Record<
     accent: "text-foreground/60",
   },
 };
+
+export const PERSONALITY_PRESET_SET = new Set<string>(PERSONALITY_PRESETS);
+
+export function toPersonalityPreset(value: unknown): PersonalityPreset {
+  if (typeof value === "string" && PERSONALITY_PRESET_SET.has(value)) {
+    return value as PersonalityPreset;
+  }
+  return "general";
+}
 
 export const BUILT_IN_SKILLS = [
   "farm-grain-bids",
@@ -163,6 +186,8 @@ export const PRESET_DEFAULT_SKILLS: Record<PersonalityPreset, BuiltInSkill[]> = 
   weather: ["farm-weather"],
   "scale-tickets": ["farm-scale-tickets"],
   operations: [],
+  agronomy: ["farm-weather"],
+  equipment: [],
   custom: [],
 };
 
@@ -173,5 +198,7 @@ export const PRESET_DEFAULT_CRONS: Record<PersonalityPreset, AvailableCronJob[]>
   weather: ["morning-weather"],
   "scale-tickets": [],
   operations: [],
+  agronomy: ["morning-weather"],
+  equipment: [],
   custom: [],
 };

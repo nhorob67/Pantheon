@@ -18,7 +18,7 @@ import type { ComposioConfig } from "@/types/composio";
 import { Dialog } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { useState, useEffect, useMemo } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, ChevronDown, RotateCcw } from "lucide-react";
 import { PresetGrid } from "./preset-grid";
 import { SkillToggles } from "./skill-toggles";
 import { CronToggles } from "./cron-toggles";
@@ -32,6 +32,7 @@ interface AgentFormProps {
   globalSkillConfigs: SkillConfig[];
   customSkills?: CustomSkill[];
   composioConfig?: ComposioConfig | null;
+  defaultPrompts?: Partial<Record<PersonalityPreset, string>>;
 }
 
 export function AgentForm({
@@ -42,6 +43,7 @@ export function AgentForm({
   globalSkillConfigs,
   customSkills = [],
   composioConfig = null,
+  defaultPrompts = {},
 }: AgentFormProps) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -93,6 +95,8 @@ export function AgentForm({
     defaultValues,
   });
 
+  const [promptExpanded, setPromptExpanded] = useState(false);
+
   const personalityPreset = useWatch({ control, name: "personality_preset" });
   const skills = useWatch({ control, name: "skills" }) || [];
   const cronJobs = useWatch({ control, name: "cron_jobs" }) || {};
@@ -102,11 +106,21 @@ export function AgentForm({
     if (open) {
       reset(defaultValues);
       setError(null);
+      // Auto-expand if editing an agent with a custom prompt override on a non-custom preset
+      const hasCustom = editAgent?.custom_personality && editAgent.custom_personality.length > 0;
+      setPromptExpanded(editAgent?.personality_preset === "custom" || !!hasCustom);
     }
-  }, [open, defaultValues, reset]);
+  }, [open, defaultValues, reset, editAgent]);
+
+  const currentDefaultPrompt = useMemo(
+    () => (personalityPreset !== "custom" ? defaultPrompts[personalityPreset] ?? "" : ""),
+    [personalityPreset, defaultPrompts]
+  );
 
   const handlePresetChange = (preset: PersonalityPreset) => {
     setValue("personality_preset", preset, { shouldValidate: true });
+    setValue("custom_personality", undefined, { shouldValidate: true });
+    setPromptExpanded(preset === "custom");
     if (!editAgent) {
       const defaultSkills = PRESET_DEFAULT_SKILLS[preset];
       setValue("skills", [...defaultSkills] as CreateAgentData["skills"]);
@@ -199,22 +213,69 @@ export function AgentForm({
           onSelect={handlePresetChange}
         />
 
-        {/* Custom Personality Textarea */}
-        {personalityPreset === "custom" && (
+        {/* System Prompt */}
+        {personalityPreset === "custom" ? (
           <div>
             <label className="block text-sm text-text-secondary mb-1.5">
-              Custom Personality
+              System Prompt
             </label>
             <textarea
               {...register("custom_personality")}
-              rows={4}
+              rows={6}
               placeholder="Describe this assistant's personality, focus areas, and communication style..."
-              className="w-full border border-border focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-lg bg-bg-dark px-4 py-3 outline-none transition-colors text-text-primary placeholder:text-text-dim resize-y"
+              className="w-full border border-border focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-lg bg-bg-dark px-4 py-3 outline-none transition-colors text-text-primary placeholder:text-text-dim resize-y text-sm font-mono"
             />
             {errors.custom_personality && (
               <p className="text-red-400 text-sm mt-1">
                 {errors.custom_personality.message}
               </p>
+            )}
+          </div>
+        ) : (
+          <div>
+            <button
+              type="button"
+              onClick={() => setPromptExpanded((v) => !v)}
+              className="flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary transition-colors cursor-pointer w-full text-left"
+            >
+              <ChevronDown
+                className={`w-4 h-4 transition-transform ${promptExpanded ? "rotate-0" : "-rotate-90"}`}
+              />
+              <span className="font-medium">System Prompt</span>
+              {!promptExpanded && (
+                <span className="text-text-dim text-xs ml-1">
+                  — using default. Click to customize.
+                </span>
+              )}
+            </button>
+
+            {promptExpanded && (
+              <div className="mt-2 space-y-2">
+                <textarea
+                  {...register("custom_personality")}
+                  rows={8}
+                  placeholder={currentDefaultPrompt}
+                  className="w-full border border-border focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-lg bg-bg-dark px-4 py-3 outline-none transition-colors text-text-primary placeholder:text-text-dim/40 resize-y text-sm font-mono"
+                />
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-text-dim">
+                    Edit to change how this assistant thinks and responds.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setValue("custom_personality", undefined, { shouldValidate: true })}
+                    className="inline-flex items-center gap-1.5 text-xs text-text-dim hover:text-text-secondary transition-colors cursor-pointer"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    Reset to Default
+                  </button>
+                </div>
+                {errors.custom_personality && (
+                  <p className="text-red-400 text-sm mt-1">
+                    {errors.custom_personality.message}
+                  </p>
+                )}
+              </div>
             )}
           </div>
         )}

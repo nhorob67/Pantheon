@@ -30,16 +30,13 @@ export const createAgentSchema = z
   })
   .refine(
     (data) => {
-      if (data.personality_preset === "custom") {
-        return (
-          data.custom_personality !== undefined &&
-          data.custom_personality.length >= 10
-        );
-      }
-      return true;
+      const cp = data.custom_personality;
+      const isRequired = data.personality_preset === "custom";
+      if (isRequired) return !!cp && cp.length >= 10;
+      return !cp || cp.length === 0 || cp.length >= 10;
     },
     {
-      message: "Custom personality must be at least 10 characters",
+      message: "System prompt must be at least 10 characters",
       path: ["custom_personality"],
     }
   );
@@ -70,16 +67,13 @@ export const updateAgentSchema = z
   })
   .refine(
     (data) => {
-      if (data.personality_preset === "custom") {
-        return (
-          data.custom_personality !== undefined &&
-          data.custom_personality.length >= 10
-        );
-      }
-      return true;
+      const cp = data.custom_personality;
+      const isRequired = data.personality_preset === "custom";
+      if (isRequired) return !!cp && cp.length >= 10;
+      return !cp || cp.length === 0 || cp.length >= 10;
     },
     {
-      message: "Custom personality must be at least 10 characters",
+      message: "System prompt must be at least 10 characters",
       path: ["custom_personality"],
     }
   );

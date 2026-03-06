@@ -287,6 +287,7 @@ export interface InstanceTenantMapping {
 export const TENANT_RUNTIME_RUN_KIND_VALUES = [
   "discord_canary",
   "discord_runtime",
+  "discord_heartbeat",
   "email_runtime",
 ] as const;
 export type TenantRuntimeRunKind = (typeof TENANT_RUNTIME_RUN_KIND_VALUES)[number];

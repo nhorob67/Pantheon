@@ -11,6 +11,8 @@ import type { PersonalityPreset } from "@/types/agent";
 import type { SkillConfig } from "@/types/database";
 import type { CustomSkill } from "@/types/custom-skill";
 import type { ComposioConfig, ComposioConnectedApp } from "@/types/composio";
+import { renderSoulPreset, type SoulPresetData } from "@/lib/templates/soul-presets";
+import { PERSONALITY_PRESETS } from "@/types/agent";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   requireDashboardCustomer,
@@ -26,7 +28,7 @@ export default async function ChannelsSettingsPage() {
   ]);
 
   const admin = createAdminClient();
-  const [instance, tenant, { data: skillConfigs }, { data: customSkills }, { data: emailIdentity }, { data: composioRow }] = await Promise.all([
+  const [instance, tenant, { data: skillConfigs }, { data: customSkills }, { data: emailIdentity }, { data: composioRow }, { data: farmProfile }] = await Promise.all([
     getCustomerInstance(customerId),
     getCustomerTenant(customerId),
     supabase
@@ -48,6 +50,11 @@ export default async function ChannelsSettingsPage() {
       .select("*")
       .eq("customer_id", customerId)
       .maybeSingle(),
+    supabase
+      .from("farm_profiles")
+      .select("farm_name, state, county, acres, crops, elevators, timezone, soil_ph, soil_cec, organic_matter_pct, avg_annual_rainfall_in")
+      .eq("customer_id", customerId)
+      .maybeSingle(),
   ]);
 
   if (!tenant) redirect("/onboarding");
@@ -58,6 +65,46 @@ export default async function ChannelsSettingsPage() {
         connected_apps: (composioRow.connected_apps || []) as ComposioConnectedApp[],
       }
     : null;
+
+  interface FarmProfileQueryRow {
+    farm_name: string | null;
+    state: string | null;
+    county: string | null;
+    acres: number | null;
+    crops: string[] | null;
+    elevators: ({ name?: string } | string)[] | null;
+    timezone: string | null;
+    soil_ph: number | null;
+    soil_cec: number | null;
+    organic_matter_pct: number | null;
+    avg_annual_rainfall_in: number | null;
+  }
+  const fp = farmProfile as FarmProfileQueryRow | null;
+  const elevatorNames = Array.isArray(fp?.elevators)
+    ? fp.elevators.map((e) => (typeof e === "string" ? e : e?.name || "Unknown")).join(", ")
+    : "Not configured";
+  const farmPresetData: SoulPresetData = {
+    farm_name: fp?.farm_name || "Your Farm",
+    agent_name: "Assistant",
+    state: fp?.state || "ND",
+    county: fp?.county || "Unknown",
+    acres: fp?.acres || 0,
+    crops_list: Array.isArray(fp?.crops) ? fp.crops.join(", ") : "Not configured",
+    elevator_names: elevatorNames,
+    timezone: fp?.timezone || "America/Chicago",
+    soil_ph: fp?.soil_ph ?? null,
+    soil_cec: fp?.soil_cec ?? null,
+    organic_matter_pct: fp?.organic_matter_pct ?? null,
+    avg_annual_rainfall_in: fp?.avg_annual_rainfall_in ?? null,
+  };
+
+  // Pre-compute default prompts server-side so soul-presets.ts stays out of the client bundle
+  const defaultPrompts: Partial<Record<string, string>> = {};
+  for (const preset of PERSONALITY_PRESETS) {
+    if (preset !== "custom") {
+      defaultPrompts[preset] = renderSoulPreset(preset, farmPresetData);
+    }
+  }
 
   // Fetch tenant-first agents (needs tenant.id)
   const { data: tenantAgents } = await supabase
@@ -188,6 +235,7 @@ export default async function ChannelsSettingsPage() {
           globalSkillConfigs={typedSkillConfigs}
           customSkills={typedCustomSkills}
           composioConfig={composioConfig}
+          defaultPrompts={defaultPrompts}
         />
       </div>
     </div>

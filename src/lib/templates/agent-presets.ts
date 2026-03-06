@@ -103,4 +103,47 @@ export const SUGGESTED_SETUPS: SuggestedSetup[] = [
       },
     ],
   },
+  {
+    id: "five-agent",
+    label: "Full Team + Specialists",
+    description:
+      "Five specialists: general advisor, grain markets, weather, agronomy, and equipment diagnostics.",
+    agents: [
+      {
+        display_name: "Farm Assistant",
+        personality_preset: "general",
+        skills: ["farm-grain-bids", "farm-weather", "farm-scale-tickets"],
+        cron_jobs: {},
+        is_default: true,
+      },
+      {
+        display_name: "Grain Desk",
+        personality_preset: "grain",
+        skills: ["farm-grain-bids"],
+        cron_jobs: { "daily-grain-bids": true },
+        is_default: false,
+      },
+      {
+        display_name: "Weather Watch",
+        personality_preset: "weather",
+        skills: ["farm-weather"],
+        cron_jobs: { "morning-weather": true },
+        is_default: false,
+      },
+      {
+        display_name: "Agronomy",
+        personality_preset: "agronomy",
+        skills: ["farm-weather"],
+        cron_jobs: {},
+        is_default: false,
+      },
+      {
+        display_name: "Shop Tech",
+        personality_preset: "equipment",
+        skills: [],
+        cron_jobs: {},
+        is_default: false,
+      },
+    ],
+  },
 ];

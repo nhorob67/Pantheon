@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CreateAgentData, UpdateAgentData } from "@/lib/validators/agent";
-import { PERSONALITY_PRESETS, type PersonalityPreset } from "@/types/agent";
+import { toPersonalityPreset, type PersonalityPreset } from "@/types/agent";
 import { safeErrorMessage } from "@/lib/security/safe-error";
 
 import { syncPredefinedSchedulesToTable } from "@/lib/schedules/sync-predefined-schedules";
@@ -9,8 +9,6 @@ const TENANT_AGENT_SELECT =
   "id, tenant_id, customer_id, legacy_agent_id, agent_key, display_name, status, policy_profile, is_default, sort_order, skills, config, created_at, updated_at";
 const LEGACY_AGENT_SELECT =
   "id, instance_id, customer_id, agent_key, display_name, personality_preset, custom_personality, discord_channel_id, discord_channel_name, is_default, skills, cron_jobs, sort_order, created_at, updated_at";
-
-const PERSONALITY_PRESET_SET = new Set<string>(PERSONALITY_PRESETS);
 
 interface TenantAgentRow {
   id: string;
@@ -117,14 +115,6 @@ function isBooleanRecord(value: unknown): value is Record<string, boolean> {
   }
 
   return Object.values(value).every((entry) => typeof entry === "boolean");
-}
-
-function toPersonalityPreset(value: unknown): PersonalityPreset {
-  if (typeof value === "string" && PERSONALITY_PRESET_SET.has(value)) {
-    return value as PersonalityPreset;
-  }
-
-  return "general";
 }
 
 function parseTenantAgentConfig(config: unknown): TenantAgentConfig {
@@ -737,8 +727,7 @@ export async function createTenantRuntimeAgent(
 
   const tenantConfig = buildTenantAgentConfig({}, {
     personality_preset: data.personality_preset,
-    custom_personality:
-      data.personality_preset === "custom" ? data.custom_personality || null : null,
+    custom_personality: data.custom_personality || null,
     discord_channel_id: data.discord_channel_id || null,
     discord_channel_name: data.discord_channel_name || null,
     cron_jobs: data.cron_jobs,

@@ -14,6 +14,10 @@ export const farmProfileSchema = z.object({
   county: z.string().optional(),
   primary_crops: z.array(z.enum(CROPS)).optional(),
   acres: z.number().int().positive("Enter your total acres").optional(),
+  soil_ph: z.number().min(0).max(14).optional(),
+  soil_cec: z.number().positive().optional(),
+  organic_matter_pct: z.number().min(0).max(100).optional(),
+  avg_annual_rainfall_in: z.number().positive().optional(),
 });
 
 export type FarmProfileFormData = z.infer<typeof farmProfileSchema>;

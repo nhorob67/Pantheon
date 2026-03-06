@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { TenantAgent } from "@/types/tenant-runtime";
 import type { PersonalityPreset } from "@/types/agent";
+import { toPersonalityPreset } from "@/types/agent";
 import { renderSoulPreset, type SoulPresetData } from "@/lib/templates/soul-presets";
 import {
   resolveCustomSkillsForAgent,
@@ -15,22 +16,15 @@ interface FarmProfileRow {
   crops: string[];
   elevators: { name: string }[];
   timezone: string;
+  soil_ph: number | null;
+  soil_cec: number | null;
+  organic_matter_pct: number | null;
+  avg_annual_rainfall_in: number | null;
 }
 
 function resolvePersonalityPreset(agent: TenantAgent): PersonalityPreset {
   const config = agent.config || {};
-  const preset = config.personality_preset;
-  if (
-    preset === "general" ||
-    preset === "grain" ||
-    preset === "weather" ||
-    preset === "scale-tickets" ||
-    preset === "operations" ||
-    preset === "custom"
-  ) {
-    return preset;
-  }
-  return "general";
+  return toPersonalityPreset(config.personality_preset);
 }
 
 export async function buildSystemPrompt(
@@ -40,7 +34,7 @@ export async function buildSystemPrompt(
   // Load farm profile for this tenant's customer
   const { data: farmProfile } = await admin
     .from("farm_profiles")
-    .select("farm_name, state, county, acres, crops, elevators, timezone")
+    .select("farm_name, state, county, acres, crops, elevators, timezone, soil_ph, soil_cec, organic_matter_pct, avg_annual_rainfall_in")
     .eq("customer_id", agent.customer_id)
     .maybeSingle();
 
@@ -52,6 +46,10 @@ export async function buildSystemPrompt(
     crops: [],
     elevators: [],
     timezone: "America/Chicago",
+    soil_ph: null,
+    soil_cec: null,
+    organic_matter_pct: null,
+    avg_annual_rainfall_in: null,
   };
 
   const cropsList = Array.isArray(profile.crops) ? profile.crops.join(", ") : "Not configured";
@@ -74,6 +72,10 @@ export async function buildSystemPrompt(
     crops_list: cropsList,
     elevator_names: elevatorNames,
     timezone: profile.timezone || "America/Chicago",
+    soil_ph: profile.soil_ph,
+    soil_cec: profile.soil_cec,
+    organic_matter_pct: profile.organic_matter_pct,
+    avg_annual_rainfall_in: profile.avg_annual_rainfall_in,
   };
 
   let systemPrompt = renderSoulPreset(preset, presetData, customPersonality);

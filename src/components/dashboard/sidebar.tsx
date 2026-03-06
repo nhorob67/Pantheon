@@ -21,6 +21,7 @@ import {
   Sun,
   Activity,
   CalendarClock,
+  HeartPulse,
   type LucideIcon,
 } from "lucide-react";
 import { useHelp } from "./help-provider";
@@ -41,6 +42,7 @@ const settingsIconsByHref: Record<string, LucideIcon> = {
   "/settings/skills": Zap,
   "/settings/briefings": Sun,
   "/settings/schedules": CalendarClock,
+  "/settings/heartbeat": HeartPulse,
   "/settings/activity": Activity,
   "/settings/memory": Brain,
   "/settings/exports": Download,

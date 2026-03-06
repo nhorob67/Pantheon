@@ -12,6 +12,8 @@ const presetAccentBorder: Record<string, string> = {
   weather: "border-l-blue-400",
   "scale-tickets": "border-l-orange-500",
   operations: "border-l-emerald-500",
+  agronomy: "border-l-lime-500",
+  equipment: "border-l-zinc-400",
   custom: "border-l-text-dim",
 };
 
@@ -21,6 +23,8 @@ const presetBadgeVariant: Record<string, "success" | "warning" | "info" | "neutr
   weather: "info",
   "scale-tickets": "warning",
   operations: "success",
+  agronomy: "success",
+  equipment: "neutral",
   custom: "neutral",
 };
 

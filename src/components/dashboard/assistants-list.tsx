@@ -6,6 +6,7 @@ import type { SkillConfig } from "@/types/database";
 import type { CustomSkill } from "@/types/custom-skill";
 import type { ComposioConfig } from "@/types/composio";
 import type { CreateAgentData } from "@/lib/validators/agent";
+import type { PersonalityPreset } from "@/types/agent";
 import { AgentCard } from "./agent-card";
 import { AgentForm } from "./agent-form";
 import { AgentPresetsPicker } from "./agent-presets-picker";
@@ -18,6 +19,7 @@ interface AssistantsListProps {
   globalSkillConfigs: SkillConfig[];
   customSkills?: CustomSkill[];
   composioConfig?: ComposioConfig | null;
+  defaultPrompts?: Partial<Record<PersonalityPreset, string>>;
 }
 
 export function AssistantsList({
@@ -26,6 +28,7 @@ export function AssistantsList({
   globalSkillConfigs,
   customSkills = [],
   composioConfig = null,
+  defaultPrompts = {},
 }: AssistantsListProps) {
   const [agents, setAgents] = useState<Agent[]>(initialAgents);
   const [formOpen, setFormOpen] = useState(false);
@@ -202,6 +205,7 @@ export function AssistantsList({
         globalSkillConfigs={globalSkillConfigs}
         customSkills={customSkills}
         composioConfig={composioConfig}
+        defaultPrompts={defaultPrompts}
       />
 
       {/* Delete Confirmation Dialog */}
