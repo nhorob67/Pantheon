@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Tooltip } from "@/components/ui/tooltip";
 import type { MemoryCaptureLevel, MemoryMode } from "@/types/memory";
 
 interface MemorySettingsInput {
@@ -27,13 +28,15 @@ interface MemorySettingsPanelProps {
 const MODE_OPTIONS: { value: MemoryMode; label: string; description: string }[] = [
   {
     value: "native_only",
-    label: "Native only",
-    description: "Use OpenClaw native memory only.",
+    label: "Conversation only",
+    description:
+      "Your assistant remembers things during each conversation but doesn\u2019t save notes for next time.",
   },
   {
     value: "hybrid_local_vault",
-    label: "Hybrid local vault",
-    description: "Use native memory plus local vault retention workflows.",
+    label: "Conversation + saved memories",
+    description:
+      "Your assistant remembers conversations and saves important details \u2014 like crop plans, elevator preferences, and commitments \u2014 for future reference.",
   },
 ];
 
@@ -44,18 +47,20 @@ const CAPTURE_LEVEL_OPTIONS: {
 }[] = [
   {
     value: "conservative",
-    label: "Conservative",
-    description: "Capture fewer items to reduce memory growth.",
+    label: "Minimal",
+    description: "Only saves facts you explicitly share, like contracts or delivery dates.",
   },
   {
     value: "standard",
-    label: "Standard",
-    description: "Balanced default for most farms.",
+    label: "Balanced",
+    description:
+      "Saves things that come up naturally \u2014 field plans, preferences, and recurring topics. Good for most farms.",
   },
   {
     value: "aggressive",
-    label: "Aggressive",
-    description: "Capture more details for long-horizon recall.",
+    label: "Thorough",
+    description:
+      "Saves as much as possible, including passing mentions and observations. Useful if you want detailed history.",
   },
 ];
 
@@ -143,7 +148,7 @@ export function MemorySettingsPanel({
       setExcludeInput(settings_.exclude_categories.join(", "));
 
       if (rebuild_?.attempted && !rebuild_.succeeded) {
-        setNotice("Settings saved, but instance rebuild did not complete.");
+        setNotice("Settings saved, but the update didn\u2019t fully apply. Try again in a few minutes.");
       } else {
         setNotice("Memory settings saved.");
       }
@@ -184,9 +189,17 @@ export function MemorySettingsPanel({
         throw new Error(errorMsg || `Failed to queue ${operation}`);
       }
 
-      setNotice(`${operation === "checkpoint" ? "Checkpoint" : "Compress"} queued.`);
+      setNotice(
+        operation === "checkpoint"
+          ? "Backup started \u2014 this may take a few minutes."
+          : "Cleanup started \u2014 this may take a few minutes."
+      );
     } catch (err) {
-      setError(err instanceof Error ? err.message : `Failed to queue ${operation}`);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Could not start backup/cleanup. Please try again."
+      );
     } finally {
       setRunningAction(null);
     }
@@ -196,10 +209,11 @@ export function MemorySettingsPanel({
     <div className="bg-card rounded-xl border border-border shadow-sm p-5 space-y-6">
       <div className="space-y-1">
         <h4 className="font-headline text-base font-semibold text-foreground">
-          Memory Mode
+          How your assistant remembers
+          <Tooltip text="This controls whether your assistant keeps notes between conversations. Most farms benefit from saved memories." />
         </h4>
         <p className="text-sm text-foreground/60">
-          Choose how context is retained for future responses.
+          Choose whether your assistant only remembers the current conversation or builds up notes over time.
         </p>
       </div>
 
@@ -229,7 +243,8 @@ export function MemorySettingsPanel({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm text-foreground/60 mb-1.5">
-            Capture level
+            What gets saved
+            <Tooltip text="Higher settings capture more detail from your conversations. Start with Balanced and adjust based on how much your assistant recalls." />
           </label>
           <select
             value={settings.capture_level}
@@ -258,7 +273,8 @@ export function MemorySettingsPanel({
 
         <div>
           <label className="block text-sm text-foreground/60 mb-1.5">
-            Retention (days)
+            Keep memories for (days)
+            <Tooltip text="Memories older than this are automatically removed. Longer retention uses more storage but gives your assistant more history to draw on." />
           </label>
           <input
             type="number"
@@ -273,30 +289,34 @@ export function MemorySettingsPanel({
             }
             className="w-full border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg bg-background px-4 py-3 outline-none transition-colors text-foreground text-sm"
           />
-          <p className="text-xs text-foreground/40 mt-1">Allowed range: 7-3650</p>
+          <p className="text-xs text-foreground/40 mt-1">Between 7 days and 10 years</p>
         </div>
       </div>
 
       <div>
         <label className="block text-sm text-foreground/60 mb-1.5">
-          Excluded categories
+          Topics to never remember
+          <Tooltip text="Add topics here that you don't want your assistant to store — for example, personal financial details or account passwords." />
         </label>
         <input
           value={excludeInput}
           onChange={(e) => setExcludeInput(e.target.value)}
-          placeholder="secrets, otp, ephemeral"
+          placeholder="passwords, pin-codes, personal-finance"
           className="w-full border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg bg-background px-4 py-3 outline-none transition-colors text-foreground text-sm"
         />
         <p className="text-xs text-foreground/40 mt-1">
-          Comma-separated category keys (lowercase + hyphens).
+          Comma-separated topics (lowercase and hyphens). Your assistant will skip saving anything tagged with these.
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div className="rounded-lg border border-border p-3 flex items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-medium text-foreground">Auto checkpoint</p>
-            <p className="text-xs text-foreground/50">Allow periodic checkpoint jobs.</p>
+            <p className="text-sm font-medium text-foreground">
+              Automatic backups
+              <Tooltip text="Creates periodic snapshots so your assistant's memory can be restored if something goes wrong." />
+            </p>
+            <p className="text-xs text-foreground/50">Periodically save a snapshot of your assistant&apos;s memory so it can be restored if needed.</p>
           </div>
           <Switch
             checked={settings.auto_checkpoint}
@@ -308,8 +328,11 @@ export function MemorySettingsPanel({
 
         <div className="rounded-lg border border-border p-3 flex items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-medium text-foreground">Auto compress</p>
-            <p className="text-xs text-foreground/50">Allow periodic compression jobs.</p>
+            <p className="text-sm font-medium text-foreground">
+              Automatic cleanup
+              <Tooltip text="Merges and summarizes older memories so your assistant stays fast without losing important context." />
+            </p>
+            <p className="text-xs text-foreground/50">Periodically summarize older memories to keep things tidy and reduce storage use.</p>
           </div>
           <Switch
             checked={settings.auto_compress}
@@ -331,7 +354,7 @@ export function MemorySettingsPanel({
           onClick={() => runOperation("checkpoint")}
           loading={runningAction === "checkpoint"}
         >
-          Run Checkpoint
+          Back Up Now
         </Button>
         <Button
           type="button"
@@ -340,7 +363,7 @@ export function MemorySettingsPanel({
           onClick={() => runOperation("compress")}
           loading={runningAction === "compress"}
         >
-          Run Compress
+          Clean Up Now
         </Button>
       </div>
 

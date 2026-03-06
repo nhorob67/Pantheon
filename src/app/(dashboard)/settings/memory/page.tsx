@@ -21,7 +21,7 @@ export default async function MemorySettingsPage() {
         <div className="mb-6">
           <h3 className="font-headline text-lg font-semibold mb-1">Memory</h3>
           <p className="text-foreground/60 text-sm">
-            Tenant workspace setup is required before configuring memory.
+            Complete your farm setup before configuring memory settings.
           </p>
         </div>
       </div>
@@ -44,7 +44,7 @@ export default async function MemorySettingsPage() {
       <div>
         <h3 className="font-headline text-lg font-semibold mb-1">Memory</h3>
         <p className="text-foreground/60 text-sm">
-          Control how FarmClaw stores and compresses long-lived context.
+          Control what your assistant remembers between conversations.
         </p>
       </div>
 
