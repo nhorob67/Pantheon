@@ -13,6 +13,7 @@ import type {
 import { StatusBadge } from "@/components/ui/status-badge";
 
 interface RunTimelineProps {
+  tenantId: string;
   run: WorkflowRun | null;
   steps: WorkflowRunStep[];
   artifacts: WorkflowRunArtifact[];
@@ -206,6 +207,7 @@ function buildSafeFilename(name: string): string {
 }
 
 export function RunTimeline({
+  tenantId,
   run,
   steps,
   artifacts,
@@ -269,7 +271,7 @@ export function RunTimeline({
 
     try {
       const response = await fetch(
-        `/api/instances/${activeRun.instance_id}/workflows/${activeRun.workflow_id}/run`,
+        `/api/tenants/${tenantId}/workflows/${activeRun.workflow_id}/run`,
         {
           method: "POST",
           headers: {
@@ -356,7 +358,7 @@ export function RunTimeline({
 
     try {
       const response = await fetch(
-        `/api/instances/${activeRun.instance_id}/workflow-runs/${activeRun.id}/retry-step`,
+        `/api/tenants/${tenantId}/workflow-runs/${activeRun.id}/retry-step`,
         {
           method: "POST",
           headers: {
@@ -646,7 +648,7 @@ export function RunTimeline({
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   {artifact.storage_bucket && artifact.storage_path ? (
                     <a
-                      href={`/api/instances/${activeRun.instance_id}/workflow-runs/${activeRun.id}/artifacts/${artifact.id}/download`}
+                      href={`/api/tenants/${tenantId}/workflow-runs/${activeRun.id}/artifacts/${artifact.id}/download`}
                       target="_blank"
                       rel="noreferrer"
                       className="inline-flex min-h-11 items-center rounded-lg border border-border px-2.5 py-1.5 text-[11px] font-medium text-text-secondary transition-colors hover:border-border-light hover:text-text-primary"

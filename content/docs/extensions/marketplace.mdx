@@ -1,6 +1,6 @@
 ---
 title: Marketplace
-description: Browse and discover extensions to add new capabilities to your FarmClaw instance.
+description: Browse and discover extensions to add new capabilities to your FarmClaw workspace.
 section: Extensions
 order: 1
 icon: Store
@@ -49,7 +49,7 @@ Filter by source type to see extensions from a specific origin:
 | Filter value | Description |
 |---|---|
 | `internal` | First-party extensions managed by FarmClaw |
-| `local` | Extensions bundled directly with your instance image |
+| `local` | Extensions bundled directly with the platform |
 | `clawhub` | Third-party packages from the FarmClaw marketplace |
 | `npm` | Node package registry sources |
 | `git` | Git repositories pinned by catalog reference |
@@ -80,7 +80,7 @@ Internal extensions are built and maintained by the FarmClaw team. They are firs
 
 ### Local
 
-Local extensions are bundled directly into your instance's container image. These are typically custom extensions that have been built specifically for your deployment. Like internal extensions, they are implicitly trusted because they are part of the image you are already running.
+Local extensions are bundled directly with the FarmClaw platform. These are typically custom extensions that have been built specifically for your deployment. Like internal extensions, they are implicitly trusted because FarmClaw controls the source.
 
 ### ClawHub
 

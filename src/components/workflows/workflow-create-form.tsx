@@ -7,7 +7,7 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import type { WorkflowPlaybook, WorkflowTemplate } from "@/types/workflow";
 
 interface WorkflowCreateFormProps {
-  instanceId: string;
+  tenantId: string;
   templates: WorkflowTemplate[];
   playbooks: WorkflowPlaybook[];
   initialSourceType?: "template" | "playbook";
@@ -32,7 +32,7 @@ function resolveTemplateCategory(template: WorkflowTemplate): string | null {
 }
 
 export function WorkflowCreateForm({
-  instanceId,
+  tenantId,
   templates,
   playbooks,
   initialSourceType,
@@ -97,7 +97,7 @@ export function WorkflowCreateForm({
       const response =
         sourceType === "template"
           ? await fetch(
-              `/api/instances/${instanceId}/workflow-templates/${encodeURIComponent(
+              `/api/tenants/${tenantId}/workflow-templates/${encodeURIComponent(
                 selectedTemplate!.id
               )}/use`,
               {
@@ -113,7 +113,7 @@ export function WorkflowCreateForm({
               }
             )
           : await fetch(
-              `/api/instances/${instanceId}/workflow-playbooks/${encodeURIComponent(
+              `/api/tenants/${tenantId}/workflow-playbooks/${encodeURIComponent(
                 selectedPlaybook!.id
               )}/install`,
               {

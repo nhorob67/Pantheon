@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
+import { streamText } from "ai";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { generateSkillSchema } from "@/lib/validators/custom-skill";
 import { getTemplateById } from "@/lib/custom-skills/templates";
 import { consumeDurableRateLimit } from "@/lib/security/durable-rate-limit";
+import { farmclawModel, DEFAULT_PRIMARY_MODEL_ID } from "@/lib/ai/client";
+import { recordTokenUsage } from "@/lib/ai/usage-tracker";
 
 const SKILL_GENERATE_WINDOW_SECONDS = 60;
 const SKILL_GENERATE_MAX_ATTEMPTS = 5;
@@ -85,32 +88,31 @@ export async function POST(request: Request) {
 
   const { prompt, template_id, farm_context } = parsed.data;
 
+  // Look up customer (used for farm context and usage tracking)
+  const { data: customer } = await supabase
+    .from("customers")
+    .select("id, tenant_id")
+    .eq("user_id", user.id)
+    .single();
+
   // Build context
   let farmContextStr = "";
-  if (farm_context) {
-    const { data: customer } = await supabase
-      .from("customers")
-      .select("id")
-      .eq("user_id", user.id)
+  if (farm_context && customer) {
+    const admin = createAdminClient();
+    const { data: profile } = await admin
+      .from("farm_profiles")
+      .select("farm_name, state, county, primary_crops, acres, elevators, timezone")
+      .eq("customer_id", customer.id)
       .single();
 
-    if (customer) {
-      const admin = createAdminClient();
-      const { data: profile } = await admin
-        .from("farm_profiles")
-        .select("farm_name, state, county, primary_crops, acres, elevators, timezone")
-        .eq("customer_id", customer.id)
-        .single();
-
-      if (profile) {
-        farmContextStr = `\n\nFarm Context (use this to personalize the skill):
+    if (profile) {
+      farmContextStr = `\n\nFarm Context (use this to personalize the skill):
 - Farm: ${profile.farm_name}
 - Location: ${profile.county || ""}, ${profile.state}
 - Crops: ${profile.primary_crops.join(", ")}
 - Acres: ${profile.acres || "unknown"}
 - Elevators: ${profile.elevators.join(", ")}
 - Timezone: ${profile.timezone}`;
-      }
     }
   }
 
@@ -126,115 +128,29 @@ export async function POST(request: Request) {
 
 Generate ONLY the SKILL.md content (YAML frontmatter + markdown body). Use "custom-" prefix for the name field.`;
 
-  // Stream from OpenRouter
-  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-      "HTTP-Referer": "https://farmclaw.com",
-      "X-Title": "FarmClaw Skill Forge",
+  const result = streamText({
+    model: farmclawModel,
+    system: SYSTEM_PROMPT,
+    prompt: userMessage,
+    maxOutputTokens: 8000,
+    onError: ({ error }) => {
+      console.error("[SKILL_GENERATE] Stream error:", error);
     },
-    body: JSON.stringify({
-      model: "anthropic/claude-sonnet-4-5",
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: userMessage },
-      ],
-      stream: true,
-      max_tokens: 8000,
-    }),
-  });
-
-  if (!response.ok) {
-    const errText = await response.text();
-    console.error("[SKILL_GENERATE] OpenRouter error:", errText);
-    return NextResponse.json(
-      { error: "AI generation failed" },
-      { status: 502 }
-    );
-  }
-
-  // Forward the SSE stream
-  const encoder = new TextEncoder();
-  const stream = new ReadableStream({
-    async start(controller) {
-      const reader = response.body!.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let totalTokens = 0;
-
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() || "";
-
-          for (const line of lines) {
-            if (!line.startsWith("data: ")) continue;
-            const data = line.slice(6);
-            if (data === "[DONE]") {
-              controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-              continue;
-            }
-
-            try {
-              const json = JSON.parse(data);
-              const content = json.choices?.[0]?.delta?.content;
-              if (content) {
-                controller.enqueue(
-                  encoder.encode(`data: ${JSON.stringify({ content })}\n\n`)
-                );
-              }
-              if (json.usage) {
-                totalTokens = json.usage.total_tokens || 0;
-              }
-            } catch {
-              // skip unparseable chunks
-            }
-          }
-        }
-
-        // Record usage
-        if (totalTokens > 0) {
-          try {
-            const { data: customer } = await supabase
-              .from("customers")
-              .select("id")
-              .eq("user_id", user.id)
-              .single();
-
-            if (customer) {
-              const admin = createAdminClient();
-              const today = new Date().toISOString().split("T")[0];
-              await admin.rpc("increment_api_usage", {
-                p_customer_id: customer.id,
-                p_date: today,
-                p_model: "anthropic/claude-sonnet-4-5",
-                p_input_tokens: Math.floor(totalTokens * 0.7),
-                p_output_tokens: Math.floor(totalTokens * 0.3),
-              });
-            }
-          } catch {
-            // Non-critical: usage tracking failure
-          }
-        }
-      } catch (err) {
-        console.error("[SKILL_GENERATE] Stream error:", err);
-      } finally {
-        controller.close();
+    onFinish: async ({ usage }) => {
+      if (customer?.tenant_id && (usage.inputTokens ?? 0) > 0) {
+        const admin = createAdminClient();
+        await recordTokenUsage(admin, {
+          tenantId: customer.tenant_id,
+          customerId: customer.id,
+          model: DEFAULT_PRIMARY_MODEL_ID,
+          inputTokens: usage.inputTokens ?? 0,
+          outputTokens: usage.outputTokens ?? 0,
+        }).catch((err) => {
+          console.error("[SKILL_GENERATE] Usage tracking failed:", err);
+        });
       }
     },
   });
 
-  return new Response(stream, {
-    headers: {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
-      Connection: "keep-alive",
-    },
-  });
+  return result.toTextStreamResponse();
 }

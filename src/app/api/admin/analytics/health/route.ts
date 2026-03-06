@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isAdmin } from "@/lib/auth/admin";
-import { getFleetHealth } from "@/lib/queries/admin-analytics";
+import { getTenantHealth } from "@/lib/queries/admin-analytics";
 
 export async function GET() {
   const supabase = await createClient();
@@ -15,7 +15,7 @@ export async function GET() {
   }
 
   const admin = createAdminClient();
-  const data = await getFleetHealth(admin);
+  const data = await getTenantHealth(admin);
 
   return NextResponse.json(data);
 }

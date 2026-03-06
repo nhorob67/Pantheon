@@ -179,6 +179,7 @@ export function McpServerList({
       )}
 
       <McpServerForm
+        key={editServer?.id ?? "new"}
         open={formOpen}
         onClose={() => {
           setFormOpen(false);

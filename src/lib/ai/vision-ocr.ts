@@ -1,4 +1,4 @@
-import { generateObject } from "ai";
+import { generateObject, type LanguageModel } from "ai";
 import { z } from "zod";
 import { farmclawModel } from "./client";
 
@@ -22,10 +22,11 @@ export type ScaleTicketOCRResult = z.infer<typeof scaleTicketOCRSchema>;
 
 export async function extractScaleTicketFromImage(
   imageUrl: string,
-  farmContext: { crops: string[]; elevators: string[] }
+  farmContext: { crops: string[]; elevators: string[] },
+  model?: LanguageModel
 ): Promise<ScaleTicketOCRResult> {
   const { object } = await generateObject({
-    model: farmclawModel,
+    model: model ?? farmclawModel,
     schema: scaleTicketOCRSchema,
     temperature: 0.1,
     messages: [

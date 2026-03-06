@@ -1,0 +1,81 @@
+---
+title: Spending Cap
+description: Set a monthly spending limit on AI usage to control costs and avoid unexpected charges.
+section: Billing & Usage
+order: 3
+icon: ShieldAlert
+tags: [billing, spending, cap, limits, budget]
+---
+
+# Spending Cap
+
+The spending cap lets you set a maximum monthly budget for metered AI usage. Once your assistant reaches the cap, it pauses automatically -- protecting you from unexpected charges.
+
+## Setting a spending cap
+
+1. Go to **Settings > Billing** (or **Settings > Spending Cap**)
+2. Enter your monthly spending limit ($1--$1,000)
+3. Toggle **Auto-pause at cap** to control whether your assistant stops when the limit is reached
+4. Optionally set an **alert email** to receive spending notifications
+5. Click **Save**
+
+The cap applies to metered API usage only -- it does not affect your $50/month base subscription.
+
+## Spending alerts
+
+FarmClaw sends alerts at three thresholds:
+
+| Threshold | Severity | Notification |
+|---|---|---|
+| **50%** of cap | Info | Dashboard notification |
+| **80%** of cap | Warning | Dashboard + email alert |
+| **100%** of cap | Critical | Dashboard + email alert |
+
+FarmClaw also detects **spending anomalies** -- if today's usage is more than 3x your daily average (and over $0.50), you'll receive a warning.
+
+Spending is checked automatically every 4 hours.
+
+## What happens when the cap is reached
+
+When auto-pause is enabled and your metered usage reaches the spending cap:
+
+- Your assistant **stops responding** to new messages in Discord
+- Scheduled jobs (morning weather, daily grain bids) are **paused**
+- Your dashboard shows a clear indicator that the cap is active
+
+<Callout variant="warning" title="Assistant pauses at the cap">
+When the spending cap is reached with auto-pause enabled, your assistant will not respond until the next billing period starts or you increase the cap. Make sure your cap is set high enough for your normal usage.
+</Callout>
+
+## Resuming after a pause
+
+Your assistant resumes automatically when you:
+
+- **Increase the cap** above your current month's spending -- the pause clears immediately
+- **Remove the cap** -- set the value to $0 or clear the field
+- **Wait for the next billing period** -- usage resets at the start of each month
+
+## Recommended cap levels
+
+| Usage Level | Recommended Cap |
+|---|---|
+| Light (a few questions/day) | $15--20/month |
+| Moderate (regular daily use) | $25--30/month |
+| Heavy (frequent use, multiple agents, OCR) | $40--50/month |
+
+If you're unsure, start with a $30 cap and adjust based on your actual usage.
+
+## Monitoring usage
+
+Track your spending in real time from the dashboard:
+
+- **Current period usage** -- How much you've spent so far this billing period
+- **Daily breakdown** -- Token usage and cost per day
+- **Cap utilization** -- Progress bar showing how close you are to your cap
+
+See [Metered Usage](/docs/billing/metered-usage) for details on what drives costs and how to reduce usage.
+
+## What's next
+
+- [Metered Usage](/docs/billing/metered-usage) -- Understand token costs and usage patterns
+- [Subscription](/docs/billing/subscription) -- Manage your base subscription

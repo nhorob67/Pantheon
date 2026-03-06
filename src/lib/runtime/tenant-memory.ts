@@ -1,27 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { safeErrorMessage } from "@/lib/security/safe-error";
-import { buildDefaultMemorySettings, type MemoryOperationType } from "@/types/memory";
-import type { UpdateInstanceMemorySettingsRequest } from "@/lib/validators/memory";
+import { buildDefaultMemorySettings, type TenantMemorySettings, type MemoryOperationType } from "@/types/memory";
+import type { UpdateTenantMemorySettingsRequest } from "@/lib/validators/memory";
 
 const MEMORY_SETTINGS_SELECT =
-  "instance_id, customer_id, mode, capture_level, retention_days, exclude_categories, auto_checkpoint, auto_compress, updated_by, created_at, updated_at";
+  "tenant_id, customer_id, mode, capture_level, retention_days, exclude_categories, auto_checkpoint, auto_compress, updated_by, created_at, updated_at";
 const MEMORY_OPERATION_SELECT = "id, operation_type, status, queued_at";
 
-interface LegacyMemorySettingsRow {
-  instance_id: string;
-  customer_id: string;
-  mode: "native_only" | "hybrid_local_vault";
-  capture_level: "conservative" | "standard" | "aggressive";
-  retention_days: number;
-  exclude_categories: string[];
-  auto_checkpoint: boolean;
-  auto_compress: boolean;
-  updated_by: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-interface LegacyMemoryOperationRow {
+interface TenantMemoryOperationRow {
   id: string;
   operation_type: MemoryOperationType;
   status: "queued" | "running" | "completed" | "failed";
@@ -31,11 +17,10 @@ interface LegacyMemoryOperationRow {
 export interface TenantMemoryMutationContext {
   tenantId: string;
   customerId: string;
-  legacyInstanceId: string | null;
 }
 
 export interface TenantMemorySettingsResult {
-  settings: LegacyMemorySettingsRow;
+  settings: Omit<TenantMemorySettings, "id">;
   source: "stored" | "default";
 }
 
@@ -52,36 +37,22 @@ export class TenantMemoryServiceError extends Error {
 
 export function buildTenantMemoryContext(
   tenantId: string,
-  customerId: string,
-  legacyInstanceId: string | null
+  customerId: string
 ): TenantMemoryMutationContext {
   return {
     tenantId,
     customerId,
-    legacyInstanceId,
   };
-}
-
-function requireLegacyInstanceId(context: TenantMemoryMutationContext): string {
-  if (!context.legacyInstanceId) {
-    throw new TenantMemoryServiceError(
-      409,
-      "No active legacy instance mapping available for tenant memory operations"
-    );
-  }
-
-  return context.legacyInstanceId;
 }
 
 export async function getTenantMemorySettings(
   admin: SupabaseClient,
   context: TenantMemoryMutationContext
 ): Promise<TenantMemorySettingsResult> {
-  const legacyInstanceId = requireLegacyInstanceId(context);
   const { data, error } = await admin
-    .from("instance_memory_settings")
+    .from("tenant_memory_settings")
     .select(MEMORY_SETTINGS_SELECT)
-    .eq("instance_id", legacyInstanceId)
+    .eq("tenant_id", context.tenantId)
     .maybeSingle();
 
   if (error) {
@@ -93,13 +64,13 @@ export async function getTenantMemorySettings(
 
   if (data) {
     return {
-      settings: data as LegacyMemorySettingsRow,
+      settings: data as Omit<TenantMemorySettings, "id">,
       source: "stored",
     };
   }
 
   return {
-    settings: buildDefaultMemorySettings(legacyInstanceId, context.customerId),
+    settings: buildDefaultMemorySettings(context.tenantId, context.customerId),
     source: "default",
   };
 }
@@ -107,20 +78,19 @@ export async function getTenantMemorySettings(
 export async function updateTenantMemorySettings(
   admin: SupabaseClient,
   context: TenantMemoryMutationContext,
-  payload: UpdateInstanceMemorySettingsRequest,
+  payload: UpdateTenantMemorySettingsRequest,
   updatedBy: string
-): Promise<LegacyMemorySettingsRow> {
-  const legacyInstanceId = requireLegacyInstanceId(context);
+): Promise<Omit<TenantMemorySettings, "id">> {
   const { data, error } = await admin
-    .from("instance_memory_settings")
+    .from("tenant_memory_settings")
     .upsert(
       {
-        instance_id: legacyInstanceId,
+        tenant_id: context.tenantId,
         customer_id: context.customerId,
         ...payload,
         updated_by: updatedBy,
       },
-      { onConflict: "instance_id" }
+      { onConflict: "tenant_id" }
     )
     .select(MEMORY_SETTINGS_SELECT)
     .single();
@@ -132,7 +102,7 @@ export async function updateTenantMemorySettings(
     );
   }
 
-  return data as LegacyMemorySettingsRow;
+  return data as Omit<TenantMemorySettings, "id">;
 }
 
 export async function queueTenantMemoryOperation(
@@ -141,17 +111,16 @@ export async function queueTenantMemoryOperation(
   operationType: MemoryOperationType,
   requestedBy: string,
   reason?: string
-): Promise<LegacyMemoryOperationRow> {
-  const legacyInstanceId = requireLegacyInstanceId(context);
+): Promise<TenantMemoryOperationRow> {
   const input =
     typeof reason === "string" && reason.trim().length > 0
       ? { reason: reason.trim() }
       : {};
 
   const { data, error } = await admin
-    .from("memory_operations")
+    .from("tenant_memory_operations")
     .insert({
-      instance_id: legacyInstanceId,
+      tenant_id: context.tenantId,
       customer_id: context.customerId,
       operation_type: operationType,
       status: "queued",
@@ -168,5 +137,5 @@ export async function queueTenantMemoryOperation(
     );
   }
 
-  return data as LegacyMemoryOperationRow;
+  return data as TenantMemoryOperationRow;
 }

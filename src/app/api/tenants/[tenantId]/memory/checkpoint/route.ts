@@ -6,7 +6,6 @@ import {
   parseTenantRouteParams,
   runTenantRoute,
 } from "@/lib/runtime/tenant-route";
-import { resolveCanonicalLegacyInstanceForTenant } from "@/lib/runtime/tenant-agents";
 import {
   buildTenantMemoryContext,
   queueTenantMemoryOperation,
@@ -78,14 +77,9 @@ export async function POST(
         );
       }
 
-      const mapping = await resolveCanonicalLegacyInstanceForTenant(
-        state.admin,
-        state.tenantContext.tenantId
-      );
       const context = buildTenantMemoryContext(
         state.tenantContext.tenantId,
-        state.tenantContext.customerId,
-        mapping.instanceId
+        state.tenantContext.customerId
       );
       const operation = await queueTenantMemoryOperation(
         state.admin,
@@ -95,17 +89,7 @@ export async function POST(
         parsedBody.data.reason
       );
 
-      const responseBody: Record<string, unknown> = {
-        operation,
-        legacy_instance_id: mapping.instanceId,
-      };
-
-      if (mapping.ambiguous) {
-        responseBody.warning =
-          "Multiple active legacy instance mappings detected. Using most recent mapping for memory checkpoint.";
-      }
-
-      return NextResponse.json(responseBody, { status: 202 });
+      return NextResponse.json({ operation }, { status: 202 });
     }
   );
 }

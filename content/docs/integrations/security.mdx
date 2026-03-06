@@ -22,7 +22,7 @@ Your Browser ──► FarmClaw API ──► Composio API ──► Service API
 
 | System | What it stores | What it does |
 |---|---|---|
-| **FarmClaw** | Composio entity ID, MCP server URL, toolkit selections, cached connection status | Manages configuration, triggers config rebuilds, serves the dashboard UI |
+| **FarmClaw** | Composio entity ID, MCP server URL, toolkit selections, cached connection status | Manages configuration, serves the dashboard UI |
 | **Composio** | OAuth tokens (access + refresh), connection metadata | Handles OAuth flows, stores credentials, proxies API calls, refreshes tokens |
 | **Service (Google, etc.)** | Your account data | Processes API requests from Composio on your behalf |
 
@@ -148,7 +148,7 @@ Both methods are equally effective. Disconnecting from FarmClaw is the recommend
 
 ### FarmClaw to Composio
 
-All communication between your FarmClaw instance and Composio occurs over HTTPS (TLS 1.2+). The MCP server connection uses Server-Sent Events (SSE) over HTTPS.
+All communication between FarmClaw and Composio occurs over HTTPS (TLS 1.2+). The MCP server connection uses Server-Sent Events (SSE) over HTTPS.
 
 ### Composio to services
 
@@ -183,11 +183,11 @@ To mitigate: use a strong password and magic link authentication for your FarmCl
 
 ### Can FarmClaw employees access my Google Sheets / emails / calendar?
 
-No. FarmClaw does not store your service credentials and does not have access to your connected service accounts. Only your AI assistant, running on your dedicated instance, can make API calls through Composio using your authorized tokens.
+No. FarmClaw does not store your service credentials and does not have access to your connected service accounts. Only your AI assistant can make API calls through Composio using your authorized tokens.
 
 ### What happens to my data if I cancel my FarmClaw subscription?
 
-When your subscription ends and your instance is deprovisioned:
+When your subscription ends and your workspace is closed:
 
 - Your Composio entity and all stored tokens are deleted.
 - All service connections are revoked.
@@ -203,6 +203,6 @@ Composio maintains enterprise security practices. Check [composio.dev/security](
 
 ## What's next
 
-- [Integrations Overview](/docs/integrations) -- How integrations fit into your FarmClaw instance
+- [Integrations Overview](/docs/integrations) -- How integrations fit into your FarmClaw workspace
 - [Connecting Services](/docs/integrations/connecting-services) -- OAuth flow and connection management
 - [Troubleshooting](/docs/troubleshooting/common-issues) -- Common issues and solutions

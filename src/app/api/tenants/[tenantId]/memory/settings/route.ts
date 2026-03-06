@@ -2,12 +2,11 @@ import { NextResponse } from "next/server.js";
 import { z } from "zod/v4";
 
 import { consumeConfigUpdateRateLimit } from "@/lib/security/user-rate-limit";
-import { updateInstanceMemorySettingsSchema } from "@/lib/validators/memory";
+import { updateTenantMemorySettingsSchema } from "@/lib/validators/memory";
 import {
   parseTenantRouteParams,
   runTenantRoute,
 } from "@/lib/runtime/tenant-route";
-import { resolveCanonicalLegacyInstanceForTenant } from "@/lib/runtime/tenant-agents";
 import {
   buildTenantMemoryContext,
   getTenantMemorySettings,
@@ -41,27 +40,13 @@ export async function GET(
       fallbackErrorMessage: "Failed to load tenant memory settings",
     },
     async (state) => {
-      const mapping = await resolveCanonicalLegacyInstanceForTenant(
-        state.admin,
-        state.tenantContext.tenantId
-      );
       const context = buildTenantMemoryContext(
         state.tenantContext.tenantId,
-        state.tenantContext.customerId,
-        mapping.instanceId
+        state.tenantContext.customerId
       );
       const result = await getTenantMemorySettings(state.admin, context);
 
-      const responseBody: Record<string, unknown> = {
-        ...result,
-        legacy_instance_id: mapping.instanceId,
-      };
-      if (mapping.ambiguous) {
-        responseBody.warning =
-          "Multiple active legacy instance mappings detected. Using most recent mapping for memory settings.";
-      }
-
-      return NextResponse.json(responseBody);
+      return NextResponse.json(result);
     }
   );
 }
@@ -112,7 +97,7 @@ export async function PUT(
         return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
       }
 
-      const parsedBody = updateInstanceMemorySettingsSchema.safeParse(body);
+      const parsedBody = updateTenantMemorySettingsSchema.safeParse(body);
       if (!parsedBody.success) {
         return NextResponse.json(
           { error: "Invalid data", details: parsedBody.error.flatten() },
@@ -120,14 +105,9 @@ export async function PUT(
         );
       }
 
-      const mapping = await resolveCanonicalLegacyInstanceForTenant(
-        state.admin,
-        state.tenantContext.tenantId
-      );
       const context = buildTenantMemoryContext(
         state.tenantContext.tenantId,
-        state.tenantContext.customerId,
-        mapping.instanceId
+        state.tenantContext.customerId
       );
       const settings = await updateTenantMemorySettings(
         state.admin,
@@ -136,24 +116,7 @@ export async function PUT(
         state.user.email || state.user.id
       );
 
-      const warnings: string[] = [];
-
-      if (mapping.ambiguous) {
-        warnings.push(
-          "Memory settings updated. Multiple active legacy instance mappings detected; using most recent mapping for deploy sync."
-        );
-      }
-
-      const responseBody: Record<string, unknown> = {
-        settings,
-        legacy_instance_id: mapping.instanceId,
-      };
-      if (warnings.length > 0) {
-        responseBody.warning = warnings[0];
-        responseBody.warnings = warnings;
-      }
-
-      return NextResponse.json(responseBody);
+      return NextResponse.json({ settings });
     }
   );
 }

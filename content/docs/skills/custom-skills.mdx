@@ -1,0 +1,120 @@
+---
+title: Custom Skills
+description: Create your own skills using the Skill Forge -- AI-assisted skill generation, version history, and testing.
+section: Skills
+order: 4
+icon: Hammer
+tags: [skills, custom, forge, ai-generation]
+---
+
+# Custom Skills
+
+Beyond the three built-in skills, FarmClaw lets you create your own custom skills using the **Skill Forge**. Custom skills extend your assistant with new capabilities tailored to your specific operation.
+
+## What are custom skills?
+
+A custom skill is a set of instructions written in Markdown (SKILL.md format) that tells your assistant how to handle a specific type of request. You can create up to **20 active custom skills** per workspace, each up to 50KB in size.
+
+## Creating a skill
+
+### Using AI generation
+
+The fastest way to create a custom skill is with AI generation:
+
+1. Go to **Settings > Skills > Forge**
+2. Click **Create Skill**
+3. Select **Generate with AI**
+4. Describe what you want the skill to do in plain English (10--5,000 characters)
+5. Optionally toggle **Include farm context** to auto-include your farm name, location, crops, acres, and elevators
+6. FarmClaw streams a complete SKILL.md in real time
+7. Review the generated skill, make any adjustments, and save
+
+<Callout variant="tip" title="Be specific in your description">
+The more detail you provide, the better the generated skill. Include examples of questions the skill should handle, what data it should use, and how responses should be formatted.
+</Callout>
+
+### Writing manually
+
+You can also write a skill from scratch using the built-in Markdown editor with formatting toolbar (bold, italic, headings, code blocks, lists) and live preview.
+
+### Using templates
+
+FarmClaw provides eight built-in templates for common farm skill patterns:
+
+| Template | Category |
+|---|---|
+| Crop Scouting Report | Crop Management |
+| Harvest Yield Tracker | Crop Management |
+| Field Notes | Crop Management |
+| Input Cost Calculator | Financial |
+| Market Alert Watcher | Financial |
+| Equipment Maintenance Log | Equipment |
+| Livestock Feed Ration | Livestock |
+| FSA/Crop Insurance Reporter | Compliance |
+
+Select a template when creating a new skill to get a working starting point you can customize.
+
+## SKILL.md format
+
+Custom skills use a Markdown-based format with YAML frontmatter:
+
+```markdown
+---
+name: custom-crop-scouting
+description: Structured crop scouting reports with pest and growth stage tracking.
+user-invocable: true
+---
+
+# Crop Scouting Report
+
+## Description
+What this skill does and when it should be used.
+
+## Instructions
+Step-by-step guidance for the assistant.
+
+## Examples
+### Example 1: Field scout
+**User:** Scout the north 80 for corn
+**Assistant:** [expected response format]
+```
+
+The `name` field must start with `custom-` and match the skill's slug.
+
+## Version history
+
+Every time you save changes to a custom skill, FarmClaw creates a new version. From the version history panel you can:
+
+- **View all versions** -- See each version with its timestamp and change summary
+- **Compare** -- The current version is highlighted for easy identification
+- **Roll back** -- Click the rollback button on any previous version to restore it. Rollbacks create a new version so you never lose history.
+
+## Testing
+
+Test your skill before deploying it to your live assistant:
+
+1. Open the skill in the Forge editor
+2. Switch to the **Test** tab
+3. Enter a sample message that should trigger the skill
+4. Watch the assistant's streaming response in real time
+5. Continue the conversation with follow-up messages to iterate
+
+The test panel shows a full chat interface. Draft skills run in preview mode; active skills test against your live assistant.
+
+## Skill lifecycle
+
+| Status | Meaning |
+|---|---|
+| **Draft** | Created but not assigned to agents. Testing available. |
+| **Active** | Deployed and available for agent assignment. |
+| **Archived** | Soft-deleted. Cannot be updated. Automatically removed from all agents. |
+
+## Reference files
+
+You can attach up to **10 reference files** (max 50KB each) to a custom skill to give your assistant additional context -- product manuals, lookup tables, conversion charts, or farm-specific documentation.
+
+## What's next
+
+- [Skills Overview](/docs/skills) -- Learn about the built-in skills
+- [Knowledge Files](/docs/tools/knowledge) -- Upload documents for your assistant to reference
+- [AI Agents](/docs/agents) -- Assign skills to specific agents

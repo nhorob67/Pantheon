@@ -1,7 +1,8 @@
 import { generateText } from "ai";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { farmclawModel, AI_CONFIG } from "./client";
+import { AI_CONFIG } from "./client";
 import { recordTokenUsage } from "./usage-tracker";
+import { resolveWorkerModels } from "./model-resolver";
 import { assembleEmailContext } from "./email-context-assembler";
 import { storeOutboundMessage } from "./message-store";
 import { safeErrorMessage } from "@/lib/security/safe-error";
@@ -18,8 +19,6 @@ import type {
   TenantRuntimeWorkerContext,
   TenantRuntimeWorkerResult,
 } from "@/lib/runtime/tenant-runtime-worker";
-
-const MODEL_ID = "claude-sonnet-4-5-20250514";
 const DISCORD_CROSS_POST_MAX_LENGTH = 1800;
 const DISCORD_BOT_TOKEN_ENV = "DISCORD_BOT_TOKEN";
 
@@ -31,6 +30,7 @@ export function createEmailAiWorker(admin: SupabaseClient): TenantRuntimeWorker 
   return {
     kind: "email_runtime",
     async execute(context: TenantRuntimeWorkerContext): Promise<TenantRuntimeWorkerResult> {
+      const { model: primaryModel, modelId: primaryModelId, inputCost: primaryInputCost, outputCost: primaryOutputCost, fastModel } = resolveWorkerModels(context.resolvedModels);
       try {
         // Spending cap check
         const { data: custRow } = await admin
@@ -94,7 +94,7 @@ export function createEmailAiWorker(admin: SupabaseClient): TenantRuntimeWorker 
 
         const hasTools = Object.keys(assembled.tools).length > 0;
         const result = await generateText({
-          model: farmclawModel,
+          model: primaryModel,
           maxOutputTokens: AI_CONFIG.maxOutputTokens,
           temperature: AI_CONFIG.temperature,
           system: assembled.systemPrompt,
@@ -159,6 +159,7 @@ export function createEmailAiWorker(admin: SupabaseClient): TenantRuntimeWorker 
             sessionId,
             captureLevel: assembled.memorySettings.captureLevel,
             excludeCategories: assembled.memorySettings.excludeCategories,
+            model: fastModel,
           }).catch((err) => {
             console.error("[email-ai-worker] Session summarization failed:", safeErrorMessage(err));
           });
@@ -176,6 +177,7 @@ export function createEmailAiWorker(admin: SupabaseClient): TenantRuntimeWorker 
               content: "content" in m && typeof m.content === "string" ? m.content : "",
             })),
           existingPatterns: [],
+          model: fastModel,
         }).catch((err) => {
           console.error("[email-ai-worker] Pattern extraction failed:", safeErrorMessage(err));
         });
@@ -206,7 +208,7 @@ export function createEmailAiWorker(admin: SupabaseClient): TenantRuntimeWorker 
             source: "",
             chunk_preview: "",
           })) || [],
-          modelId: MODEL_ID,
+          modelId: primaryModelId,
           inputTokens: result.usage?.inputTokens ?? 0,
           outputTokens: result.usage?.outputTokens ?? 0,
           totalLatencyMs,
@@ -218,9 +220,11 @@ export function createEmailAiWorker(admin: SupabaseClient): TenantRuntimeWorker 
         await recordTokenUsage(admin, {
           tenantId: context.run.tenant_id,
           customerId: context.run.customer_id,
-          model: MODEL_ID,
+          model: primaryModelId,
           inputTokens: result.usage?.inputTokens ?? 0,
           outputTokens: result.usage?.outputTokens ?? 0,
+          inputCostPerMillion: primaryInputCost,
+          outputCostPerMillion: primaryOutputCost,
         }).catch((err) => {
           console.error("[email-ai-worker] Failed to record usage:", safeErrorMessage(err));
         });
@@ -229,7 +233,7 @@ export function createEmailAiWorker(admin: SupabaseClient): TenantRuntimeWorker 
           outcome: "completed",
           result: {
             ack: "email_ai_response_dispatched",
-            model: MODEL_ID,
+            model: primaryModelId,
             agent_id: assembled.agentId,
             agent_name: assembled.agentDisplayName,
             session_id: sessionId,

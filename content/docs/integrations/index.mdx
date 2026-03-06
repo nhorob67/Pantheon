@@ -19,13 +19,12 @@ When you enable integrations, FarmClaw:
 
 1. Creates a Composio entity for your account (no separate Composio sign-up required).
 2. Provisions a remote MCP server that your assistant can call.
-3. Injects the server into your instance configuration alongside your existing MCP servers.
-4. Rebuilds and restarts your instance so the assistant can use the new tools.
+3. Adds the server to your workspace configuration alongside your existing MCP servers.
 
 From that point, your assistant has access to the actions exposed by your selected toolkits. You authorize each service individually through a standard OAuth flow -- the same "Sign in with Google" experience you use elsewhere.
 
 ```
-Instance
+Your Workspace
 ├── Built-in Farm Tools
 │   ├── scale-tickets
 │   ├── grain-bids
@@ -57,7 +56,7 @@ See [Connecting Services](/docs/integrations/connecting-services) for the full O
 
 Composio runs as a remote MCP server over Server-Sent Events (SSE). Your assistant connects to Composio's hosted endpoint, which routes requests to the appropriate service API.
 
-This means Composio does not consume resources on your instance. It runs entirely on Composio's infrastructure.
+Composio runs entirely on Composio's infrastructure.
 
 <Callout variant="info" title="No extra cost for Composio">
 Composio integration is included in your FarmClaw subscription. The Composio API key is platform-level -- you do not need your own Composio account or API key.
@@ -86,7 +85,7 @@ Integrations complement your existing skills. Your assistant can combine data fr
 1. Go to **Settings > Integrations** in your FarmClaw dashboard.
 2. Toggle the **Composio** switch to enable the integration.
 3. Select the toolkits you want your assistant to access.
-4. Click **Save Toolkits** to apply changes (this rebuilds your instance config).
+4. Click **Save Toolkits** to apply changes.
 5. Connect each service by clicking **Connect** and completing the OAuth flow.
 
 For detailed setup instructions, see [Setup Guide](/docs/integrations/setup).

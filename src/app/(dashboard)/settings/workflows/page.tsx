@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireDashboardCustomer, getCustomerInstance } from "@/lib/auth/dashboard-session";
+import { requireDashboardCustomer, getCustomerInstance, getCustomerTenant } from "@/lib/auth/dashboard-session";
 import { formatDateTime } from "@/lib/utils/format";
 import { WORKFLOW_STATUSES, type WorkflowStatus } from "@/types/workflow";
 import { isWorkflowBuilderEnabledForCustomer } from "@/lib/workflows/feature-gate";
@@ -100,9 +100,12 @@ export default async function WorkflowsSettingsPage({
   const statusFilter = parseStatusFilter(status);
   const tagFilter = parseTagFilter(tag);
   const ownerFilter = parseOwnerFilter(owner);
-  const instance = await getCustomerInstance(customerId);
+  const [instance, tenant] = await Promise.all([
+    getCustomerInstance(customerId),
+    getCustomerTenant(customerId),
+  ]);
 
-  if (!instance) {
+  if (!instance || !tenant) {
     return (
       <div>
         <div className="mb-6">
@@ -274,7 +277,7 @@ export default async function WorkflowsSettingsPage({
 
   return (
     <div className="space-y-6">
-      <WorkflowPerformanceBeacon instanceId={instance.id} routeKind="list" />
+      <WorkflowPerformanceBeacon tenantId={tenant.id} routeKind="list" />
       <div className="flex items-start justify-between gap-4">
         <div>
           <h3 className="font-headline text-lg font-semibold mb-1">Workflows</h3>
@@ -518,7 +521,7 @@ export default async function WorkflowsSettingsPage({
                     </p>
                     <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
                       <WorkflowStatusToggle
-                        instanceId={instance.id}
+                        tenantId={tenant.id}
                         workflowId={workflow.id}
                         workflowName={workflow.name}
                         isArchived={workflow.status === "archived"}

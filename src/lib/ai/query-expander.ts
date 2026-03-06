@@ -1,6 +1,6 @@
-import { generateText } from "ai";
-import { createAnthropic } from "@ai-sdk/anthropic";
+import { generateText, type LanguageModel } from "ai";
 import { decomposeQuery } from "./query-decomposer.ts";
+import { farmclawFastModel } from "./client";
 
 export interface ExpandedQuery {
   original: string;
@@ -36,19 +36,15 @@ function buildUserPrompt(query: string): string {
  * Expand a query into multiple sub-queries using Haiku.
  * Falls back to heuristic decomposeQuery on any failure.
  */
-export async function expandQuery(query: string): Promise<ExpandedQuery> {
+export async function expandQuery(query: string, model?: LanguageModel): Promise<ExpandedQuery> {
   const trimmed = query.trim();
   if (!trimmed || trimmed.length < 3) {
     return heuristicFallback(trimmed);
   }
 
   try {
-    const anthropic = createAnthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
-    });
-
     const { text } = await generateText({
-      model: anthropic("claude-haiku-4-5-20251001"),
+      model: model ?? farmclawFastModel,
       system: SYSTEM_PROMPT,
       prompt: buildUserPrompt(trimmed),
       maxOutputTokens: 150,

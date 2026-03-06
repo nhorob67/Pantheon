@@ -9,13 +9,13 @@ tags: [agents, skills, cron, scheduling]
 
 # Skills & Scheduling
 
-Each agent in your FarmClaw instance can be assigned a specific subset of skills and its own set of scheduled cron jobs. This lets you create focused specialists -- a Grain Desk agent that only handles bids, a Weather Watch agent that only handles forecasts, or a Ticket Clerk that only logs deliveries.
+Each agent in your FarmClaw workspace can be assigned a specific subset of skills and its own set of scheduled cron jobs. This lets you create focused specialists -- a Grain Desk agent that only handles bids, a Weather Watch agent that only handles forecasts, or a Ticket Clerk that only logs deliveries.
 
 ## How per-agent skills work
 
 FarmClaw has two levels of skill configuration:
 
-1. **Global skill toggle** -- Enables or disables a skill for your entire instance (Settings > Skills).
+1. **Global skill toggle** -- Enables or disables a skill for your entire workspace (Settings > Skills).
 2. **Per-agent assignment** -- Determines which of the globally-enabled skills each agent can use (Settings > Agents > [Agent]).
 
 A skill must be enabled globally before it can be assigned to any agent. If you disable a skill globally, it is removed from all agents automatically.
@@ -68,7 +68,7 @@ Each agent can be bound to a specific Discord channel. When a message comes in o
 This means you can set up a `#grain-bids` channel bound to your Grain Desk agent and a `#weather` channel bound to your Weather Watch agent. General questions in `#farm-general` (or any unbound channel) go to your default General Advisor.
 
 <Callout variant="tip" title="One agent must be the default">
-Every instance must have exactly one default agent. This agent handles DMs and any channel that is not bound to a specific agent. It is usually your General Advisor with all skills enabled.
+Every workspace must have exactly one default agent. This agent handles DMs and any channel that is not bound to a specific agent. It is usually your General Advisor with all skills enabled.
 </Callout>
 
 ## Suggested multi-agent setups
@@ -161,17 +161,6 @@ The agent always tells the farmer when it is passing a question to another assis
 When an agent delegates to another, you will see a message like "Let me pass that to Weather Watch -- they handle forecasts." The response then comes from the specialist agent.
 </Callout>
 
-## Configuration rebuild
-
-Any change to agent skills, cron jobs, or channel bindings triggers a configuration rebuild. FarmClaw:
-
-1. Fetches all current agent, skill, and MCP server settings.
-2. Rebuilds the OpenClaw configuration file.
-3. Pushes the updated configuration to your instance.
-4. Restarts the container.
-
-This process takes 15--30 seconds. Your assistant will be briefly unavailable in Discord during the restart.
-
 ## Example: setting up a three-agent system
 
 Here is a walkthrough of configuring a three-agent system from scratch.
@@ -204,6 +193,6 @@ Go to Settings > Skills and make sure Grain Bids, Weather, and Scale Tickets are
 - Channel: `#scale-tickets`
 - Default: No
 
-**5. Save and wait for the rebuild.**
+**5. Save your changes.**
 
 Your three agents will come online, each responding in their designated channels. The Farm Assistant handles DMs and any channel not explicitly bound to another agent.

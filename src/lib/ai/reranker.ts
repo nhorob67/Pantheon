@@ -1,5 +1,5 @@
-import { generateText } from "ai";
-import { createAnthropic } from "@ai-sdk/anthropic";
+import { generateText, type LanguageModel } from "ai";
+import { farmclawFastModel } from "./client";
 import type { ScoredMemory } from "./memory-scorer";
 
 export interface RerankedMemory extends ScoredMemory {
@@ -70,7 +70,8 @@ export function parseRerankResponse(
  */
 export async function rerankCandidates(
   query: string,
-  candidates: ScoredMemory[]
+  candidates: ScoredMemory[],
+  model?: LanguageModel
 ): Promise<RerankedMemory[]> {
   if (candidates.length === 0) return [];
 
@@ -89,16 +90,12 @@ export async function rerankCandidates(
   if (toRerank.length === 0) return identityFallback();
 
   try {
-    const anthropic = createAnthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
-    });
-
     const passages = toRerank
       .map((c, i) => `[${i + 1}] ${c.content.slice(0, 300)}`)
       .join("\n");
 
     const { text } = await generateText({
-      model: anthropic("claude-haiku-4-5-20251001"),
+      model: model ?? farmclawFastModel,
       system: SYSTEM_PROMPT,
       prompt: `Query: "${query}"\n\nPassages:\n${passages}`,
       maxOutputTokens: 100,

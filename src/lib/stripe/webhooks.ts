@@ -110,8 +110,6 @@ export async function handleSubscriptionDeleted(
     .update({ subscription_status: "canceled" })
     .eq("stripe_subscription_id", subscription.id);
 
-  // TODO: In multi-tenant SaaS model, subscription cancellation disables
-  // the tenant's access. Per-instance VPS deprovisioning is no longer needed.
 }
 
 export async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {

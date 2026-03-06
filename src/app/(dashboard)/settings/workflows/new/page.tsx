@@ -1,6 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
-import { requireDashboardCustomer, getCustomerInstance } from "@/lib/auth/dashboard-session";
+import { requireDashboardCustomer, getCustomerInstance, getCustomerTenant } from "@/lib/auth/dashboard-session";
 import { WorkflowCreateFormLazy } from "@/components/workflows/workflow-create-form-lazy";
 import { isWorkflowBuilderEnabledForCustomer } from "@/lib/workflows/feature-gate";
 import {
@@ -32,9 +32,12 @@ export default async function WorkflowCreatePage({
     notFound();
   }
 
-  const instance = await getCustomerInstance(customerId);
+  const [instance, tenant] = await Promise.all([
+    getCustomerInstance(customerId),
+    getCustomerTenant(customerId),
+  ]);
 
-  if (!instance) {
+  if (!instance || !tenant) {
     return (
       <div className="space-y-2">
         <h3 className="font-headline text-lg font-semibold text-text-primary">
@@ -66,7 +69,7 @@ export default async function WorkflowCreatePage({
 
   return (
     <WorkflowCreateFormLazy
-      instanceId={instance.id}
+      tenantId={tenant.id}
       templates={templates}
       playbooks={playbooks}
       initialSourceType={source === "playbook" ? "playbook" : "template"}

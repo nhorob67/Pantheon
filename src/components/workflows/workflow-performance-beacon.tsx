@@ -10,7 +10,7 @@ import {
 } from "@/lib/workflows/performance-gates";
 
 interface WorkflowPerformanceBeaconProps {
-  instanceId: string;
+  tenantId: string;
   routeKind: WorkflowWebVitalRouteKind;
 }
 
@@ -26,7 +26,7 @@ interface WebVitalMetricPayload {
 const ACCEPTED_METRICS = new Set<string>(WORKFLOW_WEB_VITAL_METRIC_NAMES);
 
 export function WorkflowPerformanceBeacon({
-  instanceId,
+  tenantId,
   routeKind,
 }: WorkflowPerformanceBeaconProps) {
   const pathname = usePathname();
@@ -65,7 +65,7 @@ export function WorkflowPerformanceBeacon({
       sampled_at: new Date().toISOString(),
     });
 
-    const endpoint = `/api/instances/${instanceId}/workflows/performance`;
+    const endpoint = `/api/tenants/${tenantId}/workflows/performance`;
 
     if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
       const payload = new Blob([body], { type: "application/json" });

@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { parseFile } from "@/lib/knowledge/parser";
 import { validateFileTypeMatchesMagicBytes } from "@/lib/knowledge/detect-file-type";
 import { safeErrorMessage } from "@/lib/security/safe-error";
-import { mapTenantKnowledgeToLegacy } from "./bridge-parity";
+
 import { tasks } from "@trigger.dev/sdk";
 import type { indexKnowledgeDocumentTask } from "@/trigger/index-knowledge-document";
 import { removeKnowledgeIndex } from "@/lib/ai/knowledge-indexer";
@@ -93,20 +93,6 @@ export interface TenantKnowledgeFileMeta {
   updated_at: string;
 }
 
-export interface LegacyKnowledgeFileMeta {
-  id: string;
-  customer_id: string;
-  instance_id: string;
-  agent_id: string | null;
-  file_name: string;
-  file_type: KnowledgeFileType;
-  file_size_bytes: number;
-  parsed_size_bytes: number;
-  status: "active" | "processing" | "failed" | "archived";
-  error_message: string | null;
-  created_at: string;
-  updated_at: string;
-}
 
 export class TenantKnowledgeServiceError extends Error {
   status: number;
@@ -220,15 +206,6 @@ function mapTenantKnowledgeRow(row: TenantKnowledgeRow): TenantKnowledgeFileMeta
   };
 }
 
-export function toLegacyKnowledgeFileMeta(
-  tenantKnowledge: TenantKnowledgeFileMeta,
-  legacyInstanceId: string
-): LegacyKnowledgeFileMeta {
-  return mapTenantKnowledgeToLegacy(
-    tenantKnowledge,
-    legacyInstanceId
-  ) as LegacyKnowledgeFileMeta;
-}
 
 async function ensureTenantKnowledgeHydratedFromLegacy(
   admin: SupabaseClient,

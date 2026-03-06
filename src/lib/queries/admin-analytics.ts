@@ -1,18 +1,26 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export interface FleetHealthData {
-  total: number;
-  running: number;
-  stopped: number;
-  errored: number;
-  health_percent: number;
-  stale_instances: {
-    id: string;
+export interface TenantHealthData {
+  total_tenants: number;
+  active_tenants: number;
+  suspended_tenants: number;
+  trial_tenants: number;
+  active_conversations_24h: number;
+  inactive_tenants_7d: {
+    tenant_id: string;
+    tenant_name: string;
     customer_email: string | null;
-    last_health_check: string | null;
+    last_activity_at: string | null;
   }[];
-  version_breakdown: { version: string; count: number }[];
+  spending_cap_alerts: {
+    tenant_id: string;
+    tenant_name: string;
+    customer_email: string | null;
+    cap_cents: number;
+    used_cents: number;
+    percentage: number;
+  }[];
 }
 
 function toSafeNumber(value: unknown): number {
@@ -52,59 +60,125 @@ function toSafeTimestamp(value: unknown): string | null {
   return null;
 }
 
-export async function getFleetHealth(
+export async function getTenantHealth(
   admin: SupabaseClient
-): Promise<FleetHealthData> {
-  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+): Promise<TenantHealthData> {
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+  startOfMonth.setHours(0, 0, 0, 0);
+  const monthStart = startOfMonth.toISOString().split("T")[0];
+
   const [
-    { data: countsData, error: countsError },
-    { data: staleData, error: staleError },
-    { data: versionData, error: versionError },
+    { data: tenantsData, error: tenantsError },
+    { data: recentSessions, error: sessionsError },
+    { data: allTenants, error: allTenantsError },
+    { data: spendingData, error: spendingError },
   ] = await Promise.all([
-    admin.rpc("admin_fleet_health_counts"),
-    admin.rpc("admin_fleet_stale_instances", { p_stale_before: oneHourAgo }),
-    admin.rpc("admin_fleet_version_breakdown"),
+    admin
+      .from("tenants")
+      .select("id, status")
+      .in("status", ["active", "suspended", "trial"]),
+    admin
+      .from("tenant_sessions")
+      .select("tenant_id")
+      .gte("updated_at", twentyFourHoursAgo),
+    admin
+      .from("tenants")
+      .select("id, name, status, customer_id, customers(email)")
+      .in("status", ["active", "trial"]),
+    admin.rpc("admin_customers_approaching_limits", {
+      p_start_date: monthStart,
+      p_min_percentage: 70,
+    }),
   ]);
 
-  if (countsError) throw new Error(countsError.message);
-  if (staleError) throw new Error(staleError.message);
-  if (versionError) throw new Error(versionError.message);
+  if (tenantsError) throw new Error(tenantsError.message);
+  if (sessionsError) throw new Error(sessionsError.message);
+  if (allTenantsError) throw new Error(allTenantsError.message);
 
-  const counts = ((countsData || [])[0] || {}) as {
-    total?: unknown;
-    running?: unknown;
-    stopped?: unknown;
-    errored?: unknown;
-  };
+  const tenantRows = (tenantsData || []) as Array<{ id: string; status: string }>;
+  const totalTenants = tenantRows.length;
+  const activeTenants = tenantRows.filter((t) => t.status === "active").length;
+  const suspendedTenants = tenantRows.filter((t) => t.status === "suspended").length;
+  const trialTenants = tenantRows.filter((t) => t.status === "trial").length;
 
-  const total = toSafeNumber(counts.total);
-  const running = toSafeNumber(counts.running);
-  const stopped = toSafeNumber(counts.stopped);
-  const errored = toSafeNumber(counts.errored);
-  const healthPercent = total > 0 ? (running / total) * 100 : 0;
+  const uniqueActiveSessionTenants = new Set(
+    ((recentSessions || []) as Array<{ tenant_id: string }>).map((s) => s.tenant_id)
+  );
+
+  // Find inactive tenants — active/trial tenants with no sessions in 7 days
+  const inactiveTenants: TenantHealthData["inactive_tenants_7d"] = [];
+  const allTenantRows = (allTenants || []) as Array<{
+    id: string;
+    name: string;
+    status: string;
+    customer_id: string;
+    customers: { email: string | null } | { email: string | null }[] | null;
+  }>;
+
+  // Check each tenant for recent session activity
+  const { data: recentActivity, error: activityError } = await admin
+    .from("tenant_sessions")
+    .select("tenant_id, updated_at")
+    .in("tenant_id", allTenantRows.map((t) => t.id))
+    .gte("updated_at", sevenDaysAgo);
+
+  if (!activityError) {
+    const activeSet = new Set(
+      ((recentActivity || []) as Array<{ tenant_id: string }>).map((s) => s.tenant_id)
+    );
+    for (const tenant of allTenantRows) {
+      if (!activeSet.has(tenant.id)) {
+        const customerEmail = tenant.customers
+          ? Array.isArray(tenant.customers)
+            ? tenant.customers[0]?.email ?? null
+            : tenant.customers.email
+          : null;
+        inactiveTenants.push({
+          tenant_id: tenant.id,
+          tenant_name: tenant.name,
+          customer_email: customerEmail,
+          last_activity_at: null,
+        });
+      }
+    }
+  }
+
+  // Spending cap alerts
+  const spendingAlerts: TenantHealthData["spending_cap_alerts"] = [];
+  if (!spendingError && spendingData) {
+    for (const row of spendingData as Array<{
+      customer_id: string;
+      email: string | null;
+      spending_cap_cents: unknown;
+      current_cents: unknown;
+      percentage: unknown;
+    }>) {
+      // Find tenant for this customer
+      const matchingTenant = allTenantRows.find((t) => t.customer_id === row.customer_id);
+      if (matchingTenant) {
+        spendingAlerts.push({
+          tenant_id: matchingTenant.id,
+          tenant_name: matchingTenant.name,
+          customer_email: row.email,
+          cap_cents: toSafeNumber(row.spending_cap_cents),
+          used_cents: toSafeNumber(row.current_cents),
+          percentage: toSafeNumber(row.percentage),
+        });
+      }
+    }
+  }
 
   return {
-    total,
-    running,
-    stopped,
-    errored,
-    health_percent: healthPercent,
-    stale_instances: ((staleData || []) as Array<{
-      id: string;
-      customer_email: string | null;
-      last_health_check: unknown;
-    }>).map((row) => ({
-      id: row.id,
-      customer_email: row.customer_email,
-      last_health_check: toSafeTimestamp(row.last_health_check),
-    })),
-    version_breakdown: ((versionData || []) as Array<{
-      version: string | null;
-      count: unknown;
-    }>).map((row) => ({
-      version: row.version || "unknown",
-      count: toSafeNumber(row.count),
-    })),
+    total_tenants: totalTenants,
+    active_tenants: activeTenants,
+    suspended_tenants: suspendedTenants,
+    trial_tenants: trialTenants,
+    active_conversations_24h: uniqueActiveSessionTenants.size,
+    inactive_tenants_7d: inactiveTenants.slice(0, 20),
+    spending_cap_alerts: spendingAlerts,
   };
 }
 

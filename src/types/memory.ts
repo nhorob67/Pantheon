@@ -19,9 +19,9 @@ export const MEMORY_OPERATION_STATUS_VALUES = [
 ] as const;
 export type MemoryOperationStatus = (typeof MEMORY_OPERATION_STATUS_VALUES)[number];
 
-export interface InstanceMemorySettings {
+export interface TenantMemorySettings {
   id: string;
-  instance_id: string;
+  tenant_id: string;
   customer_id: string;
   mode: MemoryMode;
   capture_level: MemoryCaptureLevel;
@@ -36,7 +36,7 @@ export interface InstanceMemorySettings {
 
 export interface MemoryOperation {
   id: string;
-  instance_id: string;
+  tenant_id: string;
   customer_id: string;
   operation_type: MemoryOperationType;
   status: MemoryOperationStatus;
@@ -53,7 +53,7 @@ export interface MemoryOperation {
 }
 
 export const DEFAULT_MEMORY_SETTINGS: Pick<
-  InstanceMemorySettings,
+  TenantMemorySettings,
   | "mode"
   | "capture_level"
   | "retention_days"
@@ -70,13 +70,13 @@ export const DEFAULT_MEMORY_SETTINGS: Pick<
 };
 
 export function buildDefaultMemorySettings(
-  instanceId: string,
+  tenantId: string,
   customerId: string
-): Omit<InstanceMemorySettings, "id"> {
+): Omit<TenantMemorySettings, "id"> {
   const now = new Date().toISOString();
 
   return {
-    instance_id: instanceId,
+    tenant_id: tenantId,
     customer_id: customerId,
     mode: DEFAULT_MEMORY_SETTINGS.mode,
     capture_level: DEFAULT_MEMORY_SETTINGS.capture_level,

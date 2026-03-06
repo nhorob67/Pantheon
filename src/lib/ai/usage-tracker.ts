@@ -1,25 +1,30 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { DEFAULT_PRIMARY_MODEL_ID, DEFAULT_FAST_MODEL_ID } from "./client";
 
-interface TokenUsage {
+export interface TokenUsage {
   tenantId: string;
   customerId: string;
   model: string;
   inputTokens: number;
   outputTokens: number;
+  inputCostPerMillion?: number;
+  outputCostPerMillion?: number;
 }
 
-const COST_PER_MILLION_INPUT: Record<string, number> = {
-  "claude-sonnet-4-5-20250514": 300,
+const FALLBACK_COST_INPUT: Record<string, number> = {
+  [DEFAULT_PRIMARY_MODEL_ID]: 300,
+  [DEFAULT_FAST_MODEL_ID]: 100,
 };
 
-const COST_PER_MILLION_OUTPUT: Record<string, number> = {
-  "claude-sonnet-4-5-20250514": 1500,
+const FALLBACK_COST_OUTPUT: Record<string, number> = {
+  [DEFAULT_PRIMARY_MODEL_ID]: 1500,
+  [DEFAULT_FAST_MODEL_ID]: 500,
 };
 
-function estimateCostCents(model: string, inputTokens: number, outputTokens: number): number {
-  const inputRate = COST_PER_MILLION_INPUT[model] ?? 300;
-  const outputRate = COST_PER_MILLION_OUTPUT[model] ?? 1500;
-  const cents = (inputTokens * inputRate + outputTokens * outputRate) / 1_000_000;
+function estimateCostCents(usage: TokenUsage): number {
+  const inputRate = usage.inputCostPerMillion ?? FALLBACK_COST_INPUT[usage.model] ?? 300;
+  const outputRate = usage.outputCostPerMillion ?? FALLBACK_COST_OUTPUT[usage.model] ?? 1500;
+  const cents = (usage.inputTokens * inputRate + usage.outputTokens * outputRate) / 1_000_000;
   return Math.ceil(cents);
 }
 
@@ -28,7 +33,7 @@ export async function recordTokenUsage(
   usage: TokenUsage
 ): Promise<void> {
   const today = new Date().toISOString().slice(0, 10);
-  const costCents = estimateCostCents(usage.model, usage.inputTokens, usage.outputTokens);
+  const costCents = estimateCostCents(usage);
 
   const { error } = await admin.rpc("upsert_api_usage", {
     p_customer_id: usage.customerId,

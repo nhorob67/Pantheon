@@ -18,7 +18,7 @@ const categorySchema = z
     "Categories must use lowercase letters, numbers, and hyphens"
   );
 
-export const updateInstanceMemorySettingsSchema = z.object({
+export const updateTenantMemorySettingsSchema = z.object({
   mode: memoryModeSchema,
   capture_level: memoryCaptureLevelSchema,
   retention_days: z.number().int().min(7).max(3650),
@@ -33,8 +33,8 @@ export const memoryOperationRequestSchema = z.object({
   reason: z.string().trim().max(500).optional(),
 });
 
-export type UpdateInstanceMemorySettingsRequest = z.infer<
-  typeof updateInstanceMemorySettingsSchema
+export type UpdateTenantMemorySettingsRequest = z.infer<
+  typeof updateTenantMemorySettingsSchema
 >;
 
 export type MemoryOperationRequest = z.infer<typeof memoryOperationRequestSchema>;

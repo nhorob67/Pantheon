@@ -6,7 +6,7 @@ import test from "node:test";
 const TARGET_DIRECTORIES = [
   "src/lib/workflows",
   "src/components/workflows",
-  "src/app/api/instances/[id]/workflows",
+  "src/app/api/tenants/[tenantId]/workflows",
   "src/app/(dashboard)/settings/workflows",
 ];
 

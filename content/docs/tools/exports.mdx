@@ -1,0 +1,49 @@
+---
+title: Data Exports
+description: Export your farm data -- conversations, knowledge, memory, and metadata -- as JSONL or CSV files.
+section: Tools
+order: 9
+icon: Download
+tags: [exports, backup, data, csv, jsonl]
+---
+
+# Data Exports
+
+FarmClaw lets you export your workspace data for backup, analysis, or migration. Export conversations, knowledge files, memory records, and metadata as JSONL or CSV files.
+
+## Creating an export
+
+1. Go to **Settings > Exports**
+2. Choose the **scope**:
+   - **Full tenant** -- All data including conversations, knowledge, memory, and metadata
+   - **Knowledge + memory only** -- Just your knowledge files and memory vault records
+   - **Metadata only** -- Configuration and account data without conversation content
+3. Choose the **format**: JSONL or CSV
+4. Optionally check **Include blobs** to include binary attachments and files
+5. Click **Queue Export**
+
+Exports are processed in the background. You can navigate away and check back later.
+
+## Export lifecycle
+
+| Status | Meaning |
+|---|---|
+| **Queued** | Waiting to start |
+| **Running** | Currently being processed |
+| **Completed** | Ready to download |
+| **Failed** | Job errored -- you can retry |
+| **Expired** | Old exports are automatically cleaned up after the retention period |
+
+## Downloading exports
+
+Once an export shows "Completed":
+
+1. Click on the export to view details
+2. Download the manifest file and individual data files
+3. Each file includes a checksum for integrity verification
+
+## What's next
+
+- [Knowledge Files](/docs/tools/knowledge) -- Manage your uploaded documents
+- [Memory Vault](/docs/tools/memory) -- View and manage persistent memories
+- [Billing](/docs/billing) -- Manage your subscription

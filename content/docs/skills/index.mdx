@@ -13,7 +13,7 @@ Skills define what your AI assistant can actually do. Each skill provides a set 
 
 ## Built-in skills
 
-Every FarmClaw instance ships with three built-in skills. These cover the core tasks that Upper Midwest row crop farmers use daily.
+Every FarmClaw workspace ships with three built-in skills. These cover the core tasks that Upper Midwest row crop farmers use daily.
 
 | Skill | What it does | Key capability |
 |---|---|---|
@@ -27,7 +27,7 @@ The $50/month subscription includes all built-in skills. There is no tiered feat
 
 ## How skills work
 
-Skills are loaded into your AI assistant's configuration when your instance is provisioned. Each skill contains:
+Skills define the tools and instructions available to your assistant. Each skill contains:
 
 - **Instructions** -- Detailed guidance that tells the assistant how to perform the task, what data to look for, and how to format the output.
 - **Tools** -- Access to browser automation, APIs, databases, or file creation capabilities needed to complete the task.
@@ -43,8 +43,8 @@ You can toggle skills on or off from the FarmClaw dashboard.
 2. Toggle the switch next to each skill to enable or disable it.
 3. Click **Save Changes**.
 
-<Callout variant="warning" title="Saving changes restarts your assistant">
-When you change skill settings, FarmClaw rebuilds your instance configuration and restarts the container. Your assistant will be briefly unavailable in Discord for 15--30 seconds.
+<Callout variant="info" title="Changes take effect immediately">
+When you save skill settings, FarmClaw applies the changes to your assistant. Updates take effect on the next message.
 </Callout>
 
 Disabling a skill removes it from your assistant's configuration entirely. The assistant will not attempt tasks related to a disabled skill, even if asked directly.

@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CreateAgentData, UpdateAgentData } from "@/lib/validators/agent";
 import { PERSONALITY_PRESETS, type PersonalityPreset } from "@/types/agent";
 import { safeErrorMessage } from "@/lib/security/safe-error";
-import { mapTenantAgentToLegacy } from "./bridge-parity";
+
 import { syncPredefinedSchedulesToTable } from "@/lib/schedules/sync-predefined-schedules";
 
 const TENANT_AGENT_SELECT =
@@ -89,23 +89,6 @@ export interface TenantRuntimeAgent {
   updated_at: string;
 }
 
-export interface LegacyAgentResponse {
-  id: string;
-  instance_id: string;
-  customer_id: string;
-  agent_key: string;
-  display_name: string;
-  personality_preset: PersonalityPreset;
-  custom_personality: string | null;
-  discord_channel_id: string | null;
-  discord_channel_name: string | null;
-  is_default: boolean;
-  skills: string[];
-  cron_jobs: Record<string, boolean>;
-  sort_order: number;
-  created_at: string;
-  updated_at: string;
-}
 
 export interface TenantAgentMutationContext {
   tenantId: string;
@@ -655,12 +638,6 @@ function mapTenantAgentRow(row: TenantAgentRow): TenantRuntimeAgent {
   };
 }
 
-export function toLegacyAgentResponse(
-  tenantAgent: TenantRuntimeAgent,
-  legacyInstanceId: string
-): LegacyAgentResponse {
-  return mapTenantAgentToLegacy(tenantAgent, legacyInstanceId) as LegacyAgentResponse;
-}
 
 export async function resolveTenantIdForInstance(
   admin: SupabaseClient,

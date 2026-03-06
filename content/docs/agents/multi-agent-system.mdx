@@ -99,7 +99,7 @@ Each agent has access to two inter-agent communication tools:
 
 | Tool | Purpose |
 |------|---------|
-| `agents_list` | Lists all other agents in the instance, their specialties, and their channel bindings |
+| `agents_list` | Lists all other agents in the workspace, their specialties, and their channel bindings |
 | `sessions_send` | Sends a message or question to another agent and receives a response |
 
 ### How it works in practice
@@ -127,7 +127,7 @@ Each personality preset includes guidance on when to defer to other agents:
 | Field Operations | Grain Specialist | Weather & Field Ops | Scale Ticket Clerk | -- |
 
 <Callout variant="info" title="Delegation is optional">
-If a specialist agent is not present in the instance, the delegating agent will handle the question itself with whatever skills it has available. Delegation only happens when the target agent actually exists.
+If a specialist agent is not present in the workspace, the delegating agent will handle the question itself with whatever skills it has available. Delegation only happens when the target agent actually exists.
 </Callout>
 
 ## Deploying a suggested setup
@@ -138,7 +138,7 @@ If a specialist agent is not present in the instance, the delegating agent will 
 4. Review the agents, skills, and cron jobs
 5. Click **Deploy**
 
-FarmClaw will create all the agents, assign skills and cron jobs, rebuild your instance configuration, and restart the container. The process takes about a minute.
+FarmClaw will create all the agents, assign skills and cron jobs, and apply the configuration. Changes take effect on the next message.
 
 <Callout variant="warning" title="Deploying a setup replaces existing agents">
 Choosing a suggested setup replaces your current agent configuration. If you have custom agents with specific settings, make note of them before deploying a preset. You can always reconfigure agents individually afterward.

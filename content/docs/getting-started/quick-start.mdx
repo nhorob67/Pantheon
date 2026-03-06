@@ -1,6 +1,6 @@
 ---
 title: Quick Start
-description: Get FarmClaw running in 10 minutes — from signup to your first Discord message.
+description: Get FarmClaw running in 10 minutes -- from signup to your first Discord message.
 section: Getting Started
 order: 1
 icon: Zap
@@ -13,7 +13,7 @@ This guide walks you through the entire setup process. By the end, you'll have a
 
 ## Step 1: Create your account
 
-Go to the FarmClaw signup page and enter your email address. We use **magic link authentication** — no password required. Check your inbox for the login link and click it to access your dashboard.
+Go to the FarmClaw signup page and enter your email address. We use **magic link authentication** -- no password required. Check your inbox for the login link and click it to access your dashboard.
 
 <Callout variant="tip" title="Check your spam folder">
 Magic link emails occasionally land in spam or promotions folders. The email comes from FarmClaw and contains a one-time login link.
@@ -24,57 +24,37 @@ Magic link emails occasionally land in spam or promotions folders. The email com
 After logging in, you'll be prompted to activate your subscription:
 
 - **$50/month** base subscription
-- **Metered API usage** billed at cost (typically $5–15/month depending on usage)
+- **Metered API usage** billed at cost (typically $5--15/month depending on usage)
 - Billing is handled securely through Stripe
 
 Click "Subscribe" to complete checkout. You'll be redirected back to FarmClaw to begin onboarding.
 
 ## Step 3: Complete the onboarding wizard
 
-The onboarding wizard has four steps:
+The onboarding wizard has three steps:
 
-### Farm Profile
+### Operation
 
-- **Farm name** — A display name for your operation
-- **State** — Select your state (ND, SD, MN, MT, IA, or NE)
-- **County** — Your county name
-- **Primary crops** — Select from: Corn, Soybeans, Spring Wheat, Winter Wheat, Durum, Barley, Sunflowers, Canola, Dry Beans
-- **Acres** — Total acres in your operation (up to 100,000)
+- **Farm name** -- A display name for your operation
+- **State** -- Select your state (ND, SD, MN, MT, IA, or NE)
+- **County** -- Your county name
+- **Primary crops** -- Select from: Corn, Soybeans, Spring Wheat, Winter Wheat, Durum, Barley, Sunflowers, Canola, Dry Beans
+- **Acres** -- Total acres in your operation (up to 100,000)
+- **Elevators** -- Add the grain elevators you deliver to. We provide presets for major elevator companies: CHS, ADM, Cargill, AGP, Columbia Grain, and Gavilon with state-specific defaults.
 
-### Elevator Setup
+### Location
 
-Add the grain elevators you deliver to. For each elevator:
+- **Location** -- Your town or zip code
+- **Coordinates** -- Latitude and longitude for precise NWS forecasts
+- **Timezone** -- Auto-populated based on your state
 
-- **Name** — e.g., "CHS Fargo"
-- **Website URL** — The page where cash bids are posted
-- **Crops** — Which commodities to track at this elevator
+### Discord
 
-We provide presets for major elevator companies: CHS, ADM, Cargill, AGP, Columbia Grain, and Gavilon with state-specific defaults.
+- **Add FarmClaw to Discord** -- Click the invite link to add the FarmClaw bot to your server, or paste your Discord Server ID directly. See the [Discord Setup](/docs/discord/server-setup) guide for details.
 
-### Weather Location
+## Step 4: Send your first message
 
-- **Location** — Your town or zip code
-- **Coordinates** — Latitude and longitude for precise NWS forecasts
-- **Timezone** — Auto-populated based on your state
-
-### Discord Connection
-
-- **Bot token** — Your Discord bot token (see the [Discord Setup](/docs/discord/server-setup) guide for creating a bot)
-
-## Step 4: Wait for provisioning
-
-After completing the wizard, FarmClaw provisions your instance:
-
-1. A cloud server is created for your instance
-2. Your configuration is built from the onboarding data
-3. The AI assistant container is deployed
-4. Your Discord bot comes online
-
-This process typically takes 2–3 minutes. You'll see a status indicator on your dashboard.
-
-## Step 5: Send your first message
-
-Once your instance shows "Running" status, open your Discord server and try one of these:
+Once onboarding is complete, your assistant is ready. Open your Discord server and try one of these:
 
 ```
 What are today's corn bids?
@@ -88,10 +68,10 @@ What's the weather forecast for this week?
 Log a scale ticket
 ```
 
-Your AI assistant will respond in the channel. That's it — you're up and running.
+Your AI assistant will respond in the channel. That's it -- you're up and running.
 
 ## What's next?
 
-- [Farm Profile configuration](/docs/farm-setup/farm-profile) — Fine-tune your farm details
-- [Multi-agent system](/docs/agents/multi-agent-system) — Set up specialized agents for different tasks
-- [Skills overview](/docs/skills) — Learn about grain bids, weather, and scale tickets in depth
+- [Farm Profile configuration](/docs/farm-setup/farm-profile) -- Fine-tune your farm details
+- [Multi-agent system](/docs/agents/multi-agent-system) -- Set up specialized agents for different tasks
+- [Skills overview](/docs/skills) -- Learn about grain bids, weather, and scale tickets in depth

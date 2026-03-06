@@ -16,10 +16,10 @@ This guide walks you through enabling Composio integrations, selecting toolkits,
 Before you can enable integrations, you need:
 
 - An active FarmClaw subscription
-- A provisioned instance (your AI assistant must already be running)
+- An active workspace (your AI assistant must already be set up)
 - Access to the FarmClaw dashboard
 
-If your instance is not yet provisioned, complete the [onboarding wizard](/docs/getting-started/quick-start) first.
+If your workspace is not yet set up, complete the [onboarding wizard](/docs/getting-started/quick-start) first.
 
 ## Step 1: Enable Composio
 
@@ -32,14 +32,13 @@ When you enable Composio, FarmClaw performs several setup steps behind the scene
 - Creates a Composio entity for your account
 - Provisions a remote MCP server endpoint
 - Stores the server configuration in your database
-- Rebuilds your instance configuration to include the Composio MCP server
-- Restarts your instance container
+- Adds the Composio MCP server to your workspace configuration
 
-<Callout variant="info" title="Brief downtime during setup">
-Enabling or disabling Composio triggers a configuration rebuild and container restart. Your assistant will be unavailable in Discord for approximately 15--30 seconds.
+<Callout variant="info" title="Quick setup">
+Enabling Composio takes just a few seconds. Your assistant gains access to integration tools immediately.
 </Callout>
 
-This is a one-time setup. Once enabled, adding or removing toolkits and connecting services does not require re-provisioning.
+This is a one-time setup. Once enabled, adding or removing toolkits and connecting services is instant.
 
 ## Step 2: Select toolkits
 
@@ -50,7 +49,7 @@ After enabling Composio, the **Toolkits** section appears below the integration 
 3. Selected toolkits show a green checkmark and highlighted border.
 4. Click **Save Toolkits** when you have made your selections.
 
-Saving toolkits triggers a configuration rebuild and container restart. Only the actions from your selected toolkits will be available to your assistant.
+Only the actions from your selected toolkits will be available to your assistant.
 
 <Callout variant="tip" title="Start with recommended toolkits">
 The **Recommended** tab shows the toolkits most useful for farm operations: Google Sheets, Google Calendar, Gmail, and Slack. These cover the most common integration use cases -- spreadsheet tracking, scheduling, email, and notifications.
@@ -134,7 +133,7 @@ To disable the entire Composio integration:
 
 1. Navigate to **Settings > Integrations**.
 2. Toggle the Composio switch to **off**.
-3. Your instance configuration is rebuilt without the Composio MCP server.
+3. The Composio MCP server is removed from your workspace configuration.
 4. Your assistant loses access to all integration actions.
 
 <Callout variant="info" title="Connections are preserved">
@@ -162,7 +161,7 @@ Verify that:
 1. Composio is enabled (toggle is on).
 2. The toolkit for that service is selected and saved.
 3. The service is connected (green "Connected" badge).
-4. Your instance has been restarted since the last configuration change.
+4. You have saved your toolkit selections since the last change.
 
 If all four conditions are met and the assistant still cannot access the service, click **Refresh** in the Connected Accounts section to sync the latest connection status from Composio.
 

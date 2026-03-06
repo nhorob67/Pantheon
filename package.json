@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.46",
+    "@ai-sdk/openai": "^3.0.41",
     "@composio/core": "^0.6.4",
     "@composio/vercel": "^0.6.4",
     "@hookform/resolvers": "^5.2.2",

@@ -8,14 +8,14 @@ const FOCUS_RING_CLASS =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-card";
 
 interface WorkflowStatusToggleProps {
-  instanceId: string;
+  tenantId: string;
   workflowId: string;
   workflowName: string;
   isArchived: boolean;
 }
 
 export function WorkflowStatusToggle({
-  instanceId,
+  tenantId,
   workflowId,
   workflowName,
   isArchived,
@@ -46,7 +46,7 @@ export function WorkflowStatusToggle({
           setIsSubmitting(true);
           try {
             const response = await fetch(
-              `/api/instances/${instanceId}/workflows/${workflowId}/status`,
+              `/api/tenants/${tenantId}/workflows/${workflowId}/status`,
               {
                 method: "PATCH",
                 headers: {

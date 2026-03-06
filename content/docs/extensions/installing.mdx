@@ -1,6 +1,6 @@
 ---
 title: Installing Extensions
-description: Install extensions, manage trust policies, and monitor extension health in your FarmClaw instance.
+description: Install extensions, manage trust policies, and monitor extension health in your FarmClaw workspace.
 section: Extensions
 order: 2
 icon: Download
@@ -20,7 +20,7 @@ Every FarmClaw account has an extension trust policy that controls which extensi
 The `allowed_source_types` list determines which source types you permit at all. By default, all five source types are allowed:
 
 - `internal` -- FarmClaw first-party extensions
-- `local` -- Extensions bundled with your instance image
+- `local` -- Extensions bundled with the platform
 - `clawhub` -- FarmClaw marketplace packages
 - `npm` -- Node package registry packages
 - `git` -- Git repository extensions
@@ -96,16 +96,16 @@ FarmClaw creates an installation record (or updates an existing one) and queues 
 | Operation field | Description |
 |---|---|
 | `operation_type` | `install` for new installations, `upgrade` for existing ones |
-| `scope_type` | `instance` if tied to a specific instance, `customer` if account-wide |
+| `scope_type` | `workspace` if tied to a specific workspace, `customer` if account-wide |
 | `status` | Starts as `pending`, progresses to `in_progress`, then `completed` or `failed` |
 
 ### Step 5: Execution
 
-The queued operation is picked up by FarmClaw's operation processor. It installs the extension package, configures it for your instance, and updates the installation status.
+The queued operation is picked up by FarmClaw's operation processor. It installs the extension package, configures it for your workspace, and updates the installation status.
 
 ### Step 6: Confirmation
 
-Once complete, the installation status changes to `installed` and the extension is active on your instance. The health monitor begins tracking the extension's status.
+Once complete, the installation status changes to `installed` and the extension is active in your workspace. The health monitor begins tracking the extension's status.
 
 <Callout variant="success" title="Installation is asynchronous">
 Extension installations are processed asynchronously. After clicking Install, you can navigate away from the page. Check back on the Installed section to see the current status.
@@ -176,7 +176,7 @@ Between each ring, FarmClaw evaluates the update against health thresholds calle
 | **Max hard error rate** | 3% | Maximum percentage of installations with unrecoverable errors |
 
 <Callout variant="warning" title="Automatic rollback on threshold breach">
-If the gate policy thresholds are exceeded during a rollout, FarmClaw automatically halts the rollout and rolls back affected installations. This protects your instance from bad updates.
+If the gate policy thresholds are exceeded during a rollout, FarmClaw automatically halts the rollout and rolls back affected installations. This protects your workspace from bad updates.
 </Callout>
 
 ### Rollout statuses
@@ -218,5 +218,5 @@ Pinned installations are skipped by the rollout system. To receive updates again
 
 - [Marketplace](/docs/extensions/marketplace) -- Browse and discover available extensions
 - [Extensions Overview](/docs/extensions) -- Extension types, sources, and lifecycle
-- [Skills](/docs/skills) -- Built-in capabilities that come with every instance
+- [Skills](/docs/skills) -- Built-in capabilities that come with every workspace
 - [MCP Servers](/docs/mcp-servers) -- Tool servers for filesystem, database, and memory access

@@ -2,16 +2,16 @@ import { Users, Server, DollarSign, Activity } from "lucide-react";
 
 interface StatsGridProps {
   totalCustomers: number;
-  activeInstances: number;
+  activeTenants: number;
   mrr: string;
-  fleetHealth: string;
+  tenantHealth: string;
 }
 
 export function StatsGrid({
   totalCustomers,
-  activeInstances,
+  activeTenants,
   mrr,
-  fleetHealth,
+  tenantHealth,
 }: StatsGridProps) {
   const stats = [
     {
@@ -22,8 +22,8 @@ export function StatsGrid({
       bg: "bg-primary/10",
     },
     {
-      label: "Active Instances",
-      value: activeInstances,
+      label: "Active Tenants",
+      value: activeTenants,
       icon: Server,
       color: "text-intelligence",
       bg: "bg-intelligence/10",
@@ -36,8 +36,8 @@ export function StatsGrid({
       bg: "bg-energy/10",
     },
     {
-      label: "Fleet Health",
-      value: fleetHealth,
+      label: "Tenant Health",
+      value: tenantHealth,
       icon: Activity,
       color: "text-primary",
       bg: "bg-primary/10",

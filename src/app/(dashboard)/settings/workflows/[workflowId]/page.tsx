@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireDashboardCustomer } from "@/lib/auth/dashboard-session";
+import { requireDashboardCustomer, getCustomerTenant } from "@/lib/auth/dashboard-session";
 import {
   getInstanceWorkflowDetail,
   normalizeWorkflowDefinitionRow,
@@ -43,6 +43,11 @@ export default async function WorkflowBuilderPage({
     notFound();
   }
 
+  const tenant = await getCustomerTenant(customerId);
+  if (!tenant) {
+    notFound();
+  }
+
   const workflow = normalizeWorkflowDefinitionRow(
     workflowRow as Parameters<typeof normalizeWorkflowDefinitionRow>[0]
   );
@@ -56,7 +61,7 @@ export default async function WorkflowBuilderPage({
 
   return (
     <WorkflowBuilderShellLazy
-      instanceId={workflow.instance_id}
+      tenantId={tenant.id}
       initialWorkflow={workflow}
       initialVersions={initialVersions}
     />

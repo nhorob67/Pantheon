@@ -1,3 +1,4 @@
+import type { LanguageModel } from "ai";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { generateEmbedding } from "./embeddings";
 import { scoreMemories, type ScoredMemory } from "./memory-scorer";
@@ -49,14 +50,15 @@ export async function hybridMemorySearch(
   admin: SupabaseClient,
   tenantId: string,
   query: string,
-  limit: number = 5
+  limit: number = 5,
+  fastModel?: LanguageModel
 ): Promise<ScoredMemory[]> {
   // Gate 1: Skip expansion for short, direct lookups
   let tagged: { text: string; type: string }[];
   if (shouldSkipExpansion(query)) {
     tagged = [{ text: query, type: "original" }];
   } else {
-    const expanded = await expandQuery(query);
+    const expanded = await expandQuery(query, fastModel);
     tagged = flattenExpansion(expanded);
   }
 
@@ -99,7 +101,7 @@ export async function hybridMemorySearch(
       return scored.slice(0, limit);
     }
 
-    const reranked = await rerankCandidates(query, scored);
+    const reranked = await rerankCandidates(query, scored, fastModel);
     return reranked.slice(0, limit).map((r) => ({
       ...r,
       final_score: r.blended_score,

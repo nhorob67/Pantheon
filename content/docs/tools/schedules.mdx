@@ -1,0 +1,66 @@
+---
+title: Schedules & Briefings
+description: Configure automated scheduled messages -- morning briefings with weather, grain bids, and scale ticket summaries.
+section: Tools
+order: 8
+icon: Clock
+tags: [schedules, cron, automation, briefings]
+---
+
+# Schedules & Briefings
+
+Schedules let you automate recurring messages from your assistant. The main feature is the **daily briefing** -- a configurable morning summary posted to your Discord channel covering weather, grain bids, and scale ticket activity.
+
+## Daily briefing
+
+The briefing is a single scheduled message that combines multiple sections. Configure it from **Settings > Briefings**.
+
+### Briefing sections
+
+Toggle each section on or off:
+
+| Section | What it includes |
+|---|---|
+| **Weather Forecast** | Temperature, wind, precipitation, spray windows |
+| **Grain Bids** | Cash bids from configured elevators, basis changes |
+| **Scale Ticket Summary** | Yesterday's deliveries, bushels by crop, load counts |
+
+### Configuration
+
+| Setting | Options |
+|---|---|
+| **Enable/disable** | Toggle the entire briefing on or off |
+| **Send time** | Time of day (e.g., 06:30) |
+| **Timezone** | America/Chicago, America/Denver, America/New\_York, America/Los\_Angeles |
+| **Discord channel** | The channel ID where the briefing is posted |
+
+<Callout variant="info" title="Finding your channel ID">
+To get a Discord channel ID: enable Developer Mode in Discord (User Settings > Advanced), then right-click the channel and click "Copy Channel ID".
+</Callout>
+
+## Per-agent cron jobs
+
+In addition to the briefing system, individual agents can have their own scheduled jobs:
+
+| Schedule | Default Time | Required Skill | What it posts |
+|---|---|---|---|
+| Morning Weather | 6:00 AM daily | Weather | Full morning briefing with forecast, alerts, and spray window assessment |
+| Daily Grain Bids | 9:00 AM Mon--Fri | Grain Bids | Cash grain bids from all configured elevators |
+
+Configure per-agent cron jobs from **Settings > Agents** on each agent's card. Times are in your farm's local timezone.
+
+## Cost considerations
+
+Each scheduled run consumes API tokens:
+
+- Morning weather briefing: ~1,500--3,000 tokens
+- Daily grain bids: ~2,000--4,000 tokens
+- Full briefing (all sections): ~3,000--6,000 tokens
+
+Factor this into your [spending cap](/docs/billing/spending-cap) and usage estimates. Disabling unused schedules is the easiest way to reduce costs.
+
+## What's next
+
+- [Skills & Scheduling](/docs/agents/skills-per-agent) -- Per-agent schedule configuration
+- [Metered Usage](/docs/billing/metered-usage) -- Understand how schedules affect costs
+- [Spending Cap](/docs/billing/spending-cap) -- Set budget limits

@@ -1,0 +1,106 @@
+---
+title: Memory Vault
+description: Persistent memory across conversations -- your assistant remembers important facts, preferences, and context.
+section: Tools
+order: 6
+icon: Brain
+tags: [memory, vault, persistence, context]
+---
+
+# Memory Vault
+
+The Memory Vault gives your assistant persistent memory across conversations. Important facts, preferences, and context are stored and automatically recalled when relevant -- so your assistant doesn't forget what you told it yesterday.
+
+## How it works
+
+During conversations, your assistant stores observations in the Memory Vault. Each memory is classified by type and indexed with semantic embeddings for retrieval by meaning.
+
+When your assistant receives a new message, it searches the vault for relevant memories and includes them in its context. This means your assistant can:
+
+- Remember your preferences ("I prefer CHS over ADM for soybeans")
+- Recall past decisions ("We decided to hold corn until March")
+- Track ongoing situations ("The south quarter flooded last Tuesday")
+- Build on previous conversations without re-explaining context
+
+## Memory types
+
+| Type | Example |
+|---|---|
+| **Fact** | "Farm is 2,500 acres of corn and soybeans" |
+| **Preference** | "Always check CHS bids first" |
+| **Commitment** | "Contracted 50% of corn at $4.80 in January" |
+| **Outcome** | "Corn yielded 180 bu/acre on the north field" |
+| **Summary** | "October harvest recap: 450,000 bushels total" |
+
+## Memory tiers
+
+Memories are automatically classified into tiers based on confidence and type:
+
+| Tier | What goes here |
+|---|---|
+| **Knowledge** | High-confidence facts and strong preferences |
+| **Episodic** | Conversations, events, and moderate-confidence observations |
+| **Working** | Short-term context, low-confidence items |
+
+Higher-tier memories are prioritized during retrieval.
+
+## Retrieval
+
+Your assistant automatically searches the Memory Vault when processing messages. You can also ask directly:
+
+```
+What do you remember about our marketing plan?
+```
+
+The vault uses hybrid retrieval:
+1. **Semantic search** finds conceptually similar memories using vector embeddings
+2. **Keyword search** matches specific terms
+3. Results are merged, scored, and the top matches are included in context
+
+## Settings
+
+Configure the Memory Vault from **Settings > Memory**:
+
+| Setting | Options | Default |
+|---|---|---|
+| **Mode** | Native only / Hybrid local vault | Native only |
+| **Capture level** | Conservative / Standard / Aggressive | Standard |
+| **Retention days** | 7--3,650 days | 365 |
+| **Exclude categories** | Comma-separated list (e.g., "secrets, otp") | Empty |
+| **Auto-checkpoint** | On / Off | On |
+| **Auto-compress** | On / Off | On |
+
+## Compression and checkpoints
+
+Over time, the vault accumulates many memories. The compression system:
+
+- **Groups** related memories together
+- **Deduplicates** semantically similar records
+- **Promotes** episodic memories to knowledge tier when confidence increases
+- **Tombstones** low-confidence working-tier records that are no longer useful
+- **Creates checkpoints** so you can review the vault state at any point
+
+Compression runs automatically when enabled, or you can trigger it manually from the settings page.
+
+## Diagnostics
+
+The Memory settings page includes a diagnostics panel showing:
+
+- Total records (active and tombstoned)
+- Records added in the last 24 hours
+- Average confidence score
+- Tier distribution breakdown
+- Latest record timestamp
+
+## Privacy
+
+- Memories are stored per-workspace and never shared between customers
+- All memory data is stored with Row-Level Security in your database
+- Exact-duplicate detection prevents redundant storage
+- You can delete any or all memories at any time
+
+## What's next
+
+- [Knowledge Files](/docs/tools/knowledge) -- Upload reference documents
+- [Custom Skills](/docs/skills/custom-skills) -- Create new assistant capabilities
+- [AI Agents](/docs/agents) -- Configure your assistant team

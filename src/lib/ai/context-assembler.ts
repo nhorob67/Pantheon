@@ -1,3 +1,4 @@
+import type { LanguageModel } from "ai";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ModelMessage, Tool } from "ai";
 import type { TenantAgent, TenantRole, TenantRuntimeRun } from "@/types/tenant-runtime";
@@ -43,6 +44,7 @@ interface AssembleInput {
   runtimeRun?: TenantRuntimeRun;
   actorRole?: TenantRole;
   actorId?: string | null;
+  fastModel?: LanguageModel;
 }
 
 export async function assembleContext(
@@ -63,7 +65,7 @@ export async function assembleContext(
 
   // Retrieve relevant memories and knowledge (non-blocking failures)
   const [scoredMemories, knowledge] = await Promise.all([
-    hybridMemorySearch(admin, input.tenantId, input.content, 5).catch(() => []),
+    hybridMemorySearch(admin, input.tenantId, input.content, 5, input.fastModel).catch(() => []),
     agent
       ? searchKnowledge(admin, input.tenantId, agent.id, input.content, 5).catch(() => [])
       : Promise.resolve([]),

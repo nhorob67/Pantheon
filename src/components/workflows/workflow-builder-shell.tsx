@@ -54,7 +54,7 @@ import {
 type SaveStatus = "idle" | "dirty" | "saving" | "saved" | "error" | "conflict";
 
 interface WorkflowBuilderShellProps {
-  instanceId: string;
+  tenantId: string;
   initialWorkflow: WorkflowDefinition;
   initialVersions?: WorkflowVersion[];
 }
@@ -259,8 +259,32 @@ function useWorkflowUiState() {
     });
   }, []);
 
+  const isBusy = useMemo(() => {
+    return (
+      state.isManualSaving ||
+      state.isPublishing ||
+      state.isRunning ||
+      state.isRollingBack ||
+      state.isExporting ||
+      state.isImporting ||
+      state.isSimulating ||
+      state.isGeneratingDraft ||
+      state.isEvaluatingExperiment ||
+      state.isPublishingPlaybook ||
+      state.isRefreshingVersions ||
+      state.isPromotingEnvironment !== null
+    );
+  }, [
+    state.isManualSaving, state.isPublishing, state.isRunning,
+    state.isRollingBack, state.isExporting, state.isImporting,
+    state.isSimulating, state.isGeneratingDraft, state.isEvaluatingExperiment,
+    state.isPublishingPlaybook, state.isRefreshingVersions,
+    state.isPromotingEnvironment,
+  ]);
+
   return {
     state,
+    isBusy,
     setFlag,
     setPromotingEnvironment,
   };
@@ -732,7 +756,7 @@ function formatVersionTimestamp(value: string): string {
 }
 
 export function WorkflowBuilderShell({
-  instanceId,
+  tenantId,
   initialWorkflow,
   initialVersions = [],
 }: WorkflowBuilderShellProps) {
@@ -774,6 +798,7 @@ export function WorkflowBuilderShell({
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const {
     state: workflowUiState,
+    isBusy,
     setFlag: setWorkflowUiFlag,
     setPromotingEnvironment: setWorkflowPromotingEnvironment,
   } = useWorkflowUiState();
@@ -792,7 +817,6 @@ export function WorkflowBuilderShell({
     isLoadingPromotions,
     isPublishingPlaybook,
     isRefreshingVersions,
-    isPromotingEnvironment,
   } = workflowUiState;
 
   const [publishMessage, setPublishMessage] = useState<string | null>(null);
@@ -1242,7 +1266,7 @@ export function WorkflowBuilderShell({
 
       try {
         const response = await fetch(
-          `/api/instances/${instanceId}/workflows/${initialWorkflow.id}`,
+          `/api/tenants/${tenantId}/workflows/${initialWorkflow.id}`,
           {
             method: "PUT",
             headers: {
@@ -1334,7 +1358,7 @@ export function WorkflowBuilderShell({
       graph,
       hasUnsavedChanges,
       initialWorkflow.id,
-      instanceId,
+      tenantId,
       name,
       normalizedTags,
       ownerId,
@@ -1351,7 +1375,7 @@ export function WorkflowBuilderShell({
 
       try {
         const response = await fetch(
-          `/api/instances/${instanceId}/workflows/${initialWorkflow.id}`,
+          `/api/tenants/${tenantId}/workflows/${initialWorkflow.id}`,
           {
             method: "GET",
           }
@@ -1380,7 +1404,7 @@ export function WorkflowBuilderShell({
         }
       }
     },
-    [initialWorkflow.id, instanceId, setIsRefreshingVersions]
+    [initialWorkflow.id, tenantId, setIsRefreshingVersions]
   );
 
   const reloadPromotions = useCallback(async () => {
@@ -1389,7 +1413,7 @@ export function WorkflowBuilderShell({
 
     try {
       const response = await fetch(
-        `/api/instances/${instanceId}/workflows/${initialWorkflow.id}/promotions`,
+        `/api/tenants/${tenantId}/workflows/${initialWorkflow.id}/promotions`,
         {
           method: "GET",
         }
@@ -1421,7 +1445,7 @@ export function WorkflowBuilderShell({
     } finally {
       setIsLoadingPromotions(false);
     }
-  }, [initialWorkflow.id, instanceId, setIsLoadingPromotions]);
+  }, [initialWorkflow.id, tenantId, setIsLoadingPromotions]);
 
   const handlePublish = useCallback(async () => {
     setPublishError(null);
@@ -1446,7 +1470,7 @@ export function WorkflowBuilderShell({
     setIsPublishing(true);
     try {
       const response = await fetch(
-        `/api/instances/${instanceId}/workflows/${initialWorkflow.id}/publish`,
+        `/api/tenants/${tenantId}/workflows/${initialWorkflow.id}/publish`,
         {
           method: "POST",
         }
@@ -1502,7 +1526,7 @@ export function WorkflowBuilderShell({
   }, [
     draftVersion,
     initialWorkflow.id,
-    instanceId,
+    tenantId,
     localValidation.valid,
     persistDraft,
     reloadPromotions,
@@ -1528,7 +1552,7 @@ export function WorkflowBuilderShell({
     setIsRunning(true);
     try {
       const response = await fetch(
-        `/api/instances/${instanceId}/workflows/${initialWorkflow.id}/run`,
+        `/api/tenants/${tenantId}/workflows/${initialWorkflow.id}/run`,
         {
           method: "POST",
           headers: {
@@ -1574,7 +1598,7 @@ export function WorkflowBuilderShell({
     }
   }, [
     initialWorkflow.id,
-    instanceId,
+    tenantId,
     isPublishing,
     publishedVersion,
     setIsRunning,
@@ -1629,7 +1653,7 @@ export function WorkflowBuilderShell({
     setIsRollingBack(true);
     try {
       const response = await fetch(
-        `/api/instances/${instanceId}/workflows/${initialWorkflow.id}/rollback`,
+        `/api/tenants/${tenantId}/workflows/${initialWorkflow.id}/rollback`,
         {
           method: "POST",
           headers: {
@@ -1693,7 +1717,7 @@ export function WorkflowBuilderShell({
     }
   }, [
     initialWorkflow.id,
-    instanceId,
+    tenantId,
     isPublishing,
     isRunning,
     publishedVersion,
@@ -1710,7 +1734,7 @@ export function WorkflowBuilderShell({
 
     try {
       const response = await fetch(
-        `/api/instances/${instanceId}/workflows/${initialWorkflow.id}/export`,
+        `/api/tenants/${tenantId}/workflows/${initialWorkflow.id}/export`,
         {
           method: "GET",
         }
@@ -1753,7 +1777,7 @@ export function WorkflowBuilderShell({
     } finally {
       setIsExporting(false);
     }
-  }, [initialWorkflow.id, instanceId, name, setIsExporting]);
+  }, [initialWorkflow.id, tenantId, name, setIsExporting]);
 
   const handleImportButton = useCallback(() => {
     importFileInputRef.current?.click();
@@ -1782,7 +1806,7 @@ export function WorkflowBuilderShell({
           return;
         }
 
-        const response = await fetch(`/api/instances/${instanceId}/workflows/import`, {
+        const response = await fetch(`/api/tenants/${tenantId}/workflows/import`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -1820,7 +1844,7 @@ export function WorkflowBuilderShell({
         setIsImporting(false);
       }
     },
-    [instanceId, setIsImporting]
+    [tenantId, setIsImporting]
   );
 
   const handleSimulate = useCallback(async () => {
@@ -1848,7 +1872,7 @@ export function WorkflowBuilderShell({
       }
 
       const response = await fetch(
-        `/api/instances/${instanceId}/workflows/${initialWorkflow.id}/simulate`,
+        `/api/tenants/${tenantId}/workflows/${initialWorkflow.id}/simulate`,
         {
           method: "POST",
           headers: {
@@ -1889,7 +1913,7 @@ export function WorkflowBuilderShell({
     } finally {
       setIsSimulating(false);
     }
-  }, [graph, initialWorkflow.id, instanceId, setIsSimulating]);
+  }, [graph, initialWorkflow.id, tenantId, setIsSimulating]);
 
   const handlePromoteEnvironment = useCallback(
     async (targetEnvironment: WorkflowEnvironment) => {
@@ -1904,7 +1928,7 @@ export function WorkflowBuilderShell({
       setIsPromotingEnvironment(targetEnvironment);
       try {
         const response = await fetch(
-          `/api/instances/${instanceId}/workflows/${initialWorkflow.id}/promotions`,
+          `/api/tenants/${tenantId}/workflows/${initialWorkflow.id}/promotions`,
           {
             method: "POST",
             headers: {
@@ -1947,7 +1971,7 @@ export function WorkflowBuilderShell({
         setIsPromotingEnvironment(null);
       }
     },
-    [initialWorkflow.id, instanceId, publishedVersion, setIsPromotingEnvironment, workflowStatus]
+    [initialWorkflow.id, tenantId, publishedVersion, setIsPromotingEnvironment, workflowStatus]
   );
 
   const handleGenerateDraft = useCallback(async () => {
@@ -1962,7 +1986,7 @@ export function WorkflowBuilderShell({
 
     setIsGeneratingDraft(true);
     try {
-      const response = await fetch(`/api/instances/${instanceId}/workflows/generate-draft`, {
+      const response = await fetch(`/api/tenants/${tenantId}/workflows/generate-draft`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -2032,7 +2056,7 @@ export function WorkflowBuilderShell({
     } finally {
       setIsGeneratingDraft(false);
     }
-  }, [applyGraphChange, description, draftPrompt, instanceId, name, setIsGeneratingDraft]);
+  }, [applyGraphChange, description, draftPrompt, tenantId, name, setIsGeneratingDraft]);
 
   const handleEvaluateExperiment = useCallback(async () => {
     setExperimentError(null);
@@ -2041,7 +2065,7 @@ export function WorkflowBuilderShell({
 
     try {
       const response = await fetch(
-        `/api/instances/${instanceId}/workflows/${initialWorkflow.id}/experiment`,
+        `/api/tenants/${tenantId}/workflows/${initialWorkflow.id}/experiment`,
         {
           method: "POST",
           headers: {
@@ -2081,7 +2105,7 @@ export function WorkflowBuilderShell({
     } finally {
       setIsEvaluatingExperiment(false);
     }
-  }, [graph, initialWorkflow.id, instanceId, setIsEvaluatingExperiment]);
+  }, [graph, initialWorkflow.id, tenantId, setIsEvaluatingExperiment]);
 
   const handlePublishPlaybook = useCallback(async () => {
     setPlaybookError(null);
@@ -2100,7 +2124,7 @@ export function WorkflowBuilderShell({
 
     setIsPublishingPlaybook(true);
     try {
-      const response = await fetch(`/api/instances/${instanceId}/workflow-playbooks`, {
+      const response = await fetch(`/api/tenants/${tenantId}/workflow-playbooks`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -2157,7 +2181,7 @@ export function WorkflowBuilderShell({
     description,
     initialWorkflow.id,
     initialWorkflow.name,
-    instanceId,
+    tenantId,
     name,
     normalizedTags,
     playbookSlug,
@@ -2371,13 +2395,15 @@ export function WorkflowBuilderShell({
     }
 
     const timeoutId = window.setTimeout(() => {
-      void persistDraft("autosave");
+      if (!isBusy) {
+        void persistDraft("autosave");
+      }
     }, 2000);
 
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [hasUnsavedChanges, persistDraft]);
+  }, [hasUnsavedChanges, isBusy, persistDraft]);
 
   useEffect(() => {
     if (!isCommandPaletteOpen) {
@@ -2542,7 +2568,7 @@ export function WorkflowBuilderShell({
 
   return (
     <div className="space-y-4">
-      <WorkflowPerformanceBeacon instanceId={instanceId} routeKind="builder" />
+      <WorkflowPerformanceBeacon tenantId={tenantId} routeKind="builder" />
       <input
         ref={importFileInputRef}
         type="file"
@@ -2660,7 +2686,7 @@ export function WorkflowBuilderShell({
             <button
               type="button"
               onClick={() => void persistDraft("manual")}
-              disabled={isManualSaving}
+              disabled={isBusy}
               className={`inline-flex min-h-11 items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs font-medium text-text-secondary transition-colors hover:border-border-light hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-40 ${FOCUS_RING_CLASS}`}
             >
               {isManualSaving ? (
@@ -2674,7 +2700,7 @@ export function WorkflowBuilderShell({
             <button
               type="button"
               onClick={handleExport}
-              disabled={isExporting}
+              disabled={isBusy}
               className={`inline-flex min-h-11 items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs font-medium text-text-secondary transition-colors hover:border-border-light hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-40 ${FOCUS_RING_CLASS}`}
             >
               {isExporting ? (
@@ -2688,7 +2714,7 @@ export function WorkflowBuilderShell({
             <button
               type="button"
               onClick={handleImportButton}
-              disabled={isImporting}
+              disabled={isBusy}
               className={`inline-flex min-h-11 items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs font-medium text-text-secondary transition-colors hover:border-border-light hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-40 ${FOCUS_RING_CLASS}`}
             >
               {isImporting ? (
@@ -2702,7 +2728,7 @@ export function WorkflowBuilderShell({
             <button
               type="button"
               onClick={handleSimulate}
-              disabled={isSimulating}
+              disabled={isBusy}
               className={`inline-flex min-h-11 items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs font-medium text-text-secondary transition-colors hover:border-border-light hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-40 ${FOCUS_RING_CLASS}`}
               title="Runs an in-browser-safe simulation only. No runtime dispatch."
             >
@@ -2717,7 +2743,7 @@ export function WorkflowBuilderShell({
             <button
               type="button"
               onClick={handlePublish}
-              disabled={isPublishing || !localValidation.valid}
+              disabled={isBusy || !localValidation.valid}
               className={`inline-flex min-h-11 items-center gap-1 rounded-lg bg-accent px-3 py-2 text-xs font-semibold text-bg-deep transition-colors hover:bg-accent-light disabled:cursor-not-allowed disabled:opacity-50 ${FOCUS_RING_CLASS}`}
             >
               {isPublishing ? (
@@ -2734,8 +2760,7 @@ export function WorkflowBuilderShell({
                 void handleRollback(null);
               }}
               disabled={
-                isRollingBack ||
-                isPublishing ||
+                isBusy ||
                 workflowStatus !== "published" ||
                 !publishedVersion ||
                 publishedVersion <= 1
@@ -2759,8 +2784,7 @@ export function WorkflowBuilderShell({
               type="button"
               onClick={handleRun}
               disabled={
-                isRunning ||
-                isPublishing ||
+                isBusy ||
                 workflowStatus !== "published" ||
                 !publishedVersion
               }
@@ -2944,7 +2968,7 @@ export function WorkflowBuilderShell({
               <button
                 type="button"
                 onClick={handleGenerateDraft}
-                disabled={isGeneratingDraft}
+                disabled={isBusy}
                 className={`inline-flex min-h-9 items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] text-text-secondary transition-colors hover:border-border-light hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-50 ${FOCUS_RING_CLASS}`}
               >
                 {isGeneratingDraft ? (
@@ -2985,7 +3009,7 @@ export function WorkflowBuilderShell({
               <button
                 type="button"
                 onClick={handleSimulate}
-                disabled={isSimulating}
+                disabled={isBusy}
                 className={`inline-flex min-h-9 items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] text-text-secondary transition-colors hover:border-border-light hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-50 ${FOCUS_RING_CLASS}`}
               >
                 {isSimulating ? (
@@ -3045,7 +3069,7 @@ export function WorkflowBuilderShell({
               <button
                 type="button"
                 onClick={handleEvaluateExperiment}
-                disabled={isEvaluatingExperiment}
+                disabled={isBusy}
                 className={`inline-flex min-h-9 items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] text-text-secondary transition-colors hover:border-border-light hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-50 ${FOCUS_RING_CLASS}`}
               >
                 {isEvaluatingExperiment ? (
@@ -3148,7 +3172,7 @@ export function WorkflowBuilderShell({
                   void handlePromoteEnvironment("dev");
                 }}
                 disabled={
-                  isPromotingEnvironment !== null ||
+                  isBusy ||
                   workflowStatus !== "published" ||
                   !publishedVersion ||
                   !promotionReadiness.can_promote_to_dev
@@ -3163,7 +3187,7 @@ export function WorkflowBuilderShell({
                   void handlePromoteEnvironment("stage");
                 }}
                 disabled={
-                  isPromotingEnvironment !== null ||
+                  isBusy ||
                   workflowStatus !== "published" ||
                   !publishedVersion ||
                   !promotionReadiness.can_promote_to_stage
@@ -3178,7 +3202,7 @@ export function WorkflowBuilderShell({
                   void handlePromoteEnvironment("prod");
                 }}
                 disabled={
-                  isPromotingEnvironment !== null ||
+                  isBusy ||
                   workflowStatus !== "published" ||
                   !publishedVersion ||
                   !promotionReadiness.can_promote_to_prod
@@ -3259,7 +3283,7 @@ export function WorkflowBuilderShell({
                 type="button"
                 onClick={handlePublishPlaybook}
                 disabled={
-                  isPublishingPlaybook ||
+                  isBusy ||
                   workflowStatus !== "published" ||
                   !publishedVersion
                 }
@@ -3355,7 +3379,7 @@ export function WorkflowBuilderShell({
                             onClick={() => {
                               void handleRollback(version.version);
                             }}
-                            disabled={isRollingBack || isPublishing || isRunning}
+                            disabled={isBusy}
                             className={`inline-flex min-h-7 items-center rounded-md border border-border px-2 py-1 text-[11px] text-text-secondary transition-colors hover:border-border-light hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-45 ${FOCUS_RING_CLASS}`}
                           >
                             Rollback to v{version.version}

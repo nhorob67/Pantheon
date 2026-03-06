@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireDashboardCustomer, getCustomerInstance } from "@/lib/auth/dashboard-session";
+import { requireDashboardCustomer, getCustomerInstance, getCustomerTenant } from "@/lib/auth/dashboard-session";
 import { formatDateTime } from "@/lib/utils/format";
 import { ApprovalInboxLazy } from "@/components/workflows/approval-inbox-lazy";
 import {
@@ -110,9 +110,12 @@ export default async function WorkflowApprovalsPage({
   const runIdFilter = parseUuid(query.run_id);
   const statusFilter = parseStatusFilter(query.status);
 
-  const instance = await getCustomerInstance(customerId);
+  const [instance, tenant] = await Promise.all([
+    getCustomerInstance(customerId),
+    getCustomerTenant(customerId),
+  ]);
 
-  if (!instance) {
+  if (!instance || !tenant) {
     return (
       <div className="space-y-4">
         <div>
@@ -331,7 +334,7 @@ export default async function WorkflowApprovalsPage({
         </section>
 
         <ApprovalInboxLazy
-          instanceId={instance.id}
+          tenantId={tenant.id}
           approval={selectedApproval}
           workflowName={selectedWorkflowName}
         />

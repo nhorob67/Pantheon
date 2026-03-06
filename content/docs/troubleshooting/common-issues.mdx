@@ -31,26 +31,26 @@ Your session may have expired. Clear your browser cookies for FarmClaw and reque
 
 ### The bot appears offline in Discord
 
-1. Check your **dashboard** — if the instance shows "Stopped" or "Error", the container may need to be restarted
-2. Verify the **bot token** hasn't been regenerated in the Discord Developer Portal. If you regenerated it, update the token in Settings > Discord
-3. Check that the bot hasn't been **kicked** from the server. Re-invite it using the original invite URL
+1. Check your **dashboard** — verify your workspace shows "Active" status
+2. Check that the FarmClaw bot hasn't been **kicked** from the server. Re-add it from Settings > Discord
+3. Try sending a DM to the bot to rule out channel permission issues
 
 ### The bot is online but not responding
 
 - Make sure you're messaging in a channel the bot has access to. Check the bot's role permissions in Discord server settings.
 - Verify the bot has these permissions: **Send Messages**, **Read Message History**, **Read Messages/View Channels**, **Embed Links**, **Attach Files**
 - If using channel bindings, make sure the channel you're in is bound to an agent or is handled by the default agent
-- Check your dashboard for any error indicators on the instance
+- Check your dashboard for any error indicators
 
 ### The bot responds slowly
 
-- First response after the instance restarts may take 10–15 seconds as the AI model loads
+- First response in a new conversation may take a few extra seconds
 - Grain bid fetches involve scraping elevator websites, which can take 5–15 seconds per elevator
 - Photo OCR for scale tickets requires image processing, which takes a few extra seconds
 - If consistently slow, check your usage dashboard for any unusual patterns
 
-<Callout variant="info" title="Cold starts">
-If your instance hasn't received a message in a while, the first response may be slightly slower than usual. Subsequent responses will be faster.
+<Callout variant="info" title="Response time">
+The first response in a conversation may be slightly slower as your assistant loads context. Subsequent responses will be faster.
 </Callout>
 
 ---
@@ -114,46 +114,42 @@ If the assessment doesn't match your conditions, note that it's based on the NWS
 ### Can't find a ticket I logged
 
 - Use "show today's tickets" or "show tickets from [date]" to search by date
-- Check that you're asking the right agent if you have multiple agents — scale tickets are stored per instance, but only agents with the scale-tickets skill can query them
+- Check that you're asking the right agent if you have multiple agents — scale tickets are stored per workspace, but only agents with the scale-tickets skill can query them
 
 ### Export not working
 
-The export function generates an Excel file using Python pandas. If exports fail, the instance may need pandas installed. Contact support if this persists.
+The export function generates files from your scale ticket data. If exports fail, try again or contact support if the issue persists.
 
 ---
 
-## Provisioning
+## Setup
 
-### Instance stuck on "Provisioning"
+### Workspace setup seems stuck
 
-Provisioning typically takes 2–3 minutes. If it's been more than 10 minutes:
+Workspace creation typically completes in a few seconds. If it takes longer:
 
 - Refresh your dashboard page
 - Check that your subscription is active
-- The cloud provider (Hetzner) may be experiencing capacity issues in rare cases
+- Try logging out and back in
 
-If the instance is stuck for more than 30 minutes, contact support.
+If the issue persists for more than a few minutes, contact support.
 
-### Instance shows "Error" status
+### Workspace shows an error
 
-This usually means the container failed to start. Common causes:
+Common causes:
 
-- Invalid Discord bot token — double-check the token in the Discord Developer Portal
-- The bot token was regenerated after initial setup — update it in Settings
-
-<Callout variant="warning" title="Don't regenerate your bot token">
-If you regenerate your Discord bot token in the Developer Portal, your FarmClaw instance will lose connectivity. Always update the new token in FarmClaw Settings immediately after regenerating.
-</Callout>
+- The FarmClaw bot may have been removed from your Discord server -- re-add it from Settings > Discord
+- Your subscription may have lapsed -- check Settings > Billing
 
 ---
 
 ## Billing
 
-### I was charged but my instance isn't working
+### I was charged but my assistant isn't working
 
-- Check your instance status on the dashboard first
-- If the instance shows an error, try the provisioning troubleshooting steps above
-- Your subscription is valid regardless of instance status — you won't lose your billing period
+- Check your workspace status on the dashboard first
+- If the workspace shows an error, try the setup troubleshooting steps above
+- Your subscription is valid regardless of workspace status -- you won't lose your billing period
 
 ### How do I get a refund?
 

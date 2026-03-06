@@ -27,7 +27,7 @@ Every elevator in your configuration has three pieces of information:
 For best results, enter the URL of the elevator's **cash bid page** specifically, not their homepage. The grain bids skill navigates directly to this URL and scrapes the bid table. A direct bid page URL means faster, more reliable results.
 </Callout>
 
-You can configure up to **20 elevators** per instance. Most farmers configure 2-5 elevators representing their primary delivery options.
+You can configure up to **20 elevators** per workspace. Most farmers configure 2-5 elevators representing their primary delivery options.
 
 ## Preset Elevator Companies
 
@@ -131,8 +131,8 @@ You can add, remove, or update elevators at any time:
 3. Add new elevators, remove ones you no longer deliver to, or update URLs.
 4. Save your changes.
 
-<Callout variant="warning" title="Configuration rebuild on save">
-Saving elevator changes triggers a configuration rebuild and container restart. Your assistant will be briefly unavailable (15-30 seconds) while the new configuration is applied.
+<Callout variant="info" title="Changes take effect immediately">
+When you save elevator changes, FarmClaw applies the updates to your assistant. Changes take effect on the next message.
 </Callout>
 
 ## Troubleshooting

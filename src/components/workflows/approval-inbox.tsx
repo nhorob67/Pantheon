@@ -19,7 +19,7 @@ type DecisionFeedback = {
 };
 
 interface ApprovalInboxProps {
-  instanceId: string;
+  tenantId: string;
   approval: WorkflowApprovalRecord | null;
   workflowName?: string | null;
 }
@@ -116,7 +116,7 @@ function describeSla(approval: WorkflowApprovalRecord | null): SlaDescriptor {
 }
 
 export function ApprovalInbox({
-  instanceId,
+  tenantId,
   approval,
   workflowName,
 }: ApprovalInboxProps) {
@@ -155,7 +155,7 @@ export function ApprovalInbox({
 
     try {
       const response = await fetch(
-        `/api/instances/${instanceId}/workflow-approvals/${approval.id}/${action}`,
+        `/api/tenants/${tenantId}/workflow-approvals/${approval.id}/${action}`,
         {
           method: "POST",
           headers: {

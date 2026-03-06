@@ -9,7 +9,7 @@ tags: [extensions, marketplace, overview]
 
 # Extensions
 
-The FarmClaw extension system lets you expand your AI assistant's capabilities beyond the three built-in skills. Extensions are installable packages that add new skills, plugins, connectors, MCP servers, and tool packs to your instance.
+The FarmClaw extension system lets you expand your AI assistant's capabilities beyond the three built-in skills. Extensions are installable packages that add new skills, plugins, connectors, MCP servers, and tool packs to your workspace.
 
 ## Extension types
 
@@ -30,7 +30,7 @@ Extensions can come from five different sources. Each source type has different 
 | Source | Description | Supports verification |
 |---|---|---|
 | **internal** | First-party extensions built and maintained by FarmClaw | No (implicitly trusted) |
-| **local** | Extensions bundled directly with your hosted instance image | No (implicitly trusted) |
+| **local** | Extensions bundled directly with the platform | No (implicitly trusted) |
 | **clawhub** | Third-party packages hosted on the FarmClaw marketplace | Yes |
 | **npm** | Extensions published to the Node package registry | Yes |
 | **git** | Extensions hosted in Git repositories, pinned by catalog reference | Yes |
@@ -44,7 +44,7 @@ Your account has a trust policy that determines which source types are allowed a
 Extensions are managed through a catalog-and-installation model:
 
 1. **Catalog** -- FarmClaw maintains a catalog of available extensions. Each catalog entry has a slug, type, source, description, and one or more versioned releases.
-2. **Installation** -- When you install an extension, FarmClaw creates an installation record tied to your customer account and instance. The installation tracks which version is active and the current health status.
+2. **Installation** -- When you install an extension, FarmClaw creates an installation record tied to your customer account and workspace. The installation tracks which version is active and the current health status.
 3. **Operations** -- Install, upgrade, rollback, and remove actions are queued as operations. Each operation is tracked with a status (pending, in_progress, completed, failed, canceled) so you can monitor progress.
 4. **Health monitoring** -- Installed extensions are continuously monitored. Each installation reports a health status: `healthy`, `degraded`, `unhealthy`, or `unknown`.
 

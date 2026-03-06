@@ -413,7 +413,7 @@ export type {
 export type { Agent, PersonalityPreset } from "./agent";
 export type { McpServerConfig } from "./mcp";
 export type {
-  InstanceMemorySettings,
+  TenantMemorySettings,
   MemoryMode,
   MemoryCaptureLevel,
   MemoryOperation,

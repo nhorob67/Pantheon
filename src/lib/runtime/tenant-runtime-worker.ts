@@ -29,6 +29,7 @@ const DISCORD_DISPATCH_CIRCUIT_COOLDOWN_MS = 30_000;
 export interface TenantRuntimeWorkerContext {
   run: TenantRuntimeRun;
   requestTraceId: string | null;
+  resolvedModels?: import("@/lib/ai/model-resolver").ResolvedModels;
 }
 
 export interface TenantRuntimeWorkerResult {

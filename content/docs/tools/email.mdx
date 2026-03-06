@@ -1,0 +1,74 @@
+---
+title: Email Integration
+description: Send and receive email through your AI assistant -- set up an email inbox and process messages with attachments.
+section: Tools
+order: 7
+icon: Mail
+tags: [email, inbound, outbound, identity]
+---
+
+# Email Integration
+
+FarmClaw's email integration lets your AI assistant send and receive email. Set up an email inbox, and your assistant can process inbound emails with attachments and compose replies -- all accessible from Discord.
+
+## Setting up your email inbox
+
+Email is optional and only enabled by explicit action:
+
+1. Go to **Settings > Email**
+2. Click **Enable Email Inbox**
+3. FarmClaw generates a unique email address (e.g., `smith-farms@farmclaw.com`)
+4. Your inbox is ready
+
+The default slug is based on your farm name. You can customize it to any available slug (3--63 characters, lowercase letters, numbers, and hyphens).
+
+## How inbound email works
+
+When someone sends an email to your FarmClaw address:
+
+1. The email is received and processed (including attachments)
+2. Your assistant sends an immediate acknowledgment reply ("Got your file. Analyzing now...")
+3. The content and attachments are analyzed by your assistant
+4. A full response is sent back via email with proper threading
+
+Common attachments like PDFs, images, Word documents, and text files are automatically read and summarized.
+
+## Sending email from Discord
+
+Ask your assistant to send emails directly:
+
+```
+Email the grain contract summary to john@example.com
+```
+
+```
+Send today's scale ticket report to bookkeeper@farm.com
+```
+
+Your assistant composes the email based on your request and sends it from your FarmClaw email identity.
+
+## Customizing your email address
+
+To change your email slug:
+
+1. Go to **Settings > Email**
+2. Edit the slug field
+3. Save
+
+The slug must be unique across all FarmClaw customers. Changes take effect immediately.
+
+<Callout variant="info" title="Email is included in your subscription">
+The email integration is included in your $50/month subscription at no additional cost. Only the AI processing of email content counts toward metered usage.
+</Callout>
+
+## Privacy and security
+
+- Email processing happens within your workspace -- no data is shared between customers
+- Inbound emails and attachments are stored with Row-Level Security
+- Webhook signatures are verified for all inbound email events
+- Idempotency keys prevent duplicate processing
+
+## What's next
+
+- [Integrations](/docs/integrations) -- Connect to Google Sheets, Calendar, and more
+- [Knowledge Files](/docs/tools/knowledge) -- Upload reference documents

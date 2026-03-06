@@ -6,7 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import type { MemoryCaptureLevel, MemoryMode } from "@/types/memory";
 
 interface MemorySettingsInput {
-  instance_id: string;
+  tenant_id: string;
   customer_id: string;
   mode: MemoryMode;
   capture_level: MemoryCaptureLevel;

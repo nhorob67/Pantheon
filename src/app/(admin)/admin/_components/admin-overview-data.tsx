@@ -4,7 +4,7 @@ import { StatsGrid } from "@/components/admin/stats-grid";
 import { AdminOverviewCharts } from "@/components/admin/overview-charts";
 import {
   getExtensibilityTelemetry,
-  getFleetHealth,
+  getTenantHealth,
   getRevenueBreakdown,
 } from "@/lib/queries/admin-analytics";
 
@@ -13,40 +13,33 @@ async function getAdminData() {
 
   const [
     { count: totalCustomers },
-    { count: activeInstances },
-    { count: totalInstances },
     { count: activeSubscriptions },
-    fleetHealth,
+    tenantHealth,
     revenueBreakdown,
     extensibilityTelemetry,
   ] = await Promise.all([
     admin.from("customers").select("id", { count: "exact", head: true }),
     admin
-      .from("instances")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "running"),
-    admin.from("instances").select("id", { count: "exact", head: true }),
-    admin
       .from("customers")
       .select("id", { count: "exact", head: true })
       .eq("subscription_status", "active"),
-    getFleetHealth(admin),
+    getTenantHealth(admin),
     getRevenueBreakdown(admin),
     getExtensibilityTelemetry(admin),
   ]);
 
   const mrr = (activeSubscriptions || 0) * 5000;
   const healthPercent =
-    (totalInstances || 0) > 0
-      ? ((activeInstances || 0) / (totalInstances || 0)) * 100
+    tenantHealth.total_tenants > 0
+      ? (tenantHealth.active_tenants / tenantHealth.total_tenants) * 100
       : 0;
 
   return {
     totalCustomers: totalCustomers || 0,
-    activeInstances: activeInstances || 0,
+    activeTenants: tenantHealth.active_tenants,
     mrr,
     healthPercent,
-    fleetHealth,
+    tenantHealth,
     revenueBreakdown,
     extensibilityTelemetry,
   };
@@ -59,13 +52,13 @@ export async function AdminOverviewData() {
     <>
       <StatsGrid
         totalCustomers={data.totalCustomers}
-        activeInstances={data.activeInstances}
+        activeTenants={data.activeTenants}
         mrr={formatMRR(data.mrr)}
-        fleetHealth={formatPercentage(data.healthPercent)}
+        tenantHealth={formatPercentage(data.healthPercent)}
       />
 
       <AdminOverviewCharts
-        health={data.fleetHealth}
+        tenantHealth={data.tenantHealth}
         revenue={data.revenueBreakdown}
       />
 

@@ -2,6 +2,7 @@ import { task } from "@trigger.dev/sdk";
 import { createTriggerAdminClient } from "./lib/supabase";
 import { createTenantAiWorker } from "@/lib/ai/tenant-ai-worker";
 import { createEmailAiWorker } from "@/lib/ai/email-ai-worker";
+import { resolveModels } from "@/lib/ai/model-resolver";
 import {
   getTenantRuntimeRunById,
   claimTenantRuntimeRuns,
@@ -54,12 +55,14 @@ export const processRuntimeRun = task({
       return { skipped: true, reason: "not_running", status: claimed.status };
     }
 
+    const resolvedModels = await resolveModels(admin, claimed.tenant_id);
     const worker = claimed.run_kind === "email_runtime"
       ? createEmailAiWorker(admin)
       : createTenantAiWorker(admin);
     const result = await worker.execute({
       run: claimed,
       requestTraceId: claimed.request_trace_id,
+      resolvedModels,
     });
 
     if (result.outcome === "completed") {

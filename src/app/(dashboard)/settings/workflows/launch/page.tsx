@@ -362,7 +362,7 @@ export default async function WorkflowLaunchReadinessPage({
         {snapshotHistory.length === 0 ? (
           <p className="mt-2 text-xs text-text-dim">
             Captured history will appear after the first cron or manual capture via
-            `/api/instances/:id/workflows/launch-readiness/snapshots`.
+            the launch readiness snapshots endpoint.
           </p>
         ) : (
           <div className="mt-3 space-y-2">

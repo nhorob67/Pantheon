@@ -1,7 +1,7 @@
-import { generateObject } from "ai";
+import { generateObject, type LanguageModel } from "ai";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { farmclawModel } from "./client";
+import { farmclawFastModel } from "./client";
 import { writeMemoryRecord } from "./memory-record-writer";
 import type { MemoryCaptureLevel } from "@/types/memory";
 
@@ -29,6 +29,7 @@ export interface SummarizeInput {
   sessionId: string;
   captureLevel?: MemoryCaptureLevel;
   excludeCategories?: string[];
+  model?: LanguageModel;
 }
 
 /**
@@ -101,7 +102,7 @@ export async function maybeGenerateSummary(input: SummarizeInput): Promise<void>
 
   // Generate summary via structured output
   const result = await generateObject({
-    model: farmclawModel,
+    model: input.model ?? farmclawFastModel,
     schema: SummarySchema,
     maxOutputTokens: MAX_OUTPUT_TOKENS,
     temperature: 0.3,

@@ -1,6 +1,6 @@
 ---
 title: Filesystem Server
-description: Give your AI assistant access to read and write files in its workspace directory.
+description: Give your AI assistant access to read and write files using the Filesystem MCP server.
 section: MCP Servers
 order: 1
 icon: FolderOpen
@@ -9,7 +9,7 @@ tags: [mcp, filesystem, files]
 
 # Filesystem Server
 
-The Filesystem MCP server gives your AI assistant the ability to read, write, and manage files within its workspace directory. This is useful for saving reports, keeping notes, storing exported data, and working with files that persist across conversations.
+The Filesystem MCP server gives your AI assistant the ability to read, write, and manage files. This is useful for saving reports, keeping notes, storing exported data, and working with files that persist across conversations.
 
 ## Overview
 
@@ -17,17 +17,16 @@ The Filesystem MCP server gives your AI assistant the ability to read, write, an
 |---|---|
 | **Package** | `@modelcontextprotocol/server-filesystem` |
 | **Command** | `npx` |
-| **Arguments** | `-y @modelcontextprotocol/server-filesystem /home/node/workspace` |
-| **Scope** | Instance (available to all agents) |
-| **Workspace path** | `/home/node/workspace` |
+| **Arguments** | `-y @modelcontextprotocol/server-filesystem` |
+| **Scope** | Workspace (available to all agents) |
 
-The Filesystem server is a custom MCP server you can add to your instance if you need file read/write capabilities. It is not required for any built-in farm tools -- scale tickets, grain bids, weather, and memory all work without it.
+The Filesystem server is a custom MCP server you can add to your workspace if you need file read/write capabilities. It is not required for any built-in farm tools -- scale tickets, grain bids, weather, and memory all work without it.
 
 ## What it enables
 
 With the Filesystem server active, your assistant can:
 
-- **Read files** -- Open and read the contents of any file in the workspace directory.
+- **Read files** -- Open and read the contents of any file in its workspace directory.
 - **Write files** -- Create new files or overwrite existing ones. Useful for saving reports, exporting data, or generating documents.
 - **List directory contents** -- Browse what files and folders exist in the workspace.
 - **Create directories** -- Organize files into folders as needed.
@@ -41,7 +40,7 @@ Ask your assistant to generate a summary and save it to a file:
 
 > "Summarize this week's grain bids across all elevators and save the report to `reports/weekly-bids-2025-10-13.md`."
 
-The assistant will compile the data and write it to the specified path in the workspace.
+The assistant will compile the data and write it to the specified path.
 
 ### Exporting scale ticket data
 
@@ -58,29 +57,7 @@ Your assistant can maintain running notes, checklists, or logs:
 > "Add a note to `field-notes.md` that the south quarter of section 12 had standing water after last night's rain."
 
 <Callout variant="info" title="Files persist across conversations">
-The workspace directory at `/home/node/workspace` is mounted as a persistent volume on your instance's server. Files saved here survive container restarts and configuration rebuilds.
-</Callout>
-
-## Configuration
-
-When added from the preset selector, the Filesystem server is automatically configured with the following values:
-
-| Field | Value |
-|---|---|
-| `server_key` | `filesystem` |
-| `display_name` | `Filesystem` |
-| `command` | `npx` |
-| `args` | `["-y", "@modelcontextprotocol/server-filesystem", "/home/node/workspace"]` |
-| `env_vars` | `{}` (none required) |
-| `scope` | `instance` |
-| `enabled` | `true` |
-
-### Customizing the workspace path
-
-The default workspace path is `/home/node/workspace`. If you need to point the server at a different directory, you can edit the server after creation and change the last argument.
-
-<Callout variant="warning" title="Stay within mounted volumes">
-The Filesystem server can only access paths that exist on your instance's container. Pointing it at a path outside the container's filesystem will result in errors. The default `/home/node/workspace` path is guaranteed to exist and persist.
+Files saved by the Filesystem server persist between conversations and are available any time you interact with your assistant.
 </Callout>
 
 ## Adding the Filesystem server
@@ -91,11 +68,11 @@ The Filesystem server can only access paths that exist on your instance's contai
 4. Click **Filesystem** from the preset list.
 5. Review the pre-filled fields and click **Add Server**.
 
-FarmClaw rebuilds your configuration and restarts the container. The server is available to your assistant within 15--30 seconds.
+The server is available to your assistant after saving.
 
 ## Enabling and disabling
 
-You can toggle the Filesystem server on or off at any time using the switch on its card in **Settings > MCP Servers**. Disabling the server removes it from your assistant's active configuration. Your files in the workspace are not deleted when the server is disabled.
+You can toggle the Filesystem server on or off at any time using the switch on its card in **Settings > MCP Servers**. Disabling the server removes it from your assistant's active tools. Your files are not deleted when the server is disabled.
 
 ## What's next
 
