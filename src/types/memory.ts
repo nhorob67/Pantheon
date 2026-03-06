@@ -61,7 +61,7 @@ export const DEFAULT_MEMORY_SETTINGS: Pick<
   | "auto_checkpoint"
   | "auto_compress"
 > = {
-  mode: "native_only",
+  mode: "hybrid_local_vault",
   capture_level: "standard",
   retention_days: 365,
   exclude_categories: [],
