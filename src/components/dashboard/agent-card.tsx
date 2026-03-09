@@ -4,7 +4,7 @@ import type { Agent } from "@/types/agent";
 import { PRESET_INFO, SKILL_INFO, CRON_JOB_INFO } from "@/types/agent";
 import type { BuiltInSkill, AvailableCronJob } from "@/types/agent";
 import { Badge } from "@/components/ui/badge";
-import { Pencil, Trash2, Clock, Hash } from "lucide-react";
+import { Pencil, Trash2, Clock, Hash, FlaskConical } from "lucide-react";
 
 const presetAccentBorder: Record<string, string> = {
   general: "border-l-green-bright",
@@ -32,9 +32,10 @@ interface AgentCardProps {
   agent: Agent;
   onEdit: (agent: Agent) => void;
   onDelete: (agent: Agent) => void;
+  onPreview?: (agent: Agent) => void;
 }
 
-export function AgentCard({ agent, onEdit, onDelete }: AgentCardProps) {
+export function AgentCard({ agent, onEdit, onDelete, onPreview }: AgentCardProps) {
   const presetInfo = PRESET_INFO[agent.personality_preset];
   const borderColor = presetAccentBorder[agent.personality_preset] || "border-l-text-dim";
   const badgeVariant = presetBadgeVariant[agent.personality_preset] || "neutral";
@@ -60,6 +61,16 @@ export function AgentCard({ agent, onEdit, onDelete }: AgentCardProps) {
         </div>
 
         <div className="flex items-center gap-1 shrink-0 ml-2">
+          {onPreview && (
+            <button
+              type="button"
+              onClick={() => onPreview(agent)}
+              className="inline-flex items-center justify-center rounded-lg p-2 text-text-secondary hover:bg-accent/10 hover:text-accent transition-colors cursor-pointer"
+              aria-label={`Test ${agent.display_name}`}
+            >
+              <FlaskConical className="w-4 h-4" />
+            </button>
+          )}
           <button
             type="button"
             onClick={() => onEdit(agent)}
@@ -78,6 +89,13 @@ export function AgentCard({ agent, onEdit, onDelete }: AgentCardProps) {
           </button>
         </div>
       </div>
+
+      {/* Goal subtitle */}
+      {agent.goal && (
+        <p className="text-sm text-text-secondary mb-3 line-clamp-2">
+          {agent.goal}
+        </p>
+      )}
 
       {/* Channel */}
       <div className="mb-3">

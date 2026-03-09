@@ -3,12 +3,12 @@
 import { m, LazyMotion, domAnimation } from "motion/react";
 
 const benefits = [
-  { icon: "#", title: "Organized by topic", desc: "#grain-bids, #weather, #equipment, #agronomy \u2014 organize by topic, by team, or however your operation runs." },
+  { icon: "#", title: "Organized by topic", desc: "#operations, #weather, #grain-bids, #equipment — organize by topic, by team, or however your operation runs." },
   { icon: "\u{1F465}", title: "Your whole team, free", desc: "Unlimited users at $0/month. Add operators, agronomists, and your grain buyer without a single per-seat charge." },
   { icon: "\u{1F512}", title: "Role-based access", desc: "Farm owner sees everything. Equipment operators see what they need. External agronomists see only agronomy. You set the lines." },
   { icon: "\u{1F4F1}", title: "Built for the field", desc: "Discord\u2019s mobile app uses 75% less data than alternatives and loads fast on any connection. Works on the combine, not just in the office." },
-  { icon: "/", title: "Slash commands", desc: "Type /bids corn or /weather tomorrow and get instant answers. No hunting through old messages." },
-  { icon: "\u221E", title: "Unlimited history", desc: "Every grain bid, weather alert, and conversation \u2014 searchable forever. Nothing gets buried or deleted after 90 days." },
+  { icon: "/", title: "Slash commands", desc: "Type /tasks today or /sop anhydrous and get instant answers. No hunting through old messages." },
+  { icon: "\u221E", title: "Unlimited history", desc: "Every task, procedure, weather alert, and conversation — searchable forever. Nothing gets buried or deleted after 90 days." },
 ];
 
 export function Channels() {
@@ -31,7 +31,7 @@ export function Channels() {
           <div className="discord-mockup">
             <div className="discord-server-name">Johnson Farms</div>
             <div className="discord-channels">
-              {["grain-bids", "weather", "equipment", "agronomy", "general"].map((ch) => (
+              {["general", "operations", "weather", "grain-bids", "equipment"].map((ch) => (
                 <div key={ch} className="discord-channel">
                   <span className="discord-hash">#</span>
                   {ch}

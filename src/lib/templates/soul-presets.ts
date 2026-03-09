@@ -13,6 +13,20 @@ interface SoulPresetData {
   soil_cec?: number | null;
   organic_matter_pct?: number | null;
   avg_annual_rainfall_in?: number | null;
+  goal?: string | null;
+  backstory?: string | null;
+}
+
+function renderGoalBackstoryBlock(data: SoulPresetData): string {
+  const sections: string[] = [];
+  if (data.goal && data.goal.trim()) {
+    sections.push(`- **Goal:** ${data.goal.trim()}`);
+  }
+  if (data.backstory && data.backstory.trim()) {
+    sections.push(`- **Context:** ${data.backstory.trim()}`);
+  }
+  if (sections.length === 0) return "";
+  return `\n\n## Agent Goal & Context\n\n${sections.join("\n")}`;
 }
 
 function renderGeneral(data: SoulPresetData): string {
@@ -711,13 +725,34 @@ export function renderSoulPreset(
   data: SoulPresetData,
   customPersonality?: string | null
 ): string {
+  let result: string;
+
   // If customPersonality is provided and non-empty, use it for any preset
   if (customPersonality && customPersonality.trim().length > 0) {
-    return renderCustomOverride(data, customPersonality);
+    result = renderCustomOverride(data, customPersonality);
+  } else {
+    const renderer = PRESET_RENDERERS[preset as Exclude<PersonalityPreset, "custom">];
+    result = renderer ? renderer(data) : renderGeneral(data);
   }
 
-  const renderer = PRESET_RENDERERS[preset as Exclude<PersonalityPreset, "custom">];
-  return renderer ? renderer(data) : renderGeneral(data);
+  // Inject goal/backstory block after the rendered prompt
+  const goalBlock = renderGoalBackstoryBlock(data);
+  if (goalBlock) {
+    // Insert after "About This Operation" section if present, otherwise append
+    const aboutIdx = result.indexOf("## About This Operation");
+    if (aboutIdx !== -1) {
+      const nextSectionIdx = result.indexOf("\n## ", aboutIdx + 1);
+      if (nextSectionIdx !== -1) {
+        result = result.slice(0, nextSectionIdx) + goalBlock + result.slice(nextSectionIdx);
+      } else {
+        result += goalBlock;
+      }
+    } else {
+      result += goalBlock;
+    }
+  }
+
+  return result;
 }
 
 export type { SoulPresetData };

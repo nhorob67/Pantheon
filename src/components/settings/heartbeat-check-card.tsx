@@ -15,6 +15,8 @@ interface HeartbeatCheckCardProps {
   description: string;
   checked: boolean;
   onToggle: (v: boolean) => void;
+  disabled?: boolean;
+  disabledReason?: string;
   thresholdLabel?: string;
   thresholdValue?: number;
   thresholdMin?: number;
@@ -28,6 +30,8 @@ export function HeartbeatCheckCard({
   description,
   checked,
   onToggle,
+  disabled,
+  disabledReason,
   thresholdLabel,
   thresholdValue,
   thresholdMin,
@@ -53,6 +57,7 @@ export function HeartbeatCheckCard({
           type="button"
           role="switch"
           aria-checked={checked}
+          disabled={disabled}
           onClick={() => onToggle(!checked)}
           className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors shrink-0 ${
             checked ? "bg-[#5a8a3c]" : "bg-muted"
@@ -66,6 +71,9 @@ export function HeartbeatCheckCard({
         </button>
       </div>
       <p className="text-xs text-foreground/50 mb-2">{description}</p>
+      {disabledReason && (
+        <p className="text-[11px] text-foreground/40 mb-2">{disabledReason}</p>
+      )}
 
       {checked && thresholdLabel && onThresholdChange && (
         <div className="mt-2 pt-2 border-t border-border">
@@ -73,6 +81,7 @@ export function HeartbeatCheckCard({
             <span className="text-xs text-foreground/60">{thresholdLabel}</span>
             <input
               type="number"
+              disabled={disabled}
               min={thresholdMin}
               max={thresholdMax}
               value={thresholdValue}

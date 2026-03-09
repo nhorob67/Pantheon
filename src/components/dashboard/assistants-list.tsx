@@ -10,6 +10,7 @@ import type { PersonalityPreset } from "@/types/agent";
 import { AgentCard } from "./agent-card";
 import { AgentForm } from "./agent-form";
 import { AgentPresetsPicker } from "./agent-presets-picker";
+import { AgentPreviewChat } from "./agent-preview-chat";
 import { Dialog } from "@/components/ui/dialog";
 import { Plus, Users } from "lucide-react";
 
@@ -35,6 +36,7 @@ export function AssistantsList({
   const [editAgent, setEditAgent] = useState<Agent | null>(null);
   const [deleteAgent, setDeleteAgent] = useState<Agent | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [previewAgent, setPreviewAgent] = useState<Agent | null>(null);
 
   const refreshAgents = useCallback(async () => {
     const res = await fetch(`/api/tenants/${tenantId}/agents`);
@@ -157,6 +159,7 @@ export function AssistantsList({
               agent={agent}
               onEdit={openEdit}
               onDelete={setDeleteAgent}
+              onPreview={setPreviewAgent}
             />
           ))}
         </div>
@@ -206,7 +209,18 @@ export function AssistantsList({
         customSkills={customSkills}
         composioConfig={composioConfig}
         defaultPrompts={defaultPrompts}
+        tenantId={tenantId}
       />
+
+      {/* Preview Chat Dialog */}
+      {previewAgent && (
+        <AgentPreviewChat
+          agent={previewAgent}
+          tenantId={tenantId}
+          open={!!previewAgent}
+          onClose={() => setPreviewAgent(null)}
+        />
+      )}
 
       {/* Delete Confirmation Dialog */}
       <Dialog

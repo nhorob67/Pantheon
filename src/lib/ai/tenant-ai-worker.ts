@@ -19,6 +19,7 @@ import {
   CircuitBreakerOpenError,
   runWithCircuitBreaker,
 } from "@/lib/runtime/tenant-runtime-circuit-breaker";
+import { checkTrialAndSpendingBlock } from "./trial-guard";
 import { resolveTenantRuntimeGovernancePolicy } from "@/lib/runtime/tenant-runtime-governance";
 import type {
   TenantRuntimeWorker,
@@ -107,30 +108,33 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
     async execute(context: TenantRuntimeWorkerContext): Promise<TenantRuntimeWorkerResult> {
       const { model: primaryModel, modelId: primaryModelId, inputCost: primaryInputCost, outputCost: primaryOutputCost, fastModel } = resolveWorkerModels(context.resolvedModels);
       try {
-        // Spending cap circuit breaker: block LLM calls when paused
+        // Spending cap + trial expiration circuit breaker
         const { data: custRow } = await admin
           .from("customers")
-          .select("spending_paused_at")
+          .select("spending_paused_at, trial_ends_at, subscription_status")
           .eq("id", context.run.customer_id)
           .single();
 
-        if (custRow?.spending_paused_at) {
+        const trialCheck = checkTrialAndSpendingBlock({
+          subscription_status: custRow?.subscription_status,
+          trial_ends_at: custRow?.trial_ends_at,
+          spending_paused_at: custRow?.spending_paused_at,
+        });
+
+        if (trialCheck.blocked) {
           const payload = context.run.payload;
           const channelId =
             typeof payload.channel_id === "string" ? payload.channel_id.trim() : "";
-          if (channelId) {
+          if (channelId && trialCheck.message) {
             const botToken = getDiscordBotToken();
-            const pauseMessage =
-              "Your FarmClaw assistant is currently paused because your monthly spending cap has been reached. " +
-              "To resume, increase your spending cap in Settings > Billing, or wait for the next billing cycle.";
             await sendDiscordChannelMessageSequence(
-              { botToken, channelId, contents: [pauseMessage] },
+              { botToken, channelId, contents: [trialCheck.message] },
               fetch
             ).catch(() => {});
           }
           return {
             outcome: "completed",
-            result: { paused: true, reason: "spending_cap_exceeded" },
+            result: { paused: true, reason: trialCheck.reason },
           };
         }
 
@@ -380,6 +384,7 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
             dispatched_channel_id: channelId,
             dispatched_message_ids: sent.messageIds,
             dispatched_message_parts: sent.partsSent,
+            response_preview: responseText.slice(0, 500),
             request_trace_id: context.requestTraceId,
             processed_at: new Date().toISOString(),
           },

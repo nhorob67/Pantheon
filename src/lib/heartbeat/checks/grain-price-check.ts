@@ -23,7 +23,15 @@ export async function checkGrainPriceMovement(
     .maybeSingle();
 
   if (!profile?.crops || !Array.isArray(profile.crops) || profile.crops.length === 0) {
-    return { status: "ok", summary: "No crops configured" };
+    return {
+      status: "ok",
+      summary: "No crops configured",
+      observability: {
+        crop_count: 0,
+        threshold_cents: thresholdCents,
+        latest_scraped_at: null,
+      },
+    };
   }
 
   // Get recent bids (last 2 days) to compare
@@ -37,10 +45,20 @@ export async function checkGrainPriceMovement(
     .limit(500);
 
   if (error || !bids || bids.length === 0) {
-    return { status: "ok", summary: "No recent grain bids" };
+    return {
+      status: "ok",
+      summary: "No recent grain bids",
+      observability: {
+        crop_count: profile.crops.length,
+        threshold_cents: thresholdCents,
+        latest_scraped_at: null,
+        bid_count: 0,
+      },
+    };
   }
 
   const typedBids = bids as BidRow[];
+  const latestScrapedAt = typedBids[0]?.scraped_at ?? null;
 
   // Group by elevator+crop+delivery_period and compare latest vs previous
   const groups = new Map<string, BidRow[]>();
@@ -78,12 +96,29 @@ export async function checkGrainPriceMovement(
   }
 
   if (movers.length === 0) {
-    return { status: "ok", summary: "No significant grain price movement" };
+    return {
+      status: "ok",
+      summary: "No significant grain price movement",
+      observability: {
+        crop_count: profile.crops.length,
+        threshold_cents: thresholdCents,
+        latest_scraped_at: latestScrapedAt,
+        bid_count: typedBids.length,
+        mover_count: 0,
+      },
+    };
   }
 
   return {
     status: "alert",
     summary: `${movers.length} grain price movement(s) exceeding ${thresholdCents}c threshold`,
     data: movers,
+    observability: {
+      crop_count: profile.crops.length,
+      threshold_cents: thresholdCents,
+      latest_scraped_at: latestScrapedAt,
+      bid_count: typedBids.length,
+      mover_count: movers.length,
+    },
   };
 }

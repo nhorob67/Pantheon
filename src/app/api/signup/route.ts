@@ -13,6 +13,12 @@ const createSubscriptionSchema = z.object({
   password: z.string().min(8).max(128),
 });
 
+const createTrialSchema = z.object({
+  action: z.literal("create-trial"),
+  email: z.string().trim().toLowerCase().email().max(320),
+  password: z.string().min(8).max(128),
+});
+
 const checkStatusSchema = z.object({
   action: z.literal("check-status"),
   subscriptionId: z.string().min(1),
@@ -55,6 +61,10 @@ export async function POST(request: Request) {
   }
 
   const action = (body as { action?: string })?.action;
+
+  if (action === "create-trial") {
+    return handleCreateTrial(body, request);
+  }
 
   if (action === "create-subscription") {
     return handleCreateSubscription(body, request);
@@ -353,6 +363,120 @@ async function handleCompleteSignup(body: unknown) {
   } catch (err) {
     console.error("[SIGNUP] complete-signup error:", err);
     return NextResponse.json({ status: "processing" });
+  }
+}
+
+async function handleCreateTrial(body: unknown, request: Request) {
+  try {
+    const parsed = createTrialSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Invalid request", details: parsed.error.flatten() },
+        { status: 400 }
+      );
+    }
+
+    const { email, password } = parsed.data;
+
+    // Rate limit by email + IP (same windows as paid signup)
+    const emailAllowed = await consumeDurableRateLimit({
+      action: "signup_email",
+      key: email,
+      windowSeconds: SIGNUP_EMAIL_WINDOW_SECONDS,
+      maxAttempts: SIGNUP_EMAIL_MAX_ATTEMPTS,
+    }).catch(() => null);
+
+    const networkAllowed = await consumeDurableRateLimit({
+      action: "signup_network",
+      key: getClientNetworkKey(request),
+      windowSeconds: SIGNUP_NETWORK_WINDOW_SECONDS,
+      maxAttempts: SIGNUP_NETWORK_MAX_ATTEMPTS,
+    }).catch(() => null);
+
+    if (emailAllowed === null || networkAllowed === null) {
+      return NextResponse.json(
+        { error: "Rate limiter unavailable. Please try again shortly." },
+        { status: 503 }
+      );
+    }
+
+    if (!emailAllowed || !networkAllowed) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429 }
+      );
+    }
+
+    const admin = createAdminClient();
+
+    // Check for existing customer
+    const { data: existingCustomer } = await admin
+      .from("customers")
+      .select("id")
+      .eq("email", email)
+      .single();
+
+    if (existingCustomer) {
+      return NextResponse.json(
+        { error: "An account with this email already exists. Please sign in." },
+        { status: 409 }
+      );
+    }
+
+    // Check for existing auth user
+    const { data: authUsers } = await admin.auth.admin.listUsers();
+    const existingUser = authUsers?.users?.find((u) => u.email === email);
+    if (existingUser) {
+      return NextResponse.json(
+        { error: "An account with this email already exists. Please sign in." },
+        { status: 409 }
+      );
+    }
+
+    // Create Supabase auth user directly (no payment to verify)
+    const { data: newUser, error: createError } =
+      await admin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+      });
+
+    if (createError || !newUser.user) {
+      console.error("[SIGNUP] Trial user creation failed:", createError);
+      return NextResponse.json(
+        { error: "Unable to create account. Please try again." },
+        { status: 500 }
+      );
+    }
+
+    // Insert customer row with trial state
+    const trialEndsAt = new Date(
+      Date.now() + 14 * 24 * 60 * 60 * 1000
+    ).toISOString();
+
+    const { error: insertError } = await admin.from("customers").insert({
+      user_id: newUser.user.id,
+      email,
+      subscription_status: "trialing",
+      plan: "standard",
+      trial_ends_at: trialEndsAt,
+    });
+
+    if (insertError) {
+      console.error("[SIGNUP] Failed to insert trial customer:", insertError);
+      return NextResponse.json(
+        { error: "Unable to complete signup. Please try again." },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ status: "complete" });
+  } catch (err) {
+    console.error("[SIGNUP] Trial signup unhandled error:", err);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
 

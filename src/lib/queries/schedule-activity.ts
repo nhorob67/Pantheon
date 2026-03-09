@@ -19,15 +19,18 @@ export interface ScheduleActivityData {
   next_run_at: string | null;
   agent_name: string | null;
   agent_id: string;
+  channel_id: string;
   metadata: Record<string, unknown>;
   schedule_type: string;
   display_name: string | null;
   prompt: string | null;
   tools: string[];
   created_by: string;
+  notify_on_failure: boolean;
   healthStatus: HealthStatus;
   dayBuckets: DayBucket[];
   recentRuns: RecentRun[];
+  lastRunStatus: "completed" | "failed" | null;
 }
 
 export interface RecentRun {
@@ -37,6 +40,8 @@ export interface RecentRun {
   completed_at: string | null;
   error_message: string | null;
   created_at: string;
+  retry_attempt: number | null;
+  response_preview: string | null;
 }
 
 function computeHealthStatus(buckets: DayBucket[], enabled: boolean): HealthStatus {
@@ -93,12 +98,14 @@ interface ScheduleRow {
   last_run_at: string | null;
   next_run_at: string | null;
   agent_id: string;
+  channel_id: string;
   metadata: Record<string, unknown>;
   schedule_type: string | null;
   display_name: string | null;
   prompt: string | null;
   tools: string[] | null;
   created_by: string | null;
+  notify_on_failure: boolean;
   tenant_agents: { name: string } | { name: string }[] | null;
 }
 
@@ -109,7 +116,8 @@ interface RunRow {
   completed_at: string | null;
   error_message: string | null;
   created_at: string;
-  metadata: { cron_schedule_id?: string } & Record<string, unknown>;
+  metadata: { cron_schedule_id?: string; retry_attempt?: number } & Record<string, unknown>;
+  result: Record<string, unknown> | null;
 }
 
 export async function fetchScheduleActivity(
@@ -124,7 +132,7 @@ export async function fetchScheduleActivity(
     admin
       .from("tenant_scheduled_messages")
       .select(
-        "id, schedule_key, cron_expression, timezone, enabled, last_run_at, next_run_at, agent_id, metadata, schedule_type, display_name, prompt, tools, created_by, tenant_agents(name)"
+        "id, schedule_key, cron_expression, timezone, enabled, last_run_at, next_run_at, agent_id, channel_id, metadata, schedule_type, display_name, prompt, tools, created_by, notify_on_failure, tenant_agents(name)"
       )
       .eq("tenant_id", tenantId)
       .order("enabled", { ascending: false })
@@ -133,7 +141,7 @@ export async function fetchScheduleActivity(
     admin
       .from("tenant_runtime_runs")
       .select(
-        "id, status, started_at, completed_at, error_message, created_at, metadata"
+        "id, status, started_at, completed_at, error_message, created_at, metadata, result"
       )
       .eq("tenant_id", tenantId)
       .gte("created_at", fourteenDaysAgo)
@@ -181,14 +189,40 @@ export async function fetchScheduleActivity(
       : null;
 
     // Recent runs (last 10)
-    const recentRuns: RecentRun[] = scheduleRuns.slice(0, 10).map((r) => ({
-      id: r.id,
-      status: r.status,
-      started_at: r.started_at,
-      completed_at: r.completed_at,
-      error_message: r.error_message,
-      created_at: r.created_at,
-    }));
+    const recentRuns: RecentRun[] = scheduleRuns.slice(0, 10).map((r) => {
+      // Extract response preview from run result if available
+      let responsePreview: string | null = null;
+      if (r.result && typeof r.result === "object") {
+        const res = r.result as Record<string, unknown>;
+        // The AI worker stores dispatched content info in result
+        if (typeof res.response_preview === "string") {
+          responsePreview = res.response_preview;
+        } else if (typeof res.dispatched_content === "string") {
+          responsePreview = res.dispatched_content;
+        }
+      }
+
+      return {
+        id: r.id,
+        status: r.status,
+        started_at: r.started_at,
+        completed_at: r.completed_at,
+        error_message: r.error_message,
+        created_at: r.created_at,
+        retry_attempt: r.metadata?.retry_attempt ?? null,
+        response_preview: responsePreview,
+      };
+    });
+
+    // Derive last run status from most recent run
+    const lastRun = scheduleRuns[0];
+    const lastRunStatus: "completed" | "failed" | null = lastRun
+      ? lastRun.status === "completed"
+        ? "completed"
+        : lastRun.status === "failed"
+          ? "failed"
+          : null
+      : null;
 
     return {
       id: schedule.id,
@@ -200,15 +234,18 @@ export async function fetchScheduleActivity(
       next_run_at: schedule.next_run_at,
       agent_name: agentName,
       agent_id: schedule.agent_id,
+      channel_id: schedule.channel_id,
       metadata: (schedule.metadata || {}) as Record<string, unknown>,
       schedule_type: schedule.schedule_type ?? "predefined",
       display_name: schedule.display_name ?? null,
       prompt: schedule.prompt ?? null,
       tools: schedule.tools ?? [],
       created_by: schedule.created_by ?? "system",
+      notify_on_failure: schedule.notify_on_failure ?? true,
       healthStatus: computeHealthStatus(dayBuckets, schedule.enabled),
       dayBuckets,
       recentRuns,
+      lastRunStatus,
     };
   });
 }

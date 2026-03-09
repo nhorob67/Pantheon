@@ -27,6 +27,9 @@ export const createAgentSchema = z
     skills: z.array(skillSlugSchema),
     cron_jobs: z.record(z.string().max(80), z.boolean()),
     composio_toolkits: z.array(z.string().max(80)).max(50).optional(),
+    goal: z.string().max(300).optional().or(z.literal("")),
+    backstory: z.string().max(1000).optional().or(z.literal("")),
+    tool_approval_overrides: z.record(z.string().max(80), z.enum(["auto", "confirm", "disabled"])).optional(),
   })
   .refine(
     (data) => {
@@ -40,6 +43,10 @@ export const createAgentSchema = z
       path: ["custom_personality"],
     }
   );
+
+export const agentPreviewSchema = z.object({
+  message: z.string().min(1).max(2000),
+});
 
 export const updateAgentSchema = z
   .object({
@@ -64,6 +71,9 @@ export const updateAgentSchema = z
       .record(z.string().max(80), z.boolean())
       .optional(),
     composio_toolkits: z.array(z.string().max(80)).max(50).optional(),
+    goal: z.string().max(300).optional().or(z.literal("")),
+    backstory: z.string().max(1000).optional().or(z.literal("")),
+    tool_approval_overrides: z.record(z.string().max(80), z.enum(["auto", "confirm", "disabled"])).optional(),
   })
   .refine(
     (data) => {

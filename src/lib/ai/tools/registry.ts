@@ -101,5 +101,13 @@ export async function resolveToolsForAgent(input: ToolRegistryInput): Promise<To
     Object.assign(tools, composioTools);
   }
 
+  // Remove disabled tools based on agent's tool_approval_overrides
+  const overrides = (input.agent.config?.tool_approval_overrides ?? {}) as Record<string, string>;
+  for (const [key, level] of Object.entries(overrides)) {
+    if (level === "disabled" && key in tools) {
+      delete tools[key];
+    }
+  }
+
   return tools;
 }

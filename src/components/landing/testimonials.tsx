@@ -15,8 +15,8 @@ export function SocialProof() {
         transition={{ duration: 0.7 }}
       >
         <div className="section-label">Who Built This</div>
-        <div className="quote-text">Built by a farmer&apos;s kid who got tired of checking 6 websites before breakfast.</div>
-        <div className="quote-sub">FarmClaw is built in Fargo, ND by a team that grew up on Upper Midwest row crop operations. We built this because we watched our families juggle elevator websites, weather apps, USDA reports, and text threads — every single morning — just to make decisions they could have made in one conversation.</div>
+        <div className="quote-text">Built by a farmer&apos;s kid who watched things fall through the cracks every season.</div>
+        <div className="quote-sub">FarmClaw is built in Fargo, ND by a team that grew up on Upper Midwest row crop operations. We built this because we watched our families juggle to-do lists on whiteboards, procedures that lived in someone&apos;s head, elevator websites, and weather apps — every single day — just to keep the operation running. One conversation should handle all of it.</div>
         <div className="quote-attr">NICK HOROB &middot; Fargo, ND</div>
         <div className="quote-guarantee">
           <Shield size={18} />

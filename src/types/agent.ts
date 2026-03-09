@@ -1,5 +1,7 @@
 export type PersonalityPreset = "general" | "grain" | "weather" | "scale-tickets" | "operations" | "agronomy" | "equipment" | "custom";
 
+export type ToolApprovalLevel = "auto" | "confirm" | "disabled";
+
 export interface Agent {
   id: string;
   instance_id: string;
@@ -14,6 +16,9 @@ export interface Agent {
   skills: string[];
   cron_jobs: Record<string, boolean>;
   composio_toolkits?: string[];
+  goal?: string | null;
+  backstory?: string | null;
+  tool_approval_overrides?: Record<string, ToolApprovalLevel>;
   sort_order: number;
   created_at: string;
   updated_at: string;

@@ -7,11 +7,22 @@ import {
   tenantApprovalDecisionRequestSchema,
   tenantApprovalDecisionRouteParamsSchema,
 } from "@/lib/runtime/tenant-api-contracts";
+import {
+  isHeartbeatApprovalPayload,
+  type HeartbeatApprovalRequestPayload,
+} from "@/lib/heartbeat/approvals";
+import {
+  markHeartbeatRunDeliveryStatus,
+  queueHeartbeatDelivery,
+  resolveHeartbeatConfig,
+  type HeartbeatConfigRow,
+} from "@/lib/heartbeat/processor";
 import { hasMinimumTenantRole } from "@/lib/runtime/tenant-auth";
 import { transitionTenantRuntimeRun } from "@/lib/runtime/tenant-runtime-queue";
 import { encodeToolContinuationToken } from "@/lib/runtime/tenant-runtime-tools";
 import { auditLog } from "@/lib/security/audit";
 import type { TenantRuntimeRun } from "@/types/tenant-runtime";
+import { processRuntimeRun } from "@/trigger/process-runtime-run";
 
 export async function POST(
   request: Request,
@@ -103,6 +114,9 @@ export async function POST(
         !Array.isArray(updatedApproval.request_payload)
           ? (updatedApproval.request_payload as Record<string, unknown>)
           : {};
+      const heartbeatPayload = isHeartbeatApprovalPayload(requestPayload)
+        ? (requestPayload as HeartbeatApprovalRequestPayload)
+        : null;
       const runId = typeof requestPayload.run_id === "string" ? requestPayload.run_id : null;
       const invocationId =
         typeof requestPayload.invocation_id === "string" ? requestPayload.invocation_id : null;
@@ -117,6 +131,128 @@ export async function POST(
             token: rawContinuationToken,
           })
           : null;
+
+      if (heartbeatPayload) {
+        if (decision === "approved") {
+          const { data: configRow, error: configError } = await state.admin
+            .from("tenant_heartbeat_configs")
+            .select(
+              "id, tenant_id, customer_id, agent_id, enabled, interval_minutes, timezone, active_hours_start, active_hours_end, checks, custom_checks, delivery_channel_id, cooldown_minutes, max_alerts_per_day, digest_enabled, digest_window_minutes, reminder_interval_minutes, heartbeat_instructions, last_run_at, next_run_at"
+            )
+            .eq("id", heartbeatPayload.config_id)
+            .eq("tenant_id", state.tenantContext.tenantId)
+            .maybeSingle();
+
+          if (configError) {
+            throw new Error(configError.message);
+          }
+
+          if (configRow) {
+            const config = resolveHeartbeatConfig(configRow as HeartbeatConfigRow);
+            if (config.delivery_channel_id) {
+              const runtimeRunId = await queueHeartbeatDelivery({
+                admin: state.admin,
+                config,
+                heartbeatRunId: heartbeatPayload.heartbeat_run_id,
+                requestTraceId: state.requestTraceId,
+                now: new Date(),
+                signalSummaries: heartbeatPayload.signal_summaries,
+                signalData: heartbeatPayload.signal_data,
+                issueContexts: heartbeatPayload.issue_contexts,
+              });
+
+              for (const issueContext of heartbeatPayload.issue_contexts) {
+                if (typeof issueContext.fingerprint !== "string" || issueContext.fingerprint.length === 0) {
+                  continue;
+                }
+
+                await state.admin
+                  .from("tenant_heartbeat_signals")
+                  .update({
+                    last_notified_at: nowIso,
+                    last_notification_kind: issueContext.attention_type,
+                  })
+                  .eq("config_id", heartbeatPayload.config_id)
+                  .eq("fingerprint", issueContext.fingerprint)
+                  .is("resolved_at", null);
+              }
+
+              await markHeartbeatRunDeliveryStatus(
+                state.admin,
+                heartbeatPayload.heartbeat_run_id,
+                "queued",
+                {
+                  approval_ref: {
+                    approval_id: updatedApproval.id,
+                    approval_reason: heartbeatPayload.approval_reason,
+                    decided_at: nowIso,
+                    decision,
+                    decided_by: state.user.id,
+                  },
+                },
+                null,
+                true
+              );
+
+              await processRuntimeRun.trigger({ runId: runtimeRunId });
+            } else {
+              await markHeartbeatRunDeliveryStatus(
+                state.admin,
+                heartbeatPayload.heartbeat_run_id,
+                "suppressed",
+                {
+                  approval_ref: {
+                    approval_id: updatedApproval.id,
+                    approval_reason: heartbeatPayload.approval_reason,
+                    decided_at: nowIso,
+                    decision,
+                    decided_by: state.user.id,
+                    dispatch_skipped: "missing_delivery_channel",
+                  },
+                },
+                "missing_delivery_channel",
+                false
+              );
+            }
+          } else {
+            await markHeartbeatRunDeliveryStatus(
+              state.admin,
+              heartbeatPayload.heartbeat_run_id,
+              "suppressed",
+              {
+                approval_ref: {
+                  approval_id: updatedApproval.id,
+                  approval_reason: heartbeatPayload.approval_reason,
+                  decided_at: nowIso,
+                  decision,
+                  decided_by: state.user.id,
+                  dispatch_skipped: "missing_heartbeat_config",
+                },
+              },
+              "missing_heartbeat_config",
+              false
+            );
+          }
+        } else {
+          await markHeartbeatRunDeliveryStatus(
+            state.admin,
+            heartbeatPayload.heartbeat_run_id,
+            "suppressed",
+            {
+              approval_ref: {
+                approval_id: updatedApproval.id,
+                approval_reason: heartbeatPayload.approval_reason,
+                decided_at: nowIso,
+                decision,
+                decided_by: state.user.id,
+                decision_comment: parsedBody.data.comment || null,
+              },
+            },
+            "heartbeat_approval_rejected",
+            false
+          );
+        }
+      }
 
       if (invocationId) {
         await state.admin

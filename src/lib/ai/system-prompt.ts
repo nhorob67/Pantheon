@@ -63,6 +63,9 @@ export async function buildSystemPrompt(
       ? agent.config.custom_personality
       : null;
 
+  const agentGoal = typeof agent.config?.goal === "string" ? agent.config.goal : null;
+  const agentBackstory = typeof agent.config?.backstory === "string" ? agent.config.backstory : null;
+
   const presetData: SoulPresetData = {
     farm_name: profile.farm_name || "Your Farm",
     agent_name: agent.display_name,
@@ -76,9 +79,27 @@ export async function buildSystemPrompt(
     soil_cec: profile.soil_cec,
     organic_matter_pct: profile.organic_matter_pct,
     avg_annual_rainfall_in: profile.avg_annual_rainfall_in,
+    goal: agentGoal,
+    backstory: agentBackstory,
   };
 
   let systemPrompt = renderSoulPreset(preset, presetData, customPersonality);
+
+  // Append tool approval overrides (prompt-based soft HITL)
+  const toolOverrides = (agent.config?.tool_approval_overrides ?? {}) as Record<string, string>;
+  const confirmTools = Object.entries(toolOverrides)
+    .filter(([, level]) => level === "confirm")
+    .map(([key]) => key);
+  const disabledTools = Object.entries(toolOverrides)
+    .filter(([, level]) => level === "disabled")
+    .map(([key]) => key);
+
+  if (confirmTools.length > 0) {
+    systemPrompt += `\n\n## Tool Approval Required\n\nBefore using the following tools, you MUST ask the farmer for explicit permission first. Explain what you intend to do and wait for their confirmation before proceeding:\n${confirmTools.map((t) => `- \`${t}\``).join("\n")}`;
+  }
+  if (disabledTools.length > 0) {
+    systemPrompt += `\n\n## Disabled Tools\n\nThe following tools have been disabled by the farmer. Do not attempt to use them. If asked about functionality they provide, explain that the tool is currently disabled and suggest enabling it in settings:\n${disabledTools.map((t) => `- \`${t}\``).join("\n")}`;
+  }
 
   // Append active skill descriptions
   if (agent.skills && agent.skills.length > 0) {

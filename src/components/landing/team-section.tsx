@@ -3,24 +3,28 @@
 import { useState } from "react";
 import { m, LazyMotion, domAnimation, AnimatePresence } from "motion/react";
 
-const PERSONALITY_EMOJI: Record<string, string> = {
-  general: "\u{1F33E}",
-  grain: "\u{1F4CA}",
-  weather: "\u26C5",
-  "scale-tickets": "\u{1F9FE}",
+const PERSONALITY_COLORS: Record<string, string> = {
+  general: "var(--accent)",
+  grain: "var(--green-bright)",
+  weather: "#5865F2",
+  "scale-tickets": "#7289da",
+  ops: "var(--accent-light)",
 };
 
 const SKILL_LABELS: Record<string, string> = {
   "farm-grain-bids": "Grain Bids",
   "farm-weather": "Weather",
   "farm-scale-tickets": "Scale Tickets",
+  "farm-tasks": "Tasks",
+  "farm-sops": "SOPs",
 };
 
 const CHANNEL_MAP: Record<string, string[]> = {
   general: ["#general"],
   grain: ["#grain-bids"],
   weather: ["#weather"],
-  "scale-tickets": ["#scale-tickets"],
+  "scale-tickets": ["#grain-bids"],
+  ops: ["#operations"],
 };
 
 interface AgentConfig {
@@ -42,32 +46,32 @@ const SETUPS: Setup[] = [
     id: "two-agent",
     label: "2 Agents",
     agents: [
-      { display_name: "Farm Assistant", personality_preset: "general", skills: ["farm-grain-bids", "farm-weather", "farm-scale-tickets"], cron_jobs: { "morning-weather": true }, is_default: true },
-      { display_name: "Grain Desk", personality_preset: "grain", skills: ["farm-grain-bids"], cron_jobs: { "daily-grain-bids": true }, is_default: false },
+      { display_name: "Farm Assistant", personality_preset: "general", skills: ["farm-tasks", "farm-weather", "farm-grain-bids"], cron_jobs: { "morning-weather": true }, is_default: true },
+      { display_name: "Operations Lead", personality_preset: "ops", skills: ["farm-tasks", "farm-sops"], cron_jobs: {}, is_default: false },
     ],
   },
   {
     id: "three-agent",
     label: "3 Agents",
     agents: [
-      { display_name: "Farm Assistant", personality_preset: "general", skills: ["farm-grain-bids", "farm-weather"], cron_jobs: { "morning-weather": true }, is_default: true },
-      { display_name: "Grain Desk", personality_preset: "grain", skills: ["farm-grain-bids"], cron_jobs: { "daily-grain-bids": true }, is_default: false },
-      { display_name: "Ticket Clerk", personality_preset: "scale-tickets", skills: ["farm-scale-tickets"], cron_jobs: {}, is_default: false },
+      { display_name: "Farm Assistant", personality_preset: "general", skills: ["farm-tasks", "farm-weather"], cron_jobs: { "morning-weather": true }, is_default: true },
+      { display_name: "Operations Lead", personality_preset: "ops", skills: ["farm-tasks", "farm-sops"], cron_jobs: {}, is_default: false },
+      { display_name: "Grain Desk", personality_preset: "grain", skills: ["farm-grain-bids", "farm-scale-tickets"], cron_jobs: { "daily-grain-bids": true }, is_default: false },
     ],
   },
   {
     id: "four-agent",
     label: "Full Team",
     agents: [
-      { display_name: "Farm Assistant", personality_preset: "general", skills: ["farm-grain-bids", "farm-scale-tickets"], cron_jobs: {}, is_default: true },
+      { display_name: "Farm Assistant", personality_preset: "general", skills: ["farm-tasks"], cron_jobs: {}, is_default: true },
+      { display_name: "Operations Lead", personality_preset: "ops", skills: ["farm-tasks", "farm-sops"], cron_jobs: {}, is_default: false },
       { display_name: "Grain Desk", personality_preset: "grain", skills: ["farm-grain-bids"], cron_jobs: { "daily-grain-bids": true }, is_default: false },
       { display_name: "Weather Watch", personality_preset: "weather", skills: ["farm-weather"], cron_jobs: { "morning-weather": true }, is_default: false },
-      { display_name: "Ticket Clerk", personality_preset: "scale-tickets", skills: ["farm-scale-tickets"], cron_jobs: {}, is_default: false },
     ],
   },
 ];
 
-const ALL_CHANNELS = ["#general", "#grain-bids", "#weather", "#scale-tickets"];
+const ALL_CHANNELS = ["#general", "#operations", "#grain-bids", "#weather"];
 
 function getAgentChannels(agent: AgentConfig): string[] {
   if (agent.is_default) return ["#general"];
@@ -132,7 +136,10 @@ export function TeamSection() {
                   transition={{ duration: 0.35, delay: i * 0.08 }}
                 >
                   <div className="agent-header">
-                    <span className="agent-emoji">{PERSONALITY_EMOJI[agent.personality_preset] ?? "\u{1F916}"}</span>
+                    <span
+                      className="agent-dot"
+                      style={{ background: PERSONALITY_COLORS[agent.personality_preset] ?? "var(--text-dim)" }}
+                    />
                     <span className="agent-name">{agent.display_name}</span>
                     {agent.is_default && <span className="agent-default-badge">DEFAULT</span>}
                   </div>

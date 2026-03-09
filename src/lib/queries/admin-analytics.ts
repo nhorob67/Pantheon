@@ -48,18 +48,6 @@ function toSafeDate(value: unknown): string {
   return "";
 }
 
-function toSafeTimestamp(value: unknown): string | null {
-  if (typeof value === "string") {
-    return value;
-  }
-
-  if (value instanceof Date) {
-    return value.toISOString();
-  }
-
-  return null;
-}
-
 export async function getTenantHealth(
   admin: SupabaseClient
 ): Promise<TenantHealthData> {

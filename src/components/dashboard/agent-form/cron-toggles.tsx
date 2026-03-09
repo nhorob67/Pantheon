@@ -5,7 +5,7 @@ import {
 } from "@/types/agent";
 import type { AvailableCronJob } from "@/types/agent";
 import { Switch } from "@/components/ui/switch";
-import { CalendarPlus, Clock } from "lucide-react";
+import { CalendarPlus, Clock, Trash2 } from "lucide-react";
 
 interface CustomScheduleSummary {
   id: string;
@@ -21,6 +21,8 @@ interface CronTogglesProps {
   onToggle: (cron: AvailableCronJob) => void;
   customSchedules?: CustomScheduleSummary[];
   onAddCustomSchedule?: () => void;
+  onToggleCustomSchedule?: (id: string, enabled: boolean) => void;
+  onDeleteCustomSchedule?: (id: string) => void;
 }
 
 export function CronToggles({
@@ -30,6 +32,8 @@ export function CronToggles({
   onToggle,
   customSchedules,
   onAddCustomSchedule,
+  onToggleCustomSchedule,
+  onDeleteCustomSchedule,
 }: CronTogglesProps) {
   return (
     <div>
@@ -82,13 +86,24 @@ export function CronToggles({
                 <span className="truncate">
                   {schedule.display_name || schedule.cron_expression}
                 </span>
-                <span className="ml-auto text-xs text-foreground/40">
-                  {schedule.enabled ? (
-                    <span className="text-primary">Active</span>
-                  ) : (
-                    "Disabled"
+                <div className="ml-auto flex items-center gap-2 shrink-0">
+                  {onToggleCustomSchedule && (
+                    <Switch
+                      checked={schedule.enabled}
+                      onChange={() => onToggleCustomSchedule(schedule.id, !schedule.enabled)}
+                    />
                   )}
-                </span>
+                  {onDeleteCustomSchedule && (
+                    <button
+                      type="button"
+                      onClick={() => onDeleteCustomSchedule(schedule.id)}
+                      className="text-text-dim hover:text-red-400 transition-colors cursor-pointer p-1"
+                      aria-label={`Delete ${schedule.display_name || "schedule"}`}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>

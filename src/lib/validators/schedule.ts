@@ -68,6 +68,12 @@ export const updateCustomScheduleSchema = z.object({
     .optional(),
   tools: z.array(z.enum(VALID_TOOLS)).optional(),
   enabled: z.boolean().optional(),
+  notify_on_failure: z.boolean().optional(),
+});
+
+/** Schema for toggling notification preferences on any schedule (not just custom) */
+export const updateScheduleNotificationsSchema = z.object({
+  notify_on_failure: z.boolean(),
 });
 
 export type CreateCustomScheduleData = z.infer<typeof createCustomScheduleSchema>;

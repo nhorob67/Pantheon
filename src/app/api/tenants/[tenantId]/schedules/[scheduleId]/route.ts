@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { parseTenantRouteParams, runTenantRoute } from "@/lib/runtime/tenant-route";
-import { updateCustomScheduleSchema } from "@/lib/validators/schedule";
+import { updateCustomScheduleSchema, updateScheduleNotificationsSchema } from "@/lib/validators/schedule";
 import { computeNextRun } from "@/lib/schedules/compute-next-run";
 
 const paramsSchema = z.object({ tenantId: z.uuid(), scheduleId: z.uuid() });
@@ -66,7 +66,7 @@ export async function PATCH(
       fallbackErrorMessage: "Failed to update schedule",
     },
     async ({ admin, tenantContext }) => {
-      // Verify schedule exists and is custom
+      // Verify schedule exists
       const { data: existing, error: fetchError } = await admin
         .from("tenant_scheduled_messages")
         .select("id, schedule_type, cron_expression, timezone")
@@ -78,18 +78,36 @@ export async function PATCH(
         return NextResponse.json({ error: "Schedule not found" }, { status: 404 });
       }
 
-      if (existing.schedule_type !== "custom") {
-        return NextResponse.json(
-          { error: "Only custom schedules can be edited" },
-          { status: 400 }
-        );
-      }
-
       let body: unknown;
       try {
         body = await request.json();
       } catch {
         return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+      }
+
+      // Allow notify_on_failure updates on any schedule type
+      const notifOnly = updateScheduleNotificationsSchema.safeParse(body);
+      if (notifOnly.success && Object.keys(body as object).length === 1) {
+        const { error: updateError } = await admin
+          .from("tenant_scheduled_messages")
+          .update({
+            notify_on_failure: notifOnly.data.notify_on_failure,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", parsed.data.scheduleId);
+
+        if (updateError) {
+          return NextResponse.json({ error: updateError.message }, { status: 500 });
+        }
+        return NextResponse.json({ updated: true, notify_on_failure: notifOnly.data.notify_on_failure });
+      }
+
+      // Full updates require custom schedule type
+      if (existing.schedule_type !== "custom") {
+        return NextResponse.json(
+          { error: "Only custom schedules can be edited" },
+          { status: 400 }
+        );
       }
 
       const bodyParsed = updateCustomScheduleSchema.safeParse(body);
@@ -108,6 +126,7 @@ export async function PATCH(
       if (bodyParsed.data.prompt !== undefined) update.prompt = bodyParsed.data.prompt;
       if (bodyParsed.data.tools !== undefined) update.tools = bodyParsed.data.tools;
       if (bodyParsed.data.enabled !== undefined) update.enabled = bodyParsed.data.enabled;
+      if (bodyParsed.data.notify_on_failure !== undefined) update.notify_on_failure = bodyParsed.data.notify_on_failure;
 
       if (bodyParsed.data.cron_expression !== undefined) {
         update.cron_expression = bodyParsed.data.cron_expression;

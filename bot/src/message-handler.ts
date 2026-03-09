@@ -13,7 +13,9 @@ export async function handleMessage(message: Message): Promise<void> {
 
   // Send typing indicator while processing
   try {
-    await message.channel.sendTyping();
+    if ("sendTyping" in message.channel) {
+      await message.channel.sendTyping();
+    }
   } catch {
     // Non-critical, continue
   }

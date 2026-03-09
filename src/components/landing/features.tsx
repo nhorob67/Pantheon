@@ -12,27 +12,76 @@ interface ConversationFrame {
 
 const scenarios: { label: string; frames: ConversationFrame[] }[] = [
   {
-    label: "Grain Marketing",
+    label: "Daily Tasks",
     frames: [
-      { type: "user", text: "What's corn at today?", delay: 0 },
+      { type: "user", text: "What's on my plate today?", delay: 0 },
       {
         type: "assistant",
-        text: "Cash Corn Bids — Mar 3, 9:15 AM",
+        text: "Today's Task Board — Mar 3",
         delay: 600,
         richContent: (
-          <table className="response-table">
-            <thead>
-              <tr><th>Elevator</th><th>Bid</th><th>Basis</th><th></th></tr>
-            </thead>
-            <tbody>
-              <tr><td>CHS Fargo</td><td><span className="bid-price">$4.52</span></td><td>-35 Mar</td><td></td></tr>
-              <tr><td>ADM Casselton</td><td><span className="bid-price">$4.48</span></td><td>-39 Mar</td><td></td></tr>
-              <tr><td>Cargill W. Fargo</td><td><span className="bid-price">$4.55</span></td><td>-32 Mar</td><td><span className="response-tag good">BEST</span></td></tr>
-            </tbody>
-          </table>
+          <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid var(--border)", borderRadius: 10, padding: 16, marginTop: 8 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr auto auto", gap: "8px 16px", fontSize: 13 }}>
+              <div style={{ color: "var(--text-dim)", fontSize: 11, textTransform: "uppercase" as const, letterSpacing: 1 }}>Task</div>
+              <div style={{ color: "var(--text-dim)", fontSize: 11, textTransform: "uppercase" as const, letterSpacing: 1 }}>Priority</div>
+              <div style={{ color: "var(--text-dim)", fontSize: 11, textTransform: "uppercase" as const, letterSpacing: 1 }}>Status</div>
+
+              <div style={{ color: "var(--text-primary)" }}>Pre-emerge spray — NE quarter</div>
+              <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>HIGH</div>
+              <div><span className="response-tag good">READY</span></div>
+
+              <div style={{ color: "var(--text-primary)" }}>Seed delivery from ADM</div>
+              <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>MED</div>
+              <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>2:00 PM</div>
+
+              <div style={{ color: "var(--text-primary)" }}>FSA acreage report</div>
+              <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>MED</div>
+              <div><span className="response-tag caution">DUE FRI</span></div>
+
+              <div style={{ color: "var(--text-primary)" }}>Soil sample results — review</div>
+              <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>LOW</div>
+              <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>NEW</div>
+            </div>
+          </div>
         ),
       },
-      { type: "assistant", text: "Cargill has the best bid today, 7c over ADM. Basis has narrowed 3c this week across the board.", delay: 400 },
+      { type: "assistant", text: "I'd focus on the spray first — your window closes at 11 AM. Seed delivery is confirmed. The FSA report can wait until Thursday. Want me to remind you Wednesday evening?", delay: 400 },
+    ],
+  },
+  {
+    label: "SOPs & Procedures",
+    frames: [
+      { type: "user", text: "Walk me through anhydrous application safety", delay: 0 },
+      {
+        type: "assistant",
+        text: "Anhydrous Application — Safety Checklist",
+        delay: 600,
+        richContent: (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
+              <span style={{ fontSize: 13, color: "var(--text-dim)", minWidth: 24 }}>1.</span>
+              <span style={{ fontSize: 13, color: "var(--text-primary)", flex: 1 }}>PPE check — gloves, goggles, respirator</span>
+              <span className="response-tag bad">REQUIRED</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
+              <span style={{ fontSize: 13, color: "var(--text-dim)", minWidth: 24 }}>2.</span>
+              <span style={{ fontSize: 13, color: "var(--text-primary)", flex: 1 }}>Inspect hoses and fittings for leaks</span>
+              <span className="response-tag bad">REQUIRED</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
+              <span style={{ fontSize: 13, color: "var(--text-dim)", minWidth: 24 }}>3.</span>
+              <span style={{ fontSize: 13, color: "var(--text-primary)", flex: 1 }}>Confirm wind speed &lt; 15 mph</span>
+              <span className="response-tag good">CHECK: 8 mph SW</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0" }}>
+              <span style={{ fontSize: 13, color: "var(--text-dim)", minWidth: 24 }}>4.</span>
+              <span style={{ fontSize: 13, color: "var(--text-primary)", flex: 1 }}>Verify field buffer zones</span>
+              <span className="response-tag bad">REQUIRED</span>
+            </div>
+          </div>
+        ),
+      },
+      { type: "assistant", text: "Wind is 8 mph from the southwest — you're clear. Want me to log this application when you're done?", delay: 400 },
     ],
   },
   {
@@ -67,60 +116,36 @@ const scenarios: { label: string; frames: ConversationFrame[] }[] = [
     ],
   },
   {
-    label: "Scale Tickets",
+    label: "Grain & Tickets",
     frames: [
-      { type: "user", text: "Just dropped off a load at CHS", delay: 0 },
+      { type: "user", text: "Just dropped off corn at CHS — what's the best bid today?", delay: 0 },
       {
         type: "assistant",
-        text: "Got it. Here's what I pulled from the ticket:",
+        text: "Scale Ticket Logged + Cash Corn Bids",
         delay: 600,
         richContent: (
-          <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid var(--border)", borderRadius: 10, padding: 16, marginTop: 8 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px 16px", fontSize: 13 }}>
-              <div><span style={{ color: "var(--text-dim)" }}>Crop</span><br /><strong style={{ color: "var(--text-primary)" }}>Corn</strong></div>
-              <div><span style={{ color: "var(--text-dim)" }}>Elevator</span><br /><strong style={{ color: "var(--text-primary)" }}>CHS Fargo</strong></div>
-              <div><span style={{ color: "var(--text-dim)" }}>Net Weight</span><br /><strong style={{ color: "var(--text-primary)" }}>610.0 bu</strong></div>
-              <div><span style={{ color: "var(--text-dim)" }}>Moisture</span><br /><strong style={{ color: "var(--text-primary)" }}>14.2%</strong></div>
-              <div><span style={{ color: "var(--text-dim)" }}>Test Weight</span><br /><strong style={{ color: "var(--text-primary)" }}>57.8 lb/bu</strong></div>
-              <div><span style={{ color: "var(--text-dim)" }}>Dockage</span><br /><strong style={{ color: "var(--text-primary)" }}>0.3%</strong></div>
+          <>
+            <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid var(--border)", borderRadius: 10, padding: 16, marginTop: 8 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px 16px", fontSize: 13 }}>
+                <div><span style={{ color: "var(--text-dim)" }}>Crop</span><br /><strong style={{ color: "var(--text-primary)" }}>Corn</strong></div>
+                <div><span style={{ color: "var(--text-dim)" }}>Elevator</span><br /><strong style={{ color: "var(--text-primary)" }}>CHS Fargo</strong></div>
+                <div><span style={{ color: "var(--text-dim)" }}>Net Weight</span><br /><strong style={{ color: "var(--text-primary)" }}>610.0 bu</strong></div>
+                <div><span style={{ color: "var(--text-dim)" }}>Moisture</span><br /><strong style={{ color: "var(--text-primary)" }}>14.2%</strong></div>
+              </div>
             </div>
-          </div>
+            <table className="response-table" style={{ marginTop: 12 }}>
+              <thead>
+                <tr><th>Elevator</th><th>Bid</th><th>Basis</th><th></th></tr>
+              </thead>
+              <tbody>
+                <tr><td>CHS Fargo</td><td><span className="bid-price">$4.52</span></td><td>-35 Mar</td><td></td></tr>
+                <tr><td>Cargill W. Fargo</td><td><span className="bid-price">$4.55</span></td><td>-32 Mar</td><td><span className="response-tag good">BEST</span></td></tr>
+              </tbody>
+            </table>
+          </>
         ),
       },
-      { type: "assistant", text: "Want me to log this? That puts you at 12,400 bu delivered this season.", delay: 400 },
-    ],
-  },
-  {
-    label: "Custom",
-    frames: [
-      { type: "user", text: "Compare ARC-CO vs PLC for corn in Cass County at $4.50", delay: 0 },
-      {
-        type: "assistant",
-        text: "Let me pull the county benchmarks and run the comparison...",
-        delay: 600,
-        richContent: (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, fontSize: 13 }}>
-              <div style={{ color: "var(--text-dim)" }}></div>
-              <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>ARC-CO</div>
-              <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>PLC</div>
-
-              <div style={{ color: "var(--text-dim)" }}>Est. Payment</div>
-              <div><span className="bid-price">$38/acre</span></div>
-              <div style={{ color: "var(--text-secondary)" }}>$0/acre</div>
-
-              <div style={{ color: "var(--text-dim)" }}>Trigger Price</div>
-              <div style={{ color: "var(--text-secondary)" }}>$4.88 benchmark</div>
-              <div style={{ color: "var(--text-secondary)" }}>$3.70 ref</div>
-
-              <div style={{ color: "var(--text-dim)" }}>Best When</div>
-              <div style={{ color: "var(--text-secondary)" }}>Moderate dip</div>
-              <div style={{ color: "var(--text-secondary)" }}>Major collapse</div>
-            </div>
-          </div>
-        ),
-      },
-      { type: "assistant", text: "At $4.50, ARC-CO pays out. PLC doesn't trigger until below $3.70. ARC-CO is the better bet unless you expect a major price collapse.", delay: 400 },
+      { type: "assistant", text: "Logged 610 bushels at CHS. That's 12,400 bu delivered this season. Cargill is 7 cents better if you want to route the next load there.", delay: 400 },
     ],
   },
 ];
@@ -269,7 +294,7 @@ export function ConversationShowcase() {
       >
         <div className="showcase-header">
           <div className="section-label">See It In Action</div>
-          <h2 className="section-title-display">One team. Every question your operation throws at it.</h2>
+          <h2 className="section-title-display">One team. Every task, every question, every procedure.</h2>
           <p className="section-sub">No dashboards. No apps to switch between. Just ask what you need — your team handles the rest.</p>
         </div>
 

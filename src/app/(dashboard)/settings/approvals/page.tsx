@@ -35,7 +35,7 @@ export default async function TenantApprovalsPage() {
       <div>
         <h3 className="font-headline text-lg font-semibold mb-1">Approvals</h3>
         <p className="text-foreground/60 text-sm">
-          Review high-risk tenant tool calls and approve or reject queued requests.
+          Review high-risk tenant tool calls and heartbeat alerts, then approve or reject queued requests.
         </p>
       </div>
 

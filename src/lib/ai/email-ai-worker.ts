@@ -14,6 +14,7 @@ import {
   sendDiscordChannelMessageSequence,
   buildDiscordRuntimeResponseParts,
 } from "@/lib/runtime/tenant-runtime-discord";
+import { checkTrialAndSpendingBlock } from "./trial-guard";
 import type {
   TenantRuntimeWorker,
   TenantRuntimeWorkerContext,
@@ -32,17 +33,23 @@ export function createEmailAiWorker(admin: SupabaseClient): TenantRuntimeWorker 
     async execute(context: TenantRuntimeWorkerContext): Promise<TenantRuntimeWorkerResult> {
       const { model: primaryModel, modelId: primaryModelId, inputCost: primaryInputCost, outputCost: primaryOutputCost, fastModel } = resolveWorkerModels(context.resolvedModels);
       try {
-        // Spending cap check
+        // Spending cap + trial expiration check
         const { data: custRow } = await admin
           .from("customers")
-          .select("spending_paused_at")
+          .select("spending_paused_at, trial_ends_at, subscription_status")
           .eq("id", context.run.customer_id)
           .single();
 
-        if (custRow?.spending_paused_at) {
+        const trialCheck = checkTrialAndSpendingBlock({
+          subscription_status: custRow?.subscription_status,
+          trial_ends_at: custRow?.trial_ends_at,
+          spending_paused_at: custRow?.spending_paused_at,
+        });
+
+        if (trialCheck.blocked) {
           return {
             outcome: "completed",
-            result: { paused: true, reason: "spending_cap_exceeded" },
+            result: { paused: true, reason: trialCheck.reason },
           };
         }
 

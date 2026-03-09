@@ -50,6 +50,8 @@ export async function handleCheckoutCompleted(
     subscription_status: "active",
     plan: "standard",
     stripe_metered_item_id: meteredItemId,
+    trial_ends_at: null,
+    spending_paused_at: null,
   };
 
   // Link to Supabase auth user if present (embedded checkout flow)

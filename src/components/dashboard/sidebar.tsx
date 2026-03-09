@@ -25,6 +25,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useHelp } from "./help-provider";
+import { TrialCountdownBadge } from "./trial-countdown-badge";
 import type { SettingsNavItem } from "@/lib/navigation/settings";
 
 const navItems = [
@@ -53,9 +54,11 @@ const settingsIconsByHref: Record<string, LucideIcon> = {
 
 interface SidebarProps {
   settingsItems: SettingsNavItem[];
+  subscriptionStatus?: string | null;
+  trialEndsAt?: string | null;
 }
 
-export function Sidebar({ settingsItems }: SidebarProps) {
+export function Sidebar({ settingsItems, subscriptionStatus, trialEndsAt }: SidebarProps) {
   const pathname = usePathname();
   const {
     actions: { openHelp },
@@ -122,7 +125,10 @@ export function Sidebar({ settingsItems }: SidebarProps) {
         </div>
       </div>
 
-      <div className="border-t border-border pt-4">
+      <div className="border-t border-border pt-4 space-y-2">
+        {subscriptionStatus === "trialing" && trialEndsAt && (
+          <TrialCountdownBadge trialEndsAt={trialEndsAt} />
+        )}
         <button
           onClick={openHelp}
           className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors text-foreground/60 hover:text-foreground hover:bg-muted w-full"

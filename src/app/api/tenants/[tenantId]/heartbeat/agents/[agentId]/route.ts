@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod/v4";
+import { recordHeartbeatOperatorEvent } from "@/lib/heartbeat/events";
 import { parseTenantRouteParams, runTenantRoute } from "@/lib/runtime/tenant-route";
 import { upsertAgentHeartbeatOverrideSchema } from "@/lib/validators/heartbeat";
 
@@ -28,7 +29,7 @@ export async function PUT(
       requiredGate: "writes",
       fallbackErrorMessage: "Failed to update agent heartbeat override",
     },
-    async ({ admin, tenantContext }) => {
+    async ({ admin, tenantContext, user }) => {
       // Verify agent belongs to tenant
       const { data: agent } = await admin
         .from("tenant_agents")
@@ -56,6 +57,13 @@ export async function PUT(
         );
       }
 
+      const { data: existingConfig } = await admin
+        .from("tenant_heartbeat_configs")
+        .select("id, enabled")
+        .eq("tenant_id", tenantContext.tenantId)
+        .eq("agent_id", parsed.data.agentId)
+        .maybeSingle();
+
       const nextRunAt = bodyParsed.data.enabled
         ? new Date(
             Date.now() + bodyParsed.data.interval_minutes * 60 * 1000
@@ -77,6 +85,12 @@ export async function PUT(
             checks: bodyParsed.data.checks,
             delivery_channel_id: bodyParsed.data.delivery_channel_id ?? null,
             custom_checks: bodyParsed.data.custom_checks,
+            cooldown_minutes: bodyParsed.data.cooldown_minutes,
+            max_alerts_per_day: bodyParsed.data.max_alerts_per_day,
+            digest_enabled: bodyParsed.data.digest_enabled,
+            digest_window_minutes: bodyParsed.data.digest_window_minutes,
+            reminder_interval_minutes: bodyParsed.data.reminder_interval_minutes,
+            heartbeat_instructions: bodyParsed.data.heartbeat_instructions,
             next_run_at: nextRunAt,
           },
           { onConflict: "tenant_id,agent_id" }
@@ -87,6 +101,36 @@ export async function PUT(
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
+
+      const eventType = existingConfig
+        ? existingConfig.enabled === bodyParsed.data.enabled
+          ? "config_saved"
+          : bodyParsed.data.enabled
+            ? "resumed"
+            : "paused"
+        : bodyParsed.data.enabled
+          ? "resumed"
+          : "config_saved";
+
+      await recordHeartbeatOperatorEvent({
+        admin,
+        tenantId: tenantContext.tenantId,
+        customerId: tenantContext.customerId,
+        configId: config.id as string,
+        agentId: parsed.data.agentId,
+        actorUserId: user.id,
+        eventType,
+        summary: eventType === "paused"
+          ? "Paused heartbeat override"
+          : eventType === "resumed"
+            ? "Resumed heartbeat override"
+            : "Saved heartbeat override settings",
+        metadata: {
+          digest_enabled: bodyParsed.data.digest_enabled,
+          digest_window_minutes: bodyParsed.data.digest_window_minutes,
+          interval_minutes: bodyParsed.data.interval_minutes,
+        },
+      });
 
       return NextResponse.json({ config });
     }
@@ -113,7 +157,14 @@ export async function DELETE(
       requiredGate: "writes",
       fallbackErrorMessage: "Failed to delete agent heartbeat override",
     },
-    async ({ admin, tenantContext }) => {
+    async ({ admin, tenantContext, user }) => {
+      const { data: existingConfig } = await admin
+        .from("tenant_heartbeat_configs")
+        .select("id")
+        .eq("tenant_id", tenantContext.tenantId)
+        .eq("agent_id", parsed.data.agentId)
+        .maybeSingle();
+
       const { error } = await admin
         .from("tenant_heartbeat_configs")
         .delete()
@@ -122,6 +173,19 @@ export async function DELETE(
 
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+
+      if (existingConfig) {
+        await recordHeartbeatOperatorEvent({
+          admin,
+          tenantId: tenantContext.tenantId,
+          customerId: tenantContext.customerId,
+          configId: existingConfig.id as string,
+          agentId: parsed.data.agentId,
+          actorUserId: user.id,
+          eventType: "config_saved",
+          summary: "Removed heartbeat override",
+        });
       }
 
       return NextResponse.json({ deleted: true });

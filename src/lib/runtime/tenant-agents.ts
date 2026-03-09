@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CreateAgentData, UpdateAgentData } from "@/lib/validators/agent";
-import { toPersonalityPreset, type PersonalityPreset } from "@/types/agent";
+import { toPersonalityPreset, type PersonalityPreset, type ToolApprovalLevel } from "@/types/agent";
 import { safeErrorMessage } from "@/lib/security/safe-error";
 
 import { syncPredefinedSchedulesToTable } from "@/lib/schedules/sync-predefined-schedules";
@@ -56,6 +56,9 @@ interface TenantAgentConfig {
   discord_channel_name: string | null;
   cron_jobs: Record<string, boolean>;
   composio_toolkits: string[];
+  goal: string | null;
+  backstory: string | null;
+  tool_approval_overrides: Record<string, ToolApprovalLevel>;
 }
 
 interface TenantAgentConfigPatch {
@@ -65,6 +68,9 @@ interface TenantAgentConfigPatch {
   discord_channel_name?: string | null;
   cron_jobs?: Record<string, boolean>;
   composio_toolkits?: string[];
+  goal?: string | null;
+  backstory?: string | null;
+  tool_approval_overrides?: Record<string, ToolApprovalLevel>;
 }
 
 export interface TenantRuntimeAgent {
@@ -82,6 +88,9 @@ export interface TenantRuntimeAgent {
   skills: string[];
   cron_jobs: Record<string, boolean>;
   composio_toolkits: string[];
+  goal: string | null;
+  backstory: string | null;
+  tool_approval_overrides: Record<string, ToolApprovalLevel>;
   sort_order: number;
   created_at: string;
   updated_at: string;
@@ -117,6 +126,19 @@ function isBooleanRecord(value: unknown): value is Record<string, boolean> {
   return Object.values(value).every((entry) => typeof entry === "boolean");
 }
 
+function isToolApprovalLevel(v: unknown): v is ToolApprovalLevel {
+  return v === "auto" || v === "confirm" || v === "disabled";
+}
+
+function parseToolApprovalOverrides(raw: unknown): Record<string, ToolApprovalLevel> {
+  if (!isRecord(raw)) return {};
+  const result: Record<string, ToolApprovalLevel> = {};
+  for (const [key, val] of Object.entries(raw)) {
+    if (isToolApprovalLevel(val)) result[key] = val;
+  }
+  return result;
+}
+
 function parseTenantAgentConfig(config: unknown): TenantAgentConfig {
   if (!isRecord(config)) {
     return {
@@ -126,6 +148,9 @@ function parseTenantAgentConfig(config: unknown): TenantAgentConfig {
       discord_channel_name: null,
       cron_jobs: {},
       composio_toolkits: [],
+      goal: null,
+      backstory: null,
+      tool_approval_overrides: {},
     };
   }
 
@@ -146,6 +171,9 @@ function parseTenantAgentConfig(config: unknown): TenantAgentConfig {
   const composioToolkits = Array.isArray(config["composio_toolkits"])
     ? (config["composio_toolkits"] as unknown[]).filter((v): v is string => typeof v === "string")
     : [];
+  const goal = typeof config["goal"] === "string" ? config["goal"] : null;
+  const backstory = typeof config["backstory"] === "string" ? config["backstory"] : null;
+  const toolApprovalOverrides = parseToolApprovalOverrides(config["tool_approval_overrides"]);
 
   return {
     personality_preset: personalityPreset,
@@ -154,6 +182,9 @@ function parseTenantAgentConfig(config: unknown): TenantAgentConfig {
     discord_channel_name: discordChannelName,
     cron_jobs: cronJobs,
     composio_toolkits: composioToolkits,
+    goal,
+    backstory,
+    tool_approval_overrides: toolApprovalOverrides,
   };
 }
 
@@ -179,6 +210,9 @@ function buildTenantAgentConfig(
         : current.discord_channel_name,
     cron_jobs: patch.cron_jobs ?? current.cron_jobs,
     composio_toolkits: patch.composio_toolkits ?? current.composio_toolkits,
+    goal: patch.goal !== undefined ? patch.goal : current.goal,
+    backstory: patch.backstory !== undefined ? patch.backstory : current.backstory,
+    tool_approval_overrides: patch.tool_approval_overrides ?? current.tool_approval_overrides,
   };
 }
 
@@ -622,6 +656,9 @@ function mapTenantAgentRow(row: TenantAgentRow): TenantRuntimeAgent {
     skills: row.skills,
     cron_jobs: config.cron_jobs,
     composio_toolkits: config.composio_toolkits,
+    goal: config.goal,
+    backstory: config.backstory,
+    tool_approval_overrides: config.tool_approval_overrides,
     sort_order: row.sort_order,
     created_at: row.created_at,
     updated_at: row.updated_at,
@@ -732,6 +769,9 @@ export async function createTenantRuntimeAgent(
     discord_channel_name: data.discord_channel_name || null,
     cron_jobs: data.cron_jobs,
     composio_toolkits: data.composio_toolkits || [],
+    goal: data.goal || null,
+    backstory: data.backstory || null,
+    tool_approval_overrides: data.tool_approval_overrides || {},
   });
 
   const { data: insertedTenant, error: insertTenantError } = await admin
@@ -846,6 +886,15 @@ export async function updateTenantRuntimeAgent(
   }
   if (data.composio_toolkits !== undefined) {
     configPatch.composio_toolkits = data.composio_toolkits;
+  }
+  if (data.goal !== undefined) {
+    configPatch.goal = data.goal || null;
+  }
+  if (data.backstory !== undefined) {
+    configPatch.backstory = data.backstory || null;
+  }
+  if (data.tool_approval_overrides !== undefined) {
+    configPatch.tool_approval_overrides = data.tool_approval_overrides;
   }
 
   if (Object.keys(configPatch).length > 0) {

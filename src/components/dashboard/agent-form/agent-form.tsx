@@ -17,12 +17,22 @@ import type { SkillConfig } from "@/types/database";
 import type { ComposioConfig } from "@/types/composio";
 import { Dialog } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
+import type { ToolApprovalLevel } from "@/types/agent";
 import { useState, useEffect, useMemo } from "react";
 import { Loader2, ChevronDown, RotateCcw } from "lucide-react";
 import { PresetGrid } from "./preset-grid";
 import { SkillToggles } from "./skill-toggles";
 import { CronToggles } from "./cron-toggles";
 import { ComposioToolkitToggles } from "./composio-toolkit-toggles";
+import { ToolControls } from "./tool-controls";
+import { CustomScheduleForm } from "./custom-schedule-form";
+
+interface CustomScheduleSummary {
+  id: string;
+  display_name: string | null;
+  cron_expression: string;
+  enabled: boolean;
+}
 
 interface AgentFormProps {
   open: boolean;
@@ -33,6 +43,7 @@ interface AgentFormProps {
   customSkills?: CustomSkill[];
   composioConfig?: ComposioConfig | null;
   defaultPrompts?: Partial<Record<PersonalityPreset, string>>;
+  tenantId?: string;
 }
 
 export function AgentForm({
@@ -44,9 +55,12 @@ export function AgentForm({
   customSkills = [],
   composioConfig = null,
   defaultPrompts = {},
+  tenantId,
 }: AgentFormProps) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [customSchedules, setCustomSchedules] = useState<CustomScheduleSummary[]>([]);
+  const [customScheduleFormOpen, setCustomScheduleFormOpen] = useState(false);
 
   const isGloballyDisabled = (skillName: string) => {
     const config = globalSkillConfigs.find((s) => s.skill_name === skillName);
@@ -66,6 +80,9 @@ export function AgentForm({
             skills: editAgent.skills as CreateAgentData["skills"],
             cron_jobs: (editAgent.cron_jobs || {}) as CreateAgentData["cron_jobs"],
             composio_toolkits: editAgent.composio_toolkits ?? [],
+            goal: editAgent.goal || "",
+            backstory: editAgent.backstory || "",
+            tool_approval_overrides: editAgent.tool_approval_overrides ?? {},
           }
         : {
             display_name: "",
@@ -79,6 +96,9 @@ export function AgentForm({
               PRESET_DEFAULT_CRONS.general.map((c) => [c, true])
             ) as CreateAgentData["cron_jobs"],
             composio_toolkits: [],
+            goal: "",
+            backstory: "",
+            tool_approval_overrides: {},
           },
     [editAgent]
   );
@@ -96,6 +116,8 @@ export function AgentForm({
   });
 
   const [promptExpanded, setPromptExpanded] = useState(false);
+  const [goalExpanded, setGoalExpanded] = useState(false);
+  const [toolControlsExpanded, setToolControlsExpanded] = useState(false);
 
   const personalityPreset = useWatch({ control, name: "personality_preset" });
   const skills = useWatch({ control, name: "skills" }) || [];
@@ -109,8 +131,32 @@ export function AgentForm({
       // Auto-expand if editing an agent with a custom prompt override on a non-custom preset
       const hasCustom = editAgent?.custom_personality && editAgent.custom_personality.length > 0;
       setPromptExpanded(editAgent?.personality_preset === "custom" || !!hasCustom);
+      setGoalExpanded(!!(editAgent?.goal || editAgent?.backstory));
+      setToolControlsExpanded(!!editAgent?.tool_approval_overrides && Object.keys(editAgent.tool_approval_overrides).length > 0);
+
+      // Load custom schedules for this agent
+      if (editAgent && tenantId) {
+        fetch(`/api/tenants/${tenantId}/schedules?agent_id=${editAgent.id}`)
+          .then((res) => res.ok ? res.json() : { data: { schedules: [] } })
+          .then((payload) => {
+            const schedules = Array.isArray(payload?.data?.schedules) ? payload.data.schedules : [];
+            setCustomSchedules(
+              schedules
+                .filter((s: Record<string, unknown>) => s.schedule_type === "custom")
+                .map((s: Record<string, unknown>) => ({
+                  id: s.id as string,
+                  display_name: s.display_name as string | null,
+                  cron_expression: s.cron_expression as string,
+                  enabled: s.enabled as boolean,
+                }))
+            );
+          })
+          .catch(() => setCustomSchedules([]));
+      } else {
+        setCustomSchedules([]);
+      }
     }
-  }, [open, defaultValues, reset, editAgent]);
+  }, [open, defaultValues, reset, editAgent, tenantId]);
 
   const currentDefaultPrompt = useMemo(
     () => (personalityPreset !== "custom" ? defaultPrompts[personalityPreset] ?? "" : ""),
@@ -156,6 +202,68 @@ export function AgentForm({
       ? current.filter((t) => t !== id)
       : [...current, id];
     setValue("composio_toolkits", next, { shouldValidate: true });
+  };
+
+  const toolApprovalOverrides = useWatch({ control, name: "tool_approval_overrides" }) || {};
+
+  const setToolApproval = (toolKey: string, level: ToolApprovalLevel) => {
+    const current = { ...(toolApprovalOverrides as Record<string, ToolApprovalLevel>) };
+    if (level === "auto") {
+      delete current[toolKey];
+    } else {
+      current[toolKey] = level;
+    }
+    setValue("tool_approval_overrides", current, { shouldValidate: true });
+  };
+
+  const handleToggleCustomSchedule = async (id: string, enabled: boolean) => {
+    if (!tenantId) return;
+    try {
+      await fetch(`/api/tenants/${tenantId}/schedules/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled }),
+      });
+      setCustomSchedules((prev) =>
+        prev.map((s) => (s.id === id ? { ...s, enabled } : s))
+      );
+    } catch {
+      // silent
+    }
+  };
+
+  const handleDeleteCustomSchedule = async (id: string) => {
+    if (!tenantId) return;
+    try {
+      await fetch(`/api/tenants/${tenantId}/schedules/${id}`, {
+        method: "DELETE",
+      });
+      setCustomSchedules((prev) => prev.filter((s) => s.id !== id));
+    } catch {
+      // silent
+    }
+  };
+
+  const handleCustomScheduleCreated = () => {
+    // Reload schedules
+    if (editAgent && tenantId) {
+      fetch(`/api/tenants/${tenantId}/schedules?agent_id=${editAgent.id}`)
+        .then((res) => res.ok ? res.json() : { data: { schedules: [] } })
+        .then((payload) => {
+          const schedules = Array.isArray(payload?.data?.schedules) ? payload.data.schedules : [];
+          setCustomSchedules(
+            schedules
+              .filter((s: Record<string, unknown>) => s.schedule_type === "custom")
+              .map((s: Record<string, unknown>) => ({
+                id: s.id as string,
+                display_name: s.display_name as string | null,
+                cron_expression: s.cron_expression as string,
+                enabled: s.enabled as boolean,
+              }))
+          );
+        })
+        .catch(() => {});
+    }
   };
 
   const composioEnabled = composioConfig?.enabled && (composioConfig.selected_toolkits?.length ?? 0) > 0;
@@ -212,6 +320,54 @@ export function AgentForm({
           selected={personalityPreset}
           onSelect={handlePresetChange}
         />
+
+        {/* Goal & Context (collapsible) */}
+        <div>
+          <button
+            type="button"
+            onClick={() => setGoalExpanded((v) => !v)}
+            className="flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary transition-colors cursor-pointer w-full text-left"
+          >
+            <ChevronDown
+              className={`w-4 h-4 transition-transform ${goalExpanded ? "rotate-0" : "-rotate-90"}`}
+            />
+            <span className="font-medium">Goal & Context</span>
+            {!goalExpanded && (
+              <span className="text-text-dim text-xs ml-1">
+                — optional farm-specific context for this assistant
+              </span>
+            )}
+          </button>
+
+          {goalExpanded && (
+            <div className="mt-2 space-y-3">
+              <div>
+                <label className="block text-xs text-text-dim mb-1">
+                  Goal <span className="text-text-dim">(max 300 chars)</span>
+                </label>
+                <textarea
+                  {...register("goal")}
+                  rows={2}
+                  maxLength={300}
+                  placeholder="e.g., Help me maximize basis and find the best delivery windows for my corn and soybeans"
+                  className="w-full border border-border focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-lg bg-bg-dark px-4 py-2.5 outline-none transition-colors text-text-primary placeholder:text-text-dim text-sm resize-y"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-text-dim mb-1">
+                  Backstory <span className="text-text-dim">(max 1000 chars)</span>
+                </label>
+                <textarea
+                  {...register("backstory")}
+                  rows={3}
+                  maxLength={1000}
+                  placeholder="e.g., We farm 3,200 acres in the Red River Valley. We typically sell 60% at harvest and store the rest."
+                  className="w-full border border-border focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-lg bg-bg-dark px-4 py-2.5 outline-none transition-colors text-text-primary placeholder:text-text-dim text-sm resize-y"
+                />
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* System Prompt */}
         {personalityPreset === "custom" ? (
@@ -327,12 +483,25 @@ export function AgentForm({
           />
         )}
 
+        {/* Tool Controls */}
+        <ToolControls
+          skills={skills as string[]}
+          overrides={toolApprovalOverrides as Record<string, ToolApprovalLevel>}
+          onChangeLevel={setToolApproval}
+          expanded={toolControlsExpanded}
+          onToggleExpanded={() => setToolControlsExpanded((v) => !v)}
+        />
+
         {/* Scheduled Messages */}
         <CronToggles
           cronJobs={cronJobs as Record<string, boolean>}
           skills={skills as string[]}
           isGloballyDisabled={isGloballyDisabled}
           onToggle={toggleCron}
+          customSchedules={customSchedules}
+          onAddCustomSchedule={editAgent && tenantId ? () => setCustomScheduleFormOpen(true) : undefined}
+          onToggleCustomSchedule={tenantId ? handleToggleCustomSchedule : undefined}
+          onDeleteCustomSchedule={tenantId ? handleDeleteCustomSchedule : undefined}
         />
 
         {/* Default toggle */}
@@ -380,6 +549,18 @@ export function AgentForm({
           </button>
         </div>
       </form>
+
+      {/* Custom Schedule Form (sub-dialog) */}
+      {editAgent && tenantId && (
+        <CustomScheduleForm
+          open={customScheduleFormOpen}
+          onClose={() => setCustomScheduleFormOpen(false)}
+          tenantId={tenantId}
+          agentId={editAgent.id}
+          channelId={editAgent.discord_channel_id}
+          onCreated={handleCustomScheduleCreated}
+        />
+      )}
     </Dialog>
   );
 }

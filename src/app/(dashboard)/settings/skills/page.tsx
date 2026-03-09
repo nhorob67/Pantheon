@@ -28,7 +28,7 @@ export default async function SkillsSettingsPage() {
 
   const supabase = await createClient();
 
-  const [{ data: skillConfigs }, { data: customSkills }] = await Promise.all([
+  const [{ data: skillConfigs }, { data: customSkills }, { data: tenantAgents }] = await Promise.all([
     supabase
       .from("skill_configs")
       .select("*")
@@ -39,7 +39,20 @@ export default async function SkillsSettingsPage() {
       .eq("customer_id", customerId)
       .neq("status", "archived")
       .order("created_at", { ascending: false }),
+    supabase
+      .from("tenant_agents")
+      .select("display_name, skills")
+      .eq("tenant_id", tenant.id)
+      .neq("status", "archived"),
   ]);
+
+  const agents = (tenantAgents || []) as Array<{ display_name: string; skills: string[] }>;
+
+  function agentsUsingSkill(slug: string): string[] {
+    return agents
+      .filter((a) => Array.isArray(a.skills) && a.skills.includes(slug))
+      .map((a) => a.display_name);
+  }
 
   const skills = ["farm-grain-bids", "farm-weather", "farm-scale-tickets"];
   const activeCustomSkills = (customSkills || []).filter((s) => s.status === "active");
@@ -63,6 +76,7 @@ export default async function SkillsSettingsPage() {
                 skillName={skillName}
                 enabled={config?.enabled ?? true}
                 tenantId={tenant.id}
+                agentNames={agentsUsingSkill(skillName)}
               />
             );
           })}
@@ -101,6 +115,16 @@ export default async function SkillsSettingsPage() {
                   <div>
                     <p className="font-medium text-sm">{cs.display_name}</p>
                     <p className="text-xs text-foreground/50 font-mono">{cs.slug}</p>
+                    {(() => {
+                      const names = agentsUsingSkill(cs.slug);
+                      return names.length > 0 ? (
+                        <p className="text-xs text-accent mt-0.5">
+                          Used by {names.length} assistant{names.length !== 1 ? "s" : ""}: {names.join(", ")}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-foreground/30 mt-0.5">Not assigned to any assistant</p>
+                      );
+                    })()}
                   </div>
                 </div>
                 <Link

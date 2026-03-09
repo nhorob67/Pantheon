@@ -16,7 +16,13 @@ export async function checkWeatherSevere(
     .maybeSingle();
 
   if (!profile?.weather_lat || !profile?.weather_lng) {
-    return { status: "ok", summary: "No farm location configured" };
+    return {
+      status: "ok",
+      summary: "No farm location configured",
+      observability: {
+        location_configured: false,
+      },
+    };
   }
 
   try {
@@ -33,7 +39,16 @@ export async function checkWeatherSevere(
     };
 
     const countyUrl = pointData.properties.county;
-    if (!countyUrl) return { status: "ok", summary: "County zone not available" };
+    if (!countyUrl) {
+      return {
+        status: "ok",
+        summary: "County zone not available",
+        observability: {
+          location_configured: true,
+          zone_id: null,
+        },
+      };
+    }
     const zoneId = countyUrl.split("/").pop();
 
     const alertRes = await fetch(
@@ -62,7 +77,16 @@ export async function checkWeatherSevere(
     });
 
     if (severeAlerts.length === 0) {
-      return { status: "ok", summary: "No severe weather alerts" };
+      return {
+        status: "ok",
+        summary: "No severe weather alerts",
+        observability: {
+          location_configured: true,
+          zone_id: zoneId || null,
+          severe_alert_count: 0,
+          latest_expires_at: null,
+        },
+      };
     }
 
     return {
@@ -75,11 +99,24 @@ export async function checkWeatherSevere(
         description: a.properties.description.slice(0, 500),
         expires: a.properties.expires,
       })),
+      observability: {
+        location_configured: true,
+        zone_id: zoneId || null,
+        severe_alert_count: severeAlerts.length,
+        latest_expires_at: severeAlerts
+          .map((alert) => alert.properties.expires)
+          .filter((value) => typeof value === "string" && value.length > 0)
+          .sort()
+          .slice(-1)[0] ?? null,
+      },
     };
   } catch (err) {
     return {
       status: "error",
       summary: `Weather check failed: ${err instanceof Error ? err.message : "unknown"}`,
+      observability: {
+        location_configured: true,
+      },
     };
   }
 }

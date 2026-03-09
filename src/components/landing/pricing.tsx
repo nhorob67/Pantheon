@@ -5,14 +5,14 @@ const features = [
   "AI team configured for your operation",
   "$25/mo AI usage included — most farms stay under",
   "Discord for your crew — unlimited users",
-  "Daily grain bids from your elevators",
+  "Daily task lists and reminders",
+  "SOPs and procedure checklists",
   "Morning weather & spray briefings",
+  "Grain bids from your elevators",
   "Scale ticket logging (photo/voice/typed)",
   "Research & analysis on demand",
   "Farm-specific memory that improves",
   "New capabilities added automatically",
-  "Export data anytime — CSV or JSON",
-  "Cancel anytime, no contracts",
 ];
 
 export function Pricing() {
@@ -25,9 +25,10 @@ export function Pricing() {
       <h2 className="section-title-display" style={{ margin: "0 auto" }}>The cheapest hire on your farm.</h2>
 
       <div className="pricing-card">
+        <div className="pricing-trial-label">Try it free for 14 days</div>
         <div className="pricing-amount">$50</div>
-        <div className="pricing-per-month">/month</div>
-        <div className="pricing-desc">$1.67 a day for an assistant that never calls in sick.</div>
+        <div className="pricing-per-month">/month after trial</div>
+        <div className="pricing-desc">No credit card to start. Cancel anytime.</div>
         <div className="pricing-divider" />
         <ul className="pricing-features">
           {features.map((feature) => (
@@ -38,7 +39,7 @@ export function Pricing() {
         <div className="pricing-usage-note">
           <p>
             <strong>Most farmers pay $50.</strong> Your plan includes $25 of AI
-            usage — enough for daily briefings, grain bids, and regular questions.
+            usage — enough for daily briefings, task management, and regular questions.
           </p>
           <p>
             Go beyond that and overage is billed in $20 blocks at month-end.
@@ -56,13 +57,14 @@ export function Pricing() {
           </div>
         </div>
 
-        <Link href="/signup" className="btn-primary pricing-cta">Get Started</Link>
+        <Link href="/signup" className="btn-primary pricing-cta">Start 14-Day Free Trial</Link>
+        <p className="text-center text-text-dim text-sm mt-2">No credit card required</p>
       </div>
 
       <div className="pricing-value-note">
-        <strong>Think about it this way:</strong> One better marketing decision — catching a basis move,
-        timing a sale right — pays for a full year. Your assistant watches the markets every single day
-        so you don&apos;t have to.
+        <strong>Think about it this way:</strong> One missed deadline, one forgotten procedure,
+        one dropped ball during planting costs more than a full year of FarmClaw. Your AI team
+        keeps track so nothing falls through the cracks.
       </div>
     </section>
   );

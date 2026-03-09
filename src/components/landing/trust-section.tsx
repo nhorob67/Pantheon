@@ -7,12 +7,12 @@ const trustCards = [
   {
     icon: Shield,
     title: "Your data is walled off",
-    body: "Every farm gets its own isolated data partition. Your grain bids, scale tickets, and conversations are never visible to other customers \u2014 not even accidentally. We enforce this at the database level, not just the application level.",
+    body: "Every farm gets its own isolated data partition. Your tasks, procedures, scale tickets, and conversations are never visible to other customers \u2014 not even accidentally. We enforce this at the database level, not just the application level.",
   },
   {
     icon: Download,
     title: "Export everything. Anytime.",
-    body: "Your scale tickets, conversation history, and farm profile are yours. Export them as CSV or JSON from your dashboard whenever you want. If you cancel, your data stays available for 30 days to download.",
+    body: "Your task history, procedures, conversation history, and farm profile are yours. Export them as CSV or JSON from your dashboard whenever you want. If you cancel, your data stays available for 30 days to download.",
   },
   {
     icon: KeyRound,
@@ -34,7 +34,7 @@ export function TrustSection() {
       >
         <div>
           <div className="section-label">Your Data, Your Farm</div>
-          <h2 className="section-title-display">Your neighbor can&apos;t see your bids. And we can&apos;t lock you in.</h2>
+          <h2 className="section-title-display">Your neighbor can&apos;t see your data. And we can&apos;t lock you in.</h2>
           <p className="section-sub">FarmClaw runs on shared infrastructure, but your data is completely isolated. Every query, every record, every conversation is separated at the database level.</p>
         </div>
 

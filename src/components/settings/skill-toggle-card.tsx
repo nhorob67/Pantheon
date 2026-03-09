@@ -25,12 +25,14 @@ interface SkillToggleCardProps {
   skillName: string;
   enabled: boolean;
   tenantId: string;
+  agentNames?: string[];
 }
 
 export function SkillToggleCard({
   skillName,
   enabled: initialEnabled,
   tenantId,
+  agentNames = [],
 }: SkillToggleCardProps) {
   const [enabled, setEnabled] = useState(initialEnabled);
   const [toggling, setToggling] = useState(false);
@@ -73,6 +75,13 @@ export function SkillToggleCard({
         <div>
           <p className="font-medium text-sm">{info.label}</p>
           <p className="text-xs text-foreground/50">{info.description}</p>
+            {agentNames.length > 0 ? (
+              <p className="text-xs text-accent mt-0.5" title={agentNames.join(", ")}>
+                Used by {agentNames.length} assistant{agentNames.length !== 1 ? "s" : ""}: {agentNames.join(", ")}
+              </p>
+            ) : (
+              <p className="text-xs text-foreground/30 mt-0.5">Not assigned to any assistant</p>
+            )}
         </div>
       </div>
       <button

@@ -6,7 +6,7 @@ import { m, LazyMotion, domAnimation } from "motion/react";
 import { ArrowRight } from "lucide-react";
 
 const CONVERSATION: { type: "user" | "typing" | "response"; text?: string; rich?: boolean; delay: number }[] = [
-  { type: "user", text: "What's corn at today?", delay: 0 },
+  { type: "user", text: "What do I need to get done today?", delay: 0 },
   { type: "typing", delay: 800 },
   { type: "response", rich: true, delay: 1400 },
 ];
@@ -50,9 +50,9 @@ function HeroTerminal() {
   }, [phase]);
 
   // Stream response word by word
-  const responseLine = "Cash Corn Bids — Mar 3, 9:15 AM";
+  const responseLine = "Today's Priorities — Monday, Mar 3";
   const responseWordsArr = responseLine.split(" ");
-  const summaryText = "Cargill has the best bid today, 7c over ADM. Basis narrowed 3c this week.";
+  const summaryText = "Spray window looks good this morning — I'd hit the NE quarter first. Seed delivery confirmed for 2 PM at ADM.";
   const summaryWords = summaryText.split(" ");
 
   useEffect(() => {
@@ -104,26 +104,26 @@ function HeroTerminal() {
                 <table className="response-table">
                   <thead>
                     <tr>
-                      <th>Elevator</th>
-                      <th>Bid</th>
-                      <th>Basis</th>
+                      <th>Task</th>
+                      <th>Status</th>
+                      <th>Due</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr>
-                      <td>CHS Fargo</td>
-                      <td><span className="bid-price">$4.52</span></td>
-                      <td>-35 Mar</td>
+                      <td>Pre-emerge spray — NE quarter</td>
+                      <td><span className="status-tag ready">Ready</span></td>
+                      <td>Today 6–11 AM</td>
                     </tr>
                     <tr>
-                      <td>ADM Casselton</td>
-                      <td><span className="bid-price">$4.48</span></td>
-                      <td>-39 Mar</td>
+                      <td>Seed treatment delivery — ADM</td>
+                      <td><span className="status-tag confirmed">Confirmed</span></td>
+                      <td>Today 2 PM</td>
                     </tr>
                     <tr>
-                      <td>Cargill W. Fargo</td>
-                      <td><span className="bid-price">$4.55</span></td>
-                      <td>-32 Mar</td>
+                      <td>FSA acreage report</td>
+                      <td><span className="status-tag due-soon">Due soon</span></td>
+                      <td>Friday</td>
                     </tr>
                   </tbody>
                 </table>
@@ -188,7 +188,7 @@ export function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            FarmClaw gives your farm a team of AI assistants — configured around your crops, your county, your elevators, and whatever else your operation needs. Grain bids, weather, agronomy, compliance — just ask.
+            FarmClaw gives your farm a team of AI assistants — built around your operation, your priorities, and your way of doing things. Task tracking, SOPs, grain bids, weather, compliance — just ask.
           </m.p>
 
           <m.div
@@ -197,11 +197,20 @@ export function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.4 }}
           >
-            <Link href="/signup" className="btn-primary">Get Started</Link>
+            <Link href="/signup" className="btn-primary">Start Free Trial</Link>
             <Link href="#how" className="btn-ghost">
               See how it works <ArrowRight size={16} />
             </Link>
           </m.div>
+
+          <m.p
+            className="text-text-dim text-sm mt-3"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+          >
+            14 days free. No credit card required.
+          </m.p>
         </div>
 
         <m.div

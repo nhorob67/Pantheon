@@ -1,5 +1,6 @@
 import { requireDashboardCustomer, getCustomerTenant } from "@/lib/auth/dashboard-session";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { fetchScheduleActivity } from "@/lib/queries/schedule-activity";
 import { ScheduleManagerPanel } from "@/components/settings/schedule-manager-panel";
 
 export default async function SchedulesPage() {
@@ -19,15 +20,8 @@ export default async function SchedulesPage() {
 
   const admin = createAdminClient();
 
-  // Fetch schedules with agent names
-  const { data: schedules } = await admin
-    .from("tenant_scheduled_messages")
-    .select(
-      "id, schedule_key, cron_expression, timezone, enabled, last_run_at, next_run_at, agent_id, channel_id, metadata, schedule_type, display_name, prompt, tools, created_by, created_at, updated_at, tenant_agents(id, display_name)"
-    )
-    .eq("tenant_id", tenant.id)
-    .order("enabled", { ascending: false })
-    .order("created_at", { ascending: false });
+  // Fetch schedules with activity data (14-day heatmap, recent runs, health)
+  const schedulesWithActivity = await fetchScheduleActivity(admin, tenant.id);
 
   // Fetch agents for the create form
   const { data: agents } = await admin
@@ -44,14 +38,14 @@ export default async function SchedulesPage() {
           Schedules
         </h3>
         <p className="text-foreground/60 text-sm">
-          Manage predefined and custom recurring tasks. Create scheduled reminders,
-          reports, and checks that your agents run automatically.
+          Manage and monitor your scheduled tasks. See configuration, health,
+          and recent activity all in one place.
         </p>
       </div>
 
       <ScheduleManagerPanel
         tenantId={tenant.id}
-        schedules={schedules || []}
+        schedules={schedulesWithActivity}
         agents={(agents || []).map((a) => ({
           id: a.id,
           display_name: a.display_name,

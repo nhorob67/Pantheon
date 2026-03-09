@@ -4,9 +4,9 @@ import { useState } from "react";
 import { m, LazyMotion, domAnimation, AnimatePresence } from "motion/react";
 
 const steps = [
-  { num: "01", title: "Tell us about your operation", desc: "Crops, county, elevators, acres — and what you want your team to focus on. Takes about 3 minutes. This is how we build a team that actually knows your farm." },
+  { num: "01", title: "Tell us about your operation", desc: "Crops, county, acres, and what you need help with — task tracking, SOPs, grain marketing, whatever your operation demands. Takes about 3 minutes." },
   { num: "02", title: "Add FarmClaw to Discord", desc: "Click the invite link and FarmClaw joins your Discord server. No bot tokens, no developer portal, no configuration. Just add and go." },
-  { num: "03", title: "Your team goes to work", desc: "Weather briefings, grain bids, and answers to whatever you ask — your team is live instantly. It learns your preferences and gets sharper over time." },
+  { num: "03", title: "Your team goes to work", desc: "Morning briefings, daily task lists, procedure checklists, and answers to whatever you ask — your team is live instantly. It learns your operation and gets sharper over time." },
 ];
 
 function StepVisual1() {
@@ -85,10 +85,10 @@ function StepVisual3() {
         </div>
       </div>
       <div className="phone-messages">
-        <div className="phone-msg in"><strong>Morning Weather — Fargo, ND</strong><br />Today: Sunny, High 34F, Wind NW 8mph. No precip. Clear week ahead.</div>
-        <div className="phone-msg in"><strong>Cash Bids — Mar 3</strong><br />Best corn: Cargill $4.55 (-32)<br />Best beans: ADM $10.22 (-48)</div>
-        <div className="phone-msg out">What&apos;s wheat looking like?</div>
-        <div className="phone-msg in">Spring wheat bids:<br />CHS Fargo: <strong>$6.18</strong> (basis -22 Mar)<br />Cargill: <strong>$6.14</strong> (basis -26 Mar)</div>
+        <div className="phone-msg in"><strong>Morning Briefing — Fargo, ND</strong><br />3 tasks today. Spray window 6–11 AM. High 34F, clear skies.</div>
+        <div className="phone-msg in"><strong>Reminder: FSA acreage report due Friday</strong><br />Want me to pull last year&apos;s numbers?</div>
+        <div className="phone-msg out">Yeah pull those up. And add &apos;check tile outlets&apos; to my list</div>
+        <div className="phone-msg in">Done. Last year&apos;s report is ready, and I added tile outlet check to today&apos;s tasks.</div>
       </div>
     </div>
   );

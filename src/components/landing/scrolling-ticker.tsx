@@ -3,21 +3,21 @@
 import { m, LazyMotion, domAnimation } from "motion/react";
 
 const tickerItems = [
-  "What's corn at CHS today?",
+  "What do I need to get done this week?",
+  "Walk me through the pre-emerge spray procedure",
   "Spray window tomorrow morning?",
-  "Compare soybean basis across my elevators",
-  "When does crop insurance signup close?",
-  "Break-even on corn at current input costs?",
-  "Summarize yesterday's WASDE report",
-  "Draft a message to my landlord about rent",
-  "GDD accumulation since May 1?",
+  "Add 'call seed dealer' to my to-do list",
+  "What's corn at CHS today?",
   "Any severe weather alerts for Cass County?",
+  "What's the procedure for anhydrous application?",
   "What equipment maintenance is due this month?",
-  "Walk me through ARC-CO vs PLC for my county",
+  "When does crop insurance signup close?",
+  "Mark the tile drainage inspection as done",
+  "What did I tell you about the NE quarter last fall?",
   "What's the 10-day forecast look like?",
-  "How many bushels have I delivered this season?",
-  "Pull up my scale tickets from last week",
-  "What did Dec corn close at yesterday?",
+  "Compare soybean basis across my elevators",
+  "What are my open tasks for planting season?",
+  "Walk me through ARC-CO vs PLC for my county",
 ];
 
 export function ScrollingTicker() {

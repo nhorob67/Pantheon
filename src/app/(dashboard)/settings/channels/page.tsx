@@ -143,6 +143,12 @@ export default async function ChannelsSettingsPage() {
         const composioToolkits = Array.isArray(config.composio_toolkits)
           ? (config.composio_toolkits as string[])
           : [];
+        const goal = typeof config.goal === "string" ? config.goal : null;
+        const backstory = typeof config.backstory === "string" ? config.backstory : null;
+        const toolApprovalOverrides =
+          config.tool_approval_overrides && typeof config.tool_approval_overrides === "object" && !Array.isArray(config.tool_approval_overrides)
+            ? (config.tool_approval_overrides as Record<string, import("@/types/agent").ToolApprovalLevel>)
+            : {};
 
         return {
           id: row.legacy_agent_id || row.id,
@@ -158,6 +164,9 @@ export default async function ChannelsSettingsPage() {
           skills: Array.isArray(row.skills) ? (row.skills as string[]) : [],
           cron_jobs: cronJobs,
           composio_toolkits: composioToolkits,
+          goal,
+          backstory,
+          tool_approval_overrides: toolApprovalOverrides,
           sort_order: row.sort_order,
           created_at: row.created_at,
           updated_at: row.updated_at,

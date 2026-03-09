@@ -15,6 +15,50 @@ interface ApprovalRecord {
   created_at: string;
 }
 
+function isHeartbeatApprovalPayload(
+  value: Record<string, unknown>
+): value is Record<string, unknown> & {
+  kind: "heartbeat_alert";
+  approval_reason?: string;
+  signal_summaries?: string[];
+  agent_id?: string | null;
+} {
+  return value.kind === "heartbeat_alert";
+}
+
+function describeApproval(approval: ApprovalRecord): {
+  title: string;
+  subtitle: string;
+  details: string[];
+} {
+  if (isHeartbeatApprovalPayload(approval.request_payload)) {
+    const summaries = Array.isArray(approval.request_payload.signal_summaries)
+      ? approval.request_payload.signal_summaries.filter((value): value is string => typeof value === "string")
+      : [];
+    const scope = typeof approval.request_payload.agent_id === "string"
+      ? "Agent override heartbeat alert"
+      : "Tenant default heartbeat alert";
+    const reason = typeof approval.request_payload.approval_reason === "string"
+      ? approval.request_payload.approval_reason.replaceAll("_", " ")
+      : "policy review";
+    return {
+      title: "Heartbeat alert",
+      subtitle: `${scope} · Reason: ${reason}`,
+      details: summaries.slice(0, 3),
+    };
+  }
+
+  const toolKey =
+    typeof approval.request_payload?.tool_key === "string"
+      ? approval.request_payload.tool_key
+      : "tool";
+  return {
+    title: toolKey,
+    subtitle: "",
+    details: [],
+  };
+}
+
 interface TenantApprovalsPanelProps {
   tenantId: string;
   initialApprovals: ApprovalRecord[];
@@ -141,18 +185,29 @@ export function TenantApprovalsPanel({
       ) : (
         <div className="space-y-3">
           {visible.map((approval) => {
-            const toolKey =
-              typeof approval.request_payload?.tool_key === "string"
-                ? approval.request_payload.tool_key
-                : "tool";
+            const summary = describeApproval(approval);
             return (
               <div key={approval.id} className="rounded-xl border border-border bg-card p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-sm font-semibold text-foreground">{toolKey}</p>
-                    <p className="text-xs text-foreground/60">
-                      Required role: {approval.required_role} · Created {formatDate(approval.created_at)}
-                    </p>
+                    <p className="text-sm font-semibold text-foreground">{summary.title}</p>
+                    {summary.subtitle ? (
+                      <p className="text-xs text-foreground/60">{summary.subtitle}</p>
+                    ) : null}
+                    {summary.details.length > 0 && (
+                      <div className="mt-2 space-y-1">
+                        {summary.details.map((detail, index) => (
+                          <p key={`${approval.id}:${index}`} className="text-xs text-foreground/70">
+                            {detail}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                    {summary.details.length === 0 && (
+                      <p className="text-xs text-foreground/60">
+                        Required role: {approval.required_role} · Created {formatDate(approval.created_at)}
+                      </p>
+                    )}
                   </div>
                   <span className="rounded-full border border-border px-2 py-0.5 text-xs text-foreground/70">
                     {approval.status}
