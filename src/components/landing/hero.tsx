@@ -179,7 +179,7 @@ export function Hero() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ type: "spring", stiffness: 80, damping: 20, delay: 0.05 }}
           >
-            You&apos;re running a $2M operation<br /><em>out of text threads and sticky notes.</em>
+            Your operation runs on a thousand decisions a season.<br /><em>Your tools should keep up.</em>
           </m.h1>
 
           <m.p
