@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import useSWR from "swr";
 import {
   KeyRound,
   Plus,
@@ -17,8 +18,10 @@ import {
   Save,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/toast";
 import type { TenantSecret } from "@/lib/secrets/vault";
+import { jsonFetcher } from "@/lib/utils/fetcher";
 
 export interface AgentOption {
   id: string;
@@ -39,30 +42,18 @@ interface Props {
 }
 
 export function SecretsVaultPanel({ tenantId, agents }: Props) {
-  const [secrets, setSecrets] = useState<TenantSecret[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading: loading, mutate } = useSWR(
+    `/api/tenants/${tenantId}/secrets`,
+    jsonFetcher
+  );
+  const secrets: TenantSecret[] = data?.secrets ?? [];
+  const revealStatusFromServer: string | null = data?.reveal_secret_status ?? null;
+
   const [showForm, setShowForm] = useState(false);
-  const [revealStatus, setRevealStatus] = useState<string | null>(null);
   const [togglingReveal, setTogglingReveal] = useState(false);
   const { toast } = useToast();
 
-  const fetchSecrets = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/tenants/${tenantId}/secrets`);
-      if (!res.ok) throw new Error("Failed to load secrets");
-      const data = await res.json();
-      setSecrets(data.secrets ?? []);
-      setRevealStatus(data.reveal_secret_status ?? null);
-    } catch {
-      toast("Failed to load secrets", "error");
-    } finally {
-      setLoading(false);
-    }
-  }, [tenantId, toast]);
-
-  useEffect(() => {
-    fetchSecrets();
-  }, [fetchSecrets]);
+  const effectiveRevealStatus = revealStatusFromServer;
 
   const handleDelete = async (secretId: string, label: string) => {
     if (!confirm(`Delete secret "${label}"? This cannot be undone.`)) return;
@@ -73,14 +64,14 @@ export function SecretsVaultPanel({ tenantId, agents }: Props) {
       });
       if (!res.ok) throw new Error("Failed to delete");
       toast(`Secret "${label}" deleted`);
-      setSecrets((prev) => prev.filter((s) => s.id !== secretId));
+      mutate();
     } catch {
       toast("Failed to delete secret", "error");
     }
   };
 
   const handleToggleReveal = async () => {
-    const newEnabled = revealStatus !== "enabled";
+    const newEnabled = effectiveRevealStatus !== "enabled";
     if (newEnabled && !confirm(
       "Enable break-glass access? This allows agents to reveal raw secret values " +
       "when approved by the workspace owner. Are you sure?"
@@ -94,9 +85,9 @@ export function SecretsVaultPanel({ tenantId, agents }: Props) {
         body: JSON.stringify({ enabled: newEnabled }),
       });
       if (!res.ok) throw new Error("Failed to toggle");
-      const data = await res.json();
-      setRevealStatus(data.status);
-      toast(`Break-glass access ${data.status === "enabled" ? "enabled" : "disabled"}`);
+      const result = await res.json();
+      mutate();
+      toast(`Break-glass access ${result.status === "enabled" ? "enabled" : "disabled"}`);
     } catch {
       toast("Failed to toggle break-glass access", "error");
     } finally {
@@ -104,8 +95,8 @@ export function SecretsVaultPanel({ tenantId, agents }: Props) {
     }
   };
 
-  const handleSecretUpdated = (updated: TenantSecret) => {
-    setSecrets((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+  const handleSecretUpdated = () => {
+    mutate();
   };
 
   return (
@@ -148,7 +139,7 @@ export function SecretsVaultPanel({ tenantId, agents }: Props) {
             tenantId={tenantId}
             agents={agents}
             onCreated={(secret) => {
-              setSecrets((prev) => [...prev, secret]);
+              mutate();
               setShowForm(false);
               toast(`Secret "${secret.label}" created`);
             }}
@@ -189,7 +180,7 @@ export function SecretsVaultPanel({ tenantId, agents }: Props) {
       </div>
 
       {/* Break-glass access toggle */}
-      {revealStatus !== null && (
+      {effectiveRevealStatus !== null && (
         <div className="bg-card rounded-xl border border-border shadow-sm">
           <div className="p-4">
             <div className="flex items-center justify-between">
@@ -204,23 +195,16 @@ export function SecretsVaultPanel({ tenantId, agents }: Props) {
                   </p>
                 </div>
               </div>
-              <button
-                onClick={handleToggleReveal}
-                disabled={togglingReveal}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 ml-4 ${
-                  revealStatus === "enabled"
-                    ? "bg-amber-500"
-                    : "bg-foreground/20"
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    revealStatus === "enabled" ? "translate-x-6" : "translate-x-1"
-                  }`}
+              <div className="ml-4">
+                <Switch
+                  checked={effectiveRevealStatus === "enabled"}
+                  onChange={() => handleToggleReveal()}
+                  disabled={togglingReveal}
+                  checkedColorClass="bg-amber-500"
                 />
-              </button>
+              </div>
             </div>
-            {revealStatus === "enabled" && (
+            {effectiveRevealStatus === "enabled" && (
               <div className="mt-3 ml-8 bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
                 <p className="text-xs text-amber-400">
                   Break-glass access is active. The <code>reveal_secret</code> tool is available to agents,
@@ -251,7 +235,7 @@ function SecretRow({
   agents: AgentOption[];
   tenantId: string;
   onDelete: () => void;
-  onUpdated: (updated: TenantSecret) => void;
+  onUpdated: () => void;
 }) {
   const [showHint, setShowHint] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -287,7 +271,7 @@ function SecretRow({
 
       if (!res.ok) throw new Error("Failed to update");
       const data = await res.json();
-      onUpdated(data.secret);
+      onUpdated();
       setExpanded(false);
       toast("Secret scoping updated");
     } catch {

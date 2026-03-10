@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import useSWR from "swr";
 import type { ExtensionSourceType, ExtensionTrustPolicy } from "@/types/extensibility";
 
 export interface CatalogItem {
@@ -47,10 +48,62 @@ function orderedSourceTypes(enabled: Set<ExtensionSourceType>): ExtensionSourceT
   return SOURCE_ORDER.filter((value) => enabled.has(value));
 }
 
+interface MarketplaceData {
+  catalog: CatalogItem[];
+  installations: InstallationRow[];
+  allowedSourceTypes: ExtensionSourceType[];
+  requireVerifiedSourceTypes: ExtensionSourceType[];
+}
+
+const marketplaceFetcher = async (): Promise<MarketplaceData> => {
+  const [catalogRes, installationsRes, trustPolicyRes] = await Promise.all([
+    fetch("/api/extensions/catalog?active=true&page=1&per_page=100"),
+    fetch("/api/extensions/installations"),
+    fetch("/api/extensions/trust-policy"),
+  ]);
+
+  const catalogPayload = (await catalogRes.json()) as {
+    items?: CatalogItem[];
+    error?: string;
+  };
+  const installationsPayload = (await installationsRes.json()) as {
+    installations?: InstallationRow[];
+    error?: string;
+  };
+  const trustPolicyPayload = (await trustPolicyRes.json()) as {
+    policy?: ExtensionTrustPolicy;
+    error?: string;
+  };
+
+  if (!catalogRes.ok) {
+    throw new Error(catalogPayload.error || "Failed to load extension catalog");
+  }
+  if (!installationsRes.ok) {
+    throw new Error(installationsPayload.error || "Failed to load installed extensions");
+  }
+  if (!trustPolicyRes.ok) {
+    throw new Error(trustPolicyPayload.error || "Failed to load extension trust policy");
+  }
+
+  const trustPolicy = trustPolicyPayload.policy;
+  return {
+    catalog: catalogPayload.items || [],
+    installations: installationsPayload.installations || [],
+    allowedSourceTypes: trustPolicy?.allowed_source_types || [],
+    requireVerifiedSourceTypes: trustPolicy?.require_verified_source_types || [],
+  };
+};
+
 export function useExtensionMarketplace() {
-  const [loading, setLoading] = useState(true);
-  const [catalog, setCatalog] = useState<CatalogItem[]>([]);
-  const [installations, setInstallations] = useState<InstallationRow[]>([]);
+  const { data, error: swrError, isLoading: loading, mutate } = useSWR(
+    "extensions-marketplace",
+    marketplaceFetcher,
+    { revalidateOnFocus: true }
+  );
+
+  const catalog = data?.catalog || [];
+  const installations = useMemo(() => data?.installations || [], [data?.installations]);
+
   const [allowedSourceTypes, setAllowedSourceTypes] = useState<
     Set<ExtensionSourceType>
   >(new Set());
@@ -62,57 +115,17 @@ export function useExtensionMarketplace() {
   const [notice, setNotice] = useState<string | null>(null);
   const [savingPolicy, setSavingPolicy] = useState(false);
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const [catalogRes, installationsRes, trustPolicyRes] = await Promise.all([
-        fetch("/api/extensions/catalog?active=true&page=1&per_page=100"),
-        fetch("/api/extensions/installations"),
-        fetch("/api/extensions/trust-policy"),
-      ]);
-
-      const catalogPayload = (await catalogRes.json()) as {
-        items?: CatalogItem[];
-        error?: string;
-      };
-      const installationsPayload = (await installationsRes.json()) as {
-        installations?: InstallationRow[];
-        error?: string;
-      };
-      const trustPolicyPayload = (await trustPolicyRes.json()) as {
-        policy?: ExtensionTrustPolicy;
-        error?: string;
-      };
-
-      if (!catalogRes.ok) {
-        throw new Error(catalogPayload.error || "Failed to load extension catalog");
-      }
-      if (!installationsRes.ok) {
-        throw new Error(installationsPayload.error || "Failed to load installed extensions");
-      }
-      if (!trustPolicyRes.ok) {
-        throw new Error(trustPolicyPayload.error || "Failed to load extension trust policy");
-      }
-
-      const trustPolicy = trustPolicyPayload.policy;
-      setCatalog(catalogPayload.items || []);
-      setInstallations(installationsPayload.installations || []);
-      setAllowedSourceTypes(new Set(trustPolicy?.allowed_source_types || []));
-      setRequireVerifiedSourceTypes(
-        new Set(trustPolicy?.require_verified_source_types || [])
-      );
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load extensions");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
+  // Sync trust policy state from SWR data on first load
+  const [policyInitialized, setPolicyInitialized] = useState(false);
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    if (data && !policyInitialized) {
+      setAllowedSourceTypes(new Set(data.allowedSourceTypes));
+      setRequireVerifiedSourceTypes(new Set(data.requireVerifiedSourceTypes));
+      setPolicyInitialized(true);
+    }
+  }, [data, policyInitialized]);
+
+  const effectiveError = error || (swrError ? swrError.message : null);
 
   const installationByItemId = useMemo(() => {
     return new Map(installations.map((row) => [row.item_id, row]));
@@ -135,7 +148,7 @@ export function useExtensionMarketplace() {
       }
 
       setNotice("Queued extension operation");
-      await refresh();
+      await mutate();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to queue install");
     } finally {
@@ -160,7 +173,7 @@ export function useExtensionMarketplace() {
       }
 
       setNotice("Queued rollback operation");
-      await refresh();
+      await mutate();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to queue rollback");
     } finally {
@@ -269,11 +282,11 @@ export function useExtensionMarketplace() {
     installationByItemId,
     allowedSourceTypes,
     requireVerifiedSourceTypes,
-    error,
+    error: effectiveError,
     busyKey,
     notice,
     savingPolicy,
-    refresh,
+    refresh: mutate,
     queueInstallOrUpgrade,
     queueRollback,
     updateAllowedSourceType,

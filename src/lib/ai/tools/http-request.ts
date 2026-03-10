@@ -74,7 +74,7 @@ export function createHttpRequestTool(
         credential_handle: z
           .string()
           .optional()
-          .describe("Opaque handle from use_credential tool. Server injects the secret into the request."),
+          .describe("Opaque handle from use_credential tool. Server injects the secret into the request. Omit for unauthenticated requests."),
       }),
       execute: async ({ url, method, headers, body, credential_handle }) => {
         try {
@@ -96,25 +96,26 @@ export function createHttpRequestTool(
           };
 
           let secretValue: string | null = null;
+          const credential = credential_handle
+            ? await consumeCredentialHandle(admin, credential_handle, tenantId)
+            : null;
 
-          // Inject credential if handle provided
-          if (credential_handle) {
-            const credential = await consumeCredentialHandle(admin, credential_handle, tenantId);
-
+          if (credential) {
             // Domain scoping check
             if (!isDomainAllowed(parsedUrl.hostname, credential.allowedDomains)) {
-              // Audit the rejection
-              admin.from("tenant_secret_audit_log").insert({
-                tenant_id: tenantId,
-                customer_id: customerId,
-                secret_id: credential.secretId,
-                action: "handle_created",
-                tool_name: "http_request",
-                target_domain: parsedUrl.hostname,
-                agent_id: agentId,
-                run_id: runId,
-                metadata: { rejected: true, reason: "domain_not_allowed" },
-              }).then(() => {}).catch((err: unknown) => console.error("Audit log insert failed", err));
+              void Promise.resolve(
+                admin.from("tenant_secret_audit_log").insert({
+                  tenant_id: tenantId,
+                  customer_id: customerId,
+                  secret_id: credential.secretId,
+                  action: "injected",
+                  tool_name: "http_request",
+                  target_domain: parsedUrl.hostname,
+                  agent_id: agentId,
+                  run_id: runId,
+                  metadata: { rejected: true, reason: "domain_not_allowed" },
+                })
+              ).catch((err: unknown) => console.error("Audit log insert failed", err));
 
               return {
                 error: `Credential "${credential_handle}" is not allowed for domain "${parsedUrl.hostname}". ` +
@@ -143,19 +144,20 @@ export function createHttpRequestTool(
             }
 
             // Audit: credential injected
-            admin
-              .from("tenant_secret_audit_log")
-              .insert({
-                tenant_id: tenantId,
-                customer_id: customerId,
-                secret_id: credential.secretId,
-                action: "injected",
-                tool_name: "http_request",
-                target_domain: parsedUrl.hostname,
-                agent_id: agentId,
-                run_id: runId,
-              })
-              .then(() => {}).catch((err: unknown) => console.error("Audit log insert failed", err));
+            void Promise.resolve(
+              admin
+                .from("tenant_secret_audit_log")
+                .insert({
+                  tenant_id: tenantId,
+                  customer_id: customerId,
+                  secret_id: credential.secretId,
+                  action: "injected",
+                  tool_name: "http_request",
+                  target_domain: parsedUrl.hostname,
+                  agent_id: agentId,
+                  run_id: runId,
+                })
+            ).catch((err: unknown) => console.error("Audit log insert failed", err));
           }
 
           // Execute the request

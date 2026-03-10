@@ -7,6 +7,7 @@ import { requireDashboardCustomer, getCustomerInstance, getCustomerTenant } from
 import { formatDateTime } from "@/lib/utils/format";
 import { getWorkflowRunDetail, listWorkflowRuns } from "@/lib/queries/workflow-runs";
 import { listWorkflowRunsQuerySchema } from "@/lib/validators/workflow";
+import { Suspense } from "react";
 import { RunTimelineLazy } from "@/components/workflows/run-timeline-lazy";
 import { WORKFLOW_RUN_STATUSES, type WorkflowRunStatus } from "@/types/workflow";
 import { isWorkflowBuilderEnabledForCustomer } from "@/lib/workflows/feature-gate";
@@ -433,13 +434,21 @@ export default async function WorkflowRunsPage({
           </div>
         </section>
 
-        <RunTimelineLazy
-          tenantId={tenant.id}
-          run={selectedRunDetail?.run || null}
-          steps={selectedRunDetail?.steps || []}
-          artifacts={selectedRunDetail?.artifacts || []}
-          workflowName={selectedRunWorkflowName}
-        />
+        <Suspense
+          fallback={
+            <div className="rounded-2xl border border-border bg-bg-card/80 p-8 flex items-center justify-center">
+              <p className="text-sm text-text-dim">Loading timeline...</p>
+            </div>
+          }
+        >
+          <RunTimelineLazy
+            tenantId={tenant.id}
+            run={selectedRunDetail?.run || null}
+            steps={selectedRunDetail?.steps || []}
+            artifacts={selectedRunDetail?.artifacts || []}
+            workflowName={selectedRunWorkflowName}
+          />
+        </Suspense>
       </div>
     </div>
   );

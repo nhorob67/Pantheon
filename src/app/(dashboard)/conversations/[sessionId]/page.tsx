@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { requireDashboardCustomer, getCustomerTenant } from "@/lib/auth/dashboard-session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ConversationReplay } from "@/components/dashboard/conversation-replay";
+import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 
 export const metadata: Metadata = { title: "Conversation" };
@@ -12,30 +14,6 @@ export default async function ConversationReplayPage({
   params: Promise<{ sessionId: string }>;
 }) {
   const { sessionId } = await params;
-  const { customerId } = await requireDashboardCustomer();
-  const tenant = await getCustomerTenant(customerId);
-
-  if (!tenant) {
-    return <p className="text-foreground/60">No tenant workspace configured.</p>;
-  }
-
-  const admin = createAdminClient();
-
-  const [messagesResult, tracesResult] = await Promise.all([
-    admin
-      .from("tenant_messages")
-      .select("id, direction, author_type, content, token_count, created_at")
-      .eq("session_id", sessionId)
-      .eq("tenant_id", tenant.id)
-      .order("created_at", { ascending: true })
-      .limit(200),
-    admin
-      .from("tenant_conversation_traces")
-      .select("*")
-      .eq("session_id", sessionId)
-      .eq("tenant_id", tenant.id)
-      .order("created_at", { ascending: true }),
-  ]);
 
   return (
     <div className="space-y-6">
@@ -57,10 +35,57 @@ export default async function ConversationReplayPage({
         </p>
       </div>
 
-      <ConversationReplay
-        messages={messagesResult.data || []}
-        traces={tracesResult.data || []}
-      />
+      <Suspense
+        fallback={
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-20 rounded-xl" />
+            ))}
+          </div>
+        }
+      >
+        <ConversationReplayContent sessionId={sessionId} />
+      </Suspense>
     </div>
+  );
+}
+
+async function ConversationReplayContent({
+  sessionId,
+}: {
+  sessionId: string;
+}) {
+  const { customerId } = await requireDashboardCustomer();
+  const tenant = await getCustomerTenant(customerId);
+
+  if (!tenant) {
+    return (
+      <p className="text-foreground/60">No tenant workspace configured.</p>
+    );
+  }
+
+  const admin = createAdminClient();
+
+  const [messagesResult, tracesResult] = await Promise.all([
+    admin
+      .from("tenant_messages")
+      .select("id, direction, author_type, content, token_count, created_at")
+      .eq("session_id", sessionId)
+      .eq("tenant_id", tenant.id)
+      .order("created_at", { ascending: true })
+      .limit(200),
+    admin
+      .from("tenant_conversation_traces")
+      .select("*")
+      .eq("session_id", sessionId)
+      .eq("tenant_id", tenant.id)
+      .order("created_at", { ascending: true }),
+  ]);
+
+  return (
+    <ConversationReplay
+      messages={messagesResult.data || []}
+      traces={tracesResult.data || []}
+    />
   );
 }

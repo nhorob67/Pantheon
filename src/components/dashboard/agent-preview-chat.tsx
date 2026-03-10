@@ -29,6 +29,8 @@ export function AgentPreviewChat({
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const streamingContentRef = useRef("");
+  const rafIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -39,6 +41,15 @@ export function AgentPreviewChat({
       setTimeout(() => inputRef.current?.focus(), 100);
     }
   }, [open]);
+
+  // Cancel any pending rAF on unmount to avoid stale setState calls
+  useEffect(() => {
+    return () => {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+      }
+    };
+  }, []);
 
   const clearChat = useCallback(() => {
     setMessages([]);
@@ -75,10 +86,22 @@ export function AgentPreviewChat({
       // Read the data stream
       const reader = res.body!.getReader();
       const decoder = new TextDecoder();
-      let assistantContent = "";
+      streamingContentRef.current = "";
       let buffer = "";
 
       setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+
+      const flushToState = () => {
+        const content = streamingContentRef.current;
+        setMessages((prev) => {
+          const updated = [...prev];
+          updated[updated.length - 1] = {
+            role: "assistant",
+            content,
+          };
+          return updated;
+        });
+      };
 
       while (true) {
         const { done, value } = await reader.read();
@@ -95,16 +118,14 @@ export function AgentPreviewChat({
           try {
             const json = JSON.parse(data);
             if (json.content) {
-              assistantContent += json.content;
-              const captured = assistantContent;
-              setMessages((prev) => {
-                const updated = [...prev];
-                updated[updated.length - 1] = {
-                  role: "assistant",
-                  content: captured,
-                };
-                return updated;
-              });
+              streamingContentRef.current += json.content;
+
+              if (rafIdRef.current === null) {
+                rafIdRef.current = requestAnimationFrame(() => {
+                  rafIdRef.current = null;
+                  flushToState();
+                });
+              }
             }
           } catch {
             // skip unparseable lines
@@ -115,6 +136,22 @@ export function AgentPreviewChat({
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setStreaming(false);
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
+      // Final flush to ensure all content is rendered
+      if (streamingContentRef.current) {
+        const finalContent = streamingContentRef.current;
+        setMessages((prev) => {
+          const updated = [...prev];
+          updated[updated.length - 1] = {
+            role: "assistant",
+            content: finalContent,
+          };
+          return updated;
+        });
+      }
     }
   };
 

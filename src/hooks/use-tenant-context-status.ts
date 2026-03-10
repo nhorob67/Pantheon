@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import useSWR from "swr";
 import { POLLING_INTERVAL } from "@/lib/utils/constants";
 
 interface TenantContextStatus {
@@ -17,43 +17,39 @@ interface TenantContextStatus {
   };
 }
 
+const fetcher = async (url: string): Promise<TenantContextStatus> => {
+  const res = await fetch(url);
+  const payload = await res.json();
+
+  if (!res.ok) {
+    throw new Error(
+      payload?.error?.message || payload?.error || "Failed to fetch tenant status"
+    );
+  }
+
+  const data = payload?.data;
+  if (!data || typeof data !== "object") {
+    throw new Error("Invalid tenant status payload");
+  }
+
+  return data as TenantContextStatus;
+};
+
 export function useTenantContextStatus(tenantId: string | null) {
-  const [status, setStatus] = useState<TenantContextStatus | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchStatus = useCallback(async () => {
-    if (!tenantId) return;
-
-    try {
-      const res = await fetch(`/api/tenants/${tenantId}/context`);
-      const payload = await res.json();
-
-      if (!res.ok) {
-        throw new Error(
-          payload?.error?.message || payload?.error || "Failed to fetch tenant status"
-        );
-      }
-
-      const data = payload?.data;
-      if (!data || typeof data !== "object") {
-        throw new Error("Invalid tenant status payload");
-      }
-
-      setStatus(data as TenantContextStatus);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error");
-    } finally {
-      setLoading(false);
+  const { data, error, isLoading, mutate } = useSWR(
+    tenantId ? `/api/tenants/${tenantId}/context` : null,
+    fetcher,
+    {
+      refreshInterval: POLLING_INTERVAL,
+      revalidateOnFocus: true,
+      dedupingInterval: 5_000,
     }
-  }, [tenantId]);
+  );
 
-  useEffect(() => {
-    fetchStatus();
-    const interval = setInterval(fetchStatus, POLLING_INTERVAL);
-    return () => clearInterval(interval);
-  }, [fetchStatus]);
-
-  return { status, loading, error, refetch: fetchStatus };
+  return {
+    status: data ?? null,
+    loading: isLoading,
+    error: error?.message ?? null,
+    refetch: mutate,
+  };
 }

@@ -3,8 +3,9 @@ import { Check, Shield } from "lucide-react";
 
 const features = [
   "AI team configured for your operation",
-  "$25/mo AI usage included — most farms stay under",
-  "Discord for your crew — unlimited users",
+  "$25/mo AI usage included, most farms stay under",
+  "Discord for your crew, unlimited users",
+  "Organize communication with partners and employees",
   "Daily task lists and reminders",
   "SOPs and procedure checklists",
   "Morning weather & spray briefings",
@@ -39,7 +40,7 @@ export function Pricing() {
         <div className="pricing-usage-note">
           <p>
             <strong>Most farmers pay $50.</strong> Your plan includes $25 of AI
-            usage — enough for daily briefings, task management, and regular questions.
+            usage, enough for daily briefings, task management, and regular questions.
           </p>
           <p>
             Go beyond that and overage is billed in $20 blocks at month-end.
@@ -51,7 +52,7 @@ export function Pricing() {
             <Shield size={16} />
             <span>
               <strong>You set the limit.</strong> Add a spending cap in your
-              dashboard — your assistant pauses if you hit it. No surprise
+              dashboard. Your assistant pauses if you hit it. No surprise
               charges, ever.
             </span>
           </div>
@@ -62,9 +63,10 @@ export function Pricing() {
       </div>
 
       <div className="pricing-value-note">
-        <strong>Think about it this way:</strong> One missed deadline, one forgotten procedure,
-        one dropped ball during planting costs more than a full year of FarmClaw. Your AI team
-        keeps track so nothing falls through the cracks.
+        <strong>Think about it this way:</strong> One missed callback to your crop insurance agent.
+        One forgotten delivery confirmation. One procedure your operator didn&apos;t know about.
+        Any one of these costs more than a full year of FarmClaw. Your AI team keeps track so
+        nothing falls through the cracks.
       </div>
     </section>
   );

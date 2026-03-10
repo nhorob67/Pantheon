@@ -54,7 +54,7 @@ export function useDocsSearchAi({
   const [activeIndex, setActiveIndex] = useState(0);
   const [entries, setEntries] = useState<SearchIndexEntry[]>([]);
   const [loaded, setLoaded] = useState(false);
-  const flexIndexRef = useRef<FlexSearchIndexType | null>(null);
+  const [flexIndex, setFlexIndex] = useState<FlexSearchIndexType | null>(null);
 
   const [aiState, setAiState] = useState<DocsAiState>({
     status: "idle",
@@ -87,7 +87,7 @@ export function useDocsSearchAi({
         // Eagerly build the FlexSearch index so searches are synchronous
         const idx = await getFlexSearchIndex(data);
         if (isMounted) {
-          flexIndexRef.current = idx;
+          setFlexIndex(idx);
         }
         setLoaded(true);
       })
@@ -103,10 +103,9 @@ export function useDocsSearchAi({
   }, []);
 
   const results = useMemo<SearchResult[]>(() => {
-    if (!query.trim() || !flexIndexRef.current) return [];
+    if (!query.trim() || !flexIndex) return [];
 
-    const index = flexIndexRef.current;
-    const matchedIndices = index.search(query, { limit: 15 }) as number[];
+    const matchedIndices = flexIndex.search(query, { limit: 15 }) as number[];
 
     const matched: SearchResult[] = [];
     const seen = new Set<string>();
@@ -138,7 +137,7 @@ export function useDocsSearchAi({
     }
 
     return matched.slice(0, 10);
-  }, [entries, query]);
+  }, [entries, flexIndex, query]);
 
   const isQuestion = useMemo(() => looksLikeQuestion(query), [query]);
 

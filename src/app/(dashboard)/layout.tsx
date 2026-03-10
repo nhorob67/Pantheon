@@ -68,12 +68,14 @@ export default async function DashboardLayout({
       trialEndsAt &&
       new Date(trialEndsAt) < new Date());
 
+  const settingsItems = buildSidebarSettingsItems(workflowBuilderEnabled);
+
   return (
     <ToastProvider>
       <HelpProvider>
         <div className="flex min-h-screen bg-background">
           <Sidebar
-            settingsItems={buildSidebarSettingsItems(workflowBuilderEnabled)}
+            settingsItems={settingsItems}
             subscriptionStatus={subscriptionStatus}
             trialEndsAt={trialEndsAt}
           />
@@ -83,7 +85,7 @@ export default async function DashboardLayout({
               email={user.email}
               tenantOptions={tenantOptions}
               activeTenantId={activeTenantId}
-              settingsItems={buildSidebarSettingsItems(workflowBuilderEnabled)}
+              settingsItems={settingsItems}
             />
             {isTrialing && !isExpired && (
               <TrialBanner trialEndsAt={trialEndsAt!} />

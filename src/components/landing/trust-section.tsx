@@ -7,7 +7,7 @@ const trustCards = [
   {
     icon: Shield,
     title: "Your data is walled off",
-    body: "Every farm gets its own isolated data partition. Your tasks, procedures, scale tickets, and conversations are never visible to other customers \u2014 not even accidentally. We enforce this at the database level, not just the application level.",
+    body: "Every farm gets its own isolated data partition. Your tasks, procedures, scale tickets, and conversations are never visible to other customers, not even accidentally. We enforce this at the database level, not just the application level.",
   },
   {
     icon: Download,

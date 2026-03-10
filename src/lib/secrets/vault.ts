@@ -162,11 +162,12 @@ export async function decryptSecretValue(
   const value = decrypt(data.encrypted_value);
 
   // Bump usage stats (fire-and-forget)
-  admin
-    .from("tenant_secrets")
-    .update({ last_used_at: new Date().toISOString(), use_count: (data.use_count ?? 0) + 1 })
-    .eq("id", secretId)
-    .then(() => {}).catch((err: unknown) => console.error("Secret usage stats update failed", err));
+  void Promise.resolve(
+    admin
+      .from("tenant_secrets")
+      .update({ last_used_at: new Date().toISOString(), use_count: (data.use_count ?? 0) + 1 })
+      .eq("id", secretId)
+  ).catch((err: unknown) => console.error("Secret usage stats update failed", err));
 
   const { encrypted_value: _, ...rest } = data;
   return { value, secret: rest as TenantSecret };
@@ -181,25 +182,42 @@ async function ensureRevealSecretTool(
   tenantId: string
 ): Promise<void> {
   try {
-    const { data: existing } = await admin
+    const [{ data: existing }, { data: tenant }] = await Promise.all([
+      admin
+        .from("tenant_tools")
+        .select("id")
+        .eq("tenant_id", tenantId)
+        .eq("tool_key", "reveal_secret")
+        .maybeSingle(),
+      admin
+        .from("tenants")
+        .select("customer_id")
+        .eq("id", tenantId)
+        .single(),
+    ]);
+
+    if (existing || !tenant) return;
+
+    const { data: toolRow } = await admin
       .from("tenant_tools")
+      .insert({
+        tenant_id: tenantId,
+        customer_id: tenant.customer_id,
+        tool_key: "reveal_secret",
+        display_name: "Reveal Secret (Break Glass)",
+        description: "Reveals the raw value of a stored secret. Requires owner approval.",
+        status: "disabled",
+        risk_level: "critical",
+      })
       .select("id")
-      .eq("tenant_id", tenantId)
-      .eq("tool_key", "reveal_secret")
-      .maybeSingle();
+      .single();
 
-    if (existing) return;
-
-    await admin.from("tenant_tools").insert({
-      tenant_id: tenantId,
-      tool_key: "reveal_secret",
-      status: "disabled",
-      risk_level: "critical",
-    });
+    if (!toolRow) return;
 
     await admin.from("tenant_tool_policies").insert({
       tenant_id: tenantId,
-      tool_key: "reveal_secret",
+      customer_id: tenant.customer_id,
+      tool_id: toolRow.id,
       approval_mode: "always",
       allow_roles: ["owner"],
       max_calls_per_hour: 5,

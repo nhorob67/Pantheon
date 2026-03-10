@@ -4,9 +4,9 @@ import { useState } from "react";
 import { m, LazyMotion, domAnimation, AnimatePresence } from "motion/react";
 
 const steps = [
-  { num: "01", title: "Tell us about your operation", desc: "Crops, county, acres, and what you need help with — task tracking, SOPs, grain marketing, whatever your operation demands. Takes about 3 minutes." },
+  { num: "01", title: "Tell us about your operation", desc: "Crops, county, acres, and what you need help with. Task tracking, SOPs, grain marketing, whatever your operation demands. Takes about 3 minutes." },
   { num: "02", title: "Add FarmClaw to Discord", desc: "Click the invite link and FarmClaw joins your Discord server. No bot tokens, no developer portal, no configuration. Just add and go." },
-  { num: "03", title: "Your team goes to work", desc: "Morning briefings, daily task lists, procedure checklists, and answers to whatever you ask — your team is live instantly. It learns your operation and gets sharper over time." },
+  { num: "03", title: "Everything stops falling through the cracks", desc: "Morning briefings. Task tracking. Weather and grain updates. Plus follow-up reminders, partner communication tracking, and answers to whatever you ask. Your team learns your operation and gets sharper every week." },
 ];
 
 function StepVisual1() {
@@ -85,7 +85,7 @@ function StepVisual3() {
         </div>
       </div>
       <div className="phone-messages">
-        <div className="phone-msg in"><strong>Morning Briefing — Fargo, ND</strong><br />3 tasks today. Spray window 6–11 AM. High 34F, clear skies.</div>
+        <div className="phone-msg in"><strong>Morning Briefing: Fargo, ND</strong><br />3 tasks today. Spray window 6-11 AM. High 34F, clear skies.</div>
         <div className="phone-msg in"><strong>Reminder: FSA acreage report due Friday</strong><br />Want me to pull last year&apos;s numbers?</div>
         <div className="phone-msg out">Yeah pull those up. And add &apos;check tile outlets&apos; to my list</div>
         <div className="phone-msg in">Done. Last year&apos;s report is ready, and I added tile outlet check to today&apos;s tasks.</div>

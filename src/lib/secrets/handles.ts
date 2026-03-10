@@ -85,6 +85,13 @@ export async function createCredentialHandle(
   }
 
   // Check usage_mode vs purpose
+  if (input.purpose === "http" && secret.usage_mode !== "inject") {
+    throw new Error(
+      `Secret "${input.label}" is not configured for credential injection. ` +
+      `Change its usage mode to "Inject" in the Secrets Vault settings.`
+    );
+  }
+
   if (input.purpose === "break_glass" && secret.usage_mode !== "break_glass") {
     throw new Error(
       `Secret "${input.label}" is not configured for break-glass access. ` +
@@ -107,17 +114,18 @@ export async function createCredentialHandle(
   handleStore.set(handleId, handle);
 
   // Audit: handle created
-  input.admin
-    .from("tenant_secret_audit_log")
-    .insert({
-      tenant_id: input.tenantId,
-      customer_id: input.customerId,
-      secret_id: secret.id,
-      action: "handle_created",
-      agent_id: input.agentId,
-      run_id: input.runId ?? null,
-    })
-    .then(() => {}).catch((err: unknown) => console.error("Audit log insert failed", err));
+  void Promise.resolve(
+    input.admin
+      .from("tenant_secret_audit_log")
+      .insert({
+        tenant_id: input.tenantId,
+        customer_id: input.customerId,
+        secret_id: secret.id,
+        action: "handle_created",
+        agent_id: input.agentId,
+        run_id: input.runId ?? null,
+      })
+  ).catch((err: unknown) => console.error("Audit log insert failed", err));
 
   return {
     handleId,
@@ -234,18 +242,19 @@ export async function revealSecretValue(
   const { value } = await decryptSecretValue(input.admin, input.tenantId, input.secretId);
 
   // Audit log: reveal_approved
-  input.admin
-    .from("tenant_secret_audit_log")
-    .insert({
-      tenant_id: input.tenantId,
-      customer_id: input.customerId,
-      secret_id: input.secretId,
-      action: "reveal_approved",
-      agent_id: input.agentId,
-      run_id: input.runId,
-      metadata: { reason: input.reason },
-    })
-    .then(() => {}).catch((err: unknown) => console.error("Audit log insert failed", err));
+  void Promise.resolve(
+    input.admin
+      .from("tenant_secret_audit_log")
+      .insert({
+        tenant_id: input.tenantId,
+        customer_id: input.customerId,
+        secret_id: input.secretId,
+        action: "reveal_approved",
+        agent_id: input.agentId,
+        run_id: input.runId,
+        metadata: { reason: input.reason },
+      })
+  ).catch((err: unknown) => console.error("Audit log insert failed", err));
 
   return { value, label: secret.label };
 }

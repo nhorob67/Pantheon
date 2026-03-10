@@ -16,6 +16,7 @@ import { CRON_JOB_INFO, type AvailableCronJob } from "@/types/agent";
 import type { ScheduleActivityData, RecentRun } from "@/lib/queries/schedule-activity";
 import { HeartbeatStrip } from "./heartbeat-strip";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { Switch } from "@/components/ui/switch";
 
 const SCHEDULE_ICONS: Record<string, LucideIcon> = {
   "morning-weather": CloudSun,
@@ -123,22 +124,11 @@ export function ScheduleCard({ schedule, tenantId }: ScheduleCardProps) {
         </div>
 
         {/* Toggle */}
-        <button
-          type="button"
-          role="switch"
-          aria-checked={schedule.enabled}
+        <Switch
+          checked={schedule.enabled}
+          onChange={() => handleToggle()}
           disabled={toggling}
-          onClick={handleToggle}
-          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 disabled:opacity-50 ${
-            schedule.enabled ? "bg-primary" : "bg-border"
-          }`}
-        >
-          <span
-            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-              schedule.enabled ? "translate-x-6" : "translate-x-1"
-            }`}
-          />
-        </button>
+        />
       </div>
 
       {/* Heartbeat strip */}

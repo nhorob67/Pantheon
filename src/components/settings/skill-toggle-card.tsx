@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Wheat, Cloud, ClipboardList } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 const SKILL_INFO: Record<string, { label: string; description: string; icon: typeof Wheat }> = {
   "farm-grain-bids": {
@@ -86,19 +87,11 @@ export function SkillToggleCard({
             )}
         </div>
       </div>
-      <button
-        onClick={handleToggle}
+      <Switch
+        checked={enabled}
+        onChange={() => handleToggle()}
         disabled={toggling}
-        className={`relative w-11 h-6 rounded-full transition-colors ${
-          enabled ? "bg-primary" : "bg-border"
-        }`}
-      >
-        <span
-          className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
-            enabled ? "translate-x-5.5" : "translate-x-0.5"
-          }`}
-        />
-      </button>
+      />
     </div>
   );
 }

@@ -108,16 +108,26 @@ export async function resolveToolsForAgent(input: ToolRegistryInput): Promise<To
   // Secrets vault: credential handles + http_request with injection
   if (input.secretsEnabled) {
     const runId = input.runtimeRun?.id ?? null;
+    const { data: revealSecretTool } = await input.admin
+      .from("tenant_tools")
+      .select("status")
+      .eq("tenant_id", input.tenantId)
+      .eq("tool_key", "reveal_secret")
+      .maybeSingle();
+
     Object.assign(
       tools,
-      createCredentialTools(
-        input.admin,
-        input.tenantId,
-        input.customerId,
-        input.agent.id,
-        runId,
-        input.revealedSecretValues
-      ),
+      createCredentialTools({
+        admin: input.admin,
+        tenantId: input.tenantId,
+        customerId: input.customerId,
+        agentId: input.agent.id,
+        runtimeRun: input.runtimeRun,
+        actorRole: input.actorRole,
+        actorId: input.actorId ?? null,
+        includeRevealSecret: revealSecretTool?.status === "enabled",
+        revealedSecretValues: input.revealedSecretValues,
+      }),
       createHttpRequestTool(
         input.admin,
         input.tenantId,

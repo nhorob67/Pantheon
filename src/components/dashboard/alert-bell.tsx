@@ -1,42 +1,27 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import useSWR from "swr";
 import { Bell } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { AlertEvent } from "@/types/alerts";
+import { jsonFetcher } from "@/lib/utils/fetcher";
 
 export function AlertBell() {
-  const [alerts, setAlerts] = useState<AlertEvent[]>([]);
-  const [unacknowledged, setUnacknowledged] = useState(0);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const isOnboarding = pathname === "/onboarding" || pathname.startsWith("/onboarding/");
 
-  useEffect(() => {
-    if (isOnboarding) {
-      return;
-    }
+  const { data, mutate } = useSWR(
+    isOnboarding ? null : "/api/customers/alerts?limit=5",
+    jsonFetcher,
+    { revalidateOnFocus: true }
+  );
 
-    let cancelled = false;
-
-    fetch("/api/customers/alerts?limit=5")
-      .then((r) => {
-        if (!r.ok) return null;
-        return r.json();
-      })
-      .then((data) => {
-        if (!data || cancelled) return;
-        setAlerts(data.alerts || []);
-        setUnacknowledged(data.unacknowledged || 0);
-      })
-      .catch(() => {});
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isOnboarding]);
+  const alerts: AlertEvent[] = data?.alerts || [];
+  const unacknowledged: number = data?.unacknowledged || 0;
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -50,10 +35,19 @@ export function AlertBell() {
 
   const handleAcknowledge = async (id: string) => {
     await fetch(`/api/customers/alerts/${id}/acknowledge`, { method: "POST" });
-    setAlerts((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, acknowledged: true } : a))
+    mutate(
+      (current: typeof data) =>
+        current
+          ? {
+              ...current,
+              alerts: current.alerts.map((a: AlertEvent) =>
+                a.id === id ? { ...a, acknowledged: true } : a
+              ),
+              unacknowledged: Math.max(0, (current.unacknowledged || 0) - 1),
+            }
+          : current,
+      { revalidate: false }
     );
-    setUnacknowledged((prev) => Math.max(0, prev - 1));
   };
 
   if (isOnboarding) {

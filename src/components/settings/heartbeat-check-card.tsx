@@ -1,6 +1,7 @@
 "use client";
 
 import { CloudAlert, TrendingUp, ClipboardList, Mail, type LucideIcon } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 const ICON_MAP: Record<string, LucideIcon> = {
   "cloud-alert": CloudAlert,
@@ -53,22 +54,12 @@ export function HeartbeatCheckCard({
           <Icon className="w-4 h-4 text-foreground/60" />
           <span className="text-sm font-medium">{title}</span>
         </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={checked}
+        <Switch
+          checked={checked}
+          onChange={onToggle}
           disabled={disabled}
-          onClick={() => onToggle(!checked)}
-          className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors shrink-0 ${
-            checked ? "bg-[#5a8a3c]" : "bg-muted"
-          }`}
-        >
-          <span
-            className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-              checked ? "translate-x-4.5" : "translate-x-0.5"
-            }`}
-          />
-        </button>
+          size="sm"
+        />
       </div>
       <p className="text-xs text-foreground/50 mb-2">{description}</p>
       {disabledReason && (

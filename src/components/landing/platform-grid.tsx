@@ -1,5 +1,5 @@
 const tiles: { title: string; desc: string; special?: boolean }[] = [
-  { title: "Task Tracking", desc: "Daily to-do lists, reminders, and follow-ups. Tell your assistant what needs doing — it tracks everything and nudges you when things are due." },
+  { title: "Task Tracking", desc: "Daily to-do lists, reminders, and follow-ups. Tell your assistant what needs doing. It tracks everything and nudges you when things are due." },
   { title: "SOPs & Procedures", desc: "Step-by-step checklists for any operation. Anhydrous safety, planting procedures, harvest protocols. Always consistent, always available." },
   { title: "Weather Intelligence", desc: "Morning briefings, spray windows, severe alerts, GDD tracking. All from the National Weather Service." },
   { title: "Grain Bids & Marketing", desc: "Cash bids from your elevators, basis tracking, and market context. Compare across locations instantly." },
@@ -14,7 +14,7 @@ export function PlatformGrid() {
     <section className="platform-section" id="platform">
       <div className="section-label">Your Assistant&apos;s Skills</div>
       <h2 className="section-title" style={{ margin: "0 auto" }}>It grows with your operation.</h2>
-      <p className="section-sub" style={{ margin: "16px auto 0" }}>Task lists, SOPs, weather, grain marketing, compliance — your AI team handles it all. And you can teach it new procedures specific to your operation.</p>
+      <p className="section-sub" style={{ margin: "16px auto 0" }}>Task lists, SOPs, weather, grain marketing, compliance. Your AI team handles it all. And you can teach it new procedures specific to your operation.</p>
 
       <div className="platform-grid">
         {tiles.map((tile) => (

@@ -37,6 +37,13 @@ export async function PUT(
       fallbackErrorMessage: "Failed to toggle reveal_secret",
     },
     async (state) => {
+      if (state.tenantContext.memberRole !== "owner") {
+        return NextResponse.json(
+          { error: "Only workspace owners can toggle break-glass access" },
+          { status: 403 }
+        );
+      }
+
       let body: unknown;
       try {
         body = await request.json();

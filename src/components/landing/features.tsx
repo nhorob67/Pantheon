@@ -17,7 +17,7 @@ const scenarios: { label: string; frames: ConversationFrame[] }[] = [
       { type: "user", text: "What's on my plate today?", delay: 0 },
       {
         type: "assistant",
-        text: "Today's Task Board — Mar 3",
+        text: "Today's Task Board, Mar 3",
         delay: 600,
         richContent: (
           <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid var(--border)", borderRadius: 10, padding: 16, marginTop: 8 }}>
@@ -26,7 +26,7 @@ const scenarios: { label: string; frames: ConversationFrame[] }[] = [
               <div style={{ color: "var(--text-dim)", fontSize: 11, textTransform: "uppercase" as const, letterSpacing: 1 }}>Priority</div>
               <div style={{ color: "var(--text-dim)", fontSize: 11, textTransform: "uppercase" as const, letterSpacing: 1 }}>Status</div>
 
-              <div style={{ color: "var(--text-primary)" }}>Pre-emerge spray — NE quarter</div>
+              <div style={{ color: "var(--text-primary)" }}>Pre-emerge spray, NE quarter</div>
               <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>HIGH</div>
               <div><span className="response-tag good">READY</span></div>
 
@@ -38,14 +38,14 @@ const scenarios: { label: string; frames: ConversationFrame[] }[] = [
               <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>MED</div>
               <div><span className="response-tag caution">DUE FRI</span></div>
 
-              <div style={{ color: "var(--text-primary)" }}>Soil sample results — review</div>
+              <div style={{ color: "var(--text-primary)" }}>Soil sample results: review</div>
               <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>LOW</div>
               <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>NEW</div>
             </div>
           </div>
         ),
       },
-      { type: "assistant", text: "I'd focus on the spray first — your window closes at 11 AM. Seed delivery is confirmed. The FSA report can wait until Thursday. Want me to remind you Wednesday evening?", delay: 400 },
+      { type: "assistant", text: "I'd focus on the spray first. Your window closes at 11 AM. Seed delivery is confirmed. The FSA report can wait until Thursday. Want me to remind you Wednesday evening?", delay: 400 },
     ],
   },
   {
@@ -54,13 +54,13 @@ const scenarios: { label: string; frames: ConversationFrame[] }[] = [
       { type: "user", text: "Walk me through anhydrous application safety", delay: 0 },
       {
         type: "assistant",
-        text: "Anhydrous Application — Safety Checklist",
+        text: "Anhydrous Application: Safety Checklist",
         delay: 600,
         richContent: (
           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
               <span style={{ fontSize: 13, color: "var(--text-dim)", minWidth: 24 }}>1.</span>
-              <span style={{ fontSize: 13, color: "var(--text-primary)", flex: 1 }}>PPE check — gloves, goggles, respirator</span>
+              <span style={{ fontSize: 13, color: "var(--text-primary)", flex: 1 }}>PPE check: gloves, goggles, respirator</span>
               <span className="response-tag bad">REQUIRED</span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
@@ -81,7 +81,7 @@ const scenarios: { label: string; frames: ConversationFrame[] }[] = [
           </div>
         ),
       },
-      { type: "assistant", text: "Wind is 8 mph from the southwest — you're clear. Want me to log this application when you're done?", delay: 400 },
+      { type: "assistant", text: "Wind is 8 mph from the southwest. You're clear. Want me to log this application when you're done?", delay: 400 },
     ],
   },
   {
@@ -90,7 +90,7 @@ const scenarios: { label: string; frames: ConversationFrame[] }[] = [
       { type: "user", text: "Spray window tomorrow?", delay: 0 },
       {
         type: "assistant",
-        text: "Spray Windows — Tomorrow, Cass County",
+        text: "Spray Windows: Tomorrow, Cass County",
         delay: 600,
         richContent: (
           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
@@ -107,7 +107,7 @@ const scenarios: { label: string; frames: ConversationFrame[] }[] = [
             <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0" }}>
               <span style={{ fontSize: 12, color: "var(--text-dim)", minWidth: 80 }}>6 PM – 8 PM</span>
               <span className="response-tag caution">MARGINAL</span>
-              <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>Wind drops to 4 mph — inversion risk</span>
+              <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>Wind drops to 4 mph, inversion risk</span>
             </div>
           </div>
         ),
@@ -118,7 +118,7 @@ const scenarios: { label: string; frames: ConversationFrame[] }[] = [
   {
     label: "Grain & Tickets",
     frames: [
-      { type: "user", text: "Just dropped off corn at CHS — what's the best bid today?", delay: 0 },
+      { type: "user", text: "Just dropped off corn at CHS. What's the best bid today?", delay: 0 },
       {
         type: "assistant",
         text: "Scale Ticket Logged + Cash Corn Bids",
@@ -146,6 +146,43 @@ const scenarios: { label: string; frames: ConversationFrame[] }[] = [
         ),
       },
       { type: "assistant", text: "Logged 610 bushels at CHS. That's 12,400 bu delivered this season. Cargill is 7 cents better if you want to route the next load there.", delay: 400 },
+    ],
+  },
+  {
+    label: "People & Comms",
+    frames: [
+      { type: "user", text: "Who do I need to get back to?", delay: 0 },
+      {
+        type: "assistant",
+        text: "Open Follow-Ups: This Week",
+        delay: 600,
+        richContent: (
+          <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid var(--border)", borderRadius: 10, padding: 16, marginTop: 8 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: "8px 16px", fontSize: 13 }}>
+              <div style={{ color: "var(--text-dim)", fontSize: 11, textTransform: "uppercase" as const, letterSpacing: 1 }}>Person</div>
+              <div style={{ color: "var(--text-dim)", fontSize: 11, textTransform: "uppercase" as const, letterSpacing: 1 }}>Topic</div>
+              <div style={{ color: "var(--text-dim)", fontSize: 11, textTransform: "uppercase" as const, letterSpacing: 1 }}>Status</div>
+
+              <div style={{ color: "var(--text-primary)" }}>Jake (operator)</div>
+              <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>PTO request, next week</div>
+              <div><span className="response-tag caution">WAITING</span></div>
+
+              <div style={{ color: "var(--text-primary)" }}>CHS Fargo rep</div>
+              <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>Contract pricing for fall</div>
+              <div><span className="response-tag caution">WAITING</span></div>
+
+              <div style={{ color: "var(--text-primary)" }}>Crop ins. agent</div>
+              <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>Acreage docs due Wed</div>
+              <div><span className="response-tag bad">DUE WED</span></div>
+
+              <div style={{ color: "var(--text-primary)" }}>ADM scheduler</div>
+              <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>Delivery confirmation</div>
+              <div><span className="response-tag good">SENT</span></div>
+            </div>
+          </div>
+        ),
+      },
+      { type: "assistant", text: "The crop insurance docs are the most time-sensitive. I'd handle that first, then confirm Jake's PTO. The CHS rep can wait until Thursday. Want me to draft a reply to the insurance agent?", delay: 400 },
     ],
   },
 ];
@@ -294,8 +331,8 @@ export function ConversationShowcase() {
       >
         <div className="showcase-header">
           <div className="section-label">See It In Action</div>
-          <h2 className="section-title-display">One team. Every task, every question, every procedure.</h2>
-          <p className="section-sub">No dashboards. No apps to switch between. Just ask what you need — your team handles the rest.</p>
+          <h2 className="section-title-display">Tasks, people, and decisions: handled.</h2>
+          <p className="section-sub">No more juggling apps, texts, and sticky notes. Ask your team anything, from what you need to do today to what your seed rep said last Tuesday.</p>
         </div>
 
         <div className="scenario-tabs">
@@ -323,7 +360,7 @@ export function ConversationShowcase() {
                 <div className="terminal-dots">
                   <span /><span /><span />
                 </div>
-                <span className="terminal-title">farmclaw — {scenarios[activeTab].label.toLowerCase()}</span>
+                <span className="terminal-title">farmclaw: {scenarios[activeTab].label.toLowerCase()}</span>
               </div>
               <ScenarioPlayer
                 frames={scenarios[activeTab].frames}

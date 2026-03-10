@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { CalendarPlus } from "lucide-react";
 import type { ScheduleActivityData } from "@/lib/queries/schedule-activity";
 import { UnifiedScheduleCard } from "./unified-schedule-card";
@@ -28,38 +28,6 @@ const FILTER_TABS = [
 
 type FilterTab = (typeof FILTER_TABS)[number]["key"];
 
-function healthSummary(schedules: ScheduleActivityData[]) {
-  const enabled = schedules.filter((s) => s.enabled);
-  const healthy = enabled.filter((s) => s.healthStatus === "healthy").length;
-  const degraded = enabled.filter((s) => s.healthStatus === "degraded").length;
-  const failing = enabled.filter((s) => s.healthStatus === "failing").length;
-
-  if (enabled.length === 0) return null;
-
-  if (failing > 0) {
-    return (
-      <span className="inline-flex items-center rounded-full bg-red-500/20 text-red-400 px-3 py-1 text-xs font-medium">
-        {failing} failing
-      </span>
-    );
-  }
-  if (degraded > 0) {
-    return (
-      <span className="inline-flex items-center rounded-full bg-[#D98C2E]/20 text-[#D98C2E] px-3 py-1 text-xs font-medium">
-        {degraded} degraded &middot; {healthy} healthy
-      </span>
-    );
-  }
-  if (healthy > 0) {
-    return (
-      <span className="inline-flex items-center rounded-full bg-[#5a8a3c]/20 text-[#5a8a3c] px-3 py-1 text-xs font-medium">
-        {healthy} healthy
-      </span>
-    );
-  }
-  return null;
-}
-
 export function ScheduleManagerPanel({
   tenantId,
   schedules,
@@ -68,19 +36,62 @@ export function ScheduleManagerPanel({
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
 
-  const filtered = schedules.filter((s) => {
-    const type = (s.schedule_type ?? "predefined") as ScheduleType;
-    if (activeTab === "all") return true;
-    if (activeTab === "custom") return type === "custom";
-    if (activeTab === "predefined") return type === "predefined" || type === "briefing";
-    return true;
-  });
+  const { filtered, customCount, activeCount, summary } = useMemo(() => {
+    let _customCount = 0;
+    let _activeCount = 0;
+    let _healthy = 0;
+    let _degraded = 0;
+    let _failing = 0;
+    const _filtered: ScheduleActivityData[] = [];
 
-  const customCount = schedules.filter(
-    (s) => (s.schedule_type ?? "predefined") === "custom"
-  ).length;
-  const activeCount = schedules.filter((s) => s.enabled).length;
-  const summary = healthSummary(schedules);
+    for (const s of schedules) {
+      const type = (s.schedule_type ?? "predefined") as ScheduleType;
+      if (type === "custom") _customCount++;
+      if (s.enabled) {
+        _activeCount++;
+        if (s.healthStatus === "healthy") _healthy++;
+        else if (s.healthStatus === "degraded") _degraded++;
+        else if (s.healthStatus === "failing") _failing++;
+      }
+      if (
+        activeTab === "all" ||
+        (activeTab === "custom" && type === "custom") ||
+        (activeTab === "predefined" && (type === "predefined" || type === "briefing"))
+      ) {
+        _filtered.push(s);
+      }
+    }
+
+    let _summary: React.ReactNode = null;
+    if (_activeCount > 0) {
+      if (_failing > 0) {
+        _summary = (
+          <span className="inline-flex items-center rounded-full bg-red-500/20 text-red-400 px-3 py-1 text-xs font-medium">
+            {_failing} failing
+          </span>
+        );
+      } else if (_degraded > 0) {
+        _summary = (
+          <span className="inline-flex items-center rounded-full bg-[#D98C2E]/20 text-[#D98C2E] px-3 py-1 text-xs font-medium">
+            {_degraded} degraded &middot; {_healthy} healthy
+          </span>
+        );
+      } else if (_healthy > 0) {
+        _summary = (
+          <span className="inline-flex items-center rounded-full bg-[#5a8a3c]/20 text-[#5a8a3c] px-3 py-1 text-xs font-medium">
+            {_healthy} healthy
+          </span>
+        );
+      }
+    }
+
+    return {
+      filtered: _filtered,
+      customCount: _customCount,
+      activeCount: _activeCount,
+      summary: _summary,
+    };
+  }, [schedules, activeTab]);
 
   return (
     <div className="space-y-4">

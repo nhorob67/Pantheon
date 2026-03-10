@@ -50,9 +50,9 @@ function HeroTerminal() {
   }, [phase]);
 
   // Stream response word by word
-  const responseLine = "Today's Priorities — Monday, Mar 3";
+  const responseLine = "Today's Priorities, Monday, Mar 3";
   const responseWordsArr = responseLine.split(" ");
-  const summaryText = "Spray window looks good this morning — I'd hit the NE quarter first. Seed delivery confirmed for 2 PM at ADM.";
+  const summaryText = "Spray window looks good this morning. I'd hit the NE quarter first. Seed delivery confirmed for 2 PM at ADM.";
   const summaryWords = summaryText.split(" ");
 
   useEffect(() => {
@@ -111,12 +111,12 @@ function HeroTerminal() {
                   </thead>
                   <tbody>
                     <tr>
-                      <td>Pre-emerge spray — NE quarter</td>
+                      <td>Pre-emerge spray, NE quarter</td>
                       <td><span className="status-tag ready">Ready</span></td>
                       <td>Today 6–11 AM</td>
                     </tr>
                     <tr>
-                      <td>Seed treatment delivery — ADM</td>
+                      <td>Seed treatment delivery from ADM</td>
                       <td><span className="status-tag confirmed">Confirmed</span></td>
                       <td>Today 2 PM</td>
                     </tr>
@@ -170,7 +170,7 @@ export function Hero() {
           >
             <div className="hero-badge">
               <span className="dot" style={{ background: "var(--green-bright)" }} />
-              AI that works your farm
+              Your operation, organized
             </div>
           </m.div>
 
@@ -179,7 +179,7 @@ export function Hero() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ type: "spring", stiffness: 80, damping: 20, delay: 0.05 }}
           >
-            An AI team that actually knows<br /><em>your operation.</em>
+            You&apos;re running a $2M operation<br /><em>out of text threads and sticky notes.</em>
           </m.h1>
 
           <m.p
@@ -188,7 +188,7 @@ export function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            FarmClaw gives your farm a team of AI assistants — built around your operation, your priorities, and your way of doing things. Task tracking, SOPs, grain bids, weather, compliance — just ask.
+            Seed reps. Elevator calls. Employee questions. FSA deadlines. It all lands on you. FarmClaw gives your farm AI assistants that track it all: tasks, grain bids, weather, SOPs, and communication with everyone who needs a piece of your time.
           </m.p>
 
           <m.div

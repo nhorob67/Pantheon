@@ -53,8 +53,15 @@ export async function getObservabilitySnapshot(
   todayStart.setUTCHours(0, 0, 0, 0);
   const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-  const [queueResult, runsResult, failedResult, completedResult, usageResult] =
-    await Promise.all([
+  const [
+    queueResult,
+    runsResult,
+    failedResult,
+    completedResult,
+    usageResult,
+    errorTenantsResult,
+    toolTracesResult,
+  ] = await Promise.all([
       // Queue depth
       admin
         .from("tenant_runtime_runs")
@@ -87,6 +94,19 @@ export async function getObservabilitySnapshot(
         .from("api_usage")
         .select("input_tokens, output_tokens")
         .gte("created_at", todayStart.toISOString()),
+
+      // Top error tenants (24h)
+      admin
+        .from("tenant_runtime_runs")
+        .select("tenant_id")
+        .eq("status", "failed")
+        .gte("created_at", oneDayAgo),
+
+      // Tool usage from traces (24h)
+      admin
+        .from("tenant_conversation_traces")
+        .select("tools_invoked")
+        .gte("created_at", oneDayAgo),
     ]);
 
   // Compute avg latency
@@ -122,14 +142,8 @@ export async function getObservabilitySnapshot(
   );
 
   // Top error tenants
-  const { data: errorTenants } = await admin
-    .from("tenant_runtime_runs")
-    .select("tenant_id")
-    .eq("status", "failed")
-    .gte("created_at", oneDayAgo);
-
   const errorCounts = new Map<string, number>();
-  for (const row of (errorTenants || []) as Array<{ tenant_id: string }>) {
+  for (const row of (errorTenantsResult.data || []) as Array<{ tenant_id: string }>) {
     errorCounts.set(row.tenant_id, (errorCounts.get(row.tenant_id) || 0) + 1);
   }
   const topErrors = Array.from(errorCounts.entries())
@@ -141,14 +155,8 @@ export async function getObservabilitySnapshot(
       error_count,
     }));
 
-  // Tool usage (from traces)
-  const { data: toolTraces } = await admin
-    .from("tenant_conversation_traces")
-    .select("tools_invoked")
-    .gte("created_at", oneDayAgo);
-
   const toolCounts = new Map<string, number>();
-  for (const row of (toolTraces || []) as Array<{
+  for (const row of (toolTracesResult.data || []) as Array<{
     tools_invoked: Array<{ name: string }>;
   }>) {
     const tools = Array.isArray(row.tools_invoked) ? row.tools_invoked : [];
@@ -217,21 +225,23 @@ export async function getRunDetails(
   admin: SupabaseClient,
   runId: string
 ): Promise<RunDetail | null> {
-  const { data, error } = await admin
-    .from("tenant_runtime_runs")
-    .select("*")
-    .eq("id", runId)
-    .maybeSingle();
+  const [runResult, traceResult] = await Promise.all([
+    admin
+      .from("tenant_runtime_runs")
+      .select("*")
+      .eq("id", runId)
+      .maybeSingle(),
+    admin
+      .from("tenant_conversation_traces")
+      .select("*")
+      .eq("run_id", runId)
+      .maybeSingle(),
+  ]);
 
-  if (error || !data) return null;
+  if (runResult.error || !runResult.data) return null;
 
-  const { data: trace } = await admin
-    .from("tenant_conversation_traces")
-    .select("*")
-    .eq("run_id", runId)
-    .maybeSingle();
-
-  const row = data as Record<string, unknown>;
+  const trace = traceResult.data;
+  const row = runResult.data as Record<string, unknown>;
   return {
     id: String(row.id),
     tenant_id: String(row.tenant_id),

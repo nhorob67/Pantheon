@@ -1,39 +1,40 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import useSWR from "swr";
 import { Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { formatCents } from "@/lib/utils/format";
 import { useAsyncFormState } from "@/hooks/use-async-form-state";
 import { useToast } from "@/components/ui/toast";
+import { jsonFetcher } from "@/lib/utils/fetcher";
 
 export function SpendingCapForm() {
-  const [loading, setLoading] = useState(true);
+  const { data: serverData, isLoading: loading, mutate } = useSWR(
+    "/api/customers/spending-cap",
+    jsonFetcher
+  );
   const { saving, run } = useAsyncFormState();
   const { toast } = useToast();
   const [capDollars, setCapDollars] = useState("");
   const [autoPause, setAutoPause] = useState(false);
   const [alertEmail, setAlertEmail] = useState("");
-  const [currentCents, setCurrentCents] = useState(0);
-  const [percentage, setPercentage] = useState<number | null>(null);
-  const [paused, setPaused] = useState(false);
 
+  // Sync form state when server data first loads
   useEffect(() => {
-    fetch("/api/customers/spending-cap")
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.spending_cap_cents) {
-          setCapDollars(String(data.spending_cap_cents / 100));
-        }
-        setAutoPause(data.spending_cap_auto_pause || false);
-        setAlertEmail(data.alert_email || "");
-        setCurrentCents(data.current_cents || 0);
-        setPercentage(data.percentage);
-        setPaused(!!data.spending_paused_at);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, []);
+    if (serverData) {
+      if (serverData.spending_cap_cents) {
+        setCapDollars(String(serverData.spending_cap_cents / 100));
+      }
+      setAutoPause(serverData.spending_cap_auto_pause || false);
+      setAlertEmail(serverData.alert_email || "");
+    }
+  }, [serverData]);
+
+  const currentCents: number = serverData?.current_cents || 0;
+  const percentage: number | null = serverData?.percentage ?? null;
+  const paused = !!serverData?.spending_paused_at;
 
   const handleSave = () => {
     run(async () => {
@@ -52,6 +53,7 @@ export function SpendingCapForm() {
       if (!res.ok) {
         throw new Error("Failed to save spending cap");
       }
+      mutate();
       toast("Spending cap saved", "success");
     });
   };
@@ -128,21 +130,7 @@ export function SpendingCapForm() {
               Pause your assistant when spending exceeds the cap
             </p>
           </div>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={autoPause}
-            onClick={() => setAutoPause(!autoPause)}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-              autoPause ? "bg-primary" : "bg-muted"
-            }`}
-          >
-            <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                autoPause ? "translate-x-6" : "translate-x-1"
-              }`}
-            />
-          </button>
+          <Switch checked={autoPause} onChange={setAutoPause} />
         </div>
 
         <div>

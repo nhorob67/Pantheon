@@ -49,16 +49,24 @@ CREATE TABLE tenant_secrets (
 ALTER TABLE tenant_secrets ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY tenant_secrets_select ON tenant_secrets
-  FOR SELECT USING (customer_id = auth.uid());
+  FOR SELECT USING (
+    customer_id IN (SELECT id FROM customers WHERE user_id = auth.uid())
+  );
 
 CREATE POLICY tenant_secrets_insert ON tenant_secrets
-  FOR INSERT WITH CHECK (customer_id = auth.uid());
+  FOR INSERT WITH CHECK (
+    customer_id IN (SELECT id FROM customers WHERE user_id = auth.uid())
+  );
 
 CREATE POLICY tenant_secrets_update ON tenant_secrets
-  FOR UPDATE USING (customer_id = auth.uid());
+  FOR UPDATE USING (
+    customer_id IN (SELECT id FROM customers WHERE user_id = auth.uid())
+  );
 
 CREATE POLICY tenant_secrets_delete ON tenant_secrets
-  FOR DELETE USING (customer_id = auth.uid());
+  FOR DELETE USING (
+    customer_id IN (SELECT id FROM customers WHERE user_id = auth.uid())
+  );
 
 CREATE INDEX idx_tenant_secrets_tenant ON tenant_secrets(tenant_id);
 CREATE INDEX idx_tenant_secrets_customer ON tenant_secrets(customer_id);
@@ -78,13 +86,17 @@ CREATE TABLE tenant_secret_audit_log (
   agent_id UUID,
   -- Runtime run that triggered this
   run_id TEXT,
+  -- Arbitrary metadata (e.g., break-glass reason, rejection details)
+  metadata JSONB,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 ALTER TABLE tenant_secret_audit_log ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY tenant_secret_audit_log_select ON tenant_secret_audit_log
-  FOR SELECT USING (customer_id = auth.uid());
+  FOR SELECT USING (
+    customer_id IN (SELECT id FROM customers WHERE user_id = auth.uid())
+  );
 
 -- Admin can insert audit entries (service role bypasses RLS)
 CREATE INDEX idx_tenant_secret_audit_tenant ON tenant_secret_audit_log(tenant_id, created_at DESC);

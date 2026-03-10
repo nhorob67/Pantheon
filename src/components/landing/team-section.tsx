@@ -106,7 +106,7 @@ export function TeamSection() {
         <div>
           <div className="section-label">Your Team, Your Way</div>
           <h2 className="section-title">Start simple. Add specialists when you&apos;re ready.</h2>
-          <p className="section-sub">Every farm is different. Start with a single assistant or build a team of specialists — each with its own focus, skills, and Discord channel.</p>
+          <p className="section-sub">Every farm is different. Start with a single assistant or build a team of specialists, each with its own focus, skills, and Discord channel.</p>
         </div>
 
         <div className="team-tabs">

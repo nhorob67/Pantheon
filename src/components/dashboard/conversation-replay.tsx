@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { MessageCircle } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -60,21 +60,25 @@ export function ConversationReplay({
     });
   }
 
-  // Match traces to outbound messages by closest timestamp
-  function findTraceForMessage(msg: Message): Trace | null {
-    if (msg.direction !== "outbound") return null;
-    const msgTime = new Date(msg.created_at).getTime();
-    let closest: Trace | null = null;
-    let closestDiff = Infinity;
-    for (const trace of traces) {
-      const diff = Math.abs(new Date(trace.created_at).getTime() - msgTime);
-      if (diff < closestDiff && diff < 30_000) {
-        closestDiff = diff;
-        closest = trace;
+  // Pre-compute trace lookup map: match outbound messages to closest trace within 30s
+  const traceByMessageId = useMemo(() => {
+    const map = new Map<string, Trace>();
+    for (const msg of messages) {
+      if (msg.direction !== "outbound") continue;
+      const msgTime = new Date(msg.created_at).getTime();
+      let closest: Trace | null = null;
+      let closestDiff = Infinity;
+      for (const trace of traces) {
+        const diff = Math.abs(new Date(trace.created_at).getTime() - msgTime);
+        if (diff < closestDiff && diff < 30_000) {
+          closestDiff = diff;
+          closest = trace;
+        }
       }
+      if (closest) map.set(msg.id, closest);
     }
-    return closest;
-  }
+    return map;
+  }, [messages, traces]);
 
   if (messages.length === 0) {
     return (
@@ -92,7 +96,7 @@ export function ConversationReplay({
     <div className="space-y-4">
       {messages.map((msg) => {
         const isOutbound = msg.direction === "outbound";
-        const trace = findTraceForMessage(msg);
+        const trace = traceByMessageId.get(msg.id) ?? null;
 
         return (
           <div key={msg.id} className="space-y-1">
