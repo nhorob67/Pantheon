@@ -14,6 +14,9 @@ import { AgentPreviewChat } from "./agent-preview-chat";
 import { Dialog } from "@/components/ui/dialog";
 import { Plus, Users } from "lucide-react";
 
+const EMPTY_CUSTOM_SKILLS: CustomSkill[] = [];
+const EMPTY_DEFAULT_PROMPTS: Partial<Record<PersonalityPreset, string>> = {};
+
 interface AssistantsListProps {
   initialAgents: Agent[];
   tenantId: string;
@@ -27,9 +30,9 @@ export function AssistantsList({
   initialAgents,
   tenantId,
   globalSkillConfigs,
-  customSkills = [],
+  customSkills = EMPTY_CUSTOM_SKILLS,
   composioConfig = null,
-  defaultPrompts = {},
+  defaultPrompts = EMPTY_DEFAULT_PROMPTS,
 }: AssistantsListProps) {
   const [agents, setAgents] = useState<Agent[]>(initialAgents);
   const [formOpen, setFormOpen] = useState(false);

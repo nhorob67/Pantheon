@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/auth/admin-session";
 import { notFound } from "next/navigation";
@@ -5,6 +7,25 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { formatCents } from "@/lib/utils/format";
 import type { ApiUsage, Customer, FarmProfile, Instance } from "@/types/database";
+import { Skeleton } from "@/components/ui/skeleton";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const admin = createAdminClient();
+  const { data: customer } = await admin
+    .from("customers")
+    .select("email")
+    .eq("id", id)
+    .single();
+
+  return {
+    title: customer?.email ?? "Customer Details",
+  };
+}
 
 function getFirstRelation<T extends object>(value: unknown): T | null {
   if (!Array.isArray(value) || value.length === 0) {
@@ -40,6 +61,24 @@ export default async function CustomerDetailPage({
   const { id } = await params;
   await requireAdmin();
 
+  return (
+    <div>
+      <Link
+        href="/admin/customers"
+        className="flex items-center gap-1 text-sm text-foreground/50 hover:text-foreground mb-4"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back to customers
+      </Link>
+
+      <Suspense fallback={<CustomerDetailSkeleton />}>
+        <CustomerDetailContent id={id} />
+      </Suspense>
+    </div>
+  );
+}
+
+async function CustomerDetailContent({ id }: { id: string }) {
   const admin = createAdminClient();
   const [{ data: customer }, { data: usage }] = await Promise.all([
     admin
@@ -76,15 +115,7 @@ export default async function CustomerDetailPage({
   };
 
   return (
-    <div>
-      <Link
-        href="/admin/customers"
-        className="flex items-center gap-1 text-sm text-foreground/50 hover:text-foreground mb-4"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back to customers
-      </Link>
-
+    <>
       <div className="flex items-center gap-4 mb-6">
         <h2 className="font-headline text-2xl font-bold text-foreground">
           {customer.email || "Unknown"}
@@ -109,7 +140,7 @@ export default async function CustomerDetailPage({
               <div className="flex justify-between">
                 <dt className="text-foreground/50">Farm Name</dt>
                 <dd className="text-foreground font-medium">
-                  {profile.farm_name || "—"}
+                  {profile.farm_name || "\u2014"}
                 </dd>
               </div>
               <div className="flex justify-between">
@@ -121,13 +152,13 @@ export default async function CustomerDetailPage({
               <div className="flex justify-between">
                 <dt className="text-foreground/50">Acres</dt>
                 <dd className="text-foreground font-medium">
-                  {profile.acres?.toLocaleString() || "—"}
+                  {profile.acres?.toLocaleString() || "\u2014"}
                 </dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-foreground/50">Crops</dt>
                 <dd className="text-foreground font-medium text-right max-w-[60%]">
-                  {profile.primary_crops.join(", ") || "—"}
+                  {profile.primary_crops.join(", ") || "\u2014"}
                 </dd>
               </div>
             </dl>
@@ -219,6 +250,22 @@ export default async function CustomerDetailPage({
           )}
         </div>
       </div>
-    </div>
+    </>
+  );
+}
+
+function CustomerDetailSkeleton() {
+  return (
+    <>
+      <div className="flex items-center gap-4 mb-6">
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-6 w-20 rounded-full" />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Skeleton className="h-48 rounded-xl" />
+        <Skeleton className="h-48 rounded-xl" />
+        <Skeleton className="h-64 rounded-xl lg:col-span-2" />
+      </div>
+    </>
   );
 }

@@ -9,26 +9,12 @@ import {
   createHeartbeatConfigDraft,
   type HeartbeatConfigDraft,
 } from "./heartbeat-config-editor";
+import { useHeartbeatSettings } from "./heartbeat-settings-context";
 import type { HeartbeatConfig } from "@/types/heartbeat";
 
-interface Agent {
-  id: string;
-  display_name: string;
-  discord_channel_id: string | null;
-}
-
 interface HeartbeatAgentOverridesProps {
-  tenantId: string;
-  agents: Agent[];
   overrides: HeartbeatConfig[];
-  channelOptions: Array<{ value: string; label: string }>;
   defaultTemplate: HeartbeatConfigDraft;
-  configStats: {
-    config_id: string;
-    recent_deliveries_24h: number;
-    recent_suppressed_24h: number;
-    active_issue_count: number;
-  }[];
 }
 
 function toDraft(config: HeartbeatConfig | null, fallback: HeartbeatConfigDraft): HeartbeatConfigDraft {
@@ -55,13 +41,10 @@ function toDraft(config: HeartbeatConfig | null, fallback: HeartbeatConfigDraft)
 }
 
 export function HeartbeatAgentOverrides({
-  tenantId,
-  agents,
   overrides: initialOverrides,
-  channelOptions,
   defaultTemplate,
-  configStats,
 }: HeartbeatAgentOverridesProps) {
+  const { tenantId, agents, channelOptions, configStats } = useHeartbeatSettings();
   const router = useRouter();
   const { toast } = useToast();
   const [overrides, setOverrides] = useState(initialOverrides);

@@ -6,10 +6,8 @@ import { EmailInbox } from "@/components/email/email-inbox";
 export const metadata: Metadata = { title: "Email" };
 
 export default async function EmailPage() {
-  const [{ customerId }, admin] = await Promise.all([
-    requireDashboardCustomer(),
-    Promise.resolve(createAdminClient()),
-  ]);
+  const admin = createAdminClient();
+  const { customerId } = await requireDashboardCustomer();
   const tenant = await getCustomerTenant(customerId);
 
   if (!tenant) {

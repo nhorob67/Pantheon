@@ -16,6 +16,7 @@ import {
   GitBranch,
   Download,
   HelpCircle,
+  KeyRound,
   Mail,
   MessageCircle,
   Sun,
@@ -48,6 +49,7 @@ const settingsIconsByHref: Record<string, LucideIcon> = {
   "/settings/memory": Brain,
   "/settings/exports": Download,
   "/settings/mcp-servers": Wrench,
+  "/settings/secrets": KeyRound,
   "/settings/alerts": Bell,
   "/settings/billing": CreditCard,
 };
@@ -68,8 +70,9 @@ export function Sidebar({ settingsItems, subscriptionStatus, trialEndsAt }: Side
     <aside className="w-64 border-r border-border bg-card min-h-screen px-4 py-6 hidden md:flex flex-col">
       <div className="flex-1">
         <Link href="/dashboard" className="flex items-center gap-2 px-3 mb-8">
+          <Wheat className="w-5 h-5 text-energy" />
           <span className="font-display text-xl font-bold text-foreground">
-            FarmClaw
+            Farm<span className="text-energy">Claw</span>
           </span>
         </Link>
 
@@ -82,10 +85,10 @@ export function Sidebar({ settingsItems, subscriptionStatus, trialEndsAt }: Side
                 key={item.href}
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors border-l-2 ${
                   active
-                    ? "bg-primary/10 text-primary font-medium"
-                    : "text-foreground/60 hover:text-foreground hover:bg-muted"
+                    ? "border-primary bg-primary/10 text-primary font-medium"
+                    : "border-transparent text-foreground/60 hover:text-foreground hover:bg-muted"
                 }`}
               >
                 <item.icon className="w-4 h-4" />
@@ -95,8 +98,9 @@ export function Sidebar({ settingsItems, subscriptionStatus, trialEndsAt }: Side
           })}
         </nav>
 
-        <div className="mt-8">
-          <h3 className="px-3 mb-2 font-headline text-xs font-semibold uppercase tracking-wider text-foreground/60">
+        <div className="mt-8 relative">
+          <div className="absolute top-0 left-3 right-3 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+          <h3 className="px-3 mb-2 pt-4 font-headline text-xs font-semibold uppercase tracking-wider text-foreground/60">
             <Settings className="w-3 h-3 inline mr-1.5" />
             Settings
           </h3>
@@ -110,10 +114,10 @@ export function Sidebar({ settingsItems, subscriptionStatus, trialEndsAt }: Side
                   key={item.href}
                   href={item.href}
                   aria-current={active ? "page" : undefined}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors border-l-2 ${
                     active
-                      ? "bg-primary/10 text-primary font-medium"
-                      : "text-foreground/60 hover:text-foreground hover:bg-muted"
+                      ? "border-primary bg-primary/10 text-primary font-medium"
+                      : "border-transparent text-foreground/60 hover:text-foreground hover:bg-muted"
                   }`}
                 >
                   <Icon className="w-4 h-4" />

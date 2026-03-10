@@ -6,7 +6,6 @@ import { Tabs } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import type { HeartbeatActivityData } from "@/lib/queries/heartbeat-activity";
 import type {
   HeartbeatAuditItem,
   HeartbeatAuditReport,
@@ -17,17 +16,11 @@ import type {
   HeartbeatSeries,
   HeartbeatTrendsReport,
 } from "@/types/heartbeat";
-
-interface Agent {
-  id: string;
-  display_name: string;
-}
+import { useHeartbeatSettings } from "./heartbeat-settings-context";
+import type { HeartbeatActivityData } from "@/lib/queries/heartbeat-activity";
 
 interface HeartbeatReportingWorkspaceProps {
-  tenantId: string;
   overview: HeartbeatActivityData;
-  configs: HeartbeatConfig[];
-  agents: Agent[];
 }
 
 interface RunsFiltersState {
@@ -332,11 +325,9 @@ function SeriesCard({
 }
 
 export function HeartbeatReportingWorkspace({
-  tenantId,
   overview,
-  configs,
-  agents,
 }: HeartbeatReportingWorkspaceProps) {
+  const { tenantId, agents, configs } = useHeartbeatSettings();
   const tabs = useMemo(
     () => [
       { value: "runs", label: "Runs" },

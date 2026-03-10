@@ -1,6 +1,7 @@
-"use client";
-
+import type { Metadata } from "next";
 import { AlertPreferencesForm } from "@/components/settings/alert-preferences-form";
+
+export const metadata: Metadata = { title: "Alert Preferences | FarmClaw" };
 
 export default function AlertSettingsPage() {
   return (

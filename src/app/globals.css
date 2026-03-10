@@ -1786,6 +1786,18 @@ body::before {
   .hero-states span { font-size: 11px; padding: 4px 12px; }
   .ticker-section::before,
   .ticker-section::after { width: 60px; }
+  .nav-hamburger { display: flex !important; }
+}
+
+@media (max-width: 480px) {
+  .pricing-card { padding: 36px 24px; }
+  .showcase, .how-section, .platform-section, .channels-section,
+  .pricing-section, .quote-section, .final-cta, .trust-section,
+  .team-section { padding: 60px 16px; }
+  .hero { padding: 100px 16px 48px; }
+  .platform-grid { grid-template-columns: 1fr; }
+  .landing-nav { padding: 14px 16px; }
+  .landing-nav.scrolled { padding: 10px 16px; }
 }
 
 /* ===== DOCS PROSE ===== */

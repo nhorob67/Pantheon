@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
@@ -20,14 +21,22 @@ import {
   getCustomerTenant,
 } from "@/lib/auth/dashboard-session";
 import { DiscordSetupBanner } from "@/components/dashboard/discord-setup-banner";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default async function ChannelsSettingsPage() {
-  const [{ customerId }, supabase] = await Promise.all([
-    requireDashboardCustomer(),
-    createClient(),
-  ]);
+  const { customerId } = await requireDashboardCustomer();
 
+  return (
+    <Suspense fallback={<ChannelsSkeleton />}>
+      <ChannelsContent customerId={customerId} />
+    </Suspense>
+  );
+}
+
+async function ChannelsContent({ customerId }: { customerId: string }) {
   const admin = createAdminClient();
+  const supabase = await createClient();
+
   const [instance, tenant, { data: skillConfigs }, { data: customSkills }, { data: emailIdentity }, { data: composioRow }, { data: farmProfile }] = await Promise.all([
     getCustomerInstance(customerId),
     getCustomerTenant(customerId),
@@ -106,7 +115,7 @@ export default async function ChannelsSettingsPage() {
     }
   }
 
-  // Fetch tenant-first agents (needs tenant.id)
+  // Fetch tenant-first agents (needs tenant.id) — no further parallelization possible since this depends on tenant
   const { data: tenantAgents } = await supabase
     .from("tenant_agents")
     .select("id, customer_id, legacy_agent_id, agent_key, display_name, is_default, skills, sort_order, created_at, updated_at, config")
@@ -247,6 +256,20 @@ export default async function ChannelsSettingsPage() {
           defaultPrompts={defaultPrompts}
         />
       </div>
+    </div>
+  );
+}
+
+function ChannelsSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div>
+        <Skeleton className="h-7 w-56 mb-1" />
+        <Skeleton className="h-4 w-96" />
+      </div>
+      <Skeleton className="h-16 rounded-xl" />
+      <Skeleton className="h-24 rounded-xl" />
+      <Skeleton className="h-64 rounded-xl" />
     </div>
   );
 }

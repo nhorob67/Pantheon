@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isAdmin } from "@/lib/auth/admin";
@@ -8,11 +9,11 @@ import {
   getRevenueBreakdown,
 } from "@/lib/queries/admin-analytics";
 
+export const metadata: Metadata = { title: "Usage Analytics" };
+
 export default async function AdminUsagePage() {
-  const [supabase, admin] = await Promise.all([
-    createClient(),
-    Promise.resolve(createAdminClient()),
-  ]);
+  const admin = createAdminClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

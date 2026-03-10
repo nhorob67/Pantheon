@@ -1,7 +1,10 @@
+import type { Metadata } from "next";
 import { requireDashboardCustomer, getCustomerTenant } from "@/lib/auth/dashboard-session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ConversationReplay } from "@/components/dashboard/conversation-replay";
 import Link from "next/link";
+
+export const metadata: Metadata = { title: "Conversation" };
 
 export default async function ConversationReplayPage({
   params,

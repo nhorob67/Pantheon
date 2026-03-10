@@ -20,7 +20,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { useState, useCallback } from "react";
-import { motion } from "motion/react";
+import { m } from "motion/react";
 
 function toDMS(decimal: number, isLat: boolean): string {
   const abs = Math.abs(decimal);
@@ -155,7 +155,7 @@ export function Step2Location() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
@@ -169,10 +169,10 @@ export function Step2Location() {
         <p className="text-sm text-[var(--text-secondary)]">
           Pinpoint your location for hyper-local weather intelligence.
         </p>
-      </motion.div>
+      </m.div>
 
       {/* Location input + Locate button */}
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.15 }}
@@ -220,11 +220,11 @@ export function Step2Location() {
         {geocodeError && (
           <p className="text-red-400 text-xs mt-1">{geocodeError}</p>
         )}
-      </motion.div>
+      </m.div>
 
       {/* Coordinate confirmation */}
       {geocoded && lat !== 0 && lng !== 0 && (
-        <motion.div
+        <m.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           className="flex items-center gap-3 p-3 rounded-xl bg-[var(--green-dim)] border border-[rgba(90,138,60,0.2)]"
@@ -238,11 +238,11 @@ export function Step2Location() {
               {toDMS(lat, true)} &middot; {toDMS(lng, false)}
             </p>
           </div>
-        </motion.div>
+        </m.div>
       )}
 
       {/* Timezone */}
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
@@ -260,10 +260,10 @@ export function Step2Location() {
             {errors.timezone.message}
           </p>
         )}
-      </motion.div>
+      </m.div>
 
       {/* Weather Preview */}
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.25 }}
@@ -272,10 +272,10 @@ export function Step2Location() {
           What you&apos;ll get
         </p>
         <WeatherPreview />
-      </motion.div>
+      </m.div>
 
       {/* Navigation */}
-      <motion.div
+      <m.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
@@ -296,7 +296,7 @@ export function Step2Location() {
           Continue
           <ArrowRight className="w-4 h-4" />
         </button>
-      </motion.div>
+      </m.div>
     </form>
   );
 }

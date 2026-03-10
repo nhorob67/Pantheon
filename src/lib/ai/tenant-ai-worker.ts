@@ -20,6 +20,7 @@ import {
   runWithCircuitBreaker,
 } from "@/lib/runtime/tenant-runtime-circuit-breaker";
 import { checkTrialAndSpendingBlock } from "./trial-guard";
+import { buildRedactor } from "@/lib/secrets/redaction";
 import { resolveTenantRuntimeGovernancePolicy } from "@/lib/runtime/tenant-runtime-governance";
 import type {
   TenantRuntimeWorker,
@@ -178,6 +179,9 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           };
         }
 
+        // Shared array for break-glass secret reveals — populated by reveal_secret tool
+        const revealedSecretValues: string[] = [];
+
         const botToken = getDiscordBotToken();
         const governance = await resolveTenantRuntimeGovernancePolicy(
           admin,
@@ -200,6 +204,7 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           actorRole,
           actorId: userId,
           fastModel: fastModel,
+          revealedSecretValues,
         });
 
         // Custom cron jobs can scope tools to a subset
@@ -248,7 +253,15 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           ...(hasTools ? { tools: resolvedTools, maxSteps: 5 } : {}),
         });
 
-        const responseText = result.text || "[FarmClaw] No response generated.";
+        let responseText = result.text || "[FarmClaw] No response generated.";
+
+        // Post-turn redaction: strip revealed secret values from stored text
+        const redactor = revealedSecretValues.length > 0
+          ? buildRedactor(revealedSecretValues)
+          : null;
+        if (redactor) {
+          responseText = redactor(responseText);
+        }
 
         // Store outbound message
         await storeOutboundMessage(admin, {
@@ -305,11 +318,15 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           agentId: assembled.agentId,
           agentName: assembled.agentDisplayName,
           toolsAvailable: Object.keys(resolvedTools),
-          toolsInvoked: toolCalls.map((tc) => ({
-            name: tc.toolName,
-            input_summary: JSON.stringify("args" in tc ? tc.args : {}).slice(0, 200),
-            output_summary: "",
-          })),
+          toolsInvoked: toolCalls.map((tc) => {
+            let inputSummary = JSON.stringify("args" in tc ? tc.args : {}).slice(0, 200);
+            if (redactor) inputSummary = redactor(inputSummary);
+            return {
+              name: tc.toolName,
+              input_summary: inputSummary,
+              output_summary: "",
+            };
+          }),
           memoriesReferenced: assembled.memoryIds?.map((id) => ({
             id,
             content_preview: "",

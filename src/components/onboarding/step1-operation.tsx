@@ -10,7 +10,7 @@ import {
 import { US_STATES, CA_PROVINCES, TIMEZONES } from "@/types/farm";
 import { BusinessTypePicker } from "./business-type-picker";
 import { Building2, ArrowRight } from "lucide-react";
-import { motion } from "motion/react";
+import { m } from "motion/react";
 
 export function Step1Operation() {
   const operation = useOnboardingOperation();
@@ -52,7 +52,7 @@ export function Step1Operation() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
@@ -66,10 +66,10 @@ export function Step1Operation() {
         <p className="text-sm text-[var(--text-secondary)]">
           Tell us about your agricultural business.
         </p>
-      </motion.div>
+      </m.div>
 
       {/* Operation Name */}
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.15 }}
@@ -87,10 +87,10 @@ export function Step1Operation() {
             {errors.operation_name.message}
           </p>
         )}
-      </motion.div>
+      </m.div>
 
       {/* Business Type */}
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
@@ -103,10 +103,10 @@ export function Step1Operation() {
           value={businessType}
           onChange={(v) => setValue("business_type", v, { shouldValidate: true })}
         />
-      </motion.div>
+      </m.div>
 
       {/* Country Toggle */}
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.25 }}
@@ -137,10 +137,10 @@ export function Step1Operation() {
             );
           })}
         </div>
-      </motion.div>
+      </m.div>
 
       {/* State / Province */}
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
@@ -181,10 +181,10 @@ export function Step1Operation() {
             className="w-full bg-[var(--bg-card)] border border-[var(--border)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-dim)] rounded-xl px-4 py-3 text-[var(--text-primary)] placeholder:text-[var(--text-dim)] outline-none transition-all"
           />
         </div>
-      </motion.div>
+      </m.div>
 
       {/* Continue */}
-      <motion.div
+      <m.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.35 }}
@@ -197,7 +197,7 @@ export function Step1Operation() {
           Continue
           <ArrowRight className="w-4 h-4" />
         </button>
-      </motion.div>
+      </m.div>
     </form>
   );
 }

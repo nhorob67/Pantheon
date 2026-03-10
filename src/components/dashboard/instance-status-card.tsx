@@ -59,7 +59,11 @@ export function InstanceStatusCard({ tenantId }: InstanceStatusCardProps) {
     : "active";
 
   return (
-    <div className="bg-card rounded-xl border border-border shadow-sm p-6">
+    <div className={`bg-card rounded-xl shadow-sm p-6 ${
+      status.tenant.status === "active"
+        ? "border border-primary/30 shadow-[0_0_15px_rgba(90,138,60,0.08)]"
+        : "border border-border"
+    }`}>
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-headline text-sm font-semibold text-foreground/60 uppercase tracking-wider">
           Workspace Status

@@ -7,7 +7,8 @@ import { US_STATES, CA_PROVINCES, CROPS } from "@/types/farm";
 import type { FarmProfile } from "@/types/database";
 import { useAsyncFormState } from "@/hooks/use-async-form-state";
 import { useToast } from "@/components/ui/toast";
-import { Loader2, Save } from "lucide-react";
+import { Save } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface FarmProfileFormProps {
   profile: FarmProfile;
@@ -209,18 +210,10 @@ export function FarmProfileForm({ profile, tenantId }: FarmProfileFormProps) {
       </div>
 
       <div className="flex items-center gap-3 pt-4">
-        <button
-          type="submit"
-          disabled={saving}
-          className="bg-energy hover:bg-amber-600 text-white font-semibold rounded-full px-6 py-3 transition-colors disabled:opacity-50 flex items-center gap-2"
-        >
-          {saving ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <Save className="w-4 h-4" />
-          )}
+        <Button type="submit" disabled={saving} loading={saving}>
+          <Save className="w-4 h-4" />
           Save Changes
-        </button>
+        </Button>
         {error && (
           <span className="text-destructive text-sm font-medium">{error}</span>
         )}

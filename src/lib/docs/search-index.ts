@@ -1,5 +1,3 @@
-import { Index as FlexSearchIndex } from "flexsearch";
-
 export interface SearchIndexEntry {
   slug: string;
   title: string;
@@ -41,21 +39,34 @@ export async function getSearchIndex(
 export function resetSearchIndexCacheForTests() {
   searchIndexPromise = null;
   flexSearchInstance = null;
+  flexSearchImportPromise = null;
 }
 
-// --- FlexSearch integration ---
+// --- FlexSearch integration (lazy-loaded) ---
 
-let flexSearchInstance: FlexSearchIndex | null = null;
+type FlexSearchIndexType = import("flexsearch").Index;
+let flexSearchImportPromise: Promise<typeof import("flexsearch")> | null = null;
+let flexSearchInstance: FlexSearchIndexType | null = null;
 let flexSearchEntries: SearchIndexEntry[] = [];
+
+async function loadFlexSearch(): Promise<typeof import("flexsearch")> {
+  if (!flexSearchImportPromise) {
+    flexSearchImportPromise = import("flexsearch");
+  }
+  return flexSearchImportPromise;
+}
 
 /**
  * Build and return a FlexSearch index from the search entries.
  * Uses forward tokenization for prefix matching (e.g., "gran" matches "grain").
+ * FlexSearch is dynamically imported on first call to keep it out of the initial bundle.
  */
-export function getFlexSearchIndex(entries: SearchIndexEntry[]): FlexSearchIndex {
+export async function getFlexSearchIndex(entries: SearchIndexEntry[]): Promise<FlexSearchIndexType> {
   if (flexSearchInstance && flexSearchEntries === entries) {
     return flexSearchInstance;
   }
+
+  const { Index: FlexSearchIndex } = await loadFlexSearch();
 
   flexSearchInstance = new FlexSearchIndex({
     tokenize: "forward",

@@ -1,15 +1,29 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { SkillToggleCard } from "@/components/settings/skill-toggle-card";
 import { requireDashboardCustomer, getCustomerTenant } from "@/lib/auth/dashboard-session";
 import Link from "next/link";
 import { Anvil, Plus } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const metadata: Metadata = { title: "Skills" };
 
 export default async function SkillsSettingsPage() {
   const { customerId } = await requireDashboardCustomer();
-  const tenant = await getCustomerTenant(customerId);
+
+  return (
+    <Suspense fallback={<SkillsSkeleton />}>
+      <SkillsContent customerId={customerId} />
+    </Suspense>
+  );
+}
+
+async function SkillsContent({ customerId }: { customerId: string }) {
+  const [tenant, supabase] = await Promise.all([
+    getCustomerTenant(customerId),
+    createClient(),
+  ]);
 
   if (!tenant) {
     return (
@@ -25,8 +39,6 @@ export default async function SkillsSettingsPage() {
       </div>
     );
   }
-
-  const supabase = await createClient();
 
   const [{ data: skillConfigs }, { data: customSkills }, { data: tenantAgents }] = await Promise.all([
     supabase
@@ -150,6 +162,26 @@ export default async function SkillsSettingsPage() {
             </Link>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function SkillsSkeleton() {
+  return (
+    <div>
+      <div className="mb-8">
+        <Skeleton className="h-6 w-32 mb-1" />
+        <Skeleton className="h-4 w-64 mb-4" />
+        <div className="space-y-3">
+          <Skeleton className="h-20 rounded-xl" />
+          <Skeleton className="h-20 rounded-xl" />
+          <Skeleton className="h-20 rounded-xl" />
+        </div>
+      </div>
+      <div>
+        <Skeleton className="h-6 w-32 mb-4" />
+        <Skeleton className="h-24 rounded-xl" />
       </div>
     </div>
   );

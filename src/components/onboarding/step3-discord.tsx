@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "motion/react";
+import { m } from "motion/react";
 
 export function Step3Discord() {
   const operation = useOnboardingOperation();
@@ -107,7 +107,7 @@ export function Step3Discord() {
 
   return (
     <div className="space-y-8">
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
@@ -121,10 +121,10 @@ export function Step3Discord() {
         <p className="text-sm text-[var(--text-secondary)]">
           FarmClaw lives in your Discord server. Connect now or set up later.
         </p>
-      </motion.div>
+      </m.div>
 
       {/* Discord mockup + benefits */}
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.15 }}
@@ -166,10 +166,10 @@ export function Step3Discord() {
             </div>
           ))}
         </div>
-      </motion.div>
+      </m.div>
 
       {/* Primary action: OAuth invite */}
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
@@ -205,7 +205,7 @@ export function Step3Discord() {
           </button>
 
           {showManual && (
-            <motion.div
+            <m.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               className="mt-3 space-y-3"
@@ -249,13 +249,13 @@ export function Step3Discord() {
                   <li>Click &quot;Copy Server ID&quot;</li>
                 </ol>
               </div>
-            </motion.div>
+            </m.div>
           )}
         </div>
-      </motion.div>
+      </m.div>
 
       {/* New to Discord? */}
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.25 }}
@@ -272,7 +272,7 @@ export function Step3Discord() {
         </button>
 
         {showGuide && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             className="mt-3 space-y-2 bg-[var(--bg-card)] p-4 rounded-xl border border-[var(--border)] text-sm text-[var(--text-secondary)]"
@@ -293,16 +293,16 @@ export function Step3Discord() {
               <li>Create a server for your operation</li>
               <li>Come back here and click &quot;Add FarmClaw to Discord&quot;</li>
             </ol>
-          </motion.div>
+          </m.div>
         )}
-      </motion.div>
+      </m.div>
 
       {launchError && (
         <p className="text-red-400 text-sm text-center">{launchError}</p>
       )}
 
       {/* Navigation */}
-      <motion.div
+      <m.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
@@ -341,7 +341,7 @@ export function Step3Discord() {
             I&apos;ll set up Discord later
           </button>
         </div>
-      </motion.div>
+      </m.div>
     </div>
   );
 }

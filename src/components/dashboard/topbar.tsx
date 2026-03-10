@@ -34,6 +34,9 @@ import { useHelp } from "./help-provider";
 import { Sheet } from "@/components/ui/sheet";
 import type { SettingsNavItem } from "@/lib/navigation/settings";
 
+const EMPTY_TENANT_OPTIONS: Array<{ id: string; name: string; slug: string; status: string }> = [];
+const EMPTY_SETTINGS_ITEMS: SettingsNavItem[] = [];
+
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/conversations", label: "Conversations", icon: MessageCircle },
@@ -74,8 +77,8 @@ export function Topbar({
   farmName,
   email,
   activeTenantId,
-  tenantOptions = [],
-  settingsItems = [],
+  tenantOptions = EMPTY_TENANT_OPTIONS,
+  settingsItems = EMPTY_SETTINGS_ITEMS,
 }: TopbarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -209,7 +212,8 @@ export function Topbar({
       <Sheet open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} side="left">
         <div className="px-4 py-6 flex flex-col h-full">
           <div className="flex items-center justify-between mb-6">
-            <span className="font-display text-xl font-bold text-foreground">FarmClaw</span>
+            <Wheat className="w-5 h-5 text-energy" />
+            <span className="font-display text-xl font-bold text-foreground">Farm<span className="text-energy">Claw</span></span>
             <button
               onClick={() => setMobileNavOpen(false)}
               className="text-foreground/60 hover:text-foreground transition-colors"
@@ -228,10 +232,10 @@ export function Topbar({
                   href={item.href}
                   onClick={() => setMobileNavOpen(false)}
                   aria-current={active ? "page" : undefined}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors border-l-2 ${
                     active
-                      ? "bg-primary/10 text-primary font-medium"
-                      : "text-foreground/60 hover:text-foreground hover:bg-muted"
+                      ? "border-primary bg-primary/10 text-primary font-medium"
+                      : "border-transparent text-foreground/60 hover:text-foreground hover:bg-muted"
                   }`}
                 >
                   <item.icon className="w-4 h-4" />
@@ -256,10 +260,10 @@ export function Topbar({
                     href={item.href}
                     onClick={() => setMobileNavOpen(false)}
                     aria-current={active ? "page" : undefined}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors border-l-2 ${
                       active
-                        ? "bg-primary/10 text-primary font-medium"
-                        : "text-foreground/60 hover:text-foreground hover:bg-muted"
+                        ? "border-primary bg-primary/10 text-primary font-medium"
+                        : "border-transparent text-foreground/60 hover:text-foreground hover:bg-muted"
                     }`}
                   >
                     <Icon className="w-4 h-4" />

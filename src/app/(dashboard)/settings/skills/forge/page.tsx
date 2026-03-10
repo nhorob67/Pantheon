@@ -1,8 +1,11 @@
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { requireDashboardCustomer } from "@/lib/auth/dashboard-session";
 import { SkillForgeLibrary } from "./skill-forge-library";
 import Link from "next/link";
 import { Plus, Anvil } from "lucide-react";
+
+export const metadata: Metadata = { title: "Skill Forge" };
 
 export default async function ForgeLibraryPage() {
   const { customerId } = await requireDashboardCustomer();

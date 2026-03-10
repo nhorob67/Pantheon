@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Loader2, Shield } from "lucide-react";
+import { Shield } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { formatCents } from "@/lib/utils/format";
 import { useAsyncFormState } from "@/hooks/use-async-form-state";
 import { useToast } from "@/components/ui/toast";
@@ -157,14 +158,9 @@ export function SpendingCapForm() {
           />
         </div>
 
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="bg-energy hover:bg-amber-600 text-white font-semibold rounded-full px-6 py-2.5 transition-colors flex items-center gap-2 disabled:opacity-50 text-sm"
-        >
-          {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+        <Button onClick={handleSave} disabled={saving} loading={saving} size="sm">
           Save Spending Cap
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -21,6 +21,8 @@ const SKILL_INFO: Record<string, { label: string; description: string; icon: typ
   },
 };
 
+const EMPTY_AGENT_NAMES: string[] = [];
+
 interface SkillToggleCardProps {
   skillName: string;
   enabled: boolean;
@@ -32,7 +34,7 @@ export function SkillToggleCard({
   skillName,
   enabled: initialEnabled,
   tenantId,
-  agentNames = [],
+  agentNames = EMPTY_AGENT_NAMES,
 }: SkillToggleCardProps) {
   const [enabled, setEnabled] = useState(initialEnabled);
   const [toggling, setToggling] = useState(false);

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getSearchIndex, getFlexSearchIndex, type SearchIndexEntry } from "@/lib/docs/search-index";
+import type { Index as FlexSearchIndexType } from "flexsearch";
 import type { DocsAskFeedbackSurface } from "@/lib/docs/ask-feedback-surface";
 
 const QUESTION_STARTERS =
@@ -53,6 +54,7 @@ export function useDocsSearchAi({
   const [activeIndex, setActiveIndex] = useState(0);
   const [entries, setEntries] = useState<SearchIndexEntry[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const flexIndexRef = useRef<FlexSearchIndexType | null>(null);
 
   const [aiState, setAiState] = useState<DocsAiState>({
     status: "idle",
@@ -79,9 +81,14 @@ export function useDocsSearchAi({
     let isMounted = true;
 
     void getSearchIndex()
-      .then((data) => {
+      .then(async (data) => {
         if (!isMounted) return;
         setEntries(data);
+        // Eagerly build the FlexSearch index so searches are synchronous
+        const idx = await getFlexSearchIndex(data);
+        if (isMounted) {
+          flexIndexRef.current = idx;
+        }
         setLoaded(true);
       })
       .catch(() => {
@@ -96,9 +103,9 @@ export function useDocsSearchAi({
   }, []);
 
   const results = useMemo<SearchResult[]>(() => {
-    if (!query.trim()) return [];
+    if (!query.trim() || !flexIndexRef.current) return [];
 
-    const index = getFlexSearchIndex(entries);
+    const index = flexIndexRef.current;
     const matchedIndices = index.search(query, { limit: 15 }) as number[];
 
     const matched: SearchResult[] = [];

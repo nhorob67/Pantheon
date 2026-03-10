@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
+import { MessageCircle } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface Message {
   id: string;
@@ -76,8 +78,12 @@ export function ConversationReplay({
 
   if (messages.length === 0) {
     return (
-      <div className="bg-card rounded-xl border border-border shadow-sm p-8 text-center">
-        <p className="text-foreground/60">No messages in this conversation.</p>
+      <div className="bg-card rounded-xl border border-border shadow-sm">
+        <EmptyState
+          icon={MessageCircle}
+          title="No messages yet"
+          description="No messages in this conversation."
+        />
       </div>
     );
   }

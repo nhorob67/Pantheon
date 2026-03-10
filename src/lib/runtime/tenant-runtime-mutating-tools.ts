@@ -33,6 +33,7 @@ const MUTATING_TOOL_KEYS = new Set([
   "tenant_scale_ticket_create",
   "tenant_scale_ticket_update",
   "tenant_scale_ticket_delete",
+  "reveal_secret",
 ]);
 
 type MemoryTier = (typeof MEMORY_TIER_VALUES)[number];

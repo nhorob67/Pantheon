@@ -1,13 +1,16 @@
+import { Suspense } from "react";
+import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/auth/admin-session";
 import Link from "next/link";
 import { getObservabilitySnapshot } from "@/lib/queries/admin-observability";
 import { ObservabilityDashboard } from "@/components/admin/observability-dashboard";
+import { Skeleton } from "@/components/ui/skeleton";
+
+export const metadata: Metadata = { title: "Observability" };
 
 export default async function AdminObservabilityPage() {
   await requireAdmin();
-  const admin = createAdminClient();
-  const snapshot = await getObservabilitySnapshot(admin);
 
   return (
     <div className="space-y-6">
@@ -23,7 +26,30 @@ export default async function AdminObservabilityPage() {
         </Link>
       </div>
 
-      <ObservabilityDashboard snapshot={snapshot} />
+      <Suspense fallback={<ObservabilitySkeleton />}>
+        <ObservabilityContent />
+      </Suspense>
+    </div>
+  );
+}
+
+async function ObservabilityContent() {
+  const admin = createAdminClient();
+  const snapshot = await getObservabilitySnapshot(admin);
+
+  return <ObservabilityDashboard snapshot={snapshot} />;
+}
+
+function ObservabilitySkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Skeleton className="h-28 rounded-xl" />
+        <Skeleton className="h-28 rounded-xl" />
+        <Skeleton className="h-28 rounded-xl" />
+      </div>
+      <Skeleton className="h-64 rounded-xl" />
+      <Skeleton className="h-48 rounded-xl" />
     </div>
   );
 }

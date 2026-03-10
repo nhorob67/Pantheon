@@ -51,6 +51,8 @@ import {
   X,
 } from "lucide-react";
 
+const EMPTY_VERSIONS: WorkflowVersion[] = [];
+
 type SaveStatus = "idle" | "dirty" | "saving" | "saved" | "error" | "conflict";
 
 interface WorkflowBuilderShellProps {
@@ -758,7 +760,7 @@ function formatVersionTimestamp(value: string): string {
 export function WorkflowBuilderShell({
   tenantId,
   initialWorkflow,
-  initialVersions = [],
+  initialVersions = EMPTY_VERSIONS,
 }: WorkflowBuilderShellProps) {
   const [name, setName] = useState(initialWorkflow.name);
   const [description, setDescription] = useState(initialWorkflow.description ?? "");

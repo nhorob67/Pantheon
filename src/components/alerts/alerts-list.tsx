@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AlertEventCard } from "@/components/alerts/alert-event-card";
 import type { AlertEvent } from "@/types/alerts";
 import { Bell } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface AlertsListProps {
   initialAlerts: AlertEvent[];
@@ -26,13 +27,12 @@ export function AlertsList({ initialAlerts, total }: AlertsListProps) {
 
   if (alerts.length === 0) {
     return (
-      <div className="bg-card rounded-xl border border-border shadow-sm p-12 text-center">
-        <Bell className="w-8 h-8 text-foreground/20 mx-auto mb-3" />
-        <p className="text-foreground/50 text-sm">No alerts yet.</p>
-        <p className="text-foreground/40 text-xs mt-1">
-          Alerts will appear here when spending thresholds are reached or farm
-          events occur.
-        </p>
+      <div className="bg-card rounded-xl border border-border shadow-sm">
+        <EmptyState
+          icon={Bell}
+          title="No alerts yet"
+          description="Alerts will appear here when spending thresholds are reached or farm events occur."
+        />
       </div>
     );
   }

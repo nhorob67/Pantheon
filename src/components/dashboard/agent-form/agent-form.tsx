@@ -27,6 +27,9 @@ import { ComposioToolkitToggles } from "./composio-toolkit-toggles";
 import { ToolControls } from "./tool-controls";
 import { CustomScheduleForm } from "./custom-schedule-form";
 
+const EMPTY_CUSTOM_SKILLS: CustomSkill[] = [];
+const EMPTY_DEFAULT_PROMPTS: Partial<Record<PersonalityPreset, string>> = {};
+
 interface CustomScheduleSummary {
   id: string;
   display_name: string | null;
@@ -52,9 +55,9 @@ export function AgentForm({
   onSubmit,
   editAgent,
   globalSkillConfigs,
-  customSkills = [],
+  customSkills = EMPTY_CUSTOM_SKILLS,
   composioConfig = null,
-  defaultPrompts = {},
+  defaultPrompts = EMPTY_DEFAULT_PROMPTS,
   tenantId,
 }: AgentFormProps) {
   const [saving, setSaving] = useState(false);

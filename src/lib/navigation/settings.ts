@@ -21,6 +21,7 @@ const SETTINGS_TABS_BASE: SettingsNavItem[] = [
   { href: "/settings/extensions", label: "Extensions" },
   { href: "/settings/exports", label: "Exports" },
   { href: "/settings/mcp-servers", label: "Tools" },
+  { href: "/settings/secrets", label: "Secrets Vault" },
   { href: "/settings/ai-model", label: "AI Model" },
   { href: "/settings/billing", label: "Billing" },
 ];
@@ -36,6 +37,7 @@ const SIDEBAR_SETTINGS_BASE: SettingsNavItem[] = [
   { href: "/settings/approvals", label: "Approvals" },
   { href: "/settings/exports", label: "Exports" },
   { href: "/settings/mcp-servers", label: "Tools" },
+  { href: "/settings/secrets", label: "Secrets Vault" },
   { href: "/settings/ai-model", label: "AI Model" },
   { href: "/settings/alerts", label: "Alerts" },
   { href: "/settings/billing", label: "Billing" },

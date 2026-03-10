@@ -4,18 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, BellRing, CheckCheck, Clock3 } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
-import type { HeartbeatConfig, HeartbeatIssue } from "@/types/heartbeat";
-
-interface Agent {
-  id: string;
-  display_name: string;
-}
+import { useHeartbeatSettings } from "./heartbeat-settings-context";
+import type { HeartbeatIssue } from "@/types/heartbeat";
 
 interface HeartbeatIssuesPanelProps {
-  tenantId: string;
   issues: HeartbeatIssue[];
-  configs: HeartbeatConfig[];
-  agents: Agent[];
 }
 
 function formatIssueTime(value: string | null): string {
@@ -55,11 +48,9 @@ function getSeverityLabel(severity: number): string {
 }
 
 export function HeartbeatIssuesPanel({
-  tenantId,
   issues: initialIssues,
-  configs,
-  agents,
 }: HeartbeatIssuesPanelProps) {
+  const { tenantId, agents, configs } = useHeartbeatSettings();
   const router = useRouter();
   const { toast } = useToast();
   const [issues, setIssues] = useState(initialIssues);

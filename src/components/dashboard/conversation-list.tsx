@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
+import { MessageCircle } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface SessionSummary {
   id: string;
@@ -23,11 +25,12 @@ interface ConversationListProps {
 export function ConversationList({ sessions }: ConversationListProps) {
   if (sessions.length === 0) {
     return (
-      <div className="bg-card rounded-xl border border-border shadow-sm p-8 text-center">
-        <p className="text-foreground/60">
-          No conversations yet. Start chatting with your AI assistant in
-          Discord!
-        </p>
+      <div className="bg-card rounded-xl border border-border shadow-sm">
+        <EmptyState
+          icon={MessageCircle}
+          title="No conversations yet"
+          description="Start chatting with your AI assistant in Discord!"
+        />
       </div>
     );
   }

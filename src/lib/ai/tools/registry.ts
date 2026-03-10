@@ -9,6 +9,8 @@ import { createGrainBidTools } from "./grain-bids";
 import { createMemoryTools } from "./memory";
 import { createScheduleTools } from "./schedules";
 import { createComposioTools } from "./composio";
+import { createCredentialTools } from "./credentials";
+import { createHttpRequestTool } from "./http-request";
 
 type ToolMap = Record<string, Tool>;
 
@@ -28,6 +30,8 @@ export interface ToolRegistryInput {
   runtimeRun?: TenantRuntimeRun;
   actorRole?: TenantRole;
   actorId?: string | null;
+  secretsEnabled?: boolean;
+  revealedSecretValues?: string[];
 }
 
 function buildMemoryTools(input: ToolRegistryInput): ToolMap {
@@ -99,6 +103,29 @@ export async function resolveToolsForAgent(input: ToolRegistryInput): Promise<To
       actorId: input.actorId ?? null,
     });
     Object.assign(tools, composioTools);
+  }
+
+  // Secrets vault: credential handles + http_request with injection
+  if (input.secretsEnabled) {
+    const runId = input.runtimeRun?.id ?? null;
+    Object.assign(
+      tools,
+      createCredentialTools(
+        input.admin,
+        input.tenantId,
+        input.customerId,
+        input.agent.id,
+        runId,
+        input.revealedSecretValues
+      ),
+      createHttpRequestTool(
+        input.admin,
+        input.tenantId,
+        input.customerId,
+        input.agent.id,
+        runId
+      )
+    );
   }
 
   // Remove disabled tools based on agent's tool_approval_overrides

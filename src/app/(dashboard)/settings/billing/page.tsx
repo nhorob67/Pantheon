@@ -1,14 +1,25 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { CreditCard, Clock } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requireDashboardCustomer } from "@/lib/auth/dashboard-session";
 import { ManageBillingButton } from "@/components/settings/manage-billing-button";
 import { SpendingCapForm } from "@/components/settings/spending-cap-form";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const metadata: Metadata = { title: "Billing" };
 
 export default async function BillingSettingsPage() {
   const { customerId } = await requireDashboardCustomer();
+
+  return (
+    <Suspense fallback={<BillingSkeleton />}>
+      <BillingContent customerId={customerId} />
+    </Suspense>
+  );
+}
+
+async function BillingContent({ customerId }: { customerId: string }) {
   const supabase = await createClient();
 
   const { data: customer } = await supabase
@@ -48,6 +59,20 @@ export default async function BillingSettingsPage() {
       </div>
 
       <SpendingCapForm />
+    </div>
+  );
+}
+
+function BillingSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="bg-card rounded-xl border border-border shadow-sm p-6">
+        <Skeleton className="h-6 w-20 mb-1" />
+        <Skeleton className="h-4 w-64 mb-6" />
+        <Skeleton className="h-24 rounded-lg mb-6" />
+        <Skeleton className="h-10 w-40 rounded-lg" />
+      </div>
+      <Skeleton className="h-32 rounded-xl" />
     </div>
   );
 }

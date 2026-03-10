@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Loader2, Bell } from "lucide-react";
+import { Bell } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 
 interface ToggleRowProps {
@@ -168,14 +169,9 @@ export function AlertPreferencesForm() {
         </div>
       </div>
 
-      <button
-        onClick={handleSave}
-        disabled={saving}
-        className="bg-energy hover:bg-amber-600 text-white font-semibold rounded-full px-6 py-3 transition-colors flex items-center gap-2 disabled:opacity-50"
-      >
-        {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+      <Button onClick={handleSave} disabled={saving} loading={saving}>
         Save Preferences
-      </button>
+      </Button>
     </div>
   );
 }

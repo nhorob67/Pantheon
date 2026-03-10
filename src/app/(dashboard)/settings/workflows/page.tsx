@@ -1,13 +1,18 @@
+import { Suspense } from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireDashboardCustomer, getCustomerInstance, getCustomerTenant } from "@/lib/auth/dashboard-session";
 import { formatDateTime } from "@/lib/utils/format";
+
+export const metadata: Metadata = { title: "Workflows" };
 import { WORKFLOW_STATUSES, type WorkflowStatus } from "@/types/workflow";
 import { isWorkflowBuilderEnabledForCustomer } from "@/lib/workflows/feature-gate";
 import { WorkflowPerformanceBeacon } from "@/components/workflows/workflow-performance-beacon";
 import { WorkflowStatusToggle } from "@/components/workflows/workflow-status-toggle";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type SearchParams = Promise<{
   status?: string;
@@ -85,8 +90,11 @@ export default async function WorkflowsSettingsPage({
 }: {
   searchParams: SearchParams;
 }) {
-  const { customerId, user } = await requireDashboardCustomer();
   const admin = createAdminClient();
+  const [{ customerId, user }, resolvedSearchParams] = await Promise.all([
+    requireDashboardCustomer(),
+    searchParams,
+  ]);
   const workflowBuilderEnabled = await isWorkflowBuilderEnabledForCustomer(
     admin,
     customerId
@@ -96,7 +104,27 @@ export default async function WorkflowsSettingsPage({
     notFound();
   }
 
-  const { status, tag, owner } = await searchParams;
+  return (
+    <Suspense fallback={<WorkflowsSkeleton />}>
+      <WorkflowsContent
+        customerId={customerId}
+        userId={user.id}
+        resolvedSearchParams={resolvedSearchParams}
+      />
+    </Suspense>
+  );
+}
+
+async function WorkflowsContent({
+  customerId,
+  userId,
+  resolvedSearchParams,
+}: {
+  customerId: string;
+  userId: string;
+  resolvedSearchParams: { status?: string; tag?: string; owner?: string };
+}) {
+  const { status, tag, owner } = resolvedSearchParams;
   const statusFilter = parseStatusFilter(status);
   const tagFilter = parseTagFilter(tag);
   const ownerFilter = parseOwnerFilter(owner);
@@ -362,7 +390,7 @@ export default async function WorkflowsSettingsPage({
                   : "border-border text-text-dim hover:border-border-light hover:text-text-primary"
               }`}
             >
-              {ownerId === user.id ? "You" : `${ownerId.slice(0, 8)}...`}
+              {ownerId === userId ? "You" : `${ownerId.slice(0, 8)}...`}
             </Link>
           ))}
         </div>
@@ -480,7 +508,7 @@ export default async function WorkflowsSettingsPage({
                     <p className="text-xs text-foreground/50 mt-1">
                       Owner:{" "}
                       {typeof workflow.owner_id === "string"
-                        ? workflow.owner_id === user.id
+                        ? workflow.owner_id === userId
                           ? "You"
                           : `${workflow.owner_id.slice(0, 8)}...`
                         : "Unassigned"}
@@ -540,6 +568,30 @@ export default async function WorkflowsSettingsPage({
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+function WorkflowsSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <Skeleton className="h-6 w-28 mb-1" />
+          <Skeleton className="h-4 w-80" />
+        </div>
+        <div className="flex gap-2">
+          <Skeleton className="h-8 w-28 rounded-lg" />
+          <Skeleton className="h-8 w-24 rounded-lg" />
+        </div>
+      </div>
+      <Skeleton className="h-10 w-96 rounded-full" />
+      <Skeleton className="h-24 rounded-2xl" />
+      <Skeleton className="h-32 rounded-2xl" />
+      <div className="space-y-3">
+        <Skeleton className="h-24 rounded-xl" />
+        <Skeleton className="h-24 rounded-xl" />
+      </div>
     </div>
   );
 }

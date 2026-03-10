@@ -2,7 +2,7 @@
 
 import { useOnboardingStep } from "@/hooks/use-onboarding";
 import { Building2, MapPin, MessageSquare, Check } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, LazyMotion, domAnimation, m } from "motion/react";
 import { OnboardingBackground } from "./onboarding-background";
 
 const STEPS = [
@@ -19,6 +19,7 @@ export function WizardShell({ children }: WizardShellProps) {
   const currentStep = useOnboardingStep();
 
   return (
+    <LazyMotion features={domAnimation}>
     <div className="relative min-h-screen flex flex-col">
       <OnboardingBackground />
 
@@ -88,7 +89,7 @@ export function WizardShell({ children }: WizardShellProps) {
       <div className="relative z-10 flex-1 flex items-start justify-center px-6 py-12">
         <div className="w-full max-w-2xl">
           <AnimatePresence mode="wait">
-            <motion.div
+            <m.div
               key={currentStep}
               initial={{ opacity: 0, x: 40 }}
               animate={{ opacity: 1, x: 0 }}
@@ -100,10 +101,11 @@ export function WizardShell({ children }: WizardShellProps) {
               }}
             >
               {children}
-            </motion.div>
+            </m.div>
           </AnimatePresence>
         </div>
       </div>
     </div>
+    </LazyMotion>
   );
 }

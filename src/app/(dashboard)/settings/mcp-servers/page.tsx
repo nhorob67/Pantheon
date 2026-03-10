@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { requireDashboardCustomer, getCustomerTenant } from "@/lib/auth/dashboard-session";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -6,15 +7,22 @@ import { ComposioIntegrationPanel } from "@/components/settings/composio/composi
 import type { McpServerConfig } from "@/types/mcp";
 import type { ComposioConfig, ComposioConnectedApp } from "@/types/composio";
 import { Server } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const metadata: Metadata = { title: "Tools" };
 
 export default async function ToolsSettingsPage() {
-  const [{ customerId }, admin] = await Promise.all([
-    requireDashboardCustomer(),
-    Promise.resolve(createAdminClient()),
-  ]);
+  const { customerId } = await requireDashboardCustomer();
 
+  return (
+    <Suspense fallback={<ToolsSkeleton />}>
+      <ToolsContent customerId={customerId} />
+    </Suspense>
+  );
+}
+
+async function ToolsContent({ customerId }: { customerId: string }) {
+  const admin = createAdminClient();
   const tenant = await getCustomerTenant(customerId);
 
   if (!tenant) {
@@ -96,6 +104,23 @@ export default async function ToolsSettingsPage() {
           initialConfig={composioConfig}
         />
       </div>
+    </div>
+  );
+}
+
+function ToolsSkeleton() {
+  return (
+    <div>
+      <div className="mb-6">
+        <Skeleton className="h-6 w-20 mb-1" />
+        <Skeleton className="h-4 w-80" />
+      </div>
+      <div className="mb-8">
+        <Skeleton className="h-5 w-32 mb-4" />
+        <Skeleton className="h-32 rounded-xl" />
+      </div>
+      <div className="border-t border-border my-8" />
+      <Skeleton className="h-48 rounded-xl" />
     </div>
   );
 }

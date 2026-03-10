@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ExternalLink, Loader2 } from "lucide-react";
+import { ExternalLink } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { isValidStripeUrl } from "@/lib/security/validate-redirect";
 
 interface ManageBillingButtonProps {
@@ -40,17 +41,9 @@ export function ManageBillingButton({ isTrial }: ManageBillingButtonProps) {
   };
 
   return (
-    <button
-      onClick={handleClick}
-      disabled={loading}
-      className="bg-energy hover:bg-amber-600 text-white font-semibold rounded-full px-6 py-3 transition-colors flex items-center gap-2 disabled:opacity-50"
-    >
-      {loading ? (
-        <Loader2 className="w-4 h-4 animate-spin" />
-      ) : (
-        <ExternalLink className="w-4 h-4" />
-      )}
+    <Button onClick={handleClick} disabled={loading} loading={loading}>
+      {!loading && <ExternalLink className="w-4 h-4" />}
       {isTrial ? "Subscribe — $50/month" : "Manage Billing"}
-    </button>
+    </Button>
   );
 }

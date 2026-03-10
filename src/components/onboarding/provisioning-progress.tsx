@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Check, Loader2 } from "lucide-react";
-import { motion } from "motion/react";
+import { m, LazyMotion, domAnimation } from "motion/react";
 import { useRouter } from "next/navigation";
 
 const PROVISION_STEPS = [
@@ -58,10 +58,11 @@ export function ProvisioningProgress() {
   }, [allDone, router]);
 
   return (
+    <LazyMotion features={domAnimation}>
     <div className="fixed inset-0 z-50 bg-[var(--bg-deep)] flex items-center justify-center">
       <div className="text-center max-w-md mx-auto px-6">
         {/* Seedling animation */}
-        <motion.div
+        <m.div
           className="mx-auto w-24 h-24 mb-8 relative"
           {...SPRING_IN}
         >
@@ -72,7 +73,7 @@ export function ProvisioningProgress() {
             xmlns="http://www.w3.org/2000/svg"
           >
             {/* Stem */}
-            <motion.line
+            <m.line
               x1="48"
               y1="80"
               x2="48"
@@ -85,7 +86,7 @@ export function ProvisioningProgress() {
               transition={{ duration: 1, delay: 0.3 }}
             />
             {/* Left leaf */}
-            <motion.path
+            <m.path
               d="M48 55C48 55 30 50 28 38C28 38 42 36 48 55Z"
               fill="var(--green-bright)"
               initial={{ scale: 0, opacity: 0 }}
@@ -94,7 +95,7 @@ export function ProvisioningProgress() {
               style={{ transformOrigin: "48px 55px" }}
             />
             {/* Right leaf */}
-            <motion.path
+            <m.path
               d="M48 45C48 45 66 40 68 28C68 28 54 26 48 45Z"
               fill="var(--green-bright)"
               initial={{ scale: 0, opacity: 0 }}
@@ -103,7 +104,7 @@ export function ProvisioningProgress() {
               style={{ transformOrigin: "48px 45px" }}
             />
             {/* Wheat head */}
-            <motion.ellipse
+            <m.ellipse
               cx="48"
               cy="28"
               rx="6"
@@ -117,7 +118,7 @@ export function ProvisioningProgress() {
 
           {/* Glow */}
           {allDone && (
-            <motion.div
+            <m.div
               className="absolute inset-0 rounded-full"
               initial={{ opacity: 0 }}
               animate={{ opacity: [0, 0.6, 0] }}
@@ -128,16 +129,16 @@ export function ProvisioningProgress() {
               }}
             />
           )}
-        </motion.div>
+        </m.div>
 
-        <motion.h2
+        <m.h2
           className="font-headline text-2xl font-bold text-[var(--text-primary)] mb-2"
           {...FADE_UP}
           transition={{ delay: 0.2 }}
         >
           {allDone ? "You're live!" : "Growing your FarmClaw..."}
-        </motion.h2>
-        <motion.p
+        </m.h2>
+        <m.p
           className="text-sm text-[var(--text-secondary)] mb-10"
           {...FADE_IN}
           transition={{ delay: 0.3 }}
@@ -145,7 +146,7 @@ export function ProvisioningProgress() {
           {allDone
             ? "Your AI farm assistant is ready to go."
             : "Just a moment..."}
-        </motion.p>
+        </m.p>
 
         {/* Checklist */}
         <div className="max-w-xs mx-auto space-y-3 text-left">
@@ -157,7 +158,7 @@ export function ProvisioningProgress() {
                   ? "active"
                   : "pending";
             return (
-              <motion.div
+              <m.div
                 key={step.label}
                 className="flex items-center gap-3"
                 initial={{ opacity: 0, x: -10 }}
@@ -174,13 +175,13 @@ export function ProvisioningProgress() {
                   }`}
                 >
                   {status === "complete" ? (
-                    <motion.div
+                    <m.div
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ type: "spring", stiffness: 400 }}
                     >
                       <Check className="w-4 h-4" />
-                    </motion.div>
+                    </m.div>
                   ) : status === "active" ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
@@ -196,23 +197,24 @@ export function ProvisioningProgress() {
                 >
                   {step.label}
                 </span>
-              </motion.div>
+              </m.div>
             );
           })}
         </div>
 
         {/* CTA after completion */}
         {allDone && (
-          <motion.button
+          <m.button
             {...FADE_UP}
             transition={{ delay: 0.5 }}
             onClick={() => router.push("/dashboard")}
             className="mt-10 bg-gradient-to-r from-[var(--accent)] to-[var(--accent-light)] text-[var(--bg-deep)] font-semibold py-3 px-8 rounded-full transition-all hover:shadow-[0_4px_20px_rgba(217,140,46,0.3)] hover:-translate-y-0.5"
           >
             Go to Dashboard
-          </motion.button>
+          </m.button>
         )}
       </div>
     </div>
+    </LazyMotion>
   );
 }

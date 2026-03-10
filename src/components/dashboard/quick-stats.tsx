@@ -20,6 +20,7 @@ export function QuickStats({
       icon: MessageSquare,
       color: "text-primary",
       bg: "bg-primary/10",
+      borderColor: "border-t-primary",
     },
     {
       label: "Uptime (hrs)",
@@ -27,6 +28,7 @@ export function QuickStats({
       icon: Clock,
       color: "text-intelligence",
       bg: "bg-intelligence/10",
+      borderColor: "border-t-intelligence",
     },
     {
       label: "Tokens Used",
@@ -34,6 +36,7 @@ export function QuickStats({
       icon: Zap,
       color: "text-energy",
       bg: "bg-energy/10",
+      borderColor: "border-t-energy",
     },
     {
       label: "Est. Monthly",
@@ -41,6 +44,7 @@ export function QuickStats({
       icon: DollarSign,
       color: "text-foreground",
       bg: "bg-muted",
+      borderColor: "border-t-foreground/20",
     },
   ];
 
@@ -49,7 +53,7 @@ export function QuickStats({
       {stats.map((stat) => (
         <div
           key={stat.label}
-          className="bg-card rounded-xl border border-border shadow-sm p-5"
+          className={`bg-card rounded-xl border border-border border-t-2 ${stat.borderColor} shadow-sm p-5`}
         >
           <div className="flex items-center gap-2 mb-3">
             <div

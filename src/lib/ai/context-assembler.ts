@@ -45,6 +45,7 @@ interface AssembleInput {
   actorRole?: TenantRole;
   actorId?: string | null;
   fastModel?: LanguageModel;
+  revealedSecretValues?: string[];
 }
 
 export async function assembleContext(
@@ -142,41 +143,50 @@ export async function assembleContext(
     }
   }
 
-  // 6. Resolve tools for this agent
+  // 6. Resolve tools for this agent — run independent queries in parallel
   let farmLat: number | null = null;
   let farmLng: number | null = null;
   let farmTimezone = "America/Chicago";
-  if (agent) {
-    const { data: profile } = await admin
-      .from("farm_profiles")
-      .select("weather_lat, weather_lng, timezone")
-      .eq("customer_id", agent.customer_id)
-      .maybeSingle();
-    farmLat = profile?.weather_lat ?? null;
-    farmLng = profile?.weather_lng ?? null;
-    farmTimezone = profile?.timezone ?? "America/Chicago";
-  }
-
-  // Resolve effective Composio toolkits for this agent
   let composioToolkits: string[] = [];
   let composioUserId: string | null = null;
+  let secretsEnabled = false;
+
   if (agent) {
     const agentToolkits = (agent.config?.composio_toolkits ?? []) as string[];
-    if (agentToolkits.length > 0) {
-      const { data: composioRow } = await admin
-        .from("composio_configs")
-        .select("enabled, selected_toolkits, composio_user_id")
-        .eq("customer_id", agent.customer_id)
-        .maybeSingle();
 
-      if (composioRow?.enabled && Array.isArray(composioRow.selected_toolkits)) {
-        const globalSet = new Set(composioRow.selected_toolkits as string[]);
-        composioToolkits = agentToolkits.filter((t) => globalSet.has(t));
-        if (typeof composioRow.composio_user_id === "string") {
-          composioUserId = composioRow.composio_user_id;
-        }
+    const [profileResult, composioResult, secretsCountResult] = await Promise.all([
+      admin
+        .from("farm_profiles")
+        .select("weather_lat, weather_lng, timezone")
+        .eq("customer_id", agent.customer_id)
+        .maybeSingle(),
+      agentToolkits.length > 0
+        ? admin
+            .from("composio_configs")
+            .select("enabled, selected_toolkits, composio_user_id")
+            .eq("customer_id", agent.customer_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+      admin
+        .from("tenant_secrets")
+        .select("id", { count: "exact", head: true })
+        .eq("tenant_id", input.tenantId),
+    ]);
+
+    farmLat = profileResult.data?.weather_lat ?? null;
+    farmLng = profileResult.data?.weather_lng ?? null;
+    farmTimezone = profileResult.data?.timezone ?? "America/Chicago";
+
+    const composioRow = composioResult.data;
+    if (composioRow?.enabled && Array.isArray(composioRow.selected_toolkits)) {
+      const globalSet = new Set(composioRow.selected_toolkits as string[]);
+      composioToolkits = agentToolkits.filter((t: string) => globalSet.has(t));
+      if (typeof composioRow.composio_user_id === "string") {
+        composioUserId = composioRow.composio_user_id;
       }
     }
+
+    secretsEnabled = (secretsCountResult.count ?? 0) > 0;
   }
 
   const tools = agent
@@ -196,6 +206,8 @@ export async function assembleContext(
         runtimeRun: input.runtimeRun,
         actorRole: input.actorRole,
         actorId: input.actorId,
+        secretsEnabled,
+        revealedSecretValues: input.revealedSecretValues,
       })
     : {};
 
