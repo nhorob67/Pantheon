@@ -11,6 +11,7 @@ import { createScheduleTools } from "./schedules";
 import { createComposioTools } from "./composio";
 import { createCredentialTools } from "./credentials";
 import { createHttpRequestTool } from "./http-request";
+import { createSelfConfigTools } from "./self-config";
 
 type ToolMap = Record<string, Tool>;
 
@@ -30,6 +31,8 @@ export interface ToolRegistryInput {
   runtimeRun?: TenantRuntimeRun;
   actorRole?: TenantRole;
   actorId?: string | null;
+  actorDiscordId?: string | null;
+  legacyInstanceId?: string | null;
   secretsEnabled?: boolean;
   revealedSecretValues?: string[];
 }
@@ -137,6 +140,19 @@ export async function resolveToolsForAgent(input: ToolRegistryInput): Promise<To
       )
     );
   }
+
+  // Self-configuration tools — always available, role-gated internally
+  const selfConfigTools = createSelfConfigTools({
+    admin: input.admin,
+    tenantId: input.tenantId,
+    customerId: input.customerId,
+    agent: input.agent,
+    actorRole: input.actorRole ?? "viewer",
+    actorDiscordId: input.actorDiscordId ?? null,
+    runtimeRun: input.runtimeRun,
+    legacyInstanceId: input.legacyInstanceId ?? null,
+  });
+  Object.assign(tools, selfConfigTools);
 
   // Remove disabled tools based on agent's tool_approval_overrides
   const overrides = (input.agent.config?.tool_approval_overrides ?? {}) as Record<string, string>;

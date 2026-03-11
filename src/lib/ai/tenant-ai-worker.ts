@@ -12,6 +12,7 @@ import { recordConversationTrace } from "./trace-recorder";
 import { resolveWorkerModels } from "./model-resolver";
 import {
   sendDiscordChannelMessageSequence,
+  sendDiscordTypingIndicator,
   buildDiscordRuntimeResponseParts,
   DiscordApiError,
 } from "@/lib/runtime/tenant-runtime-discord";
@@ -150,6 +151,8 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
         const guildId =
           typeof payload.guild_id === "string" ? payload.guild_id : null;
         const actorRole = resolveActorRole(payload);
+        const actorId = typeof payload.actor_id === "string" ? payload.actor_id : null;
+        const actorDiscordId = typeof payload.actor_discord_id === "string" ? payload.actor_discord_id : null;
 
         if (!channelId) {
           return {
@@ -202,7 +205,8 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           imageUrls: imageAttachments.map((a) => a.url),
           runtimeRun: context.run,
           actorRole,
-          actorId: userId,
+          actorId,
+          actorDiscordId,
           fastModel: fastModel,
           revealedSecretValues,
         });
@@ -244,6 +248,10 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
         }
 
         const hasTools = Object.keys(resolvedTools).length > 0;
+
+        // Show typing indicator while generating
+        await sendDiscordTypingIndicator(botToken, channelId);
+
         const result = await generateText({
           model: primaryModel,
           maxOutputTokens: AI_CONFIG.maxOutputTokens,

@@ -18,6 +18,7 @@ import {
   formatSuggestionsForPrompt,
   getCurrentTemporalContext,
 } from "./proactive-suggestions";
+import { resolveCanonicalLegacyInstanceForTenant } from "@/lib/runtime/tenant-agents";
 
 export interface AssembledContext {
   systemPrompt: string;
@@ -44,6 +45,7 @@ interface AssembleInput {
   runtimeRun?: TenantRuntimeRun;
   actorRole?: TenantRole;
   actorId?: string | null;
+  actorDiscordId?: string | null;
   fastModel?: LanguageModel;
   revealedSecretValues?: string[];
 }
@@ -150,11 +152,12 @@ export async function assembleContext(
   let composioToolkits: string[] = [];
   let composioUserId: string | null = null;
   let secretsEnabled = false;
+  let legacyInstanceId: string | null = null;
 
   if (agent) {
     const agentToolkits = (agent.config?.composio_toolkits ?? []) as string[];
 
-    const [profileResult, composioResult, secretsCountResult] = await Promise.all([
+    const [profileResult, composioResult, secretsCountResult, legacyInstanceResult] = await Promise.all([
       admin
         .from("farm_profiles")
         .select("weather_lat, weather_lng, timezone")
@@ -171,6 +174,7 @@ export async function assembleContext(
         .from("tenant_secrets")
         .select("id", { count: "exact", head: true })
         .eq("tenant_id", input.tenantId),
+      resolveCanonicalLegacyInstanceForTenant(admin, input.tenantId).catch(() => ({ instanceId: null, ambiguous: false })),
     ]);
 
     farmLat = profileResult.data?.weather_lat ?? null;
@@ -187,6 +191,7 @@ export async function assembleContext(
     }
 
     secretsEnabled = (secretsCountResult.count ?? 0) > 0;
+    legacyInstanceId = legacyInstanceResult?.instanceId ?? null;
   }
 
   const tools = agent
@@ -206,6 +211,8 @@ export async function assembleContext(
         runtimeRun: input.runtimeRun,
         actorRole: input.actorRole,
         actorId: input.actorId,
+        actorDiscordId: input.actorDiscordId,
+        legacyInstanceId,
         secretsEnabled,
         revealedSecretValues: input.revealedSecretValues,
       })

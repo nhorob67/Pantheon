@@ -19,6 +19,7 @@ import {
   parseAttachmentsFromPayload,
   isAudioAttachment,
 } from "@/lib/ai/attachment-handler";
+import { resolveDiscordUserRole } from "@/lib/runtime/tenant-discord-role-resolver";
 
 async function isAuthorized(request: Request): Promise<boolean> {
   const expectedTokens = [
@@ -138,6 +139,8 @@ export async function POST(request: Request) {
       );
     }
 
+    const roleResolution = await resolveDiscordUserRole(admin, match.tenantId, parsed.data.user_id);
+
     const run = await enqueueDiscordRuntimeRun(admin, {
       runKind: "discord_runtime",
       tenantId: match.tenantId,
@@ -147,8 +150,9 @@ export async function POST(request: Request) {
       payload: {
         ...parsed.data,
         attachments: attachments.length > 0 ? attachments : undefined,
-        actor_role: "viewer",
-        actor_id: null,
+        actor_role: roleResolution.role,
+        actor_id: roleResolution.userId,
+        actor_discord_id: parsed.data.user_id,
         ingress_received_at: new Date().toISOString(),
         ingress_mode: "discord_runtime",
       },

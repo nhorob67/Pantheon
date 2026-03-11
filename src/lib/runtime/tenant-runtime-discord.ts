@@ -153,6 +153,24 @@ function parseRetryAfterSeconds(
   return null;
 }
 
+export async function sendDiscordTypingIndicator(
+  botToken: string,
+  channelId: string,
+  fetchImpl: typeof fetch = fetch
+): Promise<void> {
+  await fetchImpl(
+    `${DISCORD_API_BASE_URL}/channels/${encodeURIComponent(channelId)}/typing`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bot ${botToken}`,
+      },
+    }
+  ).catch(() => {
+    // Non-critical, ignore failures
+  });
+}
+
 export async function sendDiscordChannelMessage(
   input: DiscordSendMessageInput,
   fetchImpl: typeof fetch = fetch
