@@ -16,8 +16,8 @@ const DEFAULT_POLICY = {
 const ABUSE_PATTERNS = [
   /ignore\s+all\s+previous\s+instructions/i,
   /\bjailbreak\b/i,
-  /\bDAN\b/i,
-  /system\s+prompt/i,
+  /\bDAN\b/,
+  /(ignore|override|forget|disregard|bypass)\s+(your\s+)?system\s+prompt/i,
 ];
 
 export interface TenantRuntimeGovernancePolicy {
