@@ -35,7 +35,7 @@ export function Step3Discord() {
   const redirectUri = process.env.NEXT_PUBLIC_DISCORD_REDIRECT_URI;
 
   const oauthUrl = clientId
-    ? `https://discord.com/api/oauth2/authorize?client_id=${clientId}&permissions=2048&scope=bot&redirect_uri=${encodeURIComponent(redirectUri ?? "")}&response_type=code`
+    ? `https://discord.com/api/oauth2/authorize?client_id=${clientId}&permissions=117760&scope=bot&redirect_uri=${encodeURIComponent(redirectUri ?? "")}&response_type=code`
     : null;
 
   const validateServerId = (id: string): boolean => {

@@ -21,9 +21,13 @@ const client = new Client({
 
 client.once("ready", (c) => {
   console.log(`[bot] Ready as ${c.user.tag} in ${c.guilds.cache.size} guilds`);
+  for (const [id, guild] of c.guilds.cache) {
+    console.log(`[bot] Guild: ${guild.name} (${id})`);
+  }
 });
 
 client.on("messageCreate", (message) => {
+  console.log(`[bot] messageCreate: guild=${message.guildId} channel=${message.channelId} author=${message.author.tag} bot=${message.author.bot} content=${message.content.slice(0, 50)}`);
   handleMessage(message).catch((err) => {
     console.error("[bot] Unhandled message error:", err);
   });

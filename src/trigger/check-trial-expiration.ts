@@ -1,8 +1,9 @@
 import { schedules } from "@trigger.dev/sdk";
 import { createTriggerAdminClient } from "./lib/supabase";
+import { checkAllCustomerSpending } from "@/lib/alerts/spending-check";
 
-export const checkTrialExpiration = schedules.task({
-  id: "check-trial-expiration",
+export const checkTrialAndSpending = schedules.task({
+  id: "check-trial-and-spending",
   cron: "0 */2 * * *",
   retry: {
     maxAttempts: 2,
@@ -91,7 +92,15 @@ export const checkTrialExpiration = schedules.task({
       }
     }
 
-    return { expired, reminders };
+    // 4. Check spending caps
+    let spendingResult = null;
+    try {
+      spendingResult = await checkAllCustomerSpending();
+    } catch (err) {
+      console.error("[check-trial-and-spending] Spending check failed:", err);
+    }
+
+    return { expired, reminders, spending: spendingResult };
   },
 });
 

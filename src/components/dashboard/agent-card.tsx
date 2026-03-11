@@ -113,7 +113,7 @@ export function AgentCard({ agent, onEdit, onDelete, onPreview }: AgentCardProps
 
       {/* Footer: Skills + Crons */}
       <div className="flex flex-wrap items-center gap-2">
-        {agent.skills.map((skill) => {
+        {(agent.skills || []).map((skill) => {
           const info = SKILL_INFO[skill as BuiltInSkill];
           return (
             <span

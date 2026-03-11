@@ -39,7 +39,7 @@ export function DiscordSetupBanner({
   }
 
   const oauthUrl = DISCORD_CLIENT_ID
-    ? `https://discord.com/api/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&permissions=2048&scope=bot`
+    ? `https://discord.com/api/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&permissions=117760&scope=bot`
     : null;
 
   return (

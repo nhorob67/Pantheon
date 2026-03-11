@@ -4,7 +4,7 @@ const anthropic = createAnthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-export const DEFAULT_PRIMARY_MODEL_ID = "claude-sonnet-4-5-20250514";
+export const DEFAULT_PRIMARY_MODEL_ID = "claude-sonnet-4-20250514";
 export const DEFAULT_FAST_MODEL_ID = "claude-haiku-4-5-20251001";
 
 export const farmclawModel = anthropic(DEFAULT_PRIMARY_MODEL_ID);

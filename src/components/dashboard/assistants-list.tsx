@@ -45,9 +45,18 @@ export function AssistantsList({
     const res = await fetch(`/api/tenants/${tenantId}/agents`);
     if (res.ok) {
       const payload = await res.json();
-      const nextAgents = Array.isArray(payload?.data?.agents)
+      const raw = Array.isArray(payload?.data?.agents)
         ? payload.data.agents
-        : [];
+        : Array.isArray(payload?.agents)
+          ? payload.agents
+          : [];
+      const nextAgents = raw.map((a: Record<string, unknown>) => ({
+        ...a,
+        skills: Array.isArray(a.skills) ? a.skills : [],
+        cron_jobs: a.cron_jobs && typeof a.cron_jobs === "object" && !Array.isArray(a.cron_jobs) ? a.cron_jobs : {},
+        composio_toolkits: Array.isArray(a.composio_toolkits) ? a.composio_toolkits : [],
+        tool_approval_overrides: a.tool_approval_overrides && typeof a.tool_approval_overrides === "object" && !Array.isArray(a.tool_approval_overrides) ? a.tool_approval_overrides : {},
+      }));
       setAgents(nextAgents as Agent[]);
     }
   }, [tenantId]);

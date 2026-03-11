@@ -80,12 +80,12 @@ export function AgentForm({
             discord_channel_id: editAgent.discord_channel_id || "",
             discord_channel_name: editAgent.discord_channel_name || "",
             is_default: editAgent.is_default,
-            skills: editAgent.skills as CreateAgentData["skills"],
-            cron_jobs: (editAgent.cron_jobs || {}) as CreateAgentData["cron_jobs"],
-            composio_toolkits: editAgent.composio_toolkits ?? [],
+            skills: (Array.isArray(editAgent.skills) ? editAgent.skills : []) as CreateAgentData["skills"],
+            cron_jobs: (editAgent.cron_jobs && typeof editAgent.cron_jobs === "object" ? editAgent.cron_jobs : {}) as CreateAgentData["cron_jobs"],
+            composio_toolkits: Array.isArray(editAgent.composio_toolkits) ? editAgent.composio_toolkits : [],
             goal: editAgent.goal || "",
             backstory: editAgent.backstory || "",
-            tool_approval_overrides: editAgent.tool_approval_overrides ?? {},
+            tool_approval_overrides: editAgent.tool_approval_overrides && typeof editAgent.tool_approval_overrides === "object" ? editAgent.tool_approval_overrides : {},
           }
         : {
             display_name: "",
@@ -94,9 +94,9 @@ export function AgentForm({
             discord_channel_id: "",
             discord_channel_name: "",
             is_default: false,
-            skills: [...PRESET_DEFAULT_SKILLS.general] as CreateAgentData["skills"],
+            skills: ([...(PRESET_DEFAULT_SKILLS.general || [])]) as CreateAgentData["skills"],
             cron_jobs: Object.fromEntries(
-              PRESET_DEFAULT_CRONS.general.map((c) => [c, true])
+              (PRESET_DEFAULT_CRONS.general || []).map((c) => [c, true])
             ) as CreateAgentData["cron_jobs"],
             composio_toolkits: [],
             goal: "",
@@ -269,7 +269,7 @@ export function AgentForm({
     }
   };
 
-  const composioEnabled = composioConfig?.enabled && (composioConfig.selected_toolkits?.length ?? 0) > 0;
+  const composioEnabled = !!(composioConfig?.enabled && Array.isArray(composioConfig.selected_toolkits) && composioConfig.selected_toolkits.length > 0);
   const connectedAppIds = useMemo(
     () =>
       new Set(

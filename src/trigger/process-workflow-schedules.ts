@@ -8,6 +8,8 @@ import {
 } from "@/lib/workflows/scheduler";
 import { safeErrorMessage } from "@/lib/security/safe-error";
 import { auditLog } from "@/lib/security/audit";
+import { processQueuedWorkflowRuns } from "@/lib/workflows/run-processor";
+import { processRuntimeRun } from "./process-runtime-run";
 
 const MAX_ENQUEUE_LIMIT = 500;
 
@@ -271,6 +273,18 @@ export const processWorkflowSchedules = schedules.task({
       });
     }
 
+    // Process queued workflow runs (merged from process-workflow-runs)
+    let queuedRunsResult = null;
+    try {
+      queuedRunsResult = await processQueuedWorkflowRuns(admin, {
+        onDispatch: async (_run, runId) => {
+          await processRuntimeRun.trigger({ runId });
+        },
+      });
+    } catch (err) {
+      console.error("[process-workflow-schedules] Queued runs processing failed:", err);
+    }
+
     return {
       slot_utc: slotUtc,
       scanned: definitions.length,
@@ -287,6 +301,7 @@ export const processWorkflowSchedules = schedules.task({
         enqueue_limit: skippedEnqueueLimit,
       },
       errors: errors.slice(0, 20),
+      queued_runs: queuedRunsResult,
     };
   },
 });

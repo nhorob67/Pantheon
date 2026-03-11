@@ -561,7 +561,7 @@ export async function processQueuedWorkflowRuns(
             ...runMetadata,
             runtime_state: "dispatched",
             dispatch_processed_at: nowIso,
-            dispatch_processor: "trigger/process-workflow-runs",
+            dispatch_processor: "trigger/process-workflow-schedules",
             dispatch_mode: "trigger_dev",
           },
         })
