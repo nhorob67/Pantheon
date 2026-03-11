@@ -57,7 +57,7 @@ export function DiscordServerMockup({
             <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#23a55a] border-2 border-[#232428]" />
           </div>
           <div>
-            <p className="text-xs font-semibold text-[#f2f3f5]">FarmClaw</p>
+            <p className="text-xs font-semibold text-[#f2f3f5]">Pantheon</p>
             <p className="text-[10px] text-[#23a55a]">Online</p>
           </div>
         </div>

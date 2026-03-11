@@ -2,7 +2,7 @@ import { tool } from "ai";
 import { z } from "zod";
 
 const NWS_BASE_URL = "https://api.weather.gov";
-const USER_AGENT = "FarmClaw/1.0 (contact@farmclaw.com)";
+const USER_AGENT = "Pantheon/1.0 (contact@pantheon.app)";
 
 async function nwsFetch(url: string): Promise<unknown> {
   const res = await fetch(url, {

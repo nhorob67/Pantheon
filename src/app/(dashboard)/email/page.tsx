@@ -38,12 +38,12 @@ export default async function EmailPage() {
         <div>
           <h2 className="font-headline text-2xl font-bold text-foreground">Email</h2>
           <p className="text-foreground/60 text-sm">
-            Emails sent to your FarmClaw address will appear here.
+            Emails sent to your Pantheon address will appear here.
           </p>
         </div>
         <div className="bg-card border border-border rounded-xl p-12 text-center">
           <p className="text-foreground/40 text-sm">
-            No email conversations yet. Send an email to your FarmClaw address to get started.
+            No email conversations yet. Send an email to your Pantheon address to get started.
           </p>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import { generateText, type LanguageModel } from "ai";
-import { farmclawFastModel } from "./client";
+import { pantheonFastModel } from "./client";
 import type { ScoredMemory } from "./memory-scorer";
 
 export interface RerankedMemory extends ScoredMemory {
@@ -95,7 +95,7 @@ export async function rerankCandidates(
       .join("\n");
 
     const { text } = await generateText({
-      model: model ?? farmclawFastModel,
+      model: model ?? pantheonFastModel,
       system: SYSTEM_PROMPT,
       prompt: `Query: "${query}"\n\nPassages:\n${passages}`,
       maxOutputTokens: 100,

@@ -15,7 +15,7 @@ If you're running a single agent (the default), it responds in all channels and 
 
 ## How channel bindings work
 
-Each agent in your FarmClaw workspace can be **bound** to one or more specific Discord channels. When a message comes in on a bound channel, only the assigned agent responds.
+Each agent in your Pantheon workspace can be **bound** to one or more specific Discord channels. When a message comes in on a bound channel, only the assigned agent responds.
 
 Here are the key rules:
 
@@ -25,7 +25,7 @@ Here are the key rules:
 - **One agent per channel** — Each channel can only have one agent bound to it
 
 <Callout variant="info" title="Default agent is required">
-Every FarmClaw workspace must have exactly one agent marked as the default. This agent is the catch-all — it handles DMs and any channel that isn't explicitly bound to another agent.
+Every Pantheon workspace must have exactly one agent marked as the default. This agent is the catch-all — it handles DMs and any channel that isn't explicitly bound to another agent.
 </Callout>
 
 ## Example setup
@@ -50,7 +50,7 @@ You don't need to bind every channel on day one. Start with your default agent h
 
 ### From the dashboard
 
-1. Go to **Settings > Channels** in your FarmClaw dashboard
+1. Go to **Settings > Channels** in your Pantheon dashboard
 2. You'll see a list of your Discord server's channels
 3. For each channel, select which agent should handle it from the dropdown
 4. Channels left as "Default" will be handled by your default agent
@@ -84,7 +84,7 @@ You don't need to configure delegation rules. Each agent's personality preset in
 
 ## Channel configuration and security
 
-Your Discord channel configuration is **encrypted at rest** in FarmClaw's database. Channel IDs and the mapping between channels and agents are stored using AES encryption, the same standard used for all sensitive data.
+Your Discord channel configuration is **encrypted at rest** in Pantheon's database. Channel IDs and the mapping between channels and agents are stored using AES encryption, the same standard used for all sensitive data.
 
 The configuration is decrypted at runtime when your assistant needs to connect to Discord.
 

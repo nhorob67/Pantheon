@@ -3,10 +3,10 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Trigger FarmClaw inbound email processing (intended for scheduler/cron usage).
+Trigger Pantheon inbound email processing (intended for scheduler/cron usage).
 
 Required environment variables:
-  APP_URL                 Base app URL (example: https://app.farmclaw.com)
+  APP_URL                 Base app URL (example: https://app.pantheon.app)
   EMAIL_PROCESSOR_TOKEN   Token for /api/admin/email/process-inbound auth
 
 Optional environment variables:

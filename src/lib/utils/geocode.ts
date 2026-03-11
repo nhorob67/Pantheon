@@ -22,7 +22,7 @@ export async function geocodeLocation(
   try {
     const res = await fetch(url, {
       headers: {
-        "User-Agent": "FarmClaw/1.0 (https://farmclaw.com)",
+        "User-Agent": "Pantheon/1.0 (https://pantheon.app)",
         Accept: "application/json",
       },
     });

@@ -1,4 +1,4 @@
--- FarmClaw initial schema
+-- Pantheon initial schema
 
 -- Customers
 CREATE TABLE customers (

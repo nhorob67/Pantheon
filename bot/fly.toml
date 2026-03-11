@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for farmclaw-discord-bot on 2026-03-03T19:43:20-06:00
+# fly.toml app configuration file generated for pantheon-discord-bot on 2026-03-03T19:43:20-06:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'farmclaw-discord-bot'
+app = 'pantheon-discord-bot'
 primary_region = 'iad'
 
 [build]

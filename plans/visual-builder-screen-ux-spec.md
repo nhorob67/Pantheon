@@ -1,4 +1,4 @@
-# FarmClaw Visual Builder Screen UX Specification
+# Pantheon Visual Builder Screen UX Specification
 
 Last updated: February 16, 2026  
 Status: Draft (pre-implementation)
@@ -23,7 +23,7 @@ This spec does not cover:
 - A user can identify and fix validation errors without leaving the builder.
 - A user can diagnose a failed run and retry from the failed step without opening external logs.
 
-## 3) Design Anchors (FarmClaw Alignment)
+## 3) Design Anchors (Pantheon Alignment)
 
 Use existing visual language from current dashboard styles:
 - Surface tokens: `bg-bg-deep`, `bg-bg-card`, `bg-bg-dark`, `border-border`, `border-border-light`.

@@ -52,7 +52,7 @@ function HeroTerminal() {
   // Stream response word by word
   const responseLine = "Today's Priorities, Monday, Mar 3";
   const responseWordsArr = responseLine.split(" ");
-  const summaryText = "Spray window looks good this morning. I'd hit the NE quarter first. Seed delivery confirmed for 2 PM at ADM.";
+  const summaryText = "The vendor contract is the most time-sensitive. I'd handle that before the budget review. Client proposal can go out after lunch. Want me to draft it?";
   const summaryWords = summaryText.split(" ");
 
   useEffect(() => {
@@ -75,7 +75,7 @@ function HeroTerminal() {
         <div className="terminal-dots">
           <span /><span /><span />
         </div>
-        <span className="terminal-title">farmclaw</span>
+        <span className="terminal-title">pantheon</span>
       </div>
       <div className="terminal-body">
         {phase >= 0 && (
@@ -111,17 +111,17 @@ function HeroTerminal() {
                   </thead>
                   <tbody>
                     <tr>
-                      <td>Pre-emerge spray, NE quarter</td>
+                      <td>Q1 budget review</td>
                       <td><span className="status-tag ready">Ready</span></td>
-                      <td>Today 6–11 AM</td>
+                      <td>Today 10 AM</td>
                     </tr>
                     <tr>
-                      <td>Seed treatment delivery from ADM</td>
-                      <td><span className="status-tag confirmed">Confirmed</span></td>
+                      <td>Client proposal — Meridian Group</td>
+                      <td><span className="status-tag confirmed">Draft ready</span></td>
                       <td>Today 2 PM</td>
                     </tr>
                     <tr>
-                      <td>FSA acreage report</td>
+                      <td>Vendor contract renewal</td>
                       <td><span className="status-tag due-soon">Due soon</span></td>
                       <td>Friday</td>
                     </tr>
@@ -170,7 +170,7 @@ export function Hero() {
           >
             <div className="hero-badge">
               <span className="dot" style={{ background: "var(--green-bright)" }} />
-              Your operation, organized
+              Your AI team, ready to work
             </div>
           </m.div>
 
@@ -179,7 +179,7 @@ export function Hero() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ type: "spring", stiffness: 80, damping: 20, delay: 0.05 }}
           >
-            Your operation runs on a thousand decisions a season.<br /><em>Your tools should keep up.</em>
+            You run on a thousand decisions a day.<br /><em>Your tools should keep up.</em>
           </m.h1>
 
           <m.p
@@ -188,7 +188,7 @@ export function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            Seed reps. Elevator calls. Employee questions. FSA deadlines. It all lands on you. FarmClaw gives your farm AI assistants that track it all: tasks, grain bids, weather, SOPs, and communication with everyone who needs a piece of your time.
+            Vendor emails. Employee questions. Client deadlines. It all lands on you. Pantheon gives you a team of AI agents in Discord that track it all: tasks, email, SOPs, research, and communication with everyone who needs a piece of your time.
           </m.p>
 
           <m.div

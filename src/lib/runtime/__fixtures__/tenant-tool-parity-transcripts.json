@@ -3,7 +3,7 @@
     "name": "operator-safe-tools",
     "role": "operator",
     "required_tools": ["echo", "time", "hash"],
-    "transcript": "User: can you help?\n/tool echo {\"message\":\"hello from transcript\"}\nSome free text\n/tool time {}\n/tool hash {\"value\":\"farmclaw\"}\n"
+    "transcript": "User: can you help?\n/tool echo {\"message\":\"hello from transcript\"}\nSome free text\n/tool time {}\n/tool hash {\"value\":\"pantheon\"}\n"
   },
   {
     "name": "viewer-safe-tools",

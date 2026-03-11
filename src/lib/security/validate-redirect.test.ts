@@ -20,8 +20,8 @@ describe("validateSameOriginUrl", () => {
   it("accepts same-origin URL", () => {
     assert.equal(
       validateSameOriginUrl(
-        "https://farmclaw.com/api/callback",
-        "https://farmclaw.com/api/connect"
+        "https://pantheon.app/api/callback",
+        "https://pantheon.app/api/connect"
       ),
       true
     );
@@ -31,17 +31,17 @@ describe("validateSameOriginUrl", () => {
     assert.equal(
       validateSameOriginUrl(
         "https://evil.com/steal",
-        "https://farmclaw.com/api/connect"
+        "https://pantheon.app/api/connect"
       ),
       false
     );
   });
 
   it("accepts NEXT_PUBLIC_APP_URL origin", () => {
-    process.env.NEXT_PUBLIC_APP_URL = "https://farmclaw.com";
+    process.env.NEXT_PUBLIC_APP_URL = "https://pantheon.app";
     assert.equal(
       validateSameOriginUrl(
-        "https://farmclaw.com/api/callback",
+        "https://pantheon.app/api/callback",
         "https://localhost:3000/api/connect"
       ),
       true
@@ -50,7 +50,7 @@ describe("validateSameOriginUrl", () => {
 
   it("rejects invalid target URL", () => {
     assert.equal(
-      validateSameOriginUrl("not-a-url", "https://farmclaw.com/api/connect"),
+      validateSameOriginUrl("not-a-url", "https://pantheon.app/api/connect"),
       false
     );
   });
@@ -59,7 +59,7 @@ describe("validateSameOriginUrl", () => {
     assert.equal(
       validateSameOriginUrl(
         "javascript:alert(1)",
-        "https://farmclaw.com/api/connect"
+        "https://pantheon.app/api/connect"
       ),
       false
     );
@@ -69,7 +69,7 @@ describe("validateSameOriginUrl", () => {
     assert.equal(
       validateSameOriginUrl(
         "data:text/html,<h1>hi</h1>",
-        "https://farmclaw.com/api/connect"
+        "https://pantheon.app/api/connect"
       ),
       false
     );
@@ -79,7 +79,7 @@ describe("validateSameOriginUrl", () => {
     assert.equal(
       validateSameOriginUrl(
         "http://127.0.0.1:8080/callback",
-        "https://farmclaw.com/api/connect"
+        "https://pantheon.app/api/connect"
       ),
       false
     );

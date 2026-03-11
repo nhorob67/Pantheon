@@ -1,6 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 
-const DEFAULT_EMAIL_DOMAIN = "farmclaw.com";
+const DEFAULT_EMAIL_DOMAIN = "pantheon.app";
 const MAX_SLUG_LENGTH = 63;
 
 export interface EmailIdentityRecord {
@@ -22,7 +22,7 @@ export class EmailIdentityConflictError extends Error {}
 export class EmailIdentityNotFoundError extends Error {}
 
 function getEmailDomain(): string {
-  return (process.env.FARMCLAW_EMAIL_DOMAIN || DEFAULT_EMAIL_DOMAIN).toLowerCase();
+  return (process.env.PANTHEON_EMAIL_DOMAIN || DEFAULT_EMAIL_DOMAIN).toLowerCase();
 }
 
 function stripToAscii(value: string): string {
@@ -37,7 +37,7 @@ export function slugifyEmailPart(value: string): string {
     .replace(/^-|-$/g, "");
 
   if (!cleaned) {
-    return "farmclaw-account";
+    return "pantheon-account";
   }
 
   return cleaned.slice(0, MAX_SLUG_LENGTH).replace(/-$/, "");
@@ -74,7 +74,7 @@ function buildSlugSeed(input: EnsureEmailIdentityInput): string {
     return input.customerEmail.split("@")[0];
   }
 
-  return `farmclaw-${input.customerId.slice(0, 8)}`;
+  return `pantheon-${input.customerId.slice(0, 8)}`;
 }
 
 export async function getActiveEmailIdentity(

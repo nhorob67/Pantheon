@@ -6,7 +6,7 @@ usage() {
 Send the same AgentMail-style webhook twice and verify duplicate-event idempotency.
 
 Required environment variables:
-  APP_URL                   Base app URL (example: https://staging.farmclaw.com)
+  APP_URL                   Base app URL (example: https://staging.pantheon.app)
   AGENTMAIL_WEBHOOK_SECRET  Webhook secret configured for /api/webhooks/agentmail
 
 Optional:
@@ -22,7 +22,7 @@ fi
 : "${APP_URL:?APP_URL is required}"
 : "${AGENTMAIL_WEBHOOK_SECRET:?AGENTMAIL_WEBHOOK_SECRET is required}"
 
-TO_EMAIL="${TO_EMAIL:-unknown-$(date +%s)-$RANDOM@farmclaw.com}"
+TO_EMAIL="${TO_EMAIL:-unknown-$(date +%s)-$RANDOM@pantheon.app}"
 PROVIDER_EMAIL_ID="idem-$(date +%s)-$RANDOM"
 SVIX_ID="idempotency-$(date +%s)-$RANDOM"
 SVIX_TIMESTAMP="$(date +%s)"
@@ -45,11 +45,11 @@ const payload = {
     id: process.env.PROVIDER_EMAIL_ID,
     from: "idempotency-check@example.net",
     to: [process.env.TO_EMAIL],
-    subject: "FarmClaw webhook idempotency validation",
+    subject: "Pantheon webhook idempotency validation",
     message_id: `<${process.env.PROVIDER_EMAIL_ID}@agentmail.test>`,
     attachments_count: 0,
     headers: {
-      "x-farmclaw-original-to": process.env.TO_EMAIL,
+      "x-pantheon-original-to": process.env.TO_EMAIL,
     },
   },
 };

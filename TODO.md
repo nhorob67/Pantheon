@@ -1,4 +1,4 @@
-# FarmClaw — Launch TODO
+# Pantheon — Launch TODO
 
 > Generated 2026-03-01. Overall completion: ~78%.
 
@@ -34,12 +34,12 @@ Copy `.env.local.example` → `.env.local` and fill in values.
 | `OPENAI_API_KEY` | OpenAI | platform.openai.com → API Keys — used for embeddings (text-embedding-3-small) + Whisper |
 | `OPENROUTER_API_KEY` | OpenRouter | openrouter.ai → Keys — used for custom skill gen/test + docs AI |
 | `DISCORD_BOT_TOKEN` | Discord | discord.com/developers → Application → Bot → Token |
-| `FARMCLAW_BOT_SECRET` | Self-generated | Shared secret between bot and SaaS API — `openssl rand -hex 32` |
+| `PANTHEON_BOT_SECRET` | Self-generated | Shared secret between bot and SaaS API — `openssl rand -hex 32` |
 | `NEXT_PUBLIC_APP_URL` | — | `http://localhost:3000` for local dev |
 | `ENCRYPTION_KEY` | Self-generated | `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"` |
 | `ENCRYPTION_KEY_PREVIOUS` | Self-generated | Only needed during key rotation — leave blank normally |
 | `ADMIN_EMAILS` | — | Your email address (comma-separated for multiple) |
-| `FARMCLAW_EMAIL_DOMAIN` | — | `farmclaw.com` (or your dev domain) |
+| `PANTHEON_EMAIL_DOMAIN` | — | `pantheon.app` (or your dev domain) |
 | `AGENTMAIL_API_KEY` | AgentMail | agentmail.to dashboard |
 | `AGENTMAIL_WEBHOOK_SECRET` | AgentMail | Webhook settings in AgentMail dashboard |
 | `AGENTMAIL_API_BASE_URL` | AgentMail | `https://api.agentmail.to` (default) |
@@ -65,20 +65,20 @@ Set **all** of the following in **Vercel → Project → Settings → Environmen
 | `NEXT_PUBLIC_SUPABASE_URL` | Same as dev — Project Settings → API → Project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Same as dev — Project Settings → API → `anon` `public` key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Same as dev — Project Settings → API → `service_role` key |
-| `NEXT_PUBLIC_APP_URL` | `https://farmclaw.com` (your production domain) |
+| `NEXT_PUBLIC_APP_URL` | `https://pantheon.app` (your production domain) |
 | `STRIPE_SECRET_KEY` | Live key `sk_live_...` (switch from test) |
-| `STRIPE_WEBHOOK_SECRET` | Create a production webhook endpoint in Stripe dashboard pointing to `https://farmclaw.com/api/webhooks/stripe` |
+| `STRIPE_WEBHOOK_SECRET` | Create a production webhook endpoint in Stripe dashboard pointing to `https://pantheon.app/api/webhooks/stripe` |
 | `STRIPE_PRICE_ID` | Live price ID for $40/mo subscription |
 | `STRIPE_METERED_PRICE_ID` | Live price ID for metered usage |
 | `ANTHROPIC_API_KEY` | Same as dev — console.anthropic.com → API Keys |
 | `OPENAI_API_KEY` | Same as dev — platform.openai.com → API Keys |
 | `OPENROUTER_API_KEY` | Same as dev — openrouter.ai → Keys |
 | `DISCORD_BOT_TOKEN` | Same as dev — discord.com/developers → Bot → Token |
-| `FARMCLAW_BOT_SECRET` | Same as dev — must match the value in Fly.io |
+| `PANTHEON_BOT_SECRET` | Same as dev — must match the value in Fly.io |
 | `ENCRYPTION_KEY` | Same as dev (or generate a new one for prod) |
 | `ENCRYPTION_KEY_PREVIOUS` | Only needed during key rotation — leave blank normally |
 | `ADMIN_EMAILS` | Your email address (comma-separated for multiple) |
-| `FARMCLAW_EMAIL_DOMAIN` | `farmclaw.com` |
+| `PANTHEON_EMAIL_DOMAIN` | `pantheon.app` |
 | `AGENTMAIL_API_KEY` | Same as dev — agentmail.to dashboard |
 | `AGENTMAIL_WEBHOOK_SECRET` | Same as dev — AgentMail webhook settings |
 | `AGENTMAIL_API_BASE_URL` | `https://api.agentmail.to` |
@@ -97,13 +97,13 @@ Set **all** of the following in **Vercel → Project → Settings → Environmen
 
 ### 1c. Production — Fly.io (Discord Bot)
 
-Set these via `fly secrets set` in the `farmclaw-discord-bot` app:
+Set these via `fly secrets set` in the `pantheon-discord-bot` app:
 
 | Variable | Notes |
 |----------|-------|
 | `DISCORD_BOT_TOKEN` | Same bot token as SaaS (single shared bot) |
-| `FARMCLAW_BOT_SECRET` | Must match the value in Vercel |
-| `FARMCLAW_API_URL` | `https://farmclaw.com` (production SaaS URL) |
+| `PANTHEON_BOT_SECRET` | Must match the value in Vercel |
+| `PANTHEON_API_URL` | `https://pantheon.app` (production SaaS URL) |
 | `PORT` | `8080` (Fly.io injects this, matches `fly.toml`) |
 
 ### 1d. Cloudflare Worker (Email Routing)
@@ -112,8 +112,8 @@ Set in `infra/cloudflare-email-worker/wrangler.toml`:
 
 | Variable | Notes |
 |----------|-------|
-| `ROOT_DOMAIN` | `farmclaw.com` |
-| `FORWARD_TO` | `ingress@inbound.farmclaw.com` (AgentMail ingress address) |
+| `ROOT_DOMAIN` | `pantheon.app` |
+| `FORWARD_TO` | `ingress@inbound.pantheon.app` (AgentMail ingress address) |
 | `BLOCKED_SENDERS` | Optional comma-separated blocklist |
 
 ### 1e. Missing from `.env.local.example`
@@ -193,7 +193,7 @@ The following vars are used in code but **not listed** in the example file — a
 - [ ] Create AgentMail account
 - [ ] Get API key and webhook secret
 - [ ] Set up webhook endpoint → `https://yourdomain.com/api/webhooks/agentmail`
-- [ ] Configure email domain (farmclaw.com) for sending
+- [ ] Configure email domain (pantheon.app) for sending
 
 ### Resend (Transitional Email Fallback)
 - [ ] Get API key and webhook secret
@@ -202,7 +202,7 @@ The following vars are used in code but **not listed** in the example file — a
 
 ### Cloudflare (Email Routing Worker)
 - [ ] Deploy worker from `infra/cloudflare-email-worker/`
-- [ ] Configure DNS MX records for farmclaw.com
+- [ ] Configure DNS MX records for pantheon.app
 - [ ] Set `ROOT_DOMAIN` and `FORWARD_TO` in `wrangler.toml`
 - [ ] Test inbound email routing end-to-end
 
@@ -215,13 +215,13 @@ The following vars are used in code but **not listed** in the example file — a
 - [ ] Connect GitHub repo to Vercel
 - [ ] Set all env vars from section 1b
 - [ ] Verify `npm run build` passes
-- [ ] Set up custom domain (farmclaw.com)
+- [ ] Set up custom domain (pantheon.app)
 - [ ] Enable Vercel Cron if using minute-level scheduling
 
 ### Fly.io (Discord Bot)
 - [ ] Install Fly CLI (`brew install flyctl`)
 - [ ] `cd bot && fly launch` (or `fly deploy` if app already created)
-- [ ] `fly secrets set DISCORD_BOT_TOKEN=... FARMCLAW_BOT_SECRET=... FARMCLAW_API_URL=...`
+- [ ] `fly secrets set DISCORD_BOT_TOKEN=... PANTHEON_BOT_SECRET=... PANTHEON_API_URL=...`
 - [ ] Verify single machine running in `iad` region
 - [ ] Monitor via `fly logs`
 

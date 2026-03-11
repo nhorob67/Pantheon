@@ -21,7 +21,7 @@ function callbackPage(message: string, success: boolean): string {
   const safeMessage = escapeHtml(message);
   return `<!DOCTYPE html>
 <html>
-<head><title>FarmClaw - Composio</title></head>
+<head><title>Pantheon - Composio</title></head>
 <body style="font-family:sans-serif;text-align:center;padding:60px 20px;background:#0f1209;color:#f0ece4">
   <h2>${success ? "Connected" : "Error"}</h2>
   <p>${safeMessage}</p>

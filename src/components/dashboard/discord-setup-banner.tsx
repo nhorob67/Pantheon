@@ -75,7 +75,7 @@ export function DiscordSetupBanner({
           </span>
           <div>
             <p className="text-sm font-semibold text-text-primary">
-              Add the FarmClaw Bot to Your Server
+              Add the Pantheon Bot to Your Server
             </p>
             <p className="text-xs text-text-dim mt-0.5">
               Click below to invite the bot. You&apos;ll need &ldquo;Manage

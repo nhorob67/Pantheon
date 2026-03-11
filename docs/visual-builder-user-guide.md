@@ -1,10 +1,10 @@
-# FarmClaw Visual Builder User Guide
+# Pantheon Visual Builder User Guide
 
 Last updated: February 16, 2026
 
 ## 1) Who This Is For
 
-This guide is for operators who build and run workflow automations from the FarmClaw dashboard without calling APIs directly.
+This guide is for operators who build and run workflow automations from the Pantheon dashboard without calling APIs directly.
 
 ## 2) Accessing The Builder
 

@@ -97,9 +97,9 @@ export async function POST(request: Request) {
   }
 
   const rawBody = await request.text();
-  const signature = request.headers.get("x-farmclaw-signature");
-  const eventId = request.headers.get("x-farmclaw-event-id");
-  const timestamp = request.headers.get("x-farmclaw-timestamp");
+  const signature = request.headers.get("x-pantheon-signature");
+  const eventId = request.headers.get("x-pantheon-event-id");
+  const timestamp = request.headers.get("x-pantheon-timestamp");
 
   if (!signature || !eventId || !timestamp) {
     await trackEmailWebhookOutcome({
@@ -169,9 +169,9 @@ export async function POST(request: Request) {
       event_type: eventType,
       payload: event,
       headers: {
-        "x-farmclaw-signature": signature,
-        "x-farmclaw-event-id": eventId,
-        "x-farmclaw-timestamp": timestamp,
+        "x-pantheon-signature": signature,
+        "x-pantheon-event-id": eventId,
+        "x-pantheon-timestamp": timestamp,
       },
     });
 

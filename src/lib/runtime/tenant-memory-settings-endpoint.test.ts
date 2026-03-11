@@ -36,7 +36,7 @@ function createTestEndpoint(config: TestDependenciesConfig = {}) {
   const endpoint = createTenantMemorySettingsEndpoint({
     async resolveUser() {
       if (config.user === undefined) {
-        return { id: "user-1", email: "ops@farmclaw.test" };
+        return { id: "user-1", email: "ops@pantheon.test" };
       }
       return config.user;
     },

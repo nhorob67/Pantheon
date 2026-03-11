@@ -1,11 +1,11 @@
-# FarmClaw Memory Vault Implementation Checklist
+# Pantheon Memory Vault Implementation Checklist
 
 Last updated: February 15, 2026  
 Status: Completed
 
 ## 1) Objective
 
-Implement a hybrid memory stack for FarmClaw:
+Implement a hybrid memory stack for Pantheon:
 1. Preserve OpenClaw native memory as baseline.
 2. Add per-instance local-vault settings and operational controls.
 3. Expose authenticated dashboard controls and API contracts.

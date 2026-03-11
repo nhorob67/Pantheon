@@ -1,7 +1,7 @@
 import { generateObject, type LanguageModel } from "ai";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { farmclawFastModel } from "./client";
+import { pantheonFastModel } from "./client";
 import { writeMemoryRecord } from "./memory-record-writer";
 import type { MemoryCaptureLevel } from "@/types/memory";
 
@@ -102,7 +102,7 @@ export async function maybeGenerateSummary(input: SummarizeInput): Promise<void>
 
   // Generate summary via structured output
   const result = await generateObject({
-    model: input.model ?? farmclawFastModel,
+    model: input.model ?? pantheonFastModel,
     schema: SummarySchema,
     maxOutputTokens: MAX_OUTPUT_TOKENS,
     temperature: 0.3,

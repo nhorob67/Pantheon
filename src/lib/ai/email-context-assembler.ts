@@ -21,7 +21,7 @@ interface EmailAssembleInput {
 }
 
 function buildFallbackPrompt(): string {
-  return `# FarmClaw Assistant
+  return `# Pantheon Assistant
 
 You are a helpful farm AI assistant. You help Upper Midwest row crop farmers with daily operations, grain marketing, weather monitoring, and scale ticket management.
 
@@ -77,7 +77,7 @@ export async function assembleEmailContext(
   if (knowledgeSection) systemPrompt += `\n\n${knowledgeSection}`;
 
   // Append email-specific context
-  const agentName = agent?.display_name || "FarmClaw Assistant";
+  const agentName = agent?.display_name || "Pantheon Assistant";
   systemPrompt += `
 
 ## Email Channel Context

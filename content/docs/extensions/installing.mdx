@@ -1,6 +1,6 @@
 ---
 title: Installing Extensions
-description: Install extensions, manage trust policies, and monitor extension health in your FarmClaw workspace.
+description: Install extensions, manage trust policies, and monitor extension health in your Pantheon workspace.
 section: Extensions
 order: 2
 icon: Download
@@ -13,15 +13,15 @@ This guide covers the complete extension installation workflow: configuring your
 
 ## Trust policies
 
-Every FarmClaw account has an extension trust policy that controls which extensions can be installed. The trust policy has two components:
+Every Pantheon account has an extension trust policy that controls which extensions can be installed. The trust policy has two components:
 
 ### Allowed source types
 
 The `allowed_source_types` list determines which source types you permit at all. By default, all five source types are allowed:
 
-- `internal` -- FarmClaw first-party extensions
+- `internal` -- Pantheon first-party extensions
 - `local` -- Extensions bundled with the platform
-- `clawhub` -- FarmClaw marketplace packages
+- `clawhub` -- Pantheon marketplace packages
 - `npm` -- Node package registry packages
 - `git` -- Git repository extensions
 
@@ -35,7 +35,7 @@ The `require_verified_source_types` list determines which allowed sources must b
 - `git`
 - `clawhub`
 
-Internal and local sources do not support verification -- they are implicitly trusted because FarmClaw or your deployment controls them.
+Internal and local sources do not support verification -- they are implicitly trusted because Pantheon or your deployment controls them.
 
 <Callout variant="info" title="Default trust policy">
 Out of the box, your trust policy allows all source types and requires verification for npm, git, and clawhub. This provides a balanced security posture: first-party and local extensions are always trusted, while third-party sources must be verified.
@@ -64,7 +64,7 @@ If you set a source type to require verification but then disallow that source e
 
 ### How trust evaluation works
 
-When you attempt to install an extension, FarmClaw evaluates it against your trust policy in two steps:
+When you attempt to install an extension, Pantheon evaluates it against your trust policy in two steps:
 
 1. **Source type check** -- Is the extension's source type in your `allowed_source_types`? If not, the install is blocked.
 2. **Verification check** -- Is the source type in your `require_verified_source_types`? If yes, is the extension marked as verified? If it requires verification and is not verified, the install is blocked.
@@ -81,17 +81,17 @@ Browse the [Marketplace](/docs/extensions/marketplace) and find the extension yo
 
 ### Step 2: Trust policy check
 
-FarmClaw automatically evaluates the extension against your trust policy. If the extension is blocked, you receive an error message explaining the reason (e.g., "source type 'npm' is blocked by trust policy" or "extension is unverified for source type 'clawhub'").
+Pantheon automatically evaluates the extension against your trust policy. If the extension is blocked, you receive an error message explaining the reason (e.g., "source type 'npm' is blocked by trust policy" or "extension is unverified for source type 'clawhub'").
 
 ### Step 3: Version resolution
 
-FarmClaw resolves the target version. By default, this is the latest published version. If you are upgrading an existing installation, the latest version that is newer than your current version is selected.
+Pantheon resolves the target version. By default, this is the latest published version. If you are upgrading an existing installation, the latest version that is newer than your current version is selected.
 
 You can optionally **pin** an installation to a specific version. Pinned installations do not receive automatic upgrades through the rollout system.
 
 ### Step 4: Operation queued
 
-FarmClaw creates an installation record (or updates an existing one) and queues an operation. The operation tracks the installation's progress:
+Pantheon creates an installation record (or updates an existing one) and queues an operation. The operation tracks the installation's progress:
 
 | Operation field | Description |
 |---|---|
@@ -101,7 +101,7 @@ FarmClaw creates an installation record (or updates an existing one) and queues 
 
 ### Step 5: Execution
 
-The queued operation is picked up by FarmClaw's operation processor. It installs the extension package, configures it for your workspace, and updates the installation status.
+The queued operation is picked up by Pantheon's operation processor. It installs the extension package, configures it for your workspace, and updates the installation status.
 
 ### Step 6: Confirmation
 
@@ -142,7 +142,7 @@ If an extension update causes problems, you can revert to the previous version.
 2. Find the extension in the **Installed** section.
 3. Click **Queue Rollback**.
 
-FarmClaw queues a rollback operation that reverts the installation to the previous version. The installation status changes to `rollback_pending` and then to `rolled_back` once complete.
+Pantheon queues a rollback operation that reverts the installation to the previous version. The installation status changes to `rollback_pending` and then to `rolled_back` once complete.
 
 <Callout variant="tip" title="Rollbacks are non-destructive">
 A rollback changes the active version but does not delete the newer version from the catalog. You can upgrade again later when a fix is available.
@@ -150,7 +150,7 @@ A rollback changes the active version but does not delete the newer version from
 
 ## Rollout system
 
-When extension authors publish new versions, FarmClaw uses a staged rollout system to deploy updates safely across all installations. This prevents a bad update from affecting every customer at once.
+When extension authors publish new versions, Pantheon uses a staged rollout system to deploy updates safely across all installations. This prevents a bad update from affecting every customer at once.
 
 ### Rollout rings
 
@@ -166,7 +166,7 @@ The rollout advances from canary to standard to delayed, pausing between rings t
 
 ### Gate policy
 
-Between each ring, FarmClaw evaluates the update against health thresholds called the **gate policy**. If any threshold is exceeded, the rollout is halted and affected installations are rolled back.
+Between each ring, Pantheon evaluates the update against health thresholds called the **gate policy**. If any threshold is exceeded, the rollout is halted and affected installations are rolled back.
 
 | Metric | Default threshold | Description |
 |---|---|---|
@@ -176,7 +176,7 @@ Between each ring, FarmClaw evaluates the update against health thresholds calle
 | **Max hard error rate** | 3% | Maximum percentage of installations with unrecoverable errors |
 
 <Callout variant="warning" title="Automatic rollback on threshold breach">
-If the gate policy thresholds are exceeded during a rollout, FarmClaw automatically halts the rollout and rolls back affected installations. This protects your workspace from bad updates.
+If the gate policy thresholds are exceeded during a rollout, Pantheon automatically halts the rollout and rolls back affected installations. This protects your workspace from bad updates.
 </Callout>
 
 ### Rollout statuses

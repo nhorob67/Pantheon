@@ -2,6 +2,7 @@ import { Nav } from "@/components/landing/nav";
 import { Hero } from "@/components/landing/hero";
 import { ScrollingTicker } from "@/components/landing/scrolling-ticker";
 import { ConversationShowcase } from "@/components/landing/features";
+import { PlatformGrid } from "@/components/landing/platform-grid";
 import { HowItWorks } from "@/components/landing/how-it-works";
 import { TeamSection } from "@/components/landing/team-section";
 import { Channels } from "@/components/landing/channels";
@@ -18,8 +19,9 @@ export default function LandingPage() {
       <Hero />
       <ScrollingTicker />
       <ConversationShowcase />
-      <HowItWorks />
+      <PlatformGrid />
       <TeamSection />
+      <HowItWorks />
       <Channels />
       <TrustSection />
       <SocialProof />

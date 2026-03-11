@@ -4,7 +4,7 @@ export function Footer() {
   return (
     <footer className="landing-footer">
       <div>
-        <div className="footer-logo">Farm<span>Claw</span></div>
+        <div className="footer-logo">Panthe<span>on</span></div>
         <div className="footer-built">Built in Fargo, ND</div>
       </div>
       <div className="footer-links">

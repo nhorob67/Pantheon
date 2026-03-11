@@ -22,7 +22,7 @@ export function AdminSidebar() {
     <aside className="w-64 border-r border-border bg-card min-h-screen px-4 py-6 hidden md:block">
       <Link href="/admin" className="flex items-center gap-2 px-3 mb-2">
         <span className="font-display text-xl font-bold text-foreground">
-          FarmClaw
+          Pantheon
         </span>
         <span className="text-xs font-mono bg-destructive/10 text-destructive px-2 py-0.5 rounded-full">
           Admin

@@ -23,7 +23,7 @@ BEGIN
       new_qual := regexp_replace(
         new_qual,
         '\(\s*select\s+auth\.uid\(\)\s*\)',
-        '__farmclaw_auth_uid_token__',
+        '__pantheon_auth_uid_token__',
         'gi'
       );
       new_qual := regexp_replace(
@@ -34,7 +34,7 @@ BEGIN
       );
       new_qual := replace(
         new_qual,
-        '__farmclaw_auth_uid_token__',
+        '__pantheon_auth_uid_token__',
         '(select auth.uid())'
       );
     END IF;
@@ -43,7 +43,7 @@ BEGIN
       new_with_check := regexp_replace(
         new_with_check,
         '\(\s*select\s+auth\.uid\(\)\s*\)',
-        '__farmclaw_auth_uid_token__',
+        '__pantheon_auth_uid_token__',
         'gi'
       );
       new_with_check := regexp_replace(
@@ -54,7 +54,7 @@ BEGIN
       );
       new_with_check := replace(
         new_with_check,
-        '__farmclaw_auth_uid_token__',
+        '__pantheon_auth_uid_token__',
         '(select auth.uid())'
       );
     END IF;

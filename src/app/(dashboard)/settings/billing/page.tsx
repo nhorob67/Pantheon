@@ -153,7 +153,7 @@ function ActiveCard() {
       <div className="flex items-center gap-3">
         <CreditCard className="w-5 h-5 text-foreground/40" />
         <div>
-          <p className="font-medium text-sm">FarmClaw Standard</p>
+          <p className="font-medium text-sm">Pantheon Standard</p>
           <p className="text-xs text-foreground/50">
             <span className="font-display text-lg font-bold text-foreground">$50</span>
             /month

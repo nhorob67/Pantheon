@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-FarmClaw is a managed OpenClaw hosting platform for Upper Midwest row crop farmers. Each customer gets a fully configured multi-agent AI assistant system accessible through their farm's Discord server. The platform handles onboarding, billing ($40/month + metered API usage), farm skill provisioning, container orchestration, and an extension marketplace.
+Pantheon is a managed OpenClaw hosting platform for Upper Midwest row crop farmers. Each customer gets a fully configured multi-agent AI assistant system accessible through their farm's Discord server. The platform handles onboarding, billing ($40/month + metered API usage), farm skill provisioning, container orchestration, and an extension marketplace.
 
-See `farmclaw-prd.md` for the full product requirements document.
+See `pantheon-prd.md` for the full product requirements document.
 
 ## Current Status
 

@@ -51,7 +51,7 @@ export const useOnboarding = create<OnboardingState>()(
       reset: () => set(initialState),
     }),
     {
-      name: "farmclaw-onboarding-v3",
+      name: "pantheon-onboarding-v3",
       storage: createJSONStorage(() => sessionStorage),
       version: 3,
       partialize: (state) => ({

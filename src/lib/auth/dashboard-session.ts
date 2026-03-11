@@ -16,7 +16,7 @@ interface CachedTenant {
   status: string;
 }
 
-export const TENANT_SELECTION_COOKIE_NAME = "farmclaw_selected_tenant_id";
+export const TENANT_SELECTION_COOKIE_NAME = "pantheon_selected_tenant_id";
 
 /**
  * Per-request cached instance lookup. Deduplicates the identical

@@ -13,7 +13,7 @@ import {
   UserCheck,
 } from "lucide-react";
 
-export const WORKFLOW_NODE_DRAG_MIME = "application/x-farmclaw-workflow-node-type";
+export const WORKFLOW_NODE_DRAG_MIME = "application/x-pantheon-workflow-node-type";
 const FOCUS_RING_CLASS =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-card";
 

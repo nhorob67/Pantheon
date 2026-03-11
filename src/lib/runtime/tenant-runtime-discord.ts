@@ -2,7 +2,7 @@ const DISCORD_API_BASE_URL = "https://discord.com/api/v10";
 const DISCORD_CANARY_MAX_CONTENT_LENGTH = 1900;
 const DISCORD_RUNTIME_MAX_CONTENT_LENGTH = 1900;
 const DISCORD_RUNTIME_MAX_MESSAGE_PARTS = 4;
-export const DISCORD_CANARY_PREFIX = "[FarmClaw Canary]";
+export const DISCORD_CANARY_PREFIX = "[Pantheon Canary]";
 
 export interface DiscordSendMessageInput {
   botToken: string;
@@ -118,7 +118,7 @@ function splitRuntimePartsWithLimit(content: string, total: number): string[] {
 export function buildDiscordRuntimeResponseParts(content: string): string[] {
   const normalized = content.trim();
   if (!normalized) {
-    return ["[FarmClaw] Received empty runtime content."];
+    return ["[Pantheon] Received empty runtime content."];
   }
 
   const total = resolveRuntimeMessagePartsTotal(normalized.length);

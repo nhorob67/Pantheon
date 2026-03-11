@@ -14,7 +14,7 @@
  */
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-const DEFAULT_TENANT_NAME = "FarmClaw Tenant";
+const DEFAULT_TENANT_NAME = "Pantheon Tenant";
 const BACKFILL_SEED_MIGRATION = "00036_tenant_runtime_foundation";
 const PAGE_SIZE = 500;
 

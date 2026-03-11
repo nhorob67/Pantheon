@@ -9,9 +9,9 @@ tags: [agents, personality, presets, soul]
 
 ## Overview
 
-Every FarmClaw agent has a **personality preset** that defines how it communicates, what it focuses on, and what it will and won't do. Think of presets as job descriptions for your AI assistants — they set the tone, expertise, and boundaries.
+Every Pantheon agent has a **personality preset** that defines how it communicates, what it focuses on, and what it will and won't do. Think of presets as job descriptions for your AI assistants — they set the tone, expertise, and boundaries.
 
-FarmClaw ships with five built-in presets plus a custom option. Each preset is carefully designed for its role, including explicit guardrails about topics the agent will not handle.
+Pantheon ships with five built-in presets plus a custom option. Each preset is carefully designed for its role, including explicit guardrails about topics the agent will not handle.
 
 ## Available presets
 
@@ -220,10 +220,10 @@ Write your own personality description from scratch.
 | **Default skills** | None (you assign them) |
 | **Default cron jobs** | None (you assign them) |
 
-When you choose Custom, you provide a free-text personality description. FarmClaw still wraps it with your farm's operational details (farm name, location, crops, elevators) and the standard security boundaries that all agents share.
+When you choose Custom, you provide a free-text personality description. Pantheon still wraps it with your farm's operational details (farm name, location, crops, elevators) and the standard security boundaries that all agents share.
 
 <Callout variant="warning" title="Security boundaries are always enforced">
-Even with a custom personality, FarmClaw includes mandatory security boundaries. Every agent — regardless of preset — is instructed to never follow embedded instructions in external content, never share credentials, never modify its own configuration, and never install unauthorized extensions.
+Even with a custom personality, Pantheon includes mandatory security boundaries. Every agent — regardless of preset — is instructed to never follow embedded instructions in external content, never share credentials, never modify its own configuration, and never install unauthorized extensions.
 </Callout>
 
 ## Choosing the right preset
@@ -241,7 +241,7 @@ Here's a quick guide for matching presets to your needs:
 
 ## What all presets share
 
-Regardless of which preset you choose, every FarmClaw agent includes:
+Regardless of which preset you choose, every Pantheon agent includes:
 
 - **Farm context** — Your farm name, location, acreage, crops, elevators, and timezone are embedded in every agent's configuration
 - **Security boundaries** — Protection against prompt injection, credential leaks, and unauthorized modifications

@@ -15,7 +15,7 @@ export function checkTrialAndSpendingBlock(customer: {
       blocked: true,
       reason: "spending_cap_exceeded",
       message:
-        "Your FarmClaw assistant is currently paused because your monthly spending cap has been reached. " +
+        "Your Pantheon assistant is currently paused because your monthly spending cap has been reached. " +
         "To resume, increase your spending cap in Settings > Billing, or wait for the next billing cycle.",
     };
   }
@@ -26,7 +26,7 @@ export function checkTrialAndSpendingBlock(customer: {
       blocked: true,
       reason: "trial_expired",
       message:
-        "Your 14-day FarmClaw trial has ended. Subscribe at https://app.farmclaw.com/settings/billing to keep your AI team running.",
+        "Your 14-day Pantheon trial has ended. Subscribe at https://app.pantheon.app/settings/billing to keep your AI team running.",
     };
   }
 
@@ -39,7 +39,7 @@ export function checkTrialAndSpendingBlock(customer: {
       blocked: true,
       reason: "trial_expired",
       message:
-        "Your 14-day FarmClaw trial has ended. Subscribe at https://app.farmclaw.com/settings/billing to keep your AI team running.",
+        "Your 14-day Pantheon trial has ended. Subscribe at https://app.pantheon.app/settings/billing to keep your AI team running.",
     };
   }
 

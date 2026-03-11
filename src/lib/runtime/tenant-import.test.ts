@@ -20,7 +20,7 @@ test("tenant import dry-run accepts valid full-scope records", () => {
         table: "tenants",
         record: {
           id: TENANT_ID,
-          name: "FarmClaw Tenant",
+          name: "Pantheon Tenant",
         },
       },
       {

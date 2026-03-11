@@ -80,7 +80,7 @@ Use:
 Example crontab entry (every minute):
 
 ```cron
-* * * * * APP_URL=https://<your-app-domain> EMAIL_PROCESSOR_TOKEN=<token> /bin/bash /path/to/repo/scripts/email/process-inbound-cron.sh >> /var/log/farmclaw-email-processor.log 2>&1
+* * * * * APP_URL=https://<your-app-domain> EMAIL_PROCESSOR_TOKEN=<token> /bin/bash /path/to/repo/scripts/email/process-inbound-cron.sh >> /var/log/pantheon-email-processor.log 2>&1
 ```
 
 ## Expected Outcomes

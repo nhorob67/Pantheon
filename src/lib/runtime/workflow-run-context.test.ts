@@ -27,7 +27,7 @@ test("buildWorkflowRunContextPayload includes request trace id for worker propag
 test("buildWorkflowRunContextCommand encodes context and trace env assignments", () => {
   const command = buildWorkflowRunContextCommand(BASE_INPUT, "console.log('ok')");
 
-  assert.match(command, /FARMCLAW_RUN_CONTEXT_B64='/);
-  assert.match(command, /FARMCLAW_REQUEST_TRACE_ID='request-trace-1'/);
+  assert.match(command, /PANTHEON_RUN_CONTEXT_B64='/);
+  assert.match(command, /PANTHEON_REQUEST_TRACE_ID='request-trace-1'/);
   assert.match(command, /node -e '/);
 });

@@ -1,4 +1,4 @@
-# FarmClaw — Product Requirements Document
+# Pantheon — Product Requirements Document
 
 **Version:** 1.0
 **Author:** Nick / Nerd Out Inc.
@@ -11,13 +11,13 @@
 
 ### What We're Building
 
-FarmClaw is a managed OpenClaw hosting platform purpose-built for farmers. Each customer gets a fully configured, always-on AI assistant accessible via WhatsApp, Telegram, or Discord. The assistant comes pre-loaded with farm-specific skills and a farm-advisor persona — no technical setup required from the farmer.
+Pantheon is a managed OpenClaw hosting platform purpose-built for farmers. Each customer gets a fully configured, always-on AI assistant accessible via WhatsApp, Telegram, or Discord. The assistant comes pre-loaded with farm-specific skills and a farm-advisor persona — no technical setup required from the farmer.
 
 Think SimpleClaw, but vertical: optimized for agricultural operations with curated skills, farm-aware onboarding, and a persona that understands crop cycles, grain markets, and weather windows.
 
 ### Why It Matters
 
-Farmers check grain prices, weather, and market conditions multiple times per day across scattered websites and apps. FarmClaw consolidates this into a single conversational interface on messaging platforms they already use. The farmer sends a message like "what's corn at the Fargo elevator?" or "what's the spray window look like tomorrow?" and gets an answer — no app to download, no dashboard to check.
+Farmers check grain prices, weather, and market conditions multiple times per day across scattered websites and apps. Pantheon consolidates this into a single conversational interface on messaging platforms they already use. The farmer sends a message like "what's corn at the Fargo elevator?" or "what's the spray window look like tomorrow?" and gets an answer — no app to download, no dashboard to check.
 
 ### Business Model
 
@@ -48,7 +48,7 @@ Initial distribution: AI on Your Farm course buyers, Fullstack Ag community memb
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    FARMCLAW PLATFORM                     │
+│                    PANTHEON PLATFORM                     │
 │                                                         │
 │  ┌─────────────┐    ┌──────────────┐   ┌─────────────┐ │
 │  │  Dashboard   │    │ Provisioning │   │  Billing &   │ │
@@ -249,7 +249,7 @@ The onboarding wizard is critical — it collects the information needed to gene
 
 **Step 5: Review & Launch**
 - Summary of all settings
-- "Launch My FarmClaw" button
+- "Launch My Pantheon" button
 - Provisioning begins (show progress: Creating instance → Installing skills → Connecting channel → Running health check → Live!)
 
 ---
@@ -269,7 +269,7 @@ When a customer completes onboarding, the dashboard calls the provisioning API w
 
 ### 5.2 Container Configuration
 
-**Base Docker Image: `farmclaw/openclaw:latest`**
+**Base Docker Image: `pantheon/openclaw:latest`**
 
 Built from the official OpenClaw image with farm skills pre-installed:
 
@@ -327,7 +327,7 @@ exec openclaw gateway --port 18789
 
 ```jsonc
 {
-  "name": "FarmClaw",
+  "name": "Pantheon",
   "version": "1.0.0",
 
   // LLM Configuration — platform API key, proxied for metering
@@ -417,9 +417,9 @@ exec openclaw gateway --port 18789
 **`SOUL.md` (templated per customer):**
 
 ```markdown
-# FarmClaw — Your Farm AI Assistant
+# Pantheon — Your Farm AI Assistant
 
-You are FarmClaw, an AI assistant built specifically for {{FARM_NAME}}.
+You are Pantheon, an AI assistant built specifically for {{FARM_NAME}}.
 You help with daily farm operations, grain marketing decisions, and weather monitoring.
 
 ## About This Operation
@@ -636,7 +636,7 @@ Free, reliable, no authentication required. Use for:
 5. Get observations: `GET https://api.weather.gov/stations/{stationId}/observations/latest`
 
 **Important:** The NWS API requires a `User-Agent` header. Use:
-`User-Agent: FarmClaw/1.0 (contact@farmclaw.com)`
+`User-Agent: Pantheon/1.0 (contact@pantheon.app)`
 
 Use bash `curl` commands to call these endpoints. Parse the JSON response
 to extract relevant fields.
@@ -746,7 +746,7 @@ These are placed in the managed skills directory so they're available to all ins
 
 ### 7.1 Architecture
 
-FarmClaw uses a single platform-owned Anthropic API key. All customer instances route through this key. To meter per-customer usage:
+Pantheon uses a single platform-owned Anthropic API key. All customer instances route through this key. To meter per-customer usage:
 
 **Option A (Recommended for MVP): Log-based metering**
 - Each OpenClaw instance logs API calls with token counts to a local file.
@@ -789,7 +789,7 @@ into the base allocation sizing.
 
 ```
 Stripe Products:
-├── FarmClaw Standard ($40/month, recurring)
+├── Pantheon Standard ($40/month, recurring)
 │   └── Metered component: API Usage (price per 1K tokens, billed monthly)
 ```
 
@@ -822,7 +822,7 @@ Flow:
 1. Validate customer has active subscription
 2. Generate `openclaw.json` from template + farm_profile data
 3. Generate `SOUL.md` from template + farm_profile data
-4. Call Coolify API to create new container from `farmclaw/openclaw:latest`
+4. Call Coolify API to create new container from `pantheon/openclaw:latest`
 5. Mount generated config files as a volume
 6. Attach persistent storage volume for OpenClaw memory/state
 7. Start container
@@ -861,7 +861,7 @@ GET  /api/v1/applications/{uuid} — Status
 DELETE /api/v1/applications/{uuid} — Destroy
 ```
 
-Each customer instance is a Coolify "application" running the `farmclaw/openclaw` Docker image with environment-specific config mounted.
+Each customer instance is a Coolify "application" running the `pantheon/openclaw` Docker image with environment-specific config mounted.
 
 ---
 
@@ -896,7 +896,7 @@ Self-hosted on the Coolify orchestration server. Monitors:
 
 When a farm skill is updated:
 
-1. Push updated skill files to the `farmclaw/openclaw` Docker image repo
+1. Push updated skill files to the `pantheon/openclaw` Docker image repo
 2. Rebuild and push new image tag
 3. Trigger rolling restart of all customer instances via the admin API
 4. Each container pulls the new image on restart
@@ -911,7 +911,7 @@ Admin dashboard page: `/admin/skills-update` — one-click deploy of skill updat
 ### Phase 1: Foundation (Week 1-2)
 - [ ] Set up Hetzner account and provision orchestration server
 - [ ] Install and configure Coolify on orchestration server
-- [ ] Build the `farmclaw/openclaw` Docker image with Playwright + Chromium
+- [ ] Build the `pantheon/openclaw` Docker image with Playwright + Chromium
 - [ ] Write `farm-grain-bids` SKILL.md and test locally
 - [ ] Write `farm-weather` SKILL.md and test locally
 - [ ] Write the SOUL.md template and test with various farm profiles

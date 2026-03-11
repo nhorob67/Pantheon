@@ -1,6 +1,6 @@
 import { generateText, type LanguageModel } from "ai";
 import { decomposeQuery } from "./query-decomposer.ts";
-import { farmclawFastModel } from "./client";
+import { pantheonFastModel } from "./client";
 
 export interface ExpandedQuery {
   original: string;
@@ -44,7 +44,7 @@ export async function expandQuery(query: string, model?: LanguageModel): Promise
 
   try {
     const { text } = await generateText({
-      model: model ?? farmclawFastModel,
+      model: model ?? pantheonFastModel,
       system: SYSTEM_PROMPT,
       prompt: buildUserPrompt(trimmed),
       maxOutputTokens: 150,

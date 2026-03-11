@@ -5,26 +5,26 @@ import { m, LazyMotion, domAnimation, AnimatePresence } from "motion/react";
 
 const PERSONALITY_COLORS: Record<string, string> = {
   general: "var(--accent)",
-  grain: "var(--green-bright)",
-  weather: "#5865F2",
-  "scale-tickets": "#7289da",
-  ops: "var(--accent-light)",
+  ops: "var(--green-bright)",
+  research: "#5865F2",
+  comms: "#60a5fa",
 };
 
 const SKILL_LABELS: Record<string, string> = {
-  "farm-grain-bids": "Grain Bids",
-  "farm-weather": "Weather",
-  "farm-scale-tickets": "Scale Tickets",
-  "farm-tasks": "Tasks",
-  "farm-sops": "SOPs",
+  tasks: "Tasks",
+  email: "Email",
+  research: "Research",
+  sops: "SOPs",
+  scheduling: "Scheduling",
+  documents: "Documents",
+  followups: "Follow-ups",
 };
 
 const CHANNEL_MAP: Record<string, string[]> = {
   general: ["#general"],
-  grain: ["#grain-bids"],
-  weather: ["#weather"],
-  "scale-tickets": ["#grain-bids"],
   ops: ["#operations"],
+  research: ["#research"],
+  comms: ["#comms"],
 };
 
 interface AgentConfig {
@@ -46,32 +46,32 @@ const SETUPS: Setup[] = [
     id: "two-agent",
     label: "2 Agents",
     agents: [
-      { display_name: "Farm Assistant", personality_preset: "general", skills: ["farm-tasks", "farm-weather", "farm-grain-bids"], cron_jobs: { "morning-weather": true }, is_default: true },
-      { display_name: "Operations Lead", personality_preset: "ops", skills: ["farm-tasks", "farm-sops"], cron_jobs: {}, is_default: false },
+      { display_name: "Executive Assistant", personality_preset: "general", skills: ["tasks", "email", "scheduling"], cron_jobs: { "morning-briefing": true }, is_default: true },
+      { display_name: "Operations Lead", personality_preset: "ops", skills: ["tasks", "sops", "documents"], cron_jobs: {}, is_default: false },
     ],
   },
   {
     id: "three-agent",
     label: "3 Agents",
     agents: [
-      { display_name: "Farm Assistant", personality_preset: "general", skills: ["farm-tasks", "farm-weather"], cron_jobs: { "morning-weather": true }, is_default: true },
-      { display_name: "Operations Lead", personality_preset: "ops", skills: ["farm-tasks", "farm-sops"], cron_jobs: {}, is_default: false },
-      { display_name: "Grain Desk", personality_preset: "grain", skills: ["farm-grain-bids", "farm-scale-tickets"], cron_jobs: { "daily-grain-bids": true }, is_default: false },
+      { display_name: "Executive Assistant", personality_preset: "general", skills: ["tasks", "email", "scheduling"], cron_jobs: { "morning-briefing": true }, is_default: true },
+      { display_name: "Operations Lead", personality_preset: "ops", skills: ["tasks", "sops", "documents"], cron_jobs: {}, is_default: false },
+      { display_name: "Research Analyst", personality_preset: "research", skills: ["research", "documents", "followups"], cron_jobs: {}, is_default: false },
     ],
   },
   {
     id: "four-agent",
     label: "Full Team",
     agents: [
-      { display_name: "Farm Assistant", personality_preset: "general", skills: ["farm-tasks"], cron_jobs: {}, is_default: true },
-      { display_name: "Operations Lead", personality_preset: "ops", skills: ["farm-tasks", "farm-sops"], cron_jobs: {}, is_default: false },
-      { display_name: "Grain Desk", personality_preset: "grain", skills: ["farm-grain-bids"], cron_jobs: { "daily-grain-bids": true }, is_default: false },
-      { display_name: "Weather Watch", personality_preset: "weather", skills: ["farm-weather"], cron_jobs: { "morning-weather": true }, is_default: false },
+      { display_name: "Executive Assistant", personality_preset: "general", skills: ["tasks", "scheduling"], cron_jobs: { "morning-briefing": true }, is_default: true },
+      { display_name: "Operations Lead", personality_preset: "ops", skills: ["tasks", "sops", "documents"], cron_jobs: {}, is_default: false },
+      { display_name: "Research Analyst", personality_preset: "research", skills: ["research", "documents"], cron_jobs: {}, is_default: false },
+      { display_name: "Comms Manager", personality_preset: "comms", skills: ["email", "followups", "scheduling"], cron_jobs: {}, is_default: false },
     ],
   },
 ];
 
-const ALL_CHANNELS = ["#general", "#operations", "#grain-bids", "#weather"];
+const ALL_CHANNELS = ["#general", "#operations", "#research", "#comms"];
 
 function getAgentChannels(agent: AgentConfig): string[] {
   if (agent.is_default) return ["#general"];
@@ -88,7 +88,7 @@ function getChannelAgent(channel: string, agents: AgentConfig[]): AgentConfig | 
   return agents.find((a) => a.is_default);
 }
 
-const AGENT_COLORS = ["var(--accent)", "var(--green-bright)", "#5865F2", "#7289da"];
+const AGENT_COLORS = ["var(--accent)", "var(--green-bright)", "#5865F2", "#60a5fa"];
 
 export function TeamSection() {
   const [activeTab, setActiveTab] = useState(0);
@@ -98,6 +98,7 @@ export function TeamSection() {
     <LazyMotion features={domAnimation}>
       <m.section
         className="team-section"
+        id="team"
         initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-80px" }}
@@ -106,7 +107,7 @@ export function TeamSection() {
         <div>
           <div className="section-label">Your Team, Your Way</div>
           <h2 className="section-title">Start simple. Add specialists when you&apos;re ready.</h2>
-          <p className="section-sub">Every farm is different. Start with a single assistant or build a team of specialists, each with its own focus, skills, and Discord channel.</p>
+          <p className="section-sub">Every business is different. Start with a single assistant or build a team of specialists, each with its own focus, skills, and Discord channel.</p>
         </div>
 
         <div className="team-tabs">
@@ -160,7 +161,7 @@ export function TeamSection() {
           </AnimatePresence>
 
           <div className="team-discord">
-            <div className="team-discord-header">Johnson Farms</div>
+            <div className="team-discord-header">Acme Corp</div>
             <div className="team-discord-channels">
               <AnimatePresence mode="wait">
                 {ALL_CHANNELS.map((ch) => {

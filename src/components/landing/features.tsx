@@ -26,132 +26,99 @@ const scenarios: { label: string; frames: ConversationFrame[] }[] = [
               <div style={{ color: "var(--text-dim)", fontSize: 11, textTransform: "uppercase" as const, letterSpacing: 1 }}>Priority</div>
               <div style={{ color: "var(--text-dim)", fontSize: 11, textTransform: "uppercase" as const, letterSpacing: 1 }}>Status</div>
 
-              <div style={{ color: "var(--text-primary)" }}>Pre-emerge spray, NE quarter</div>
+              <div style={{ color: "var(--text-primary)" }}>Q1 budget review</div>
               <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>HIGH</div>
               <div><span className="response-tag good">READY</span></div>
 
-              <div style={{ color: "var(--text-primary)" }}>Seed delivery from ADM</div>
+              <div style={{ color: "var(--text-primary)" }}>Client proposal — Meridian Group</div>
               <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>MED</div>
               <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>2:00 PM</div>
 
-              <div style={{ color: "var(--text-primary)" }}>FSA acreage report</div>
+              <div style={{ color: "var(--text-primary)" }}>Vendor contract renewal</div>
               <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>MED</div>
               <div><span className="response-tag caution">DUE FRI</span></div>
 
-              <div style={{ color: "var(--text-primary)" }}>Soil sample results: review</div>
+              <div style={{ color: "var(--text-primary)" }}>Review contractor invoices</div>
               <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>LOW</div>
               <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>NEW</div>
             </div>
           </div>
         ),
       },
-      { type: "assistant", text: "I'd focus on the spray first. Your window closes at 11 AM. Seed delivery is confirmed. The FSA report can wait until Thursday. Want me to remind you Wednesday evening?", delay: 400 },
+      { type: "assistant", text: "I'd focus on the vendor contract first — it expires Friday and needs sign-off. Budget review is prepped and ready for 10 AM. The Meridian proposal can go out after lunch. Want me to draft it?", delay: 400 },
     ],
   },
   {
     label: "SOPs & Procedures",
     frames: [
-      { type: "user", text: "Walk me through anhydrous application safety", delay: 0 },
+      { type: "user", text: "Walk me through new employee onboarding", delay: 0 },
       {
         type: "assistant",
-        text: "Anhydrous Application: Safety Checklist",
+        text: "New Employee Onboarding Checklist",
         delay: 600,
         richContent: (
           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
               <span style={{ fontSize: 13, color: "var(--text-dim)", minWidth: 24 }}>1.</span>
-              <span style={{ fontSize: 13, color: "var(--text-primary)", flex: 1 }}>PPE check: gloves, goggles, respirator</span>
+              <span style={{ fontSize: 13, color: "var(--text-primary)", flex: 1 }}>IT setup: laptop, email, software access</span>
               <span className="response-tag bad">REQUIRED</span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
               <span style={{ fontSize: 13, color: "var(--text-dim)", minWidth: 24 }}>2.</span>
-              <span style={{ fontSize: 13, color: "var(--text-primary)", flex: 1 }}>Inspect hoses and fittings for leaks</span>
+              <span style={{ fontSize: 13, color: "var(--text-primary)", flex: 1 }}>HR paperwork and benefits enrollment</span>
               <span className="response-tag bad">REQUIRED</span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
               <span style={{ fontSize: 13, color: "var(--text-dim)", minWidth: 24 }}>3.</span>
-              <span style={{ fontSize: 13, color: "var(--text-primary)", flex: 1 }}>Confirm wind speed &lt; 15 mph</span>
-              <span className="response-tag good">CHECK: 8 mph SW</span>
+              <span style={{ fontSize: 13, color: "var(--text-primary)", flex: 1 }}>Team introductions and org chart walkthrough</span>
+              <span className="response-tag good">SCHEDULED</span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0" }}>
               <span style={{ fontSize: 13, color: "var(--text-dim)", minWidth: 24 }}>4.</span>
-              <span style={{ fontSize: 13, color: "var(--text-primary)", flex: 1 }}>Verify field buffer zones</span>
-              <span className="response-tag bad">REQUIRED</span>
+              <span style={{ fontSize: 13, color: "var(--text-primary)", flex: 1 }}>Project orientation and tool training</span>
+              <span className="response-tag caution">WEEK 1</span>
             </div>
           </div>
         ),
       },
-      { type: "assistant", text: "Wind is 8 mph from the southwest. You're clear. Want me to log this application when you're done?", delay: 400 },
+      { type: "assistant", text: "Sarah's start date is Monday. IT setup is in progress and HR paperwork was sent yesterday. Want me to schedule the team intro for Tuesday morning?", delay: 400 },
     ],
   },
   {
-    label: "Weather & Spray",
+    label: "Research & Analysis",
     frames: [
-      { type: "user", text: "Spray window tomorrow?", delay: 0 },
+      { type: "user", text: "Compare the proposals from our three vendors", delay: 0 },
       {
         type: "assistant",
-        text: "Spray Windows: Tomorrow, Cass County",
+        text: "Vendor Comparison: Cloud Infrastructure",
         delay: 600,
         richContent: (
           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
-              <span style={{ fontSize: 12, color: "var(--text-dim)", minWidth: 80 }}>6 AM – 11 AM</span>
-              <span className="response-tag good">GOOD</span>
-              <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>Wind 5-8 mph SW, 62-71F, 0% precip</span>
+              <span style={{ fontSize: 12, color: "var(--text-dim)", minWidth: 100 }}>Vendor A</span>
+              <span style={{ fontSize: 13, color: "var(--text-primary)", flex: 1 }}>$4,200/mo &middot; 99.9% SLA &middot; 24/7 support</span>
+              <span className="response-tag good">BEST VALUE</span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
-              <span style={{ fontSize: 12, color: "var(--text-dim)", minWidth: 80 }}>1 PM – 5 PM</span>
-              <span className="response-tag bad">AVOID</span>
-              <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>Gusting 18-22 mph</span>
+              <span style={{ fontSize: 12, color: "var(--text-dim)", minWidth: 100 }}>Vendor B</span>
+              <span style={{ fontSize: 13, color: "var(--text-primary)", flex: 1 }}>$3,800/mo &middot; 99.5% SLA &middot; Business hours</span>
+              <span className="response-tag caution">CHEAPEST</span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0" }}>
-              <span style={{ fontSize: 12, color: "var(--text-dim)", minWidth: 80 }}>6 PM – 8 PM</span>
-              <span className="response-tag caution">MARGINAL</span>
-              <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>Wind drops to 4 mph, inversion risk</span>
+              <span style={{ fontSize: 12, color: "var(--text-dim)", minWidth: 100 }}>Vendor C</span>
+              <span style={{ fontSize: 13, color: "var(--text-primary)", flex: 1 }}>$5,100/mo &middot; 99.99% SLA &middot; Dedicated rep</span>
+              <span className="response-tag bad">PREMIUM</span>
             </div>
           </div>
         ),
       },
-      { type: "assistant", text: "I'd recommend hitting it early. After 11 the wind picks up and you won't get another clean window until evening, and that's borderline with inversion risk.", delay: 400 },
+      { type: "assistant", text: "Vendor A gives the best balance of cost and reliability. Vendor B saves $400/mo but cuts support hours in half. Vendor C only makes sense if you need the four-nines SLA. Want me to draft a follow-up to Vendor A?", delay: 400 },
     ],
   },
   {
-    label: "Grain & Tickets",
+    label: "Email & Follow-ups",
     frames: [
-      { type: "user", text: "Just dropped off corn at CHS. What's the best bid today?", delay: 0 },
-      {
-        type: "assistant",
-        text: "Scale Ticket Logged + Cash Corn Bids",
-        delay: 600,
-        richContent: (
-          <>
-            <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid var(--border)", borderRadius: 10, padding: 16, marginTop: 8 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px 16px", fontSize: 13 }}>
-                <div><span style={{ color: "var(--text-dim)" }}>Crop</span><br /><strong style={{ color: "var(--text-primary)" }}>Corn</strong></div>
-                <div><span style={{ color: "var(--text-dim)" }}>Elevator</span><br /><strong style={{ color: "var(--text-primary)" }}>CHS Fargo</strong></div>
-                <div><span style={{ color: "var(--text-dim)" }}>Net Weight</span><br /><strong style={{ color: "var(--text-primary)" }}>610.0 bu</strong></div>
-                <div><span style={{ color: "var(--text-dim)" }}>Moisture</span><br /><strong style={{ color: "var(--text-primary)" }}>14.2%</strong></div>
-              </div>
-            </div>
-            <table className="response-table" style={{ marginTop: 12 }}>
-              <thead>
-                <tr><th>Elevator</th><th>Bid</th><th>Basis</th><th></th></tr>
-              </thead>
-              <tbody>
-                <tr><td>CHS Fargo</td><td><span className="bid-price">$4.52</span></td><td>-35 Mar</td><td></td></tr>
-                <tr><td>Cargill W. Fargo</td><td><span className="bid-price">$4.55</span></td><td>-32 Mar</td><td><span className="response-tag good">BEST</span></td></tr>
-              </tbody>
-            </table>
-          </>
-        ),
-      },
-      { type: "assistant", text: "Logged 610 bushels at CHS. That's 12,400 bu delivered this season. Cargill is 7 cents better if you want to route the next load there.", delay: 400 },
-    ],
-  },
-  {
-    label: "People & Comms",
-    frames: [
-      { type: "user", text: "Who do I need to get back to?", delay: 0 },
+      { type: "user", text: "Who do I still need to get back to?", delay: 0 },
       {
         type: "assistant",
         text: "Open Follow-Ups: This Week",
@@ -163,26 +130,59 @@ const scenarios: { label: string; frames: ConversationFrame[] }[] = [
               <div style={{ color: "var(--text-dim)", fontSize: 11, textTransform: "uppercase" as const, letterSpacing: 1 }}>Topic</div>
               <div style={{ color: "var(--text-dim)", fontSize: 11, textTransform: "uppercase" as const, letterSpacing: 1 }}>Status</div>
 
-              <div style={{ color: "var(--text-primary)" }}>Jake (operator)</div>
-              <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>PTO request, next week</div>
-              <div><span className="response-tag caution">WAITING</span></div>
-
-              <div style={{ color: "var(--text-primary)" }}>CHS Fargo rep</div>
-              <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>Contract pricing for fall</div>
-              <div><span className="response-tag caution">WAITING</span></div>
-
-              <div style={{ color: "var(--text-primary)" }}>Crop ins. agent</div>
-              <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>Acreage docs due Wed</div>
+              <div style={{ color: "var(--text-primary)" }}>Lisa (accountant)</div>
+              <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>Q1 tax documents</div>
               <div><span className="response-tag bad">DUE WED</span></div>
 
-              <div style={{ color: "var(--text-primary)" }}>ADM scheduler</div>
-              <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>Delivery confirmation</div>
+              <div style={{ color: "var(--text-primary)" }}>Meridian Group</div>
+              <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>Partnership proposal</div>
+              <div><span className="response-tag caution">WAITING</span></div>
+
+              <div style={{ color: "var(--text-primary)" }}>Dave (contractor)</div>
+              <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>Project timeline update</div>
+              <div><span className="response-tag caution">WAITING</span></div>
+
+              <div style={{ color: "var(--text-primary)" }}>AWS support</div>
+              <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>Billing inquiry</div>
               <div><span className="response-tag good">SENT</span></div>
             </div>
           </div>
         ),
       },
-      { type: "assistant", text: "The crop insurance docs are the most time-sensitive. I'd handle that first, then confirm Jake's PTO. The CHS rep can wait until Thursday. Want me to draft a reply to the insurance agent?", delay: 400 },
+      { type: "assistant", text: "The tax documents for Lisa are the most time-sensitive — she needs them by Wednesday. The Meridian proposal has been waiting since last week. I'd handle those two first. Want me to draft a reply to Lisa?", delay: 400 },
+    ],
+  },
+  {
+    label: "People & Comms",
+    frames: [
+      { type: "user", text: "What did we decide in last week's team meeting?", delay: 0 },
+      {
+        type: "assistant",
+        text: "Team Meeting Summary: Feb 28",
+        delay: 600,
+        richContent: (
+          <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid var(--border)", borderRadius: 10, padding: 16, marginTop: 8 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: "8px 16px", fontSize: 13 }}>
+              <div style={{ color: "var(--text-dim)", fontSize: 11, textTransform: "uppercase" as const, letterSpacing: 1 }}>Decision</div>
+              <div style={{ color: "var(--text-dim)", fontSize: 11, textTransform: "uppercase" as const, letterSpacing: 1 }}>Owner</div>
+              <div style={{ color: "var(--text-dim)", fontSize: 11, textTransform: "uppercase" as const, letterSpacing: 1 }}>Due</div>
+
+              <div style={{ color: "var(--text-primary)" }}>Switch to Vendor A for hosting</div>
+              <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>You</div>
+              <div><span className="response-tag caution">MAR 7</span></div>
+
+              <div style={{ color: "var(--text-primary)" }}>Hire second contractor for Q2</div>
+              <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>Dave</div>
+              <div><span className="response-tag good">IN PROGRESS</span></div>
+
+              <div style={{ color: "var(--text-primary)" }}>Update client SLA templates</div>
+              <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>Sarah</div>
+              <div><span className="response-tag bad">OVERDUE</span></div>
+            </div>
+          </div>
+        ),
+      },
+      { type: "assistant", text: "Three action items. The vendor switch is on you — deadline is Friday. Dave started the contractor search. Sarah's SLA update is overdue. Want me to send her a reminder?", delay: 400 },
     ],
   },
 ];
@@ -332,7 +332,7 @@ export function ConversationShowcase() {
         <div className="showcase-header">
           <div className="section-label">See It In Action</div>
           <h2 className="section-title-display">Tasks, people, and decisions: handled.</h2>
-          <p className="section-sub">No more juggling apps, texts, and sticky notes. Ask your team anything, from what you need to do today to what your seed rep said last Tuesday.</p>
+          <p className="section-sub">No more juggling apps, threads, and sticky notes. Ask your team anything, from what you need to do today to what your vendor quoted last Tuesday.</p>
         </div>
 
         <div className="scenario-tabs">
@@ -360,7 +360,7 @@ export function ConversationShowcase() {
                 <div className="terminal-dots">
                   <span /><span /><span />
                 </div>
-                <span className="terminal-title">farmclaw: {scenarios[activeTab].label.toLowerCase()}</span>
+                <span className="terminal-title">pantheon: {scenarios[activeTab].label.toLowerCase()}</span>
               </div>
               <ScenarioPlayer
                 frames={scenarios[activeTab].frames}

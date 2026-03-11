@@ -55,10 +55,10 @@ export function TrialExpiredOverlay() {
         <p className="text-foreground/30 text-xs mt-4">
           Questions?{" "}
           <a
-            href="mailto:support@farmclaw.com"
+            href="mailto:support@pantheon.app"
             className="text-foreground/50 hover:text-foreground/70 underline"
           >
-            support@farmclaw.com
+            support@pantheon.app
           </a>
         </p>
       </div>

@@ -129,7 +129,7 @@ export function EmailIdentityForm({ initialIdentity }: EmailIdentityFormProps) {
           </h3>
           <p className="text-foreground/60 text-sm">
             Onboarding stays focused on Discord. Enable this only when you want
-            to send files to FarmClaw by email.
+            to send files to Pantheon by email.
           </p>
         </div>
 

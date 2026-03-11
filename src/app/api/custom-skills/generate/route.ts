@@ -5,13 +5,13 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { generateSkillSchema } from "@/lib/validators/custom-skill";
 import { getTemplateById } from "@/lib/custom-skills/templates";
 import { consumeDurableRateLimit } from "@/lib/security/durable-rate-limit";
-import { farmclawModel, DEFAULT_PRIMARY_MODEL_ID } from "@/lib/ai/client";
+import { pantheonModel, DEFAULT_PRIMARY_MODEL_ID } from "@/lib/ai/client";
 import { recordTokenUsage } from "@/lib/ai/usage-tracker";
 
 const SKILL_GENERATE_WINDOW_SECONDS = 60;
 const SKILL_GENERATE_MAX_ATTEMPTS = 5;
 
-const SYSTEM_PROMPT = `You are an expert at writing OpenClaw SKILL.md files for an agricultural AI assistant platform called FarmClaw.
+const SYSTEM_PROMPT = `You are an expert at writing OpenClaw SKILL.md files for an agricultural AI assistant platform called Pantheon.
 
 A SKILL.md file has this format:
 1. YAML frontmatter between --- delimiters
@@ -129,7 +129,7 @@ export async function POST(request: Request) {
 Generate ONLY the SKILL.md content (YAML frontmatter + markdown body). Use "custom-" prefix for the name field.`;
 
   const result = streamText({
-    model: farmclawModel,
+    model: pantheonModel,
     system: SYSTEM_PROMPT,
     prompt: userMessage,
     maxOutputTokens: 8000,

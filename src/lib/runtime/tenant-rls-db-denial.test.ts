@@ -127,13 +127,13 @@ test(
   async () => {
     const admin = createAdminClient();
     const runId = randomUUID().replace(/-/g, "").slice(0, 12);
-    const password = `FarmClaw!${runId}9`;
+    const password = `Pantheon!${runId}9`;
 
     const fixture: Partial<FixtureState> = {};
 
     try {
-      const emailA = `tenant-rls-a-${runId}@farmclaw.test`;
-      const emailB = `tenant-rls-b-${runId}@farmclaw.test`;
+      const emailA = `tenant-rls-a-${runId}@pantheon.test`;
+      const emailB = `tenant-rls-b-${runId}@pantheon.test`;
 
       const userA = await createAuthUser(admin, emailA, password);
       const userB = await createAuthUser(admin, emailB, password);

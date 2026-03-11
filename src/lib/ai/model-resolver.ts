@@ -1,7 +1,7 @@
 import type { LanguageModel } from "ai";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createModelFromCatalog } from "./model-registry";
-import { DEFAULT_PRIMARY_MODEL_ID, DEFAULT_FAST_MODEL_ID, farmclawModel } from "./client";
+import { DEFAULT_PRIMARY_MODEL_ID, DEFAULT_FAST_MODEL_ID, pantheonModel } from "./client";
 
 export interface ResolvedModel {
   model: LanguageModel;
@@ -46,7 +46,7 @@ function setCache(tenantId: string, models: ResolvedModels): void {
 /** Extract primary model defaults from optional ResolvedModels (shared by AI workers). */
 export function resolveWorkerModels(rm?: ResolvedModels) {
   return {
-    model: rm?.primary.model ?? farmclawModel,
+    model: rm?.primary.model ?? pantheonModel,
     modelId: rm?.primary.modelId ?? DEFAULT_PRIMARY_MODEL_ID,
     inputCost: rm?.primary.inputCostPerMillion,
     outputCost: rm?.primary.outputCostPerMillion,

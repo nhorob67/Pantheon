@@ -261,7 +261,7 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           ...(hasTools ? { tools: resolvedTools, maxSteps: 5 } : {}),
         });
 
-        let responseText = result.text || "[FarmClaw] No response generated.";
+        let responseText = result.text || "[Pantheon] No response generated.";
 
         // Post-turn redaction: strip revealed secret values from stored text
         const redactor = revealedSecretValues.length > 0

@@ -4,34 +4,34 @@ import { useState } from "react";
 import { m, LazyMotion, domAnimation, AnimatePresence } from "motion/react";
 
 const steps = [
-  { num: "01", title: "Tell us about your operation", desc: "Crops, county, acres, and what you need help with. Task tracking, SOPs, grain marketing, whatever your operation demands. Takes about 3 minutes." },
-  { num: "02", title: "Add FarmClaw to Discord", desc: "Click the invite link and FarmClaw joins your Discord server. No bot tokens, no developer portal, no configuration. Just add and go." },
-  { num: "03", title: "Everything stops falling through the cracks", desc: "Morning briefings. Task tracking. Weather and grain updates. Plus follow-up reminders, partner communication tracking, and answers to whatever you ask. Your team learns your operation and gets sharper every week." },
+  { num: "01", title: "Tell us about your work", desc: "Industry, focus areas, tools you use, and what you need help with. Task tracking, SOPs, email, research, whatever your business demands. Takes about 3 minutes." },
+  { num: "02", title: "Add Pantheon to Discord", desc: "Click the invite link and Pantheon joins your Discord server. No bot tokens, no developer portal, no configuration. Just add and go." },
+  { num: "03", title: "Everything stops falling through the cracks", desc: "Morning briefings. Task tracking. Email summaries. Follow-up reminders, communication tracking, and answers to whatever you ask. Your team learns your business and gets sharper every week." },
 ];
 
 function StepVisual1() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div style={{ fontSize: 13, color: "var(--accent)", fontWeight: 600, letterSpacing: 1, textTransform: "uppercase" as const, marginBottom: 4 }}>Your Farm Profile</div>
+      <div style={{ fontSize: 13, color: "var(--accent)", fontWeight: 600, letterSpacing: 1, textTransform: "uppercase" as const, marginBottom: 4 }}>Your Business Profile</div>
       <div style={{ background: "var(--bg-dark)", borderRadius: 10, padding: "14px 16px", border: "1px solid var(--border)" }}>
-        <div style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 4 }}>LOCATION</div>
-        <div style={{ fontSize: 15 }}>Cass County, North Dakota</div>
+        <div style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 4 }}>INDUSTRY</div>
+        <div style={{ fontSize: 15 }}>Professional Services</div>
       </div>
       <div style={{ background: "var(--bg-dark)", borderRadius: 10, padding: "14px 16px", border: "1px solid var(--border)" }}>
-        <div style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 4 }}>CROPS</div>
+        <div style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 4 }}>FOCUS AREAS</div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
-          <span style={{ background: "var(--green-dim)", color: "var(--green-bright)", padding: "4px 12px", borderRadius: 100, fontSize: 13 }}>Corn</span>
-          <span style={{ background: "var(--green-dim)", color: "var(--green-bright)", padding: "4px 12px", borderRadius: 100, fontSize: 13 }}>Soybeans</span>
-          <span style={{ background: "var(--green-dim)", color: "var(--green-bright)", padding: "4px 12px", borderRadius: 100, fontSize: 13 }}>Spring Wheat</span>
+          <span style={{ background: "var(--green-dim)", color: "var(--green-bright)", padding: "4px 12px", borderRadius: 100, fontSize: 13 }}>Client Projects</span>
+          <span style={{ background: "var(--green-dim)", color: "var(--green-bright)", padding: "4px 12px", borderRadius: 100, fontSize: 13 }}>Operations</span>
+          <span style={{ background: "var(--green-dim)", color: "var(--green-bright)", padding: "4px 12px", borderRadius: 100, fontSize: 13 }}>Finance</span>
         </div>
       </div>
       <div style={{ background: "var(--bg-dark)", borderRadius: 10, padding: "14px 16px", border: "1px solid var(--border)" }}>
-        <div style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 4 }}>ELEVATORS</div>
-        <div style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.7 }}>CHS Fargo &middot; ADM Casselton &middot; Cargill West Fargo</div>
+        <div style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 4 }}>TOOLS</div>
+        <div style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.7 }}>Gmail &middot; Google Drive &middot; Slack &middot; QuickBooks</div>
       </div>
       <div style={{ background: "var(--bg-dark)", borderRadius: 10, padding: "14px 16px", border: "1px solid var(--border)" }}>
-        <div style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 4 }}>TOTAL ACRES</div>
-        <div style={{ fontSize: 15 }}>2,400</div>
+        <div style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 4 }}>TEAM SIZE</div>
+        <div style={{ fontSize: 15 }}>12 people</div>
       </div>
     </div>
   );
@@ -50,7 +50,7 @@ function StepVisual2() {
         <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 12 }}>Add to Server</div>
         <div style={{ fontSize: 12, color: "var(--text-dim)", marginBottom: 8, textTransform: "uppercase" as const, letterSpacing: 1 }}>SELECT A SERVER</div>
         <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: 8, padding: "10px 14px", border: "1px solid var(--border-light)", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-          <span style={{ fontSize: 14, color: "var(--text-primary)" }}>Johnson Farms</span>
+          <span style={{ fontSize: 14, color: "var(--text-primary)" }}>Acme Corp</span>
           <span style={{ fontSize: 11, color: "var(--text-dim)" }}>&#x25BC;</span>
         </div>
         <div style={{ fontSize: 12, color: "var(--text-dim)", marginBottom: 8, textTransform: "uppercase" as const, letterSpacing: 1 }}>PERMISSIONS</div>
@@ -68,7 +68,7 @@ function StepVisual2() {
 
       <div style={{ padding: 14, background: "var(--bg-dark)", borderRadius: 10, border: "1px solid var(--green-dim)", display: "flex", alignItems: "center", gap: 10 }}>
         <span style={{ color: "var(--green-bright)", fontSize: 18 }}>&#x2713;</span>
-        <span style={{ fontSize: 13, color: "var(--green-bright)" }}>FarmClaw has been added to Johnson Farms</span>
+        <span style={{ fontSize: 13, color: "var(--green-bright)" }}>Pantheon has been added to Acme Corp</span>
       </div>
     </div>
   );
@@ -78,17 +78,17 @@ function StepVisual3() {
   return (
     <div className="phone-mockup">
       <div className="phone-header">
-        <div className="phone-avatar">&#x1F33E;</div>
+        <div className="phone-avatar" style={{ background: "var(--accent-dim)", color: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700 }}>P</div>
         <div>
-          <div className="phone-name">FarmClaw</div>
+          <div className="phone-name">Pantheon</div>
           <div className="phone-status">online</div>
         </div>
       </div>
       <div className="phone-messages">
-        <div className="phone-msg in"><strong>Morning Briefing: Fargo, ND</strong><br />3 tasks today. Spray window 6-11 AM. High 34F, clear skies.</div>
-        <div className="phone-msg in"><strong>Reminder: FSA acreage report due Friday</strong><br />Want me to pull last year&apos;s numbers?</div>
-        <div className="phone-msg out">Yeah pull those up. And add &apos;check tile outlets&apos; to my list</div>
-        <div className="phone-msg in">Done. Last year&apos;s report is ready, and I added tile outlet check to today&apos;s tasks.</div>
+        <div className="phone-msg in"><strong>Morning Briefing</strong><br />3 tasks today. Vendor contract expires Friday. Client proposal draft is ready for review.</div>
+        <div className="phone-msg in"><strong>Reminder: Q1 budget review at 10 AM</strong><br />Want me to pull last quarter&apos;s numbers?</div>
+        <div className="phone-msg out">Yeah pull those up. And add &apos;review contractor invoices&apos; to my list</div>
+        <div className="phone-msg in">Done. Last quarter&apos;s report is ready, and I added contractor invoice review to today&apos;s tasks.</div>
       </div>
     </div>
   );

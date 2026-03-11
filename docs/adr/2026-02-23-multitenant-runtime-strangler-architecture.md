@@ -6,7 +6,7 @@
 
 ## Context
 
-FarmClaw currently runs a per-customer, per-instance OpenClaw runtime surface with 51 `/api/instances/*` handlers and a schema centered around `instances` + `customer_id`. The product direction is to preserve customer/billing and SaaS control-plane UX while replacing instance-hosted runtime execution with a centralized multi-tenant Discord-first runtime.
+Pantheon currently runs a per-customer, per-instance OpenClaw runtime surface with 51 `/api/instances/*` handlers and a schema centered around `instances` + `customer_id`. The product direction is to preserve customer/billing and SaaS control-plane UX while replacing instance-hosted runtime execution with a centralized multi-tenant Discord-first runtime.
 
 Constraints:
 
@@ -17,7 +17,7 @@ Constraints:
 
 ## Decision
 
-FarmClaw will implement a strangler migration with three explicit planes and a compatibility bridge:
+Pantheon will implement a strangler migration with three explicit planes and a compatibility bridge:
 
 1. Control Plane: Keep Next.js + Supabase + Stripe account/billing surface.
 2. Runtime Plane: Introduce centralized multi-tenant runtime workers and Discord ingress.

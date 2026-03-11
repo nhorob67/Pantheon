@@ -9,7 +9,7 @@ tags: [workflow, rollout, canary, release]
 
 # Workflow Builder Rollout Rings
 
-FarmClaw uses three rollout rings to release workflow builder updates safely:
+Pantheon uses three rollout rings to release workflow builder updates safely:
 
 - **Canary**: first 10% of customers by deterministic customer-ID bucket.
 - **Standard**: next 60% of customers.
@@ -23,7 +23,7 @@ The environment variable `WORKFLOW_BUILDER_ROLLOUT_TARGET_RING` controls how far
 - `standard`: canary + standard.
 - `delayed`: all rings.
 
-If unset or invalid, FarmClaw defaults to `delayed`.
+If unset or invalid, Pantheon defaults to `delayed`.
 
 ## Promotion checklist
 

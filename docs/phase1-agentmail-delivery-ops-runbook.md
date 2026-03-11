@@ -5,8 +5,8 @@ This runbook covers the non-code delivery operations required before removing Re
 ## Goals
 
 1. Verify AgentMail domain setup for inbound + outbound.
-2. Confirm SPF, DKIM, and DMARC posture for `farmclaw.com`.
-3. Register webhook events needed for FarmClaw email lifecycle tracking.
+2. Confirm SPF, DKIM, and DMARC posture for `pantheon.app`.
+3. Register webhook events needed for Pantheon email lifecycle tracking.
 4. Validate end-to-end ingest in staging and production.
 5. Execute safe deprecation of Resend ingress after verification.
 
@@ -24,7 +24,7 @@ This runbook covers the non-code delivery operations required before removing Re
 
 ## 1) Domain Verification (AgentMail Console)
 
-1. Add sender domain in AgentMail for `farmclaw.com`.
+1. Add sender domain in AgentMail for `pantheon.app`.
 2. Add inbound routing domain/records as required by AgentMail.
 3. Publish all DNS records exactly as provided by AgentMail.
 4. Wait for AgentMail domain status to become verified.
@@ -38,7 +38,7 @@ This runbook covers the non-code delivery operations required before removing Re
    - Publish AgentMail DKIM TXT/CNAME records.
    - Verify keys are active in AgentMail.
 3. DMARC:
-   - Ensure `_dmarc.farmclaw.com` TXT exists.
+   - Ensure `_dmarc.pantheon.app` TXT exists.
    - Recommended minimum during rollout: `p=none` with reporting enabled.
    - Tighten policy after healthy delivery metrics.
 

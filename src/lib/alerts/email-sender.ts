@@ -18,9 +18,9 @@ export async function sendAlertEmail(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: "FarmClaw Alerts <alerts@farmclaw.com>",
+      from: "Pantheon Alerts <alerts@pantheon.app>",
       to: [to],
-      subject: `[FarmClaw] ${alert.title}`,
+      subject: `[Pantheon] ${alert.title}`,
       html: `
         <div style="font-family: sans-serif; max-width: 600px;">
           <h2 style="color: ${alert.severity === "critical" ? "#dc2626" : "#d97706"};">${alert.title}</h2>

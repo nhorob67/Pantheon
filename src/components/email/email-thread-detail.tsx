@@ -233,7 +233,7 @@ export function EmailThreadDetail({
                     <span className={`font-medium text-sm ${
                       isAck ? "text-foreground/50" : "text-foreground"
                     }`}>
-                      {isAck ? "Auto-acknowledgment" : "FarmClaw Assistant"}
+                      {isAck ? "Auto-acknowledgment" : "Pantheon Assistant"}
                     </span>
                     <span className="text-xs text-foreground/40 shrink-0">
                       {email.sentAt
@@ -274,7 +274,7 @@ export function EmailThreadDetail({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-medium text-sm text-foreground">
-                        FarmClaw Assistant
+                        Pantheon Assistant
                       </span>
                       <span className="text-xs text-foreground/40 shrink-0">
                         {format(new Date(msg.createdAt), "MMM d, h:mm a")}

@@ -12,12 +12,12 @@ test("uuid tool returns RFC4122-format identifier", async () => {
 
 test("base64 encode/decode roundtrip preserves utf8 value", async () => {
   const encoded = await executeRuntimeSafeTool("base64_encode", {
-    value: "farmclaw:hello",
+    value: "pantheon:hello",
   });
   const decoded = await executeRuntimeSafeTool("base64_decode", {
     base64: String(encoded.output.base64 || ""),
   });
-  assert.equal(decoded.output.value, "farmclaw:hello");
+  assert.equal(decoded.output.value, "pantheon:hello");
 });
 
 test("base64_decode rejects invalid payloads", async () => {

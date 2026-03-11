@@ -119,7 +119,7 @@ export function Step3Discord() {
           </h2>
         </div>
         <p className="text-sm text-[var(--text-secondary)]">
-          FarmClaw lives in your Discord server. Connect now or set up later.
+          Pantheon lives in your Discord server. Connect now or set up later.
         </p>
       </m.div>
 
@@ -182,7 +182,7 @@ export function Step3Discord() {
             rel="noopener noreferrer"
             className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-xl bg-[#5865F2] hover:bg-[#4752C4] text-white font-semibold text-sm transition-all hover:shadow-[0_4px_20px_rgba(88,101,242,0.3)]"
           >
-            Add FarmClaw to Discord
+            Add Pantheon to Discord
             <ExternalLink className="w-4 h-4" />
           </a>
         ) : (
@@ -291,7 +291,7 @@ export function Step3Discord() {
               </li>
               <li>Create a free account</li>
               <li>Create a server for your operation</li>
-              <li>Come back here and click &quot;Add FarmClaw to Discord&quot;</li>
+              <li>Come back here and click &quot;Add Pantheon to Discord&quot;</li>
             </ol>
           </m.div>
         )}
@@ -320,7 +320,7 @@ export function Step3Discord() {
           ) : (
             <Rocket className="w-4 h-4" />
           )}
-          Launch FarmClaw
+          Launch Pantheon
         </button>
 
         <div className="flex items-center justify-between">

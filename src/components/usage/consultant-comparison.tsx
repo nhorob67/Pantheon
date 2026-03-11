@@ -21,8 +21,8 @@ export function ConsultantComparison({
       (AVG_CONVERSATION_MINUTES / 60) *
       CONSULTANT_HOURLY_RATE_CENTS
   );
-  const farmclawCost = SUBSCRIPTION_PRICE_CENTS + apiUsageCents;
-  const savings = consultantCostCents - farmclawCost;
+  const pantheonCost = SUBSCRIPTION_PRICE_CENTS + apiUsageCents;
+  const savings = consultantCostCents - pantheonCost;
 
   if (savings <= 0) return null;
 
@@ -34,7 +34,7 @@ export function ConsultantComparison({
       <p className="text-sm text-foreground/70">
         Your assistant handled{" "}
         <span className="font-semibold">{totalConversations} conversations</span>{" "}
-        for <span className="font-semibold">{formatCents(farmclawCost)}</span>.
+        for <span className="font-semibold">{formatCents(pantheonCost)}</span>.
       </p>
       <p className="text-sm text-foreground/70 mt-1">
         A consultant at $150/hr would cost{" "}

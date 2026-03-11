@@ -1,4 +1,4 @@
-# FarmClaw Multi-Tenant Discord SaaS Master Plan (OpenClaw-Inspired Runtime)
+# Pantheon Multi-Tenant Discord SaaS Master Plan (OpenClaw-Inspired Runtime)
 
 Last updated: February 24, 2026  
 Status: Execution in progress (pre-launch / zero-customer mode)  
@@ -50,7 +50,7 @@ From current OpenClaw docs/repo, the common user jobs are:
 - Built-in memory retrieval over long conversation history.
 - Webhook/lifecycle events and operational visibility.
 
-## 3.2 QMD + memory/search insights that matter for FarmClaw
+## 3.2 QMD + memory/search insights that matter for Pantheon
 
 QMD (as implemented in OpenClaw memory docs/repo) contributes:
 - Query decomposition and intent extraction from chat history.
@@ -91,7 +91,7 @@ Research-backed memory risks and mitigations:
 - No broad multi-channel expansion in this migration phase (Discord-first).
 - No forced migration that breaks active billing/customers.
 
-## 5) Capability Parity Matrix (OpenClaw-Inspired -> FarmClaw Target)
+## 5) Capability Parity Matrix (OpenClaw-Inspired -> Pantheon Target)
 
 | Capability (JTBD) | Current State | Target State | Gate |
 |---|---|---|---|
@@ -251,7 +251,7 @@ Exit criteria:
 - [ ] Add tombstone/retention policies per tenant controls.
 
 ### 5.5 Memory quality evaluation
-- [ ] Create eval dataset from real FarmClaw use-cases (market, agronomy, ops, ticketing).
+- [ ] Create eval dataset from real Pantheon use-cases (market, agronomy, ops, ticketing).
 - [ ] Add recall@k, answer groundedness, stale-memory rate metrics.
 - [ ] Add adversarial evals (contradictions, outdated facts, prompt injection).
 - [ ] Gate deployment on memory quality thresholds.

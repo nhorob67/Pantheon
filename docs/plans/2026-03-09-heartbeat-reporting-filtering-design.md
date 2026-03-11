@@ -1,4 +1,4 @@
-# FarmClaw Heartbeat Reporting And Filtering Design
+# Pantheon Heartbeat Reporting And Filtering Design
 
 **Date:** 2026-03-09
 **Author:** Codex

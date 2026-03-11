@@ -91,7 +91,7 @@ export function createHttpRequestTool(
           }
 
           const requestHeaders: Record<string, string> = {
-            "User-Agent": "FarmClaw/1.0",
+            "User-Agent": "Pantheon/1.0",
             ...(headers ?? {}),
           };
 

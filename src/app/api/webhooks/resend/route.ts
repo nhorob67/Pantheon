@@ -113,7 +113,7 @@ function extractHeaderValue(headers: unknown, name: string): string | null {
 
 function extractOriginalRecipient(headers: unknown): string | null {
   const candidate =
-    extractHeaderValue(headers, "x-farmclaw-original-to") ||
+    extractHeaderValue(headers, "x-pantheon-original-to") ||
     extractHeaderValue(headers, "x-original-to") ||
     extractHeaderValue(headers, "delivered-to");
 

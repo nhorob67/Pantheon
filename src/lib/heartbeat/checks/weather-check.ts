@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CheapCheckResult } from "@/types/heartbeat";
 
 const NWS_BASE_URL = "https://api.weather.gov";
-const USER_AGENT = "FarmClaw/1.0 (contact@farmclaw.com)";
+const USER_AGENT = "Pantheon/1.0 (contact@pantheon.app)";
 
 export async function checkWeatherSevere(
   admin: SupabaseClient,

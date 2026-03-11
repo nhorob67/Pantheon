@@ -17,8 +17,8 @@ interface SourceOption {
 const SOURCE_OPTIONS: SourceOption[] = [
   {
     value: "internal",
-    label: "FarmClaw Internal",
-    description: "First-party extensions managed by FarmClaw.",
+    label: "Pantheon Internal",
+    description: "First-party extensions managed by Pantheon.",
     supportsVerification: false,
   },
   {

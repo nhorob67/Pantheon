@@ -19,8 +19,8 @@ export async function generateMetadata({
 
   return {
     title: skill
-      ? `${skill.display_name} | Skill Forge | FarmClaw`
-      : "Skill Editor | FarmClaw",
+      ? `${skill.display_name} | Skill Forge | Pantheon`
+      : "Skill Editor | Pantheon",
   };
 }
 

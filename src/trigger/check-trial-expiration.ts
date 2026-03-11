@@ -47,9 +47,9 @@ export const checkTrialAndSpending = schedules.task({
         alert_type: "trial_reminder",
         alert_key: alertKey,
         severity: "info",
-        title: "Your FarmClaw trial ends in 4 days",
+        title: "Your Pantheon trial ends in 4 days",
         message:
-          "You've been using FarmClaw for 10 days. Your trial ends soon — subscribe to keep your assistant running. $50/month, includes $25 in AI usage.",
+          "You've been using Pantheon for 10 days. Your trial ends soon — subscribe to keep your assistant running. $50/month, includes $25 in AI usage.",
         metadata: { reminder: "day10" },
         delivery_channels: ["email", "dashboard"],
       });
@@ -79,7 +79,7 @@ export const checkTrialAndSpending = schedules.task({
         alert_type: "trial_reminder",
         alert_key: alertKey,
         severity: "warning",
-        title: "Last day: Your FarmClaw trial ends tomorrow",
+        title: "Last day: Your Pantheon trial ends tomorrow",
         message:
           "After tomorrow, your AI team goes offline. Your farm data and settings stay safe — subscribe anytime to pick up right where you left off.",
         metadata: { reminder: "day13" },
@@ -111,18 +111,18 @@ async function sendTrialReminderEmail(
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return;
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://app.farmclaw.com";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://app.pantheon.app";
 
   const subject =
     stage === "day10"
-      ? "Your FarmClaw trial ends in 4 days"
-      : "Last day: Your FarmClaw trial ends tomorrow";
+      ? "Your Pantheon trial ends in 4 days"
+      : "Last day: Your Pantheon trial ends tomorrow";
 
   const body =
     stage === "day10"
       ? `<div style="font-family: sans-serif; max-width: 600px;">
-          <h2 style="color: #d97706;">Your FarmClaw trial ends in 4 days</h2>
-          <p>You've been using FarmClaw for 10 days. Your trial ends soon.</p>
+          <h2 style="color: #d97706;">Your Pantheon trial ends in 4 days</h2>
+          <p>You've been using Pantheon for 10 days. Your trial ends soon.</p>
           <p>Subscribe to keep your AI team running — $50/month, includes $25 in AI usage.</p>
           <p style="margin-top: 24px;">
             <a href="${appUrl}/settings/billing" style="background: #d97706; color: white; padding: 12px 24px; text-decoration: none; border-radius: 999px; font-weight: 600;">Subscribe Now</a>
@@ -132,7 +132,7 @@ async function sendTrialReminderEmail(
           </p>
         </div>`
       : `<div style="font-family: sans-serif; max-width: 600px;">
-          <h2 style="color: #d97706;">Last day: Your FarmClaw trial ends tomorrow</h2>
+          <h2 style="color: #d97706;">Last day: Your Pantheon trial ends tomorrow</h2>
           <p>After tomorrow, your AI team goes offline. Your farm data and settings stay safe — subscribe anytime to pick up right where you left off.</p>
           <p style="margin-top: 24px;">
             <a href="${appUrl}/settings/billing" style="background: #d97706; color: white; padding: 12px 24px; text-decoration: none; border-radius: 999px; font-weight: 600;">Subscribe Now</a>
@@ -149,9 +149,9 @@ async function sendTrialReminderEmail(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: "FarmClaw <hello@farmclaw.com>",
+      from: "Pantheon <hello@pantheon.app>",
       to: [to],
-      subject: `[FarmClaw] ${subject}`,
+      subject: `[Pantheon] ${subject}`,
       html: body,
     }),
   }).catch((err) => {

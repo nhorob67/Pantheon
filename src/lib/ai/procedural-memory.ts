@@ -1,7 +1,7 @@
 import { generateObject, type LanguageModel } from "ai";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { farmclawFastModel } from "./client";
+import { pantheonFastModel } from "./client";
 
 const patternSchema = z.object({
   patterns: z.array(
@@ -37,7 +37,7 @@ export async function extractBehavioralPatterns(
     .join("\n");
 
   const { object } = await generateObject({
-    model: input.model ?? farmclawFastModel,
+    model: input.model ?? pantheonFastModel,
     schema: patternSchema,
     temperature: 0.3,
     system: `You are analyzing a conversation between a farmer and their AI assistant to extract behavioral patterns. Focus on:

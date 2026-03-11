@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { AlertPreferencesForm } from "@/components/settings/alert-preferences-form";
 
-export const metadata: Metadata = { title: "Alert Preferences | FarmClaw" };
+export const metadata: Metadata = { title: "Alert Preferences | Pantheon" };
 
 export default function AlertSettingsPage() {
   return (

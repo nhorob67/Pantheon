@@ -39,7 +39,7 @@ export function HelpModal() {
       a11yTitleId="dashboard-help-modal-title"
       a11yDescId="dashboard-help-modal-description"
       title="Dashboard help"
-      description="Search FarmClaw documentation and ask AI support questions."
+      description="Search Pantheon documentation and ask AI support questions."
       placeholder="Search help or ask a question..."
       inputId="dashboard-help-input"
     />

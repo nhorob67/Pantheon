@@ -1,12 +1,12 @@
-# FarmClaw Visual Builder Implementation Master Plan
+# Pantheon Visual Builder Implementation Master Plan
 
 Last updated: February 17, 2026  
 Status: In Progress (Code-Audited)
 
 ## 1) Objective
 
-Deliver a production-grade visual workflow builder for FarmClaw that:
-1. Preserves FarmClaw's established visual language.
+Deliver a production-grade visual workflow builder for Pantheon that:
+1. Preserves Pantheon's established visual language.
 2. Runs on the existing Hetzner + OpenClaw per-instance runtime model.
 3. Enables non-technical operators to design, publish, run, and debug workflows safely.
 4. Adds governance, observability, and rollback controls required for safe production use.
@@ -25,7 +25,7 @@ Primary evidence sources:
 
 - Keep runtime isolation model: workflows execute in tenant OpenClaw containers.
 - Keep control-plane compile model: graph -> validated IR -> runtime payload.
-- Keep FarmClaw visual system (`bg-bg-card`, `text-text-primary`, `border-border`, amber accent hierarchy).
+- Keep Pantheon visual system (`bg-bg-card`, `text-text-primary`, `border-border`, amber accent hierarchy).
 - Accessibility and performance gates are launch blockers.
 
 ## 4) Current Product Scope Status
@@ -139,7 +139,7 @@ Legend: `[x]` complete, `[ ]` not complete.
 ### 5.7 Runtime Integration
 
 - [x] Compiler (`graph -> IR`) and runtime validator wrapper.
-- [x] IR embedding into rebuild payload (`FARMCLAW_WORKFLOW_IR`).
+- [x] IR embedding into rebuild payload (`PANTHEON_WORKFLOW_IR`).
 - [x] Queued run dispatch processor route.
 - [x] Scheduled cron invocation of processor (`vercel.json`).
 - [x] Gateway worker invocation and signed lifecycle event emission.

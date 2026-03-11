@@ -136,7 +136,7 @@ export function ProvisioningProgress() {
           {...FADE_UP}
           transition={{ delay: 0.2 }}
         >
-          {allDone ? "You're live!" : "Growing your FarmClaw..."}
+          {allDone ? "You're live!" : "Growing your Pantheon..."}
         </m.h2>
         <m.p
           className="text-sm text-[var(--text-secondary)] mb-10"

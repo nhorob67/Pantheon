@@ -7,30 +7,30 @@ Use these runbooks for active operations:
 2. `docs/phase2-agentmail-staging-validation-runbook.md`
 3. `docs/phase2-email-processor-runbook.md`
 
-This runbook deploys the Phase 1 infrastructure for per-account addresses like `my-farm@farmclaw.com`.
+This runbook deploys the Phase 1 infrastructure for per-account addresses like `my-farm@pantheon.app`.
 
 ## Architecture
 
-1. Root domain `farmclaw.com` receives inbound mail at Cloudflare.
+1. Root domain `pantheon.app` receives inbound mail at Cloudflare.
 2. Cloudflare Email Routing catch-all sends mail to an Email Worker.
-3. Worker forwards to one verified ingress destination (`ingress@inbound.farmclaw.com`) and stamps `X-FarmClaw-*` headers.
-4. Resend Receiving on `inbound.farmclaw.com` triggers FarmClaw webhook (`/api/webhooks/resend`).
-5. FarmClaw stores a queued inbound row in Supabase (`email_inbound`).
+3. Worker forwards to one verified ingress destination (`ingress@inbound.pantheon.app`) and stamps `X-Pantheon-*` headers.
+4. Resend Receiving on `inbound.pantheon.app` triggers Pantheon webhook (`/api/webhooks/resend`).
+5. Pantheon stores a queued inbound row in Supabase (`email_inbound`).
 
 ## Prerequisites
 
-1. Cloudflare manages DNS for `farmclaw.com`.
+1. Cloudflare manages DNS for `pantheon.app`.
 2. Resend account with receiving access enabled.
-3. FarmClaw app deployed with:
+3. Pantheon app deployed with:
    - `RESEND_WEBHOOK_SECRET`
-   - `FARMCLAW_EMAIL_DOMAIN=farmclaw.com`
+   - `PANTHEON_EMAIL_DOMAIN=pantheon.app`
 4. Supabase migrations applied:
    - `00008_email_phase1.sql`
    - `00009_email_webhook_observability.sql`
 
 ## 1) Configure Resend Receiving Subdomain
 
-1. In Resend, add receiving domain: `inbound.farmclaw.com`.
+1. In Resend, add receiving domain: `inbound.pantheon.app`.
 2. Create required DNS records in Cloudflare exactly as Resend provides (MX/TXT).
 3. In Resend, add webhook endpoint:
    - URL: `https://<your-app-domain>/api/webhooks/resend`
@@ -63,44 +63,44 @@ Worker behavior:
 2. Rejects reserved local-parts (`postmaster`, `abuse`, `mailer-daemon`).
 3. Forwards all accepted mail to `FORWARD_TO`.
 4. Adds:
-   - `X-FarmClaw-Original-To`
-   - `X-FarmClaw-Original-From`
-   - `X-FarmClaw-Original-Localpart`
-   - `X-FarmClaw-Forwarded-At`
+   - `X-Pantheon-Original-To`
+   - `X-Pantheon-Original-From`
+   - `X-Pantheon-Original-Localpart`
+   - `X-Pantheon-Forwarded-At`
 
 ## 3) Verify Cloudflare Forward Destination
 
 Cloudflare Email Worker `message.forward(...)` requires a verified destination address.
 
 1. In Cloudflare Email Routing, add destination address:
-   - `ingress@inbound.farmclaw.com`
+   - `ingress@inbound.pantheon.app`
 2. Cloudflare sends a verification email.
-3. Open that email in Resend received-email view for `inbound.farmclaw.com`.
+3. Open that email in Resend received-email view for `inbound.pantheon.app`.
 4. Click the verification link/code from that email.
 5. Confirm destination status is `Verified` in Cloudflare.
 
 ## 4) Bind Catch-All Rule to Worker
 
-1. In Cloudflare Email Routing for `farmclaw.com`, create a catch-all custom address:
-   - `*@farmclaw.com`
+1. In Cloudflare Email Routing for `pantheon.app`, create a catch-all custom address:
+   - `*@pantheon.app`
 2. Action:
-   - Send to Email Worker `farmclaw-email-router`
+   - Send to Email Worker `pantheon-email-router`
 3. Ensure no higher-priority rule bypasses the worker.
 
 ## 5) App Environment
 
-Set these in FarmClaw runtime:
+Set these in Pantheon runtime:
 
-1. `FARMCLAW_EMAIL_DOMAIN=farmclaw.com`
+1. `PANTHEON_EMAIL_DOMAIN=pantheon.app`
 2. `RESEND_WEBHOOK_SECRET=<from Resend webhook>`
 3. Optional:
    - `RESEND_API_KEY=<for later processing phases>`
 
 ## 6) End-to-End Validation
 
-1. In FarmClaw app, open settings:
+1. In Pantheon app, open settings:
    - `/settings/email`
-2. Confirm account address exists (for example `my-farm@farmclaw.com`).
+2. Confirm account address exists (for example `my-farm@pantheon.app`).
 3. Send a test email from an external address to that account address.
 4. Watch worker logs:
 ```bash

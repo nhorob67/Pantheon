@@ -1,17 +1,17 @@
-# FarmClaw Email Integration Implementation Plan (Hybrid)
+# Pantheon Email Integration Implementation Plan (Hybrid)
 
 Last updated: February 13, 2026
 
 ## 1) Decision Summary
 
-1. FarmClaw is adopting a hybrid long-term email architecture.
+1. Pantheon is adopting a hybrid long-term email architecture.
 2. AgentMail will own mailbox infrastructure concerns (inbox provisioning, delivery, provider event stream, sender operations).
-3. FarmClaw will remain source-of-truth for canonical records, attachment storage, AV/quarantine policy, retention/deletion workflows, and container sync safety.
+3. Pantheon will remain source-of-truth for canonical records, attachment storage, AV/quarantine policy, retention/deletion workflows, and container sync safety.
 4. Email is optional product functionality, not a required onboarding step.
 
 ## 2) Project Goals
 
-1. Give accounts an optional readable email address (`slug@farmclaw.com`) for ingestion workflows.
+1. Give accounts an optional readable email address (`slug@pantheon.app`) for ingestion workflows.
 2. Ingest inbound email into canonical Supabase data/storage with strong idempotency.
 3. Support outbound sending with per-account aliases and auditable event history.
 4. Keep OpenClaw cache non-authoritative and rebuildable from canonical storage.
@@ -26,11 +26,11 @@ Last updated: February 13, 2026
 ## 4) Architecture Target (Hybrid)
 
 1. Customer enables email in settings (optional), which provisions mailbox identity with provider metadata.
-2. Provider (AgentMail) emits inbound events to FarmClaw webhook.
-3. FarmClaw webhook verifies signatures, deduplicates events, and writes `email_inbound` in `queued` state.
-4. FarmClaw processor claims queued rows, fetches full payload + attachments via provider adapter, stores raw + binaries to Supabase Storage, then marks `processed`/`failed`.
+2. Provider (AgentMail) emits inbound events to Pantheon webhook.
+3. Pantheon webhook verifies signatures, deduplicates events, and writes `email_inbound` in `queued` state.
+4. Pantheon processor claims queued rows, fetches full payload + attachments via provider adapter, stores raw + binaries to Supabase Storage, then marks `processed`/`failed`.
 5. AV/quarantine gates control which artifacts are eligible for indexing and container sync.
-6. Outbound uses provider send API with stored alias, while FarmClaw logs lifecycle events in canonical tables.
+6. Outbound uses provider send API with stored alias, while Pantheon logs lifecycle events in canonical tables.
 
 ## 5) Current Repo State (Source of Truth)
 
@@ -154,7 +154,7 @@ Last updated: February 13, 2026
 - [ ] Register webhook events required for inbound + outbound lifecycle tracking.
 
 ### Exit Criteria
-- [ ] New enabled accounts get provider mailbox mapped to one FarmClaw identity.
+- [ ] New enabled accounts get provider mailbox mapped to one Pantheon identity.
 - [ ] AgentMail inbound events create queued rows with dedupe guarantees.
 
 ## Phase II: Provider-Adapter Processing + Canonical Storage

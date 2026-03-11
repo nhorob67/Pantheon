@@ -3,10 +3,10 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Trigger FarmClaw memory operation processing (intended for scheduler/cron usage).
+Trigger Pantheon memory operation processing (intended for scheduler/cron usage).
 
 Required environment variables:
-  APP_URL                  Base app URL (example: https://app.farmclaw.com)
+  APP_URL                  Base app URL (example: https://app.pantheon.app)
   MEMORY_PROCESSOR_TOKEN   Token for /api/admin/memory/process-operations auth
 
 Optional environment variables:

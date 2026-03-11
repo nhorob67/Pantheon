@@ -26,7 +26,7 @@ async function isAuthorized(request: Request): Promise<boolean> {
     process.env.TENANT_RUNTIME_PROCESSOR_TOKEN,
     process.env.WORKFLOW_RUN_PROCESSOR_TOKEN,
     process.env.CRON_SECRET,
-    process.env.FARMCLAW_BOT_SECRET,
+    process.env.PANTHEON_BOT_SECRET,
   ].filter((value): value is string => !!value && value.trim().length > 0);
 
   const bearerHeader = request.headers.get("authorization");

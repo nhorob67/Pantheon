@@ -1,4 +1,4 @@
--- FarmClaw email ingestion SLO checks
+-- Pantheon email ingestion SLO checks
 -- Usage: run in Supabase SQL editor or psql.
 
 -- 1) 7-day status mix and success rate

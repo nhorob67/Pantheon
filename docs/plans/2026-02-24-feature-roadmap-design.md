@@ -1,4 +1,4 @@
-# FarmClaw Feature Roadmap Design
+# Pantheon Feature Roadmap Design
 
 **Date:** 2026-02-24
 **Author:** Nick Horob + Claude
@@ -6,7 +6,7 @@
 
 ## Context
 
-Research was conducted across three dimensions to identify features that would make FarmClaw the most valuable B2B agentic AI platform for Upper Midwest row crop farmers:
+Research was conducted across three dimensions to identify features that would make Pantheon the most valuable B2B agentic AI platform for Upper Midwest row crop farmers:
 
 1. **25+ B2B agentic platforms** analyzed (Microsoft, Salesforce, ServiceNow, Google, AWS, IBM, LangChain, CrewAI, AutoGen, Letta, Dust, Relevance AI, Lindy, Composio, Wordware, OpenAI Agents SDK, MCP ecosystem, Agno, Mem0, MultiOn, and more)
 2. **OpenClaw deep dive** (196K+ GitHub stars, user sentiment from HN/Reddit/GitHub, feature analysis, security posture, community)
@@ -14,7 +14,7 @@ Research was conducted across three dimensions to identify features that would m
 
 ## Strategic Position
 
-FarmClaw occupies a genuinely unique position: **no US-focused, conversational, multi-agent AI platform exists for row crop farmers.** FBN's "Norm" is the closest competitor (web-only, reactive, single-agent). Climate FieldView and Granular are data platforms, not conversational AI.
+Pantheon occupies a genuinely unique position: **no US-focused, conversational, multi-agent AI platform exists for row crop farmers.** FBN's "Norm" is the closest competitor (web-only, reactive, single-agent). Climate FieldView and Granular are data platforms, not conversational AI.
 
 ### Unfair Advantages (Already Built)
 - Multi-agent architecture with farm-specific personality presets
@@ -117,7 +117,7 @@ Export scale tickets, grain sales, input costs for lenders and accountants. "Gen
 
 ### Moonshot Features (6+ months)
 
-- **A2A Protocol Integration** -- FarmClaw agents communicate with elevator/weather AI agents
+- **A2A Protocol Integration** -- Pantheon agents communicate with elevator/weather AI agents
 - **Satellite Imagery** -- Sentinel-2/Planet NDVI for field-level stress detection
 - **Equipment Integration** -- John Deere Operations Center API for yield data
 - **Predictive Yield Modeling** -- Combine weather, soil, satellite, historical data
@@ -143,7 +143,7 @@ Export scale tickets, grain sales, input costs for lenders and accountants. "Gen
 - Farmers reject black-box AI -- transparency about WHY is critical
 - Data ownership is the most emotionally charged issue for farmers
 - Crop consultants: $5.75-6.75/acre ($12K-40K/year for mid-size farm)
-- FarmClaw at $40/mo = 2-4% of consultant cost
+- Pantheon at $40/mo = 2-4% of consultant cost
 - 57% precision tool adoption in ND (highest in US)
 - Age 50 is the digital tipping point; 65% of young farmers want app-based grain sales
 - Trust signal: "We never sell your data to Bayer, Corteva, ADM, or anyone"

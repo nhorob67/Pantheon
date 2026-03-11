@@ -11,11 +11,11 @@ tags: [integrations, composio, google, oauth, third-party]
 
 Integrations let your AI assistant connect to external services like Google Sheets, Gmail, Google Calendar, Slack, and hundreds more. Instead of being limited to skills and local tools, your assistant can read spreadsheets, send emails, create calendar events, and interact with the services you already use on the farm.
 
-FarmClaw integrations are powered by [Composio](https://composio.dev), a platform that provides secure, authenticated access to 800+ third-party APIs through a single connection. Composio runs as a remote MCP server alongside your built-in farm tools.
+Pantheon integrations are powered by [Composio](https://composio.dev), a platform that provides secure, authenticated access to 800+ third-party APIs through a single connection. Composio runs as a remote MCP server alongside your built-in farm tools.
 
 ## How it works
 
-When you enable integrations, FarmClaw:
+When you enable integrations, Pantheon:
 
 1. Creates a Composio entity for your account (no separate Composio sign-up required).
 2. Provisions a remote MCP server that your assistant can call.
@@ -44,11 +44,11 @@ Your Workspace
 
 A toolkit is a bundle of related actions for a single service. For example, the **Google Sheets** toolkit includes actions for reading spreadsheets, writing data, and creating new sheets. You select which toolkits your assistant has access to -- only selected toolkits are available.
 
-FarmClaw curates a set of toolkits with descriptions tailored to farming use cases. See [Available Toolkits](/docs/integrations/toolkits) for the full list.
+Pantheon curates a set of toolkits with descriptions tailored to farming use cases. See [Available Toolkits](/docs/integrations/toolkits) for the full list.
 
 ### Connections
 
-A connection is an authorized link between your assistant and a specific service. When you connect Google Sheets, for example, you go through Google's OAuth consent screen and grant your assistant permission to access your spreadsheets. The connection is managed by Composio -- your Google credentials are never stored on FarmClaw servers.
+A connection is an authorized link between your assistant and a specific service. When you connect Google Sheets, for example, you go through Google's OAuth consent screen and grant your assistant permission to access your spreadsheets. The connection is managed by Composio -- your Google credentials are never stored on Pantheon servers.
 
 See [Connecting Services](/docs/integrations/connecting-services) for the full OAuth walkthrough.
 
@@ -59,7 +59,7 @@ Composio runs as a remote MCP server over Server-Sent Events (SSE). Your assista
 Composio runs entirely on Composio's infrastructure.
 
 <Callout variant="info" title="No extra cost for Composio">
-Composio integration is included in your FarmClaw subscription. The Composio API key is platform-level -- you do not need your own Composio account or API key.
+Composio integration is included in your Pantheon subscription. The Composio API key is platform-level -- you do not need your own Composio account or API key.
 </Callout>
 
 ## What can your assistant do with integrations?
@@ -82,7 +82,7 @@ Integrations complement your existing skills. Your assistant can combine data fr
 
 ## Getting started
 
-1. Go to **Settings > Integrations** in your FarmClaw dashboard.
+1. Go to **Settings > Integrations** in your Pantheon dashboard.
 2. Toggle the **Composio** switch to enable the integration.
 3. Select the toolkits you want your assistant to access.
 4. Click **Save Toolkits** to apply changes.
@@ -92,7 +92,7 @@ For detailed setup instructions, see [Setup Guide](/docs/integrations/setup).
 
 ## Privacy and security
 
-- Your service credentials (Google tokens, Slack tokens, etc.) are encrypted with AES-256-GCM and managed by Composio. They are never stored on FarmClaw servers.
+- Your service credentials (Google tokens, Slack tokens, etc.) are encrypted with AES-256-GCM and managed by Composio. They are never stored on Pantheon servers.
 - Composio acts as a secure proxy -- your assistant accesses services through authorized API calls only.
 - Disconnecting a service immediately revokes all access and removes stored tokens.
 - You control exactly which toolkits your assistant can use. Disabling a toolkit removes the assistant's ability to call those actions.

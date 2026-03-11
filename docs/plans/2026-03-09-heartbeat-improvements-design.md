@@ -1,4 +1,4 @@
-# FarmClaw Heartbeat Improvements Design
+# Pantheon Heartbeat Improvements Design
 
 **Date:** 2026-03-09
 **Author:** Codex
@@ -6,11 +6,11 @@
 
 ## Summary
 
-FarmClaw's heartbeat feature already has the correct economic shape: it runs deterministic, low-cost checks first and only invokes an LLM when something appears to need attention. That design should be preserved. The next iteration should focus on making heartbeats more correct, less noisy, more stateful, easier to operate, and safer to deliver.
+Pantheon's heartbeat feature already has the correct economic shape: it runs deterministic, low-cost checks first and only invokes an LLM when something appears to need attention. That design should be preserved. The next iteration should focus on making heartbeats more correct, less noisy, more stateful, easier to operate, and safer to deliver.
 
 This document proposes a phased heartbeat improvement plan based on:
 
-1. The current FarmClaw implementation
+1. The current Pantheon implementation
 2. OpenClaw's heartbeat and cron model
 3. Scheduling, observability, testing, and guardrail patterns used by other agent platforms
 
@@ -62,7 +62,7 @@ This was intentionally narrower than the full design:
 
 ## Current State
 
-### What FarmClaw does today
+### What Pantheon does today
 
 The current heartbeat pipeline is implemented across these files:
 
@@ -129,11 +129,11 @@ Important patterns from OpenClaw:
 - Heartbeat visibility is configurable independently from execution.
 - OpenClaw differentiates heartbeat from cron and uses heartbeat when multiple checks should be batched into one context-aware review.
 
-Why this matters for FarmClaw:
+Why this matters for Pantheon:
 
-- FarmClaw already has deterministic signal detection, but it does not yet have a strong "no-op suppression" contract.
-- FarmClaw stores overrides, but the runtime behavior is not yet aligned with an explicit per-agent heartbeat model.
-- FarmClaw could benefit from a lightweight heartbeat policy/checklist concept, even if it remains structured rather than file-based.
+- Pantheon already has deterministic signal detection, but it does not yet have a strong "no-op suppression" contract.
+- Pantheon stores overrides, but the runtime behavior is not yet aligned with an explicit per-agent heartbeat model.
+- Pantheon could benefit from a lightweight heartbeat policy/checklist concept, even if it remains structured rather than file-based.
 
 ### OpenAI Tasks
 
@@ -145,11 +145,11 @@ OpenAI Tasks highlights the operator-experience side of proactive systems:
 - There are explicit notification settings and delivery controls.
 - There is an enforced limit on active tasks, which prevents uncontrolled schedule sprawl.
 
-Why this matters for FarmClaw:
+Why this matters for Pantheon:
 
-- FarmClaw needs better schedule operations UX.
+- Pantheon needs better schedule operations UX.
 - The heartbeat system should expose clear pause/resume and next-run behavior.
-- FarmClaw should introduce pacing and quota controls so a misconfigured heartbeat cannot flood a farmer.
+- Pantheon should introduce pacing and quota controls so a misconfigured heartbeat cannot flood a farmer.
 
 ### Lindy
 
@@ -158,7 +158,7 @@ Lindy contributes two especially relevant patterns:
 - A built-in test panel for running workflows before production use
 - Rich task observability with task history, task status changes, and task detail inspection
 
-Why this matters for FarmClaw:
+Why this matters for Pantheon:
 
 - Heartbeat configuration should be testable without requiring a real outbound post.
 - Operators need to see exactly why a heartbeat fired, what checks ran, and what was sent.
@@ -172,7 +172,7 @@ Relevance AI offers several schedule-control patterns directly relevant to heart
 - Task queues and run-state visibility
 - Trigger configuration patterns that emphasize overlap prevention and testing
 
-Why this matters for FarmClaw:
+Why this matters for Pantheon:
 
 - Heartbeats should not interrupt active runtime work unnecessarily.
 - Heartbeats need built-in pacing controls.
@@ -185,10 +185,10 @@ Zapier and LangGraph contribute safety and approval patterns:
 - Zapier's AI Guardrails product scans AI outputs for PII, prompt injection, toxicity, and other issues before downstream use.
 - LangGraph's human-in-the-loop patterns allow execution to pause for approval before sensitive actions and then resume safely later.
 
-Why this matters for FarmClaw:
+Why this matters for Pantheon:
 
 - A heartbeat alert is external communication, and some heartbeat sources come from untrusted text inputs like email or custom checklist items.
-- FarmClaw should be able to scan or gate outbound alerts in riskier cases.
+- Pantheon should be able to scan or gate outbound alerts in riskier cases.
 - Some heartbeat alerts should optionally require human review before being dispatched.
 
 ## Design Goals
@@ -261,7 +261,7 @@ Recommended choice: Option A for the first pass, because it is simpler and avoid
 
 ### Problem
 
-FarmClaw now has minimal cooldown and daily-cap suppression, but the pacing model is still stateless. A repeated unresolved signal like "2 unanswered emails" is suppressed for a while, but once the cooldown expires the system still cannot distinguish "same ongoing issue" from "meaningfully new or worse issue."
+Pantheon now has minimal cooldown and daily-cap suppression, but the pacing model is still stateless. A repeated unresolved signal like "2 unanswered emails" is suppressed for a while, but once the cooldown expires the system still cannot distinguish "same ongoing issue" from "meaningfully new or worse issue."
 
 This is where many proactive systems fail: they become background noise and get disabled.
 
@@ -378,7 +378,7 @@ It also creates space for better language generation:
 
 ### Optional policy/checklist layer
 
-OpenClaw's `HEARTBEAT.md` is a useful pattern, but FarmClaw does not need to copy the file mechanism directly. The FarmClaw equivalent can be one of:
+OpenClaw's `HEARTBEAT.md` is a useful pattern, but Pantheon does not need to copy the file mechanism directly. The Pantheon equivalent can be one of:
 
 1. Structured config in the database
 2. Per-tenant freeform heartbeat instructions
@@ -861,7 +861,7 @@ This keeps the strongest part of the design intact, cheap-check-first escalation
 
 ### Discovery and design
 
-- [x] Review current FarmClaw heartbeat implementation
+- [x] Review current Pantheon heartbeat implementation
 - [x] Research OpenClaw heartbeat behavior
 - [x] Research comparable scheduling and proactive-agent patterns
 - [x] Produce heartbeat improvements design document
@@ -925,7 +925,7 @@ This keeps the strongest part of the design intact, cheap-check-first escalation
 
 ## Source Notes
 
-### Internal FarmClaw sources
+### Internal Pantheon sources
 
 - `src/trigger/process-heartbeat.ts`
 - `src/lib/heartbeat/cheap-checks.ts`

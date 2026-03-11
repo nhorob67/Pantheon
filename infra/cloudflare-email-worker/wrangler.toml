@@ -1,9 +1,9 @@
-name = "farmclaw-email-router"
+name = "pantheon-email-router"
 main = "worker.js"
 compatibility_date = "2026-02-12"
 
 [vars]
-ROOT_DOMAIN = "farmclaw.com"
+ROOT_DOMAIN = "pantheon.app"
 WEBHOOK_URL = "https://your-app.vercel.app/api/webhooks/email-inbound"
 # Optional comma-separated blocked senders:
 # BLOCKED_SENDERS = "blocked@example.com,spam@example.org"

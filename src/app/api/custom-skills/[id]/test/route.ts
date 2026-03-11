@@ -78,8 +78,8 @@ ${skill.skill_md}`;
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-      "HTTP-Referer": "https://farmclaw.com",
-      "X-Title": "FarmClaw Skill Test",
+      "HTTP-Referer": "https://pantheon.app",
+      "X-Title": "Pantheon Skill Test",
     },
     body: JSON.stringify({
       model: "anthropic/claude-sonnet-4-5",

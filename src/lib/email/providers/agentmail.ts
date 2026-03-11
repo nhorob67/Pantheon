@@ -174,7 +174,7 @@ export function createAgentMailClient(options: AgentMailClientOptions = {}) {
     const headers = new Headers({
       Authorization: `Bearer ${apiKey}`,
       Accept: "application/json",
-      "User-Agent": "farmclaw-agentmail-client/1.0",
+      "User-Agent": "pantheon-agentmail-client/1.0",
     });
 
     if (init?.headers) {

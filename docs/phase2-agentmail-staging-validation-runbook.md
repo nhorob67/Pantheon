@@ -2,8 +2,8 @@
 
 This runbook validates the hybrid ingestion flow end-to-end in staging:
 
-1. AgentMail `message.received` webhook lands in FarmClaw.
-2. FarmClaw writes `email_inbound` row in `queued`.
+1. AgentMail `message.received` webhook lands in Pantheon.
+2. Pantheon writes `email_inbound` row in `queued`.
 3. Phase 2 processor transitions message to `processed`.
 4. Raw payload and attachments persist in Supabase Storage.
 
@@ -26,7 +26,7 @@ This runbook validates the hybrid ingestion flow end-to-end in staging:
 
 ## Option A: Real Email Validation (Recommended)
 
-1. Send a real email from external sender to the FarmClaw identity address.
+1. Send a real email from external sender to the Pantheon identity address.
 2. Wait for AgentMail event delivery.
 3. Run SQL checks in Supabase (queries below).
 4. Invoke processor endpoint.
@@ -42,7 +42,7 @@ AGENTMAIL_WEBHOOK_SECRET="<whsec_...>" \
 EMAIL_PROCESSOR_TOKEN="<token>" \
 bash scripts/email/replay-agentmail-webhook.sh \
   --provider-email-id "<agentmail_message_id>" \
-  --to-email "<slug@farmclaw.com>" \
+  --to-email "<slug@pantheon.app>" \
   --inbox-id "<agentmail_inbox_id>"
 ```
 
@@ -60,7 +60,7 @@ AGENTMAIL_WEBHOOK_SECRET="<whsec_...>" \
 EMAIL_PROCESSOR_TOKEN="<token>" \
 bash scripts/email/staging-e2e-validation.sh \
   --provider-email-id "<agentmail_message_id>" \
-  --to-email "<slug@farmclaw.com>" \
+  --to-email "<slug@pantheon.app>" \
   --inbox-id "<agentmail_inbox_id>"
 ```
 

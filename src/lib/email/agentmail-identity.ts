@@ -34,7 +34,7 @@ export async function ensureAgentMailInboxForIdentity(
       metadata: {
         customer_id: identity.customer_id,
         identity_id: identity.id,
-        farmclaw_address: identity.address,
+        pantheon_address: identity.address,
       },
     });
   } catch (error) {

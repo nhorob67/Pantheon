@@ -1,11 +1,11 @@
 openapi: 3.1.0
 info:
-  title: FarmClaw Tenant Runtime API (Launch-Critical Slice)
+  title: Pantheon Tenant Runtime API (Launch-Critical Slice)
   version: "2026-02-24"
   description: >
     Typed contract snapshot for launch-critical tenant runtime routes.
 servers:
-  - url: https://app.farmclaw.com
+  - url: https://app.pantheon.app
 paths:
   /api/tenants/{tenantId}/context:
     get:

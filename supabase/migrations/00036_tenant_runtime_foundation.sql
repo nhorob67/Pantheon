@@ -481,7 +481,7 @@ SELECT
   COALESCE(
     NULLIF(fp.farm_name, ''),
     NULLIF(split_part(COALESCE(c.email, ''), '@', 1), ''),
-    'FarmClaw Tenant'
+    'Pantheon Tenant'
   ) AS name,
   jsonb_build_object(
     'seed_migration', '00036_tenant_runtime_foundation',

@@ -5,7 +5,7 @@ const MAX_CONTEXT_CHARS = 12_000;
 const MAX_CHUNKS = 8;
 const MAX_CHUNK_CHARS = 1_100;
 
-const SYSTEM_PROMPT = `You are a helpful documentation assistant for FarmClaw, a managed OpenClaw hosting platform for Upper Midwest row crop farmers.
+const SYSTEM_PROMPT = `You are a helpful documentation assistant for Pantheon, a managed OpenClaw hosting platform for Upper Midwest row crop farmers.
 
 Rules:
 - Answer ONLY from the provided documentation context.
@@ -402,8 +402,8 @@ export function createDocsAskHandler(deps: DocsAskDeps) {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${apiKey}`,
-          "HTTP-Referer": "https://farmclaw.com",
-          "X-Title": "FarmClaw Docs AI",
+          "HTTP-Referer": "https://pantheon.app",
+          "X-Title": "Pantheon Docs AI",
         },
         body: JSON.stringify({
           model: "anthropic/claude-sonnet-4-5",

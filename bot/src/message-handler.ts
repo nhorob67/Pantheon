@@ -1,7 +1,7 @@
 import type { Message } from "discord.js";
 
-const FARMCLAW_API_URL = process.env.FARMCLAW_API_URL || "http://localhost:3000";
-const FARMCLAW_BOT_SECRET = process.env.FARMCLAW_BOT_SECRET;
+const PANTHEON_API_URL = process.env.PANTHEON_API_URL || "http://localhost:3000";
+const PANTHEON_BOT_SECRET = process.env.PANTHEON_BOT_SECRET;
 const INGRESS_PATH = "/api/admin/tenants/runtime/discord/ingress";
 
 export async function handleMessage(message: Message): Promise<void> {
@@ -37,7 +37,7 @@ export async function handleMessage(message: Message): Promise<void> {
   };
 
   const requestId = `bot-${message.id}-${Date.now()}`;
-  const url = `${FARMCLAW_API_URL}${INGRESS_PATH}`;
+  const url = `${PANTHEON_API_URL}${INGRESS_PATH}`;
 
   try {
     const headers: Record<string, string> = {
@@ -46,8 +46,8 @@ export async function handleMessage(message: Message): Promise<void> {
       "x-request-id": requestId,
     };
 
-    if (FARMCLAW_BOT_SECRET) {
-      headers["Authorization"] = `Bearer ${FARMCLAW_BOT_SECRET}`;
+    if (PANTHEON_BOT_SECRET) {
+      headers["Authorization"] = `Bearer ${PANTHEON_BOT_SECRET}`;
     }
 
     const response = await fetch(url, {

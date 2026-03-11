@@ -65,7 +65,7 @@ export default function LoginPage() {
     <div className="bg-bg-card rounded-xl border border-border shadow-sm p-8 w-full max-w-md">
       <div className="text-center mb-8">
         <h1 className="font-headline text-3xl font-bold text-text-primary">
-          FarmClaw
+          Pantheon
         </h1>
         <p className="mt-2 text-text-secondary">
           Sign in to your farm assistant

@@ -222,7 +222,7 @@ async function ChannelsContent({ customerId }: { customerId: string }) {
             </h3>
             <p className="text-sm text-text-secondary mt-1 max-w-2xl">
               This is not required for setup. Enable it later only if you want
-              to send files into FarmClaw by email.
+              to send files into Pantheon by email.
             </p>
             <p className="text-xs text-text-secondary mt-2">
               Status: <span className="font-mono">{emailStatus}</span>

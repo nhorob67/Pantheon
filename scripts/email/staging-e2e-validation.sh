@@ -3,7 +3,7 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Run end-to-end AgentMail staging validation for FarmClaw.
+Run end-to-end AgentMail staging validation for Pantheon.
 
 This script:
 1) Replays a signed AgentMail webhook.
@@ -11,13 +11,13 @@ This script:
 3) Optionally runs webhook idempotency duplicate check.
 
 Required environment variables:
-  APP_URL                   Base app URL (example: https://staging.farmclaw.com)
+  APP_URL                   Base app URL (example: https://staging.pantheon.app)
   AGENTMAIL_WEBHOOK_SECRET  Secret for /api/webhooks/agentmail verification
   EMAIL_PROCESSOR_TOKEN     Token for /api/admin/email/process-inbound
 
 Required arguments:
   --provider-email-id <id>  Real AgentMail message id
-  --to-email <address>      FarmClaw identity address (slug@farmclaw.com)
+  --to-email <address>      Pantheon identity address (slug@pantheon.app)
 
 Optional arguments:
   --inbox-id <id>           AgentMail inbox id

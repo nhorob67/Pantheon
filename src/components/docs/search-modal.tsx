@@ -42,7 +42,7 @@ export function SearchModal() {
       a11yTitleId="docs-search-modal-title"
       a11yDescId="docs-search-modal-description"
       title="Search documentation"
-      description="Search FarmClaw documentation and ask AI questions with cited sources."
+      description="Search Pantheon documentation and ask AI questions with cited sources."
       placeholder="Search docs or ask a question..."
       inputId="docs-search-input"
       renderSignInPrompt={() => (

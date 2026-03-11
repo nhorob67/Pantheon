@@ -3,12 +3,12 @@
 import { m, LazyMotion, domAnimation } from "motion/react";
 
 const benefits = [
-  { icon: "#", title: "Organized by topic", desc: "#operations for your crew, #grain-bids for market updates, #weather for daily briefings. Everyone gets what they need without everything going through you." },
-  { icon: "\u{1F465}", title: "Your whole team, free", desc: "Unlimited users at $0/month. Add operators, agronomists, and your grain buyer without a single per-seat charge." },
-  { icon: "\u{1F512}", title: "Role-based access", desc: "Farm owner sees everything. Equipment operators see what they need. External agronomists see only agronomy. You set the lines." },
-  { icon: "\u{1F4F1}", title: "Built for the field", desc: "Discord\u2019s mobile app uses 75% less data than alternatives and loads fast on any connection. Works on the combine, not just in the office." },
-  { icon: "/", title: "Slash commands", desc: "Type /tasks today or /sop anhydrous and get instant answers. No hunting through old messages." },
-  { icon: "\u221E", title: "Unlimited history", desc: "Every task, procedure, weather alert, and conversation, searchable forever. Nothing gets buried or deleted after 90 days." },
+  { icon: "#", title: "Organized by topic", desc: "#operations for your team, #research for market intel, #client-projects for active work. Everyone gets what they need without everything going through you." },
+  { icon: "\u{1F465}", title: "Your whole team, free", desc: "Unlimited users at $0/month. Add employees, contractors, and partners without a single per-seat charge." },
+  { icon: "\u{1F512}", title: "Role-based access", desc: "Owner sees everything. Managers see what they need. Contractors see only their projects. Guests see only what you share. You set the lines." },
+  { icon: "\u{1F4F1}", title: "Works everywhere", desc: "Discord\u2019s mobile app uses 75% less data than alternatives and loads fast on any connection. Works in the field, not just in the office." },
+  { icon: "/", title: "Slash commands", desc: "Type /tasks today or /sop onboarding and get instant answers. No hunting through old messages." },
+  { icon: "\u221E", title: "Unlimited history", desc: "Every task, procedure, research result, and conversation, searchable forever. Nothing gets buried or deleted after 90 days." },
 ];
 
 export function Channels() {
@@ -22,16 +22,16 @@ export function Channels() {
         transition={{ duration: 0.7 }}
       >
         <div style={{ textAlign: "center" as const }}>
-          <div className="section-label">Your Farm&apos;s Command Center</div>
+          <div className="section-label">Your Command Center</div>
           <h2 className="section-title" style={{ margin: "0 auto" }}>Stop routing everything through your phone.</h2>
-          <p className="section-sub" style={{ margin: "16px auto 0" }}>Give your crew, your advisors, and your AI team their own channels. The right people see the right information, and you stop being the middleman for every question. No per-user fees. No message limits.</p>
+          <p className="section-sub" style={{ margin: "16px auto 0" }}>Give your team, your partners, and your AI agents their own channels. The right people see the right information, and you stop being the middleman for every question. No per-user fees. No message limits.</p>
         </div>
 
         <div className="discord-grid">
           <div className="discord-mockup">
-            <div className="discord-server-name">Johnson Farms</div>
+            <div className="discord-server-name">Acme Corp</div>
             <div className="discord-channels">
-              {["general", "operations", "weather", "grain-bids", "equipment"].map((ch) => (
+              {["general", "operations", "research", "client-projects", "finance"].map((ch) => (
                 <div key={ch} className="discord-channel">
                   <span className="discord-hash">#</span>
                   {ch}
@@ -43,8 +43,8 @@ export function Channels() {
               <div className="discord-role-list">
                 <span className="discord-role owner">Owner</span>
                 <span className="discord-role manager">Manager</span>
-                <span className="discord-role operator">Operator</span>
-                <span className="discord-role agronomist">Agronomist</span>
+                <span className="discord-role operator">Contractor</span>
+                <span className="discord-role agronomist">Guest</span>
               </div>
             </div>
           </div>

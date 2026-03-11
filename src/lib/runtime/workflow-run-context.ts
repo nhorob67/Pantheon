@@ -34,8 +34,8 @@ export function buildWorkflowRunContextCommand(
 ): string {
   const contextPayload = buildWorkflowRunContextPayload(input);
   const encodedContext = Buffer.from(JSON.stringify(contextPayload)).toString("base64");
-  const contextAssignment = `FARMCLAW_RUN_CONTEXT_B64=${shellQuote(encodedContext)}`;
-  const traceAssignment = `FARMCLAW_REQUEST_TRACE_ID=${shellQuote(
+  const contextAssignment = `PANTHEON_RUN_CONTEXT_B64=${shellQuote(encodedContext)}`;
+  const traceAssignment = `PANTHEON_REQUEST_TRACE_ID=${shellQuote(
     input.requestTraceId
   )}`;
   const workerCommand = `node -e ${shellQuote(workerScript)}`;

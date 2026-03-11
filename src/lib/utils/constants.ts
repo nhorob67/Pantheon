@@ -1,4 +1,4 @@
-export const APP_NAME = "FarmClaw";
+export const APP_NAME = "Pantheon";
 export const SUBSCRIPTION_PRICE = 50;
 export const SUBSCRIPTION_PRICE_CENTS = 5000;
 export const API_MARGIN = 0.25;

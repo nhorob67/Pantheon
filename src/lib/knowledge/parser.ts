@@ -74,7 +74,7 @@ async function parsePdfWithPdfParse(buffer: Buffer): Promise<string | null> {
 }
 
 async function parsePdfWithPdftotext(buffer: Buffer): Promise<string | null> {
-  const tempDir = await mkdtemp(join(tmpdir(), "farmclaw-pdf-"));
+  const tempDir = await mkdtemp(join(tmpdir(), "pantheon-pdf-"));
   const inputPath = join(tempDir, "input.pdf");
   const outputPath = join(tempDir, "output.txt");
 
@@ -95,7 +95,7 @@ async function parsePdfWithPdftotext(buffer: Buffer): Promise<string | null> {
 }
 
 async function parsePdfWithOcr(buffer: Buffer): Promise<string | null> {
-  const tempDir = await mkdtemp(join(tmpdir(), "farmclaw-pdf-ocr-"));
+  const tempDir = await mkdtemp(join(tmpdir(), "pantheon-pdf-ocr-"));
   const inputPath = join(tempDir, "input.pdf");
   const ocrScript = [
     "import sys",

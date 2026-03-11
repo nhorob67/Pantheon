@@ -27,7 +27,7 @@ export function ComposioTrustDisclosure() {
             <li className="flex items-start gap-2">
               <span className="text-foreground/30 mt-0.5">&#8226;</span>
               Service credentials are encrypted with AES-256-GCM and never
-              stored on FarmClaw servers.
+              stored on Pantheon servers.
             </li>
             <li className="flex items-start gap-2">
               <span className="text-foreground/30 mt-0.5">&#8226;</span>

@@ -1,4 +1,4 @@
-# FarmClaw Discord-Only Extensibility Execution Plan (P0-P2)
+# Pantheon Discord-Only Extensibility Execution Plan (P0-P2)
 
 Last updated: February 15, 2026
 Status: In Progress

@@ -40,7 +40,7 @@ Free, reliable, no authentication required. Use for:
 5. Get observations: `GET https://api.weather.gov/stations/{stationId}/observations/latest`
 
 **Important:** The NWS API requires a `User-Agent` header. Use:
-`User-Agent: FarmClaw/1.0 (contact@farmclaw.com)`
+`User-Agent: Pantheon/1.0 (contact@pantheon.app)`
 
 Use bash `curl` commands to call these endpoints. Parse the JSON response
 to extract relevant fields.
@@ -48,15 +48,15 @@ to extract relevant fields.
 Example curl commands:
 ```bash
 # Get grid point info
-curl -sf -H "User-Agent: FarmClaw/1.0 (contact@farmclaw.com)" \
+curl -sf -H "User-Agent: Pantheon/1.0 (contact@pantheon.app)" \
   "https://api.weather.gov/points/46.8772,-96.7898"
 
 # Get forecast (use URL from grid point response)
-curl -sf -H "User-Agent: FarmClaw/1.0 (contact@farmclaw.com)" \
+curl -sf -H "User-Agent: Pantheon/1.0 (contact@pantheon.app)" \
   "https://api.weather.gov/gridpoints/FGF/78,47/forecast"
 
 # Get active alerts for a location
-curl -sf -H "User-Agent: FarmClaw/1.0 (contact@farmclaw.com)" \
+curl -sf -H "User-Agent: Pantheon/1.0 (contact@pantheon.app)" \
   "https://api.weather.gov/alerts/active?point=46.8772,-96.7898"
 ```
 

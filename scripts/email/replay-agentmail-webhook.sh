@@ -8,20 +8,20 @@ fi
 
 usage() {
   cat <<'EOF'
-Replay an AgentMail-style signed webhook to FarmClaw and optionally trigger the Phase 2 processor.
+Replay an AgentMail-style signed webhook to Pantheon and optionally trigger the Phase 2 processor.
 
 Required environment variables:
-  APP_URL                   Base app URL (example: https://staging.farmclaw.com)
+  APP_URL                   Base app URL (example: https://staging.pantheon.app)
   AGENTMAIL_WEBHOOK_SECRET  Webhook secret used by /api/webhooks/agentmail
 
 Required arguments:
   --provider-email-id <id>  Real AgentMail message id (must exist for processor success)
-  --to-email <address>      FarmClaw identity address (slug@farmclaw.com)
+  --to-email <address>      Pantheon identity address (slug@pantheon.app)
 
 Optional arguments:
   --inbox-id <id>           AgentMail inbox id (improves identity matching)
   --from-email <address>    Sender address used in payload (default: staging-sender@example.net)
-  --subject <text>          Message subject (default: FarmClaw AgentMail staging replay)
+  --subject <text>          Message subject (default: Pantheon AgentMail staging replay)
   --batch-size <n>          Processor batch size (default: 10)
   --max-retries <n>         Processor max retries (default: 5)
   --skip-processor          Only send webhook; do not call processor endpoint
@@ -35,7 +35,7 @@ PROVIDER_EMAIL_ID=""
 TO_EMAIL=""
 INBOX_ID=""
 FROM_EMAIL="staging-sender@example.net"
-SUBJECT="FarmClaw AgentMail staging replay"
+SUBJECT="Pantheon AgentMail staging replay"
 RUN_PROCESSOR=1
 BATCH_SIZE=10
 MAX_RETRIES=5
@@ -128,7 +128,7 @@ const payload = {
     message_id: `<${process.env.PROVIDER_EMAIL_ID}@agentmail.staging>`,
     attachments_count: 0,
     headers: {
-      "x-farmclaw-original-to": process.env.TO_EMAIL,
+      "x-pantheon-original-to": process.env.TO_EMAIL,
     },
   },
 };

@@ -2,17 +2,16 @@ import Link from "next/link";
 import { Check, Shield } from "lucide-react";
 
 const features = [
-  "AI team configured for your operation",
-  "$25/mo AI usage included, most farms stay under",
-  "Discord for your crew, unlimited users",
-  "Organize communication with partners and employees",
-  "Daily task lists and reminders",
+  "AI team configured for your business",
+  "$25/mo AI usage included, most teams stay under",
+  "Discord for your team, unlimited users",
+  "Task management and daily reminders",
+  "Email intelligence and follow-up tracking",
   "SOPs and procedure checklists",
-  "Morning weather & spray briefings",
-  "Grain bids from your elevators",
-  "Scale ticket logging (photo/voice/typed)",
-  "Research & analysis on demand",
-  "Farm-specific memory that improves",
+  "Research and analysis on demand",
+  "Document processing (PDF, DOCX, contracts)",
+  "Communication tracking across contacts",
+  "Work-specific memory that improves",
   "New capabilities added automatically",
 ];
 
@@ -23,7 +22,7 @@ export function Pricing() {
       id="pricing"
     >
       <div className="section-label">Simple Pricing</div>
-      <h2 className="section-title-display" style={{ margin: "0 auto" }}>The cheapest hire on your farm.</h2>
+      <h2 className="section-title-display" style={{ margin: "0 auto" }}>The cheapest hire on your team.</h2>
 
       <div className="pricing-card">
         <div className="pricing-trial-label">Try it free for 14 days</div>
@@ -39,14 +38,14 @@ export function Pricing() {
 
         <div className="pricing-usage-note">
           <p>
-            <strong>Most farmers pay $50.</strong> Your plan includes $25 of AI
+            <strong>Most teams pay $50.</strong> Your plan includes $25 of AI
             usage, enough for daily briefings, task management, and regular questions.
           </p>
           <p>
             Go beyond that and overage is billed in $20 blocks at month-end.
             That rate includes a small service fee that covers the infrastructure
             keeping your assistant available 24/7. Most heavy users (multiple
-            agents, frequent scale tickets) land around $60–75/mo.
+            agents, frequent research) land around $60–75/mo.
           </p>
           <div className="pricing-control-note">
             <Shield size={16} />
@@ -63,9 +62,9 @@ export function Pricing() {
       </div>
 
       <div className="pricing-value-note">
-        <strong>Think about it this way:</strong> One missed callback to your crop insurance agent.
-        One forgotten delivery confirmation. One procedure your operator didn&apos;t know about.
-        Any one of these costs more than a full year of FarmClaw. Your AI team keeps track so
+        <strong>Think about it this way:</strong> One missed client follow-up.
+        One forgotten contract renewal. One procedure a new hire didn&apos;t know about.
+        Any one of these costs more than a full year of Pantheon. Your AI team keeps track so
         nothing falls through the cracks.
       </div>
     </section>

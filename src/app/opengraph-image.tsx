@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "FarmClaw — AI That Works Your Farm";
+export const alt = "Pantheon — AI That Works Your Farm";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -50,7 +50,7 @@ export default function OGImage() {
               display: "flex",
             }}
           >
-            FarmClaw
+            Pantheon
           </div>
 
           <div

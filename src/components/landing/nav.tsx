@@ -18,16 +18,16 @@ export function Nav() {
   const closeMenu = () => setMenuOpen(false);
 
   const links = [
-    { href: "#skills", label: "What It Does" },
+    { href: "#platform", label: "Capabilities" },
+    { href: "#team", label: "Your Team" },
     { href: "#how", label: "How It Works" },
-    { href: "#trust", label: "Your Data" },
     { href: "#pricing", label: "Pricing" },
   ];
 
   return (
     <>
       <nav className={`landing-nav ${scrolled ? "scrolled" : ""}`}>
-        <Link href="#" className="nav-logo">Farm<span>Claw</span></Link>
+        <Link href="#" className="nav-logo">Panthe<span>on</span></Link>
         <div className="nav-links">
           {links.map((l) => (
             <Link key={l.href} href={l.href}>{l.label}</Link>

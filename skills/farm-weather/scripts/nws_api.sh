@@ -1,5 +1,5 @@
 #!/bin/bash
-# NWS API helper for FarmClaw weather skill
+# NWS API helper for Pantheon weather skill
 # Usage: nws_api.sh <lat> <lng> [forecast|hourly|alerts]
 
 set -e
@@ -7,7 +7,7 @@ set -e
 LAT="$1"
 LNG="$2"
 TYPE="${3:-forecast}"
-USER_AGENT="FarmClaw/1.0 (contact@farmclaw.com)"
+USER_AGENT="Pantheon/1.0 (contact@pantheon.app)"
 
 # Get grid point
 POINT_URL="https://api.weather.gov/points/${LAT},${LNG}"

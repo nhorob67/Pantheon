@@ -145,7 +145,7 @@ export default async function DashboardPage() {
             </h3>
             <p className="text-sm text-foreground/60 mt-1">
               Not needed for onboarding. Enable it only if you want to send
-              files into FarmClaw by email.
+              files into Pantheon by email.
             </p>
             <p className="text-xs text-foreground/50 mt-2">
               Status:{" "}

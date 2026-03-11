@@ -56,7 +56,7 @@ He opened his laptop to check the weather — he'd been toggling between three d
 
 But this was different. The guy was talking about AI. Not the sci-fi kind. Not the kind that was going to replace farmers. The kind that just... answered questions. That remembered things. That watched your email and told you when something mattered. That let your employees ask it questions at 5 AM instead of calling you.
 
-FarmClaw.
+Pantheon.
 
 Ryan read the post twice. Then he went to the website. Then he read it again.
 
@@ -68,11 +68,11 @@ He signed up at 10:47 PM. He didn't tell anyone.
 
 ## Part Three: Building the Brain
 
-The onboarding took him twenty minutes. FarmClaw asked about his farm — location, crops, acres, elevators. It asked about his team. It asked what was keeping him up at night.
+The onboarding took him twenty minutes. Pantheon asked about his farm — location, crops, acres, elevators. It asked about his team. It asked what was keeping him up at night.
 
 *Everything*, he thought. But he typed "too many questions from employees, can't keep track of spray plans, email is a disaster."
 
-FarmClaw set up a Discord server for his operation. Then it walked him through creating his first advisors.
+Pantheon set up a Discord server for his operation. Then it walked him through creating his first advisors.
 
 Ryan built five of them that first week.
 
@@ -131,7 +131,7 @@ He didn't call Ryan once that entire day.
 
 Ryan's wife, Sarah, had been asking him for two years to get a better system for tracking employee hours. They'd tried a paper sign-in sheet. It lasted a month before it became illegible. They tried an app, but half the crew didn't download it, and the other half forgot to clock out.
 
-Ryan added a clock-in function to the Discord server through FarmClaw. Simple. You type "clock in" when you arrive. You type "clock out" when you leave. The advisor logs the time, confirms it back to you, and stores the record. End of week, Ryan pulls the summary. Hours by employee, by day. No paper. No app. No arguments.
+Ryan added a clock-in function to the Discord server through Pantheon. Simple. You type "clock in" when you arrive. You type "clock out" when you leave. The advisor logs the time, confirms it back to you, and stores the record. End of week, Ryan pulls the summary. Hours by employee, by day. No paper. No app. No arguments.
 
 The first week, Tyler forgot to clock out on Wednesday. The advisor sent him a DM at 7 PM: *Hey Tyler, looks like you're still clocked in from this morning. Did you forget to clock out? What time did you wrap up?*
 
@@ -199,4 +199,4 @@ Time. And quiet. And the ability to be somewhere — really be somewhere — tha
 
 ---
 
-*FarmClaw. The brain your farm deserves.*
+*Pantheon. The brain your farm deserves.*

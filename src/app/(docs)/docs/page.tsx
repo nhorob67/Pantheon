@@ -17,7 +17,7 @@ import {
 export const metadata: Metadata = {
   title: "Documentation",
   description:
-    "Learn how to set up and use FarmClaw, the AI assistant for Upper Midwest row crop farmers.",
+    "Learn how to set up and use Pantheon, the AI assistant for Upper Midwest row crop farmers.",
 };
 
 const SECTION_META: Record<
@@ -91,7 +91,7 @@ export default function DocsPage() {
           className="text-4xl font-bold tracking-tight"
           style={{ fontFamily: "var(--headline)" }}
         >
-          FarmClaw Documentation
+          Pantheon Documentation
         </h1>
         <p className="mt-4 text-lg text-text-secondary max-w-2xl leading-relaxed">
           Everything you need to set up and get the most out of your AI farm

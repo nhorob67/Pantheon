@@ -223,7 +223,7 @@ export async function assembleContext(
     messages,
     tools,
     agentId: agent?.id ?? null,
-    agentDisplayName: agent?.display_name ?? "FarmClaw Assistant",
+    agentDisplayName: agent?.display_name ?? "Pantheon Assistant",
     sessionId: session.id,
     agent,
     memorySettings,
@@ -233,7 +233,7 @@ export async function assembleContext(
 }
 
 function buildFallbackPrompt(): string {
-  return `# FarmClaw Assistant
+  return `# Pantheon Assistant
 
 You are a helpful farm AI assistant. You help Upper Midwest row crop farmers with daily operations, grain marketing, weather monitoring, and scale ticket management.
 

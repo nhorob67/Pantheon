@@ -13,7 +13,7 @@ Each toolkit that requires authentication needs a one-time OAuth connection befo
 
 ## The OAuth flow
 
-OAuth is the industry-standard protocol for granting third-party access to your accounts without sharing passwords. When you connect a service through FarmClaw, you go through the service provider's own login and consent screens. FarmClaw never sees or stores your service passwords.
+OAuth is the industry-standard protocol for granting third-party access to your accounts without sharing passwords. When you connect a service through Pantheon, you go through the service provider's own login and consent screens. Pantheon never sees or stores your service passwords.
 
 ### Step by step
 
@@ -25,7 +25,7 @@ OAuth is the industry-standard protocol for granting third-party access to your 
 6. **Complete:** The popup shows "Connected" and closes automatically. The parent page updates with a green "Connected" badge.
 
 ```
-FarmClaw Dashboard          Popup Window
+Pantheon Dashboard          Popup Window
 ─────────────────          ─────────────
 Click "Connect"  ────────► Opens service login
                            User signs in
@@ -39,15 +39,15 @@ Success toast
 
 When you click Authorize:
 
-1. FarmClaw's API calls Composio to initiate an OAuth connection for your Composio entity.
+1. Pantheon's API calls Composio to initiate an OAuth connection for your Composio entity.
 2. Composio generates a redirect URL pointing to the service's OAuth authorization endpoint.
 3. The popup navigates to this URL.
-4. After you consent, the service redirects back to FarmClaw's callback URL.
+4. After you consent, the service redirects back to Pantheon's callback URL.
 5. The callback endpoint syncs your connection status from Composio and updates the database.
 6. The popup sends a `postMessage` to the parent window, which triggers a UI refresh.
 
 <Callout variant="info" title="Tokens are managed by Composio">
-OAuth access tokens and refresh tokens are stored and managed by Composio, not FarmClaw. Composio handles token refresh automatically when tokens expire. You do not need to re-authorize unless the refresh token itself expires (which is rare for most services).
+OAuth access tokens and refresh tokens are stored and managed by Composio, not Pantheon. Composio handles token refresh automatically when tokens expire. You do not need to re-authorize unless the refresh token itself expires (which is rare for most services).
 </Callout>
 
 ## Which account to use
@@ -123,7 +123,7 @@ When you disconnect a service, access is revoked immediately. There is no delay 
 Most OAuth providers issue refresh tokens that Composio uses to automatically renew access. However, some scenarios cause expiration:
 
 - You changed your service account password
-- You revoked FarmClaw's access in the service's security settings
+- You revoked Pantheon's access in the service's security settings
 - The refresh token exceeded its maximum lifetime (uncommon)
 - The service provider rotated their OAuth credentials (rare)
 
@@ -139,7 +139,7 @@ Most browsers block popups by default. If the OAuth popup does not appear:
 2. Click it and select "Always allow popups from this site."
 3. Try clicking Connect again.
 
-If popups remain blocked, FarmClaw falls back to a full-page redirect. You will be redirected away from the dashboard to complete the OAuth flow, then redirected back afterward.
+If popups remain blocked, Pantheon falls back to a full-page redirect. You will be redirected away from the dashboard to complete the OAuth flow, then redirected back afterward.
 
 ### Popup opened but stuck
 
@@ -166,7 +166,7 @@ If the popup showed "Connected" but the dashboard still shows "Disconnected":
 
 ## Revoking access from the service side
 
-You can also revoke FarmClaw's access directly from the service provider:
+You can also revoke Pantheon's access directly from the service provider:
 
 | Service | Where to revoke |
 |---|---|
@@ -176,7 +176,7 @@ You can also revoke FarmClaw's access directly from the service provider:
 | Todoist | Todoist settings > Integrations |
 | Airtable | Airtable account settings > API |
 
-After revoking from the service side, click **Refresh** in FarmClaw to update your connection status. The status will change to "Expired" or "Disconnected."
+After revoking from the service side, click **Refresh** in Pantheon to update your connection status. The status will change to "Expired" or "Disconnected."
 
 ## What's next
 

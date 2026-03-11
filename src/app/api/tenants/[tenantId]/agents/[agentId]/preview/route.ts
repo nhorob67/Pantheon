@@ -9,7 +9,7 @@ import {
 } from "@/lib/runtime/tenant-route";
 import { buildSystemPrompt } from "@/lib/ai/system-prompt";
 import { resolveToolsForAgent } from "@/lib/ai/tools/registry";
-import { farmclawModel, AI_CONFIG } from "@/lib/ai/client";
+import { pantheonModel, AI_CONFIG } from "@/lib/ai/client";
 
 const previewRouteParamsSchema = z.object({
   tenantId: z.uuid(),
@@ -124,7 +124,7 @@ export async function POST(
       const hasTools = Object.keys(tools).length > 0;
 
       const result = await generateText({
-        model: farmclawModel,
+        model: pantheonModel,
         system: systemPrompt + "\n\n## Preview Mode\nThis is a preview/test conversation. Responses will NOT appear in Discord. Treat this as a normal farmer interaction.",
         messages: [{ role: "user" as const, content: parsed.data.message }],
         ...(hasTools ? { tools, maxSteps: 3 } : {}),

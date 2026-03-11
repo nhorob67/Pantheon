@@ -29,7 +29,7 @@ async function resendRequest(
   const url = `${getResendApiBaseUrl()}${path}`;
   const headers = new Headers(init.headers);
   headers.set("Authorization", `Bearer ${getResendApiKey()}`);
-  headers.set("User-Agent", "farmclaw-email-processor/1.0");
+  headers.set("User-Agent", "pantheon-email-processor/1.0");
 
   const response = await fetch(url, {
     ...init,

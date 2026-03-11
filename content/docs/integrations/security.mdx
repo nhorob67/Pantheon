@@ -9,26 +9,26 @@ tags: [integrations, security, privacy, credentials, encryption, oauth, composio
 
 # Security and Privacy
 
-This page explains how FarmClaw's Composio integration handles your credentials, what data flows between systems, and what controls you have over access.
+This page explains how Pantheon's Composio integration handles your credentials, what data flows between systems, and what controls you have over access.
 
 ## Architecture overview
 
 Three systems are involved in the integrations flow:
 
 ```
-Your Browser ──► FarmClaw API ──► Composio API ──► Service API
+Your Browser ──► Pantheon API ──► Composio API ──► Service API
                                                    (Google, Slack, etc.)
 ```
 
 | System | What it stores | What it does |
 |---|---|---|
-| **FarmClaw** | Composio entity ID, MCP server URL, toolkit selections, cached connection status | Manages configuration, serves the dashboard UI |
+| **Pantheon** | Composio entity ID, MCP server URL, toolkit selections, cached connection status | Manages configuration, serves the dashboard UI |
 | **Composio** | OAuth tokens (access + refresh), connection metadata | Handles OAuth flows, stores credentials, proxies API calls, refreshes tokens |
 | **Service (Google, etc.)** | Your account data | Processes API requests from Composio on your behalf |
 
-### What FarmClaw does NOT store
+### What Pantheon does NOT store
 
-FarmClaw never stores:
+Pantheon never stores:
 
 - Your service passwords
 - OAuth access tokens
@@ -36,7 +36,7 @@ FarmClaw never stores:
 - Service API keys
 - Any credentials for Google, Slack, Notion, or other connected services
 
-The only credential-related data FarmClaw stores is the **connection status** (connected/disconnected/expired) and the **account identifier** (e.g., the email address associated with the connection). These are cached from Composio for display in the dashboard.
+The only credential-related data Pantheon stores is the **connection status** (connected/disconnected/expired) and the **account identifier** (e.g., the email address associated with the connection). These are cached from Composio for display in the dashboard.
 
 ## Credential encryption
 
@@ -81,16 +81,16 @@ Composio does not:
 - Use your data for training or analytics
 - Access your connected services outside of explicit tool calls from your assistant
 
-### What FarmClaw can see
+### What Pantheon can see
 
-FarmClaw can see:
+Pantheon can see:
 
 - That you have Composio enabled
 - Which toolkits you have selected
 - Which services are connected (status only, not tokens)
 - Standard API usage metrics (request counts for billing)
 
-FarmClaw cannot see:
+Pantheon cannot see:
 
 - The content of integration requests or responses (these flow directly between your assistant and Composio)
 - Your OAuth tokens or service credentials
@@ -124,13 +124,13 @@ Visit the Connected Accounts section periodically to review which services are c
 
 ## Disconnection and revocation
 
-### Disconnecting from FarmClaw
+### Disconnecting from Pantheon
 
-When you click **Disconnect** in the FarmClaw dashboard:
+When you click **Disconnect** in the Pantheon dashboard:
 
-1. FarmClaw calls Composio's API to revoke the connection.
+1. Pantheon calls Composio's API to revoke the connection.
 2. Composio deletes the stored OAuth tokens.
-3. The connection status updates to "Disconnected" in FarmClaw.
+3. The connection status updates to "Disconnected" in Pantheon.
 4. Your assistant immediately loses access to that service.
 
 ### Revoking from the service side
@@ -142,21 +142,21 @@ You can also revoke access directly from the service provider (e.g., Google Acco
 3. The connection status will show as "Expired" after a refresh.
 4. Your assistant will receive an authorization error when trying to use the service.
 
-Both methods are equally effective. Disconnecting from FarmClaw is the recommended approach because it provides immediate UI feedback.
+Both methods are equally effective. Disconnecting from Pantheon is the recommended approach because it provides immediate UI feedback.
 
 ## Transport security
 
-### FarmClaw to Composio
+### Pantheon to Composio
 
-All communication between FarmClaw and Composio occurs over HTTPS (TLS 1.2+). The MCP server connection uses Server-Sent Events (SSE) over HTTPS.
+All communication between Pantheon and Composio occurs over HTTPS (TLS 1.2+). The MCP server connection uses Server-Sent Events (SSE) over HTTPS.
 
 ### Composio to services
 
 Composio communicates with service APIs over HTTPS. Composio does not support unencrypted connections to service providers.
 
-### Your browser to FarmClaw
+### Your browser to Pantheon
 
-The FarmClaw dashboard is served over HTTPS. OAuth callbacks are also HTTPS-only.
+The Pantheon dashboard is served over HTTPS. OAuth callbacks are also HTTPS-only.
 
 ## Incident response
 
@@ -164,28 +164,28 @@ The FarmClaw dashboard is served over HTTPS. OAuth callbacks are also HTTPS-only
 
 In the unlikely event of a Composio security incident:
 
-1. Immediately disconnect all services from the FarmClaw dashboard.
-2. Revoke FarmClaw's access from each service provider's security settings.
+1. Immediately disconnect all services from the Pantheon dashboard.
+2. Revoke Pantheon's access from each service provider's security settings.
 3. Disable the Composio integration toggle.
 4. Change passwords on your connected service accounts.
 
-### If FarmClaw is compromised
+### If Pantheon is compromised
 
-A FarmClaw compromise would not expose your service credentials because FarmClaw does not store them. However, an attacker with access to your FarmClaw account could:
+A Pantheon compromise would not expose your service credentials because Pantheon does not store them. However, an attacker with access to your Pantheon account could:
 
 - See which services are connected (status only)
 - Enable/disable toolkits
 - Trigger new OAuth flows (but would need your service password to complete them)
 
-To mitigate: use a strong password and magic link authentication for your FarmClaw account.
+To mitigate: use a strong password and magic link authentication for your Pantheon account.
 
 ## Frequently asked questions
 
-### Can FarmClaw employees access my Google Sheets / emails / calendar?
+### Can Pantheon employees access my Google Sheets / emails / calendar?
 
-No. FarmClaw does not store your service credentials and does not have access to your connected service accounts. Only your AI assistant can make API calls through Composio using your authorized tokens.
+No. Pantheon does not store your service credentials and does not have access to your connected service accounts. Only your AI assistant can make API calls through Composio using your authorized tokens.
 
-### What happens to my data if I cancel my FarmClaw subscription?
+### What happens to my data if I cancel my Pantheon subscription?
 
 When your subscription ends and your workspace is closed:
 
@@ -193,7 +193,7 @@ When your subscription ends and your workspace is closed:
 - All service connections are revoked.
 - No residual access to your services remains.
 
-### Can I use integrations without giving FarmClaw access to my email?
+### Can I use integrations without giving Pantheon access to my email?
 
 Yes. Each toolkit is independent. You can enable Google Sheets and Google Calendar without enabling Gmail. You choose exactly which services to connect.
 
@@ -203,6 +203,6 @@ Composio maintains enterprise security practices. Check [composio.dev/security](
 
 ## What's next
 
-- [Integrations Overview](/docs/integrations) -- How integrations fit into your FarmClaw workspace
+- [Integrations Overview](/docs/integrations) -- How integrations fit into your Pantheon workspace
 - [Connecting Services](/docs/integrations/connecting-services) -- OAuth flow and connection management
 - [Troubleshooting](/docs/troubleshooting/common-issues) -- Common issues and solutions

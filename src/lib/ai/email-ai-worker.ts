@@ -109,7 +109,7 @@ export function createEmailAiWorker(admin: SupabaseClient): TenantRuntimeWorker 
           ...(hasTools ? { tools: assembled.tools, maxSteps: 5 } : {}),
         });
 
-        const responseText = result.text || "[FarmClaw] No response generated.";
+        const responseText = result.text || "[Pantheon] No response generated.";
 
         // Store outbound message
         await storeOutboundMessage(admin, {

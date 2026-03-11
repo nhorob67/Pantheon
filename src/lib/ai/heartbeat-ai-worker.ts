@@ -157,7 +157,7 @@ export function createHeartbeatAiWorker(admin: SupabaseClient): TenantRuntimeWor
           messages: [{ role: "user", content: userPrompt }],
         });
 
-        const responseText = result.text || "[FarmClaw] Heartbeat check completed with no summary.";
+        const responseText = result.text || "[Pantheon] Heartbeat check completed with no summary.";
         const outputGuardrail = evaluateHeartbeatOutputGuardrails(responseText);
 
         // Record token usage

@@ -1,6 +1,6 @@
 import { generateObject, type LanguageModel } from "ai";
 import { z } from "zod";
-import { farmclawModel } from "./client";
+import { pantheonModel } from "./client";
 
 const scaleTicketOCRSchema = z.object({
   date: z.string().nullable().describe("Delivery date (YYYY-MM-DD)"),
@@ -26,7 +26,7 @@ export async function extractScaleTicketFromImage(
   model?: LanguageModel
 ): Promise<ScaleTicketOCRResult> {
   const { object } = await generateObject({
-    model: model ?? farmclawModel,
+    model: model ?? pantheonModel,
     schema: scaleTicketOCRSchema,
     temperature: 0.1,
     messages: [

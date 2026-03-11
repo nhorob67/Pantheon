@@ -9,6 +9,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/api/", "/dashboard/", "/settings/", "/admin/", "/onboarding/"],
       },
     ],
-    sitemap: "https://farmclaw.com/sitemap.xml",
+    sitemap: "https://pantheon.app/sitemap.xml",
   };
 }

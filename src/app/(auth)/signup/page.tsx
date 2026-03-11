@@ -83,7 +83,7 @@ export default function SignupPage() {
           <Wheat className="w-6 h-6 text-accent" />
         </div>
         <h1 className="font-headline text-3xl font-bold text-text-primary">
-          Try FarmClaw Free for 14 Days
+          Try Pantheon Free for 14 Days
         </h1>
         <p className="mt-2 text-text-secondary">
           Full access. No credit card. Cancel anytime.

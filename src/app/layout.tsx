@@ -21,13 +21,13 @@ const display = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://farmclaw.com"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://pantheon.app"),
   title: {
-    default: "FarmClaw — AI That Works Your Farm",
-    template: "%s | FarmClaw",
+    default: "Pantheon — Your AI Team",
+    template: "%s | Pantheon",
   },
   description:
-    "A managed AI assistant for Upper Midwest row crop farmers. Get grain bids, weather, and market intelligence through your farm's Discord server.",
+    "A managed AI agent team for any business. Tasks, email, SOPs, research, and communication tracking — all through your Discord server.",
 };
 
 export default function RootLayout({

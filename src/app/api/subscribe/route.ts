@@ -39,7 +39,7 @@ export async function POST() {
   if (!stripeCustomerId) {
     const stripeCustomer = await stripe.customers.create({
       email: customer.email,
-      metadata: { farmclaw_customer_id: customer.id, user_id: user.id },
+      metadata: { pantheon_customer_id: customer.id, user_id: user.id },
     });
     stripeCustomerId = stripeCustomer.id;
 

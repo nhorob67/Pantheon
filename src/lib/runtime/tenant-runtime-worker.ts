@@ -243,9 +243,9 @@ export function createDiscordCanaryDispatchWorker(
 function buildDiscordRuntimeResponseContent(content: string): string {
   const normalized = content.trim();
   if (!normalized) {
-    return "[FarmClaw] Received empty runtime content.";
+    return "[Pantheon] Received empty runtime content.";
   }
-  return `[FarmClaw] ${normalized}`;
+  return `[Pantheon] ${normalized}`;
 }
 
 function resolveActorRole(payload: Record<string, unknown>): TenantRole {

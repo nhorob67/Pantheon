@@ -54,7 +54,7 @@ function parseHeaders(message) {
 
 const worker = {
   async email(message, env) {
-    const rootDomain = normalizeAddress(env.ROOT_DOMAIN || "farmclaw.com");
+    const rootDomain = normalizeAddress(env.ROOT_DOMAIN || "pantheon.app");
     const webhookUrl = env.WEBHOOK_URL;
     const webhookSecret = env.WEBHOOK_SECRET;
 
@@ -118,9 +118,9 @@ const worker = {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-FarmClaw-Signature": `v1,${signature}`,
-          "X-FarmClaw-Event-Id": eventId,
-          "X-FarmClaw-Timestamp": timestamp,
+          "X-Pantheon-Signature": `v1,${signature}`,
+          "X-Pantheon-Event-Id": eventId,
+          "X-Pantheon-Timestamp": timestamp,
         },
         body: payload,
       });
