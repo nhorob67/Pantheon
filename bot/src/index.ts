@@ -1,6 +1,6 @@
 import { Client, GatewayIntentBits, Partials } from "discord.js";
-import { handleMessage } from "./message-handler.js";
-import { startHealthServer } from "./health.js";
+import { handleMessage } from "./message-handler.ts";
+import { startHealthServer } from "./health.ts";
 
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 
