@@ -94,59 +94,61 @@ export function AgentRoster() {
           ))}
         </div>
 
-        <AnimatePresence mode="wait">
-          <m.div
-            key={setup.id}
-            className="roster-table"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            <div className="roster-header-row">
-              <span className="roster-col-mark" />
-              <span className="roster-col-name">Agent</span>
-              <span className="roster-col-spec">Specialization</span>
-              <span className="roster-col-status">Status</span>
-              <span className="roster-col-mission">Current Mission</span>
-            </div>
-            {setup.agents.map((agent, i) => {
-              const Mark = agent.mark;
-              return (
-                <m.div
-                  key={agent.name}
-                  className="roster-row"
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ ...REVEAL_SLOW, delay: i * STAGGER_DELAY }}
-                >
-                  <span className="roster-col-mark">
-                    <Mark size={20} className="roster-mark" />
-                  </span>
-                  <span className="roster-col-name roster-agent-name">{agent.name}</span>
-                  <span className="roster-col-spec">{agent.specialization}</span>
-                  <span className="roster-col-status">
-                    <StatusIndicator active={agent.active} />
-                    <span className="roster-status-text">{agent.active ? "Active" : "Idle"}</span>
-                  </span>
-                  <span className="roster-col-mission">
-                    <AnimatePresence mode="wait">
-                      <m.span
-                        key={missionIndices[i] ?? 0}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.4 }}
-                      >
-                        {agent.missions[missionIndices[i] ?? 0]}
-                      </m.span>
-                    </AnimatePresence>
-                  </span>
-                </m.div>
-              );
-            })}
-          </m.div>
-        </AnimatePresence>
+        <div className="roster-table-container">
+          <AnimatePresence mode="wait">
+            <m.div
+              key={setup.id}
+              className="roster-table"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.4 }}
+            >
+              <div className="roster-header-row">
+                <span className="roster-col-mark" />
+                <span className="roster-col-name">Agent</span>
+                <span className="roster-col-spec">Specialization</span>
+                <span className="roster-col-status">Status</span>
+                <span className="roster-col-mission">Current Mission</span>
+              </div>
+              {setup.agents.map((agent, i) => {
+                const Mark = agent.mark;
+                return (
+                  <m.div
+                    key={agent.name}
+                    className="roster-row"
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ ...REVEAL_SLOW, delay: i * STAGGER_DELAY }}
+                  >
+                    <span className="roster-col-mark">
+                      <Mark size={28} className="roster-mark" />
+                    </span>
+                    <span className="roster-col-name roster-agent-name">{agent.name}</span>
+                    <span className="roster-col-spec">{agent.specialization}</span>
+                    <span className="roster-col-status">
+                      <StatusIndicator active={agent.active} />
+                      <span className="roster-status-text">{agent.active ? "Active" : "Idle"}</span>
+                    </span>
+                    <span className="roster-col-mission">
+                      <AnimatePresence mode="wait">
+                        <m.span
+                          key={missionIndices[i] ?? 0}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.4 }}
+                        >
+                          {agent.missions[missionIndices[i] ?? 0]}
+                        </m.span>
+                      </AnimatePresence>
+                    </span>
+                  </m.div>
+                );
+              })}
+            </m.div>
+          </AnimatePresence>
+        </div>
       </m.section>
     </LazyMotion>
   );

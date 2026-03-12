@@ -2,7 +2,7 @@ import type { DeityMarkProps } from "./types";
 
 export function Hephaestus({ size = 24, className }: DeityMarkProps) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={className}>
       {/* Anvil/hammer — builder/skills */}
       <path d="M6 14h12v3H6z" />
       <path d="M8 17v4M16 17v4" />

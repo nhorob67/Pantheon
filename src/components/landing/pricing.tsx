@@ -61,7 +61,7 @@ export function Pricing() {
           <div key={f.name} className="pricing-formation-card">
             <div className="pricing-formation-marks">
               {f.marks.map((Mark, i) => (
-                <Mark key={i} size={20} className="pricing-mark" />
+                <Mark key={i} size={24} className="pricing-mark" />
               ))}
             </div>
             <h3 className="pricing-formation-name">{f.name}</h3>

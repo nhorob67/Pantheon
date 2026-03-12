@@ -306,29 +306,6 @@ body::before {
   align-items: flex-start;
 }
 
-.hero-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 18px;
-  border-radius: 100px;
-  border: 1px solid var(--border-light);
-  background: var(--accent-dim);
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--accent);
-  margin-bottom: 40px;
-  letter-spacing: 0.5px;
-}
-
-.hero-badge .dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--accent);
-  animation: pulse 2s ease infinite;
-}
-
 .hero h1 {
   font-family: var(--display);
   font-size: clamp(52px, 6vw, 108px);
@@ -475,21 +452,6 @@ body::before {
   background: var(--bg-elevated);
   border-bottom: 1px solid var(--border);
 }
-
-.terminal-dots {
-  display: flex;
-  gap: 6px;
-}
-
-.terminal-dots span {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-}
-
-.terminal-dots span:nth-child(1) { background: #ff5f57; }
-.terminal-dots span:nth-child(2) { background: #febc2e; }
-.terminal-dots span:nth-child(3) { background: #28c840; }
 
 .terminal-status-bar {
   font-family: var(--mono);
@@ -843,14 +805,6 @@ body::before {
   position: relative;
 }
 
-.how-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 80px;
-  margin-top: 80px;
-  align-items: start;
-}
-
 .how-steps {
   display: flex;
   flex-direction: column;
@@ -878,7 +832,7 @@ body::before {
 
 .landing-page .how-step {
   padding: 28px 24px;
-  border: 1px solid var(--gold-trace);
+  border: 1px solid rgba(212, 168, 73, 0.2);
   border-radius: 2px;
   margin-bottom: 12px;
 }
@@ -948,255 +902,9 @@ body::before {
   margin-top: 12px;
 }
 
-.how-visual {
-  position: sticky;
-  top: 120px;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 32px;
-  min-height: 420px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-/* ===== HOW-IT-WORKS VISUAL HELPERS ===== */
-.hiw-field-box {
-  background: var(--bg-dark);
-  border-radius: 10px;
-  padding: 14px 16px;
-  border: 1px solid var(--border);
-}
-
-.hiw-field-label {
-  font-size: 11px;
-  color: var(--text-dim);
-  margin-bottom: 4px;
-}
-
-.hiw-tag {
-  background: var(--green-dim);
-  color: var(--green-bright);
-  padding: 4px 12px;
-  border-radius: 100px;
-  font-size: 13px;
-}
-
-.hiw-discord-panel {
-  background: var(--bg-dark);
-  border-radius: 12px;
-  padding: 20px;
-  border: 1px solid var(--border);
-}
-
-.hiw-server-select {
-  background: rgba(255,255,255,0.05);
-  border-radius: 8px;
-  padding: 10px 14px;
-  border: 1px solid var(--border-light);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-
-.hiw-authorize-btn {
-  background: rgba(88, 101, 242, 0.9);
-  color: #fff;
-  text-align: center;
-  padding: 12px 0;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.hiw-success-bar {
-  padding: 14px;
-  background: var(--bg-dark);
-  border-radius: 10px;
-  border: 1px solid var(--green-dim);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
 /* ===== TEAM SECTION ===== */
 .team-section {
   padding: 120px 48px;
-}
-
-.team-tabs {
-  display: flex;
-  gap: 4px;
-  margin: 48px 0;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 4px;
-  width: fit-content;
-}
-
-.team-tab {
-  font-family: var(--sans);
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-dim);
-  background: transparent;
-  border: none;
-  padding: 10px 24px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all var(--duration-micro) var(--ease-standard);
-  letter-spacing: 0.3px;
-}
-
-.team-tab:hover { color: var(--text-secondary); }
-
-.team-tab.active {
-  background: var(--accent);
-  color: var(--bg-deep);
-  font-weight: 600;
-}
-
-.team-grid {
-  display: grid;
-  grid-template-columns: 1fr 300px;
-  gap: 48px;
-  align-items: start;
-}
-
-.team-agents {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.agent-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--border);
-  border-radius: 14px;
-  padding: 24px;
-  transition: all var(--duration-standard) var(--ease-standard);
-}
-
-.agent-card:hover {
-  border-color: var(--border-light);
-  background: var(--bg-card-hover);
-}
-
-.agent-card.default-agent {
-  border-left-color: var(--accent);
-  box-shadow: 0 0 20px rgba(196, 136, 63, 0.06);
-}
-
-.agent-card:not(.default-agent) {
-  border-left-color: var(--green-bright);
-}
-
-.agent-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-
-.agent-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-
-.agent-name {
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.agent-default-badge {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  padding: 3px 10px;
-  border-radius: 100px;
-  background: var(--accent-dim);
-  color: var(--accent);
-}
-
-.agent-skills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 12px;
-}
-
-.agent-skill-badge {
-  font-size: 12px;
-  font-weight: 500;
-  padding: 4px 12px;
-  border-radius: 100px;
-  background: var(--green-dim);
-  color: var(--green-bright);
-}
-
-.agent-channels {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.agent-channel {
-  font-size: 12px;
-  color: var(--text-dim);
-  font-weight: 400;
-}
-
-.agent-channel.dim { opacity: 0.6; }
-
-/* Team Discord sidebar */
-.team-discord {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 24px;
-  position: sticky;
-  top: 120px;
-}
-
-.team-discord-header {
-  font-family: var(--headline);
-  font-size: 16px;
-  font-weight: 700;
-  margin-bottom: 20px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--border);
-}
-
-.team-discord-channels {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.team-discord-channel {
-  font-size: 14px;
-  color: var(--text-secondary);
-  padding: 8px 10px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: background var(--duration-micro);
-}
-
-.team-discord-channel:hover { background: rgba(255,255,255,0.05); }
-
-.team-discord-hash {
-  font-weight: 600;
-  font-size: 15px;
-}
-
-.team-discord-agent {
-  margin-left: auto;
-  font-size: 11px;
-  font-weight: 500;
-  opacity: 0.7;
 }
 
 /* ===== CHANNELS / DISCORD SECTION ===== */
@@ -1215,152 +923,6 @@ body::before {
   height: 600px;
   background: radial-gradient(circle, rgba(88, 101, 242, 0.05) 0%, transparent 70%);
   pointer-events: none;
-}
-
-.discord-grid {
-  display: grid;
-  grid-template-columns: 300px 1fr;
-  gap: 48px;
-  margin-top: 64px;
-  align-items: start;
-}
-
-.discord-mockup {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 24px;
-  position: sticky;
-  top: 120px;
-  box-shadow: var(--shadow-md);
-  transform: perspective(800px) rotateY(2deg);
-  transition: transform var(--duration-emphasis) cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.discord-mockup:hover { transform: perspective(800px) rotateY(0deg); }
-
-.discord-server-name {
-  font-family: var(--headline);
-  font-size: 16px;
-  font-weight: 700;
-  margin-bottom: 20px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--border);
-}
-
-.discord-channels {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-bottom: 20px;
-}
-
-.discord-channel {
-  font-size: 14px;
-  color: var(--text-secondary);
-  padding: 6px 8px;
-  border-radius: 6px;
-  transition: background var(--duration-micro);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.discord-channel:hover { background: rgba(255,255,255,0.05); }
-
-.discord-hash {
-  color: var(--text-dim);
-  font-weight: 500;
-}
-
-.discord-roles {
-  border-top: 1px solid var(--border);
-  padding-top: 16px;
-}
-
-.discord-role-label {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  color: var(--text-dim);
-  margin-bottom: 10px;
-}
-
-.discord-role-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.discord-role {
-  font-size: 12px;
-  font-weight: 500;
-  padding: 3px 10px;
-  border-radius: 100px;
-}
-
-.discord-role.owner { background: var(--accent-dim); color: var(--accent); }
-.discord-role.manager { background: var(--green-dim); color: var(--green-bright); }
-.discord-role.operator { background: var(--discord-dim); color: var(--discord-secondary); }
-.discord-role.agronomist { background: rgba(237, 230, 219, 0.08); color: var(--text-secondary); }
-
-.discord-benefits {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-.discord-benefit-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 24px;
-  display: flex;
-  gap: 14px;
-  align-items: flex-start;
-  transition: all var(--duration-standard) cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.discord-benefit-card:first-child {
-  grid-column: span 2;
-}
-
-.discord-benefit-card:last-child {
-  grid-column: span 2;
-}
-
-.discord-benefit-card:hover {
-  border-color: var(--border-light);
-  background: var(--bg-card-hover);
-  box-shadow: var(--shadow-sm);
-}
-
-.discord-benefit-icon {
-  font-size: 20px;
-  flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--discord-dim);
-  border-radius: 8px;
-  color: var(--discord);
-  font-weight: 700;
-}
-
-.discord-benefit-card h3 {
-  font-size: 15px;
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-
-.discord-benefit-card p {
-  font-size: 13px;
-  font-weight: 300;
-  color: var(--text-secondary);
-  line-height: 1.5;
 }
 
 /* ===== TRUST SECTION ===== */
@@ -1780,76 +1342,6 @@ body::before {
   opacity: 0.5;
 }
 
-/* ===== HOW-IT-WORKS VISUALS ===== */
-.phone-mockup {
-  background: var(--bg-dark);
-  border: 1px solid var(--border-light);
-  border-radius: 24px;
-  padding: 20px;
-  max-width: 320px;
-  margin: 0 auto;
-}
-
-.phone-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--border);
-}
-
-.phone-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--accent-dim);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-}
-
-.phone-name {
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.phone-status {
-  font-size: 11px;
-  color: var(--green-bright);
-}
-
-.phone-messages {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.phone-msg {
-  font-size: 13px;
-  line-height: 1.5;
-  padding: 10px 14px;
-  border-radius: 14px;
-  max-width: 85%;
-}
-
-.phone-msg.out {
-  background: var(--accent-dim);
-  border: 1px solid rgba(196, 136, 63, 0.2);
-  align-self: flex-end;
-  color: var(--text-primary);
-  border-bottom-right-radius: 4px;
-}
-
-.phone-msg.in {
-  background: rgba(255,255,255,0.05);
-  border: 1px solid var(--border);
-  align-self: flex-start;
-  color: var(--text-secondary);
-  border-bottom-left-radius: 4px;
-}
-
 /* ===== PLATFORM SECTION ===== */
 .platform-section {
   padding: 120px 48px;
@@ -1878,7 +1370,7 @@ body::before {
 .landing-page .platform-tile {
   background: transparent;
   border-left: none;
-  border: 1px solid var(--gold-trace);
+  border: 1px solid rgba(212, 168, 73, 0.2);
 }
 
 .landing-page .platform-tile:hover {
@@ -2100,15 +1592,13 @@ body::before {
   .ticker-track { animation: none; }
   .terminal-window { transform: none; }
   .terminal-window:hover { transform: none; }
-  .discord-mockup { transform: none; }
-  .discord-mockup:hover { transform: none; }
   .status-active, .status-idle { animation: none; opacity: 1; }
 }
 
 /* ===== TOUCH TARGETS ===== */
 @media (pointer: coarse) {
   .btn-primary, .btn-secondary, .btn-ghost,
-  .nav-cta, .scenario-tab, .team-tab {
+  .nav-cta, .scenario-tab {
     min-height: 44px;
     min-width: 44px;
   }
@@ -2128,29 +1618,14 @@ body::before {
   .hero-right { perspective: none; }
   .terminal-window { transform: none; }
   .terminal-window:hover { transform: none; }
-  .how-grid { grid-template-columns: 1fr; gap: 40px; }
-  .how-visual { position: relative; top: 0; order: -1; }
   .platform-grid { grid-template-columns: repeat(2, 1fr); }
   .platform-tile:first-child { border-radius: 16px 0 0 0; }
   .platform-tile:nth-child(2) { border-radius: 0 16px 0 0; }
   .platform-tile:nth-child(4) { border-radius: 0; }
   .platform-tile:nth-child(7) { border-radius: 0 0 0 16px; }
   .platform-tile:last-child { border-radius: 0 0 16px 0; }
-  .discord-grid { grid-template-columns: 1fr; }
-  .discord-mockup {
-    position: relative;
-    top: 0;
-    transform: none;
-  }
-  .discord-mockup:hover { transform: none; }
-  .discord-benefits { grid-template-columns: 1fr; }
-  .discord-benefit-card:first-child,
-  .discord-benefit-card:last-child { grid-column: span 1; }
   .trust-grid { grid-template-columns: 1fr; }
   .trust-card:first-child { grid-row: span 1; }
-  .team-grid { grid-template-columns: 1fr; }
-  .team-discord { position: relative; top: 0; }
-  .team-tabs { flex-wrap: wrap; }
   .pricing-features { grid-template-columns: 1fr; }
   .scenario-tabs { flex-wrap: wrap; }
   .showcase, .how-section, .platform-section, .channels-section, .pricing-section, .quote-section, .final-cta, .trust-section, .team-section { padding: 80px 24px; }
@@ -2244,7 +1719,8 @@ body::before {
   display: flex;
   justify-content: center;
   padding: 40px 0;
-  color: var(--gold-trace-solid);
+  color: var(--gold-divine);
+  opacity: 0.4;
 }
 
 .inscription-divider {
@@ -2259,13 +1735,13 @@ body::before {
 .inscription-rule {
   flex: 1;
   height: 1px;
-  background: var(--gold-trace);
+  background: rgba(212, 168, 73, 0.25);
 }
 
 .inscription-text {
   font-family: var(--mono);
   font-size: 11px;
-  color: var(--gold-trace-solid);
+  color: var(--text-warm-gray);
   letter-spacing: 4px;
   text-transform: uppercase;
   white-space: nowrap;
@@ -2285,7 +1761,7 @@ body::before {
 }
 
 .status-idle {
-  color: var(--gold-trace-solid);
+  color: var(--text-warm-gray);
   animation: status-idle 6s ease-in-out infinite;
 }
 
@@ -2299,7 +1775,7 @@ body::before {
 }
 
 .hero-roster-strip {
-  border-top: 1px solid var(--gold-trace);
+  border-top: 1px solid rgba(212, 168, 73, 0.3);
   padding-top: 24px;
   display: flex;
   gap: 32px;
@@ -2316,6 +1792,7 @@ body::before {
 .hero-roster-mark {
   color: var(--gold-divine);
   flex-shrink: 0;
+  filter: drop-shadow(0 0 3px rgba(212, 168, 73, 0.25));
 }
 
 .hero-roster-name {
@@ -2371,12 +1848,18 @@ body::before {
   width: 100%;
 }
 
+.roster-table-container {
+  border: 1px solid var(--gold-trace);
+  border-radius: 2px;
+  padding: 0 24px;
+}
+
 .roster-header-row {
   display: grid;
-  grid-template-columns: 40px 120px 1fr 100px 1fr;
+  grid-template-columns: 48px 120px 1fr 100px 1fr;
   gap: 16px;
   padding: 12px 0;
-  border-bottom: 1px solid var(--gold-trace);
+  border-bottom: 1px solid rgba(212, 168, 73, 0.25);
   font-family: var(--mono);
   font-size: 11px;
   color: var(--text-dim);
@@ -2386,16 +1869,17 @@ body::before {
 
 .roster-row {
   display: grid;
-  grid-template-columns: 40px 120px 1fr 100px 1fr;
+  grid-template-columns: 48px 120px 1fr 100px 1fr;
   gap: 16px;
   padding: 16px 0;
-  border-bottom: 1px solid var(--gold-trace);
+  padding-left: 4px;
+  border-bottom: 1px solid rgba(212, 168, 73, 0.15);
   align-items: center;
   transition: all 0.3s ease;
 }
 
 .roster-row:hover {
-  background: rgba(212, 168, 73, 0.03);
+  background: rgba(212, 168, 73, 0.06);
 }
 
 .roster-row:hover .roster-mark {
@@ -2404,12 +1888,18 @@ body::before {
 
 .roster-mark {
   color: var(--gold-divine);
-  transition: color 0.3s ease;
+  filter: drop-shadow(0 0 3px rgba(212, 168, 73, 0.3));
+  transition: filter 0.3s ease, color 0.3s ease;
+}
+
+.roster-row:hover .roster-mark {
+  filter: drop-shadow(0 0 6px rgba(232, 196, 90, 0.5));
+  color: var(--gold-active);
 }
 
 .roster-agent-name {
   font-family: var(--mono);
-  font-size: 14px;
+  font-size: 15px;
   color: var(--gold-divine);
   font-weight: 400;
 }
@@ -2506,7 +1996,7 @@ body::before {
 }
 
 .landing-page .trust-card {
-  border-color: var(--gold-trace);
+  border-color: rgba(212, 168, 73, 0.2);
   background: transparent;
 }
 
@@ -2575,6 +2065,7 @@ body::before {
 
 .pricing-mark {
   color: var(--gold-divine);
+  filter: drop-shadow(0 0 3px rgba(212, 168, 73, 0.3));
 }
 
 .pricing-formation-name {
@@ -2672,21 +2163,32 @@ body::before {
   align-items: center;
   gap: 16px;
   text-align: center;
+  padding: 64px 48px;
+  position: relative;
 }
 
 .landing-page .landing-footer::before {
-  background: linear-gradient(90deg, transparent, var(--gold-trace-solid), transparent);
+  background: linear-gradient(90deg, transparent, var(--gold-divine), transparent);
+  opacity: 0.3;
 }
 
 .landing-page .footer-logo {
   font-family: var(--serif);
+  font-size: 24px;
+  color: var(--gold-divine);
+  opacity: 0.4;
+}
+
+.landing-page .footer-copy {
+  color: var(--text-warm-gray);
 }
 
 .footer-status {
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-warm-gray);
   letter-spacing: 1px;
+  opacity: 0.7;
 }
 
 .landing-page .footer-built {

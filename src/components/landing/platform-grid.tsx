@@ -21,7 +21,7 @@ export function PlatformGrid() {
       <div className="platform-grid">
         {tiles.map((tile) => (
           <div key={tile.title} className="platform-tile">
-            <h3><StatusIndicator className="platform-tile-indicator" /> {tile.title}</h3>
+            <h3><StatusIndicator active className="platform-tile-indicator" /> {tile.title}</h3>
             <p>{tile.desc}</p>
           </div>
         ))}

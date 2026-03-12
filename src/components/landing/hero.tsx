@@ -176,7 +176,7 @@ function AgentRosterStrip() {
         const Mark = agent.mark;
         return (
           <div key={agent.name} className="hero-roster-agent">
-            <Mark size={18} className="hero-roster-mark" />
+            <Mark size={22} className="hero-roster-mark" />
             <span className="hero-roster-name">{agent.name}</span>
             <StatusIndicator active={agent.status} />
             <AnimatePresence mode="wait">
