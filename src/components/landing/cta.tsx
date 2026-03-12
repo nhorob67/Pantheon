@@ -15,7 +15,7 @@ export function FinalCTA() {
         transition={REVEAL_SLOW}
       >
         <h2>Stop being every god<br /><span className="final-cta-em">on the mountain.</span></h2>
-        <p>Three minutes to set up. Tomorrow morning, your pantheon sends your first briefing, tracks your tasks, and starts keeping you organized.</p>
+        <p>Three minutes to set up. Tomorrow morning, your first agent sends a briefing, your second tracks deadlines, and your third triages email. That&apos;s what a team looks like.</p>
         <div className="final-cta-trust">14 days free &middot; No credit card &middot; Cancel in two clicks</div>
         <Link href="/signup" className="cta-inscription">
           Start Free Trial

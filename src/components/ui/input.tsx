@@ -29,12 +29,12 @@ function Input({ label, error, className = "", id, ref, ...rest }: InputProps) {
         aria-invalid={!!error}
         aria-describedby={error ? errorId : undefined}
         className={[
-          "border border-border-light focus:border-primary focus:ring-2 focus:ring-primary/40",
+          "border border-border-light focus:border-accent focus:ring-2 focus:ring-accent/60 focus:ring-offset-1 focus:ring-offset-background",
           "rounded-lg bg-input px-4 py-3 font-body text-foreground",
           "outline-none transition-colors duration-150",
           "placeholder:text-foreground/50",
           "disabled:opacity-50 disabled:cursor-not-allowed",
-          error ? "border-destructive focus:border-destructive focus:ring-destructive/40" : "",
+          error ? "border-destructive focus:border-destructive focus:ring-destructive/60" : "",
           className,
         ]
           .filter(Boolean)

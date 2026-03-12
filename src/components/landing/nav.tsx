@@ -37,7 +37,7 @@ export function Nav() {
           className="nav-hamburger"
           onClick={() => setMenuOpen(!menuOpen)}
           aria-label={menuOpen ? "Close menu" : "Open menu"}
-          style={{ display: "none" }}
+          aria-expanded={menuOpen}
         >
           {menuOpen ? (
             <svg width="24" height="24" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" fill="none">

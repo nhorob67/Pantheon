@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { m, LazyMotion, domAnimation, AnimatePresence } from "motion/react";
 import { REVEAL_SLOW } from "./motion-config";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 
 interface ConversationFrame {
   type: "user" | "assistant";
@@ -189,12 +190,18 @@ const scenarios: { label: string; frames: ConversationFrame[] }[] = [
 ];
 
 function StreamingText({ text, onDone }: { text: string; onDone?: () => void }) {
+  const reduced = useReducedMotion();
   const [count, setCount] = useState(0);
   const words = text.split(" ");
   const onDoneRef = useRef(onDone);
   onDoneRef.current = onDone;
 
   useEffect(() => {
+    if (reduced) {
+      setCount(words.length);
+      onDoneRef.current?.();
+      return;
+    }
     let i = 0;
     const interval = setInterval(() => {
       i++;
@@ -205,7 +212,7 @@ function StreamingText({ text, onDone }: { text: string; onDone?: () => void }) 
       }
     }, 40);
     return () => clearInterval(interval);
-  }, [words.length]);
+  }, [words.length, reduced]);
 
   return (
     <>
@@ -216,11 +223,17 @@ function StreamingText({ text, onDone }: { text: string; onDone?: () => void }) 
 }
 
 function UserTyping({ text, onDone }: { text: string; onDone: () => void }) {
+  const reduced = useReducedMotion();
   const [chars, setChars] = useState(0);
   const onDoneRef = useRef(onDone);
   onDoneRef.current = onDone;
 
   useEffect(() => {
+    if (reduced) {
+      setChars(text.length);
+      onDoneRef.current();
+      return;
+    }
     let i = 0;
     const interval = setInterval(() => {
       i++;
@@ -231,7 +244,7 @@ function UserTyping({ text, onDone }: { text: string; onDone: () => void }) {
       }
     }, 45);
     return () => clearInterval(interval);
-  }, [text]);
+  }, [text, reduced]);
 
   return (
     <div className="terminal-user">
@@ -332,12 +345,20 @@ export function ConversationShowcase() {
           <p className="section-sub">No more juggling apps, threads, and sticky notes. Ask your pantheon anything, from what you need to do today to what your vendor quoted last Tuesday.</p>
         </div>
 
-        <div className="scenario-tabs">
+        <div className="scenario-tabs" role="tablist" aria-label="Conversation scenarios">
           {scenarios.map((s, i) => (
             <button
               key={s.label}
+              role="tab"
+              aria-selected={activeTab === i}
+              aria-controls={`scenario-panel-${i}`}
+              tabIndex={activeTab === i ? 0 : -1}
               className={`scenario-tab ${activeTab === i ? "active" : ""}`}
               onClick={() => setActiveTab(i)}
+              onKeyDown={(e) => {
+                if (e.key === "ArrowRight") { e.preventDefault(); setActiveTab(Math.min(i + 1, scenarios.length - 1)); }
+                if (e.key === "ArrowLeft") { e.preventDefault(); setActiveTab(Math.max(i - 1, 0)); }
+              }}
             >
               {s.label}
             </button>
@@ -347,6 +368,9 @@ export function ConversationShowcase() {
         <AnimatePresence mode="wait">
           <m.div
             key={activeTab}
+            id={`scenario-panel-${activeTab}`}
+            role="tabpanel"
+            aria-label={scenarios[activeTab].label}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}

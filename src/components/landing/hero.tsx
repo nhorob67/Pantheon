@@ -5,6 +5,7 @@ import { useEffect, useState, useRef } from "react";
 import { m, LazyMotion, domAnimation, AnimatePresence } from "motion/react";
 import { REVEAL_SLOW, FADE_UP } from "./motion-config";
 import { Athena, Hermes, Ares, Apollo, StatusIndicator } from "./deity-marks";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 
 const AGENTS = [
   { name: "Athena", mark: Athena, status: true, actions: ["Triaged 3 vendor emails", "Updated Q1 budget summary", "Flagged overdue contract"] },
@@ -20,6 +21,7 @@ const CONVERSATION: { type: "user" | "typing" | "response"; text?: string; rich?
 ];
 
 function HeroTerminal() {
+  const reduced = useReducedMotion();
   const [phase, setPhase] = useState(-1);
   const [userText, setUserText] = useState("");
   const [responseWords, setResponseWords] = useState(0);
@@ -27,10 +29,17 @@ function HeroTerminal() {
   const timerRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   useEffect(() => {
+    if (reduced) {
+      setPhase(2);
+      setUserText(CONVERSATION[0].text!);
+      setResponseWords(Infinity);
+      setShowTable(true);
+      return;
+    }
     const timers = timerRef.current;
     timers.push(setTimeout(() => setPhase(0), 600));
     return () => timers.forEach(clearTimeout);
-  }, []);
+  }, [reduced]);
 
   useEffect(() => {
     if (phase !== 0) return;
@@ -138,9 +147,11 @@ function HeroTerminal() {
 }
 
 function StreamText({ words }: { words: string[] }) {
+  const reduced = useReducedMotion();
   const [count, setCount] = useState(0);
 
   useEffect(() => {
+    if (reduced) { setCount(words.length); return; }
     let i = 0;
     const interval = setInterval(() => {
       i++;
@@ -148,7 +159,7 @@ function StreamText({ words }: { words: string[] }) {
       if (i >= words.length) clearInterval(interval);
     }, 40);
     return () => clearInterval(interval);
-  }, [words.length]);
+  }, [words.length, reduced]);
 
   return (
     <p style={{ marginTop: 8 }}>
@@ -199,18 +210,21 @@ function AgentRosterStrip() {
 }
 
 export function Hero() {
+  const reduced = useReducedMotion();
+  const noMotion = { initial: undefined, animate: undefined, whileInView: undefined, transition: { duration: 0 } };
+
   return (
     <LazyMotion features={domAnimation}>
       <section className="hero">
         <div className="hero-left">
           <m.h1
-            initial={{ opacity: 0, y: 20 }}
+            initial={reduced ? undefined : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={REVEAL_SLOW}
+            transition={reduced ? noMotion.transition : REVEAL_SLOW}
           >
-            You run on a thousand decisions a day.
+            One person shouldn&apos;t need five tabs, three apps, and a prayer.
             <br />
-            <span style={{ color: "var(--gold-divine)" }}>Your tools should keep up.</span>
+            <span style={{ color: "var(--gold-divine)" }}>Build the team that runs it for you.</span>
           </m.h1>
 
           <m.p
@@ -218,7 +232,7 @@ export function Hero() {
             {...FADE_UP}
             transition={{ ...REVEAL_SLOW, delay: 0.2 }}
           >
-            Vendor emails. Employee questions. Client deadlines. It all lands on you. Pantheon gives you a team of AI specialists — each with its own domain, its own skills, its own channel — working together in Discord so your whole team stops routing everything through one person.
+            Emails, questions, deadlines — it all lands on you. Pantheon lets you build a team of AI agents, each with its own role, skills, and Discord channel. They coordinate so your team stops routing everything through one person.
           </m.p>
 
           <m.div

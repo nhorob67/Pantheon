@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { m, LazyMotion, domAnimation, AnimatePresence } from "motion/react";
 import { REVEAL_SLOW, STAGGER_DELAY } from "./motion-config";
 import { Athena, Hermes, Ares, Apollo, Hephaestus, Artemis, StatusIndicator } from "./deity-marks";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import type { DeityMarkProps } from "./deity-marks";
 
 interface AgentRow {
@@ -55,6 +56,7 @@ const SETUPS: Setup[] = [
 export function AgentRoster() {
   const [activeTab, setActiveTab] = useState(0);
   const [missionIndices, setMissionIndices] = useState<number[]>([]);
+  const reduced = useReducedMotion();
   const setup = SETUPS[activeTab];
 
   useEffect(() => {
@@ -81,14 +83,26 @@ export function AgentRoster() {
         transition={REVEAL_SLOW}
       >
         <div>
-          <div className="section-label">Every Pantheon Starts Somewhere</div>
-          <h2 className="section-title-display">Assemble your pantheon.</h2>
-          <p className="section-sub">One agent or six. A solo assistant or a full pantheon of specialists. Start with what you need and add new roles as your operation grows.</p>
+          <div className="section-label">Your Team, Your Way</div>
+          <h2 className="section-title-display">One agent is useful. A team of agents changes everything.</h2>
+          <p className="section-sub">Start with a duo and grow to a full roster. Each agent gets its own role, skills, and channel — so the right specialist handles every question.</p>
         </div>
 
-        <div className="roster-tabs">
+        <div className="roster-tabs" role="tablist" aria-label="Team configurations">
           {SETUPS.map((s, i) => (
-            <button key={s.id} className={`roster-tab ${activeTab === i ? "active" : ""}`} onClick={() => setActiveTab(i)}>
+            <button
+              key={s.id}
+              role="tab"
+              aria-selected={activeTab === i}
+              aria-controls={`roster-panel-${s.id}`}
+              tabIndex={activeTab === i ? 0 : -1}
+              className={`roster-tab ${activeTab === i ? "active" : ""}`}
+              onClick={() => setActiveTab(i)}
+              onKeyDown={(e) => {
+                if (e.key === "ArrowRight") { e.preventDefault(); setActiveTab(Math.min(i + 1, SETUPS.length - 1)); }
+                if (e.key === "ArrowLeft") { e.preventDefault(); setActiveTab(Math.max(i - 1, 0)); }
+              }}
+            >
               {s.label}
             </button>
           ))}
@@ -98,11 +112,14 @@ export function AgentRoster() {
           <AnimatePresence mode="wait">
             <m.div
               key={setup.id}
+              id={`roster-panel-${setup.id}`}
+              role="tabpanel"
+              aria-label={`${setup.label} configuration`}
               className="roster-table"
-              initial={{ opacity: 0 }}
+              initial={reduced ? undefined : { opacity: 0 }}
               animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.4 }}
+              exit={reduced ? undefined : { opacity: 0 }}
+              transition={{ duration: reduced ? 0 : 0.4 }}
             >
               <div className="roster-header-row">
                 <span className="roster-col-mark" />
@@ -117,9 +134,9 @@ export function AgentRoster() {
                   <m.div
                     key={agent.name}
                     className="roster-row"
-                    initial={{ opacity: 0, y: 12 }}
+                    initial={reduced ? undefined : { opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ ...REVEAL_SLOW, delay: i * STAGGER_DELAY }}
+                    transition={reduced ? { duration: 0 } : { ...REVEAL_SLOW, delay: i * STAGGER_DELAY }}
                   >
                     <span className="roster-col-mark">
                       <Mark size={28} className="roster-mark" />
