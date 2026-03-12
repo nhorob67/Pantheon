@@ -283,8 +283,8 @@ body::before {
 .hero {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 60px;
+  grid-template-columns: 3fr 2fr;
+  gap: 48px;
   align-items: center;
   padding: 140px 48px 100px;
   position: relative;
@@ -336,10 +336,10 @@ body::before {
 
 .landing-page .hero h1 {
   font-family: var(--serif);
-  font-size: clamp(72px, 9vw, 150px);
+  font-size: clamp(48px, 5vw, 84px);
   color: var(--gold-divine);
-  letter-spacing: -3px;
-  line-height: 0.95;
+  letter-spacing: -2px;
+  line-height: 1.0;
 }
 
 .hero h1 em {
