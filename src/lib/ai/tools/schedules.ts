@@ -16,7 +16,7 @@ export function createScheduleTools(
   return {
     schedule_create: tool({
       description:
-        "Create a recurring scheduled task. The farmer can ask things like 'remind me every Tuesday at 7am to check field moisture'. You should parse their request into a cron expression and generate a prompt.",
+        "Create a recurring scheduled task. The user can ask things like 'remind me every Tuesday at 7am to review reports'. You should parse their request into a cron expression and generate a prompt.",
       inputSchema: z.object({
         display_name: z
           .string()
@@ -35,7 +35,7 @@ export function createScheduleTools(
           .array(z.string())
           .optional()
           .describe(
-            "Optional list of skill slugs to scope this job. E.g. ['farm-weather']. Leave empty for no tool restriction."
+            "Optional list of skill slugs to scope this job. Leave empty for no tool restriction."
           ),
       }),
       execute: async ({ display_name, prompt, cron_expression, tools }) => {
@@ -102,7 +102,7 @@ export function createScheduleTools(
 
     schedule_list: tool({
       description:
-        "List all active schedules for this farm. Shows predefined and custom scheduled tasks with their status.",
+        "List all active schedules for this team. Shows predefined and custom scheduled tasks with their status.",
       inputSchema: z.object({}),
       execute: async () => {
         const { data: schedules, error } = await admin

@@ -7,7 +7,7 @@ const NOW = new Date("2026-02-24T12:00:00Z");
 function makeCandidate(overrides: Record<string, unknown> = {}) {
   return {
     id: "mem-1",
-    content: "Farm has 2400 acres of corn",
+    content: "Team manages 12 active projects",
     memory_type: "fact",
     memory_tier: "knowledge",
     confidence: 0.9,

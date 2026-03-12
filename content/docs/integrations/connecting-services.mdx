@@ -9,7 +9,7 @@ tags: [integrations, oauth, connect, disconnect, google, authorization]
 
 # Connecting Services
 
-Each toolkit that requires authentication needs a one-time OAuth connection before your assistant can use it. This page covers the full connection lifecycle -- authorizing, monitoring, refreshing, and disconnecting services.
+Each toolkit that requires authentication needs a one-time OAuth connection before your agents can use it. This page covers the full connection lifecycle -- authorizing, monitoring, refreshing, and disconnecting services.
 
 ## The OAuth flow
 
@@ -18,7 +18,7 @@ OAuth is the industry-standard protocol for granting third-party access to your 
 ### Step by step
 
 1. **Initiate:** In the Connected Accounts section, click **Connect** next to the service.
-2. **Confirm:** A dialog shows what actions your assistant will have access to. Click **Authorize [Service]**.
+2. **Confirm:** A dialog shows what actions your agents will have access to. Click **Authorize [Service]**.
 3. **Authenticate:** A popup window opens with the service's login page (e.g., Google's account chooser).
 4. **Consent:** Review the permissions requested. Google, for example, shows exactly which scopes are being requested (read spreadsheets, send email, etc.).
 5. **Grant access:** Click **Allow** or **Grant Access** on the service's consent page.
@@ -58,16 +58,16 @@ When the OAuth popup opens, you choose which account to connect. Some considerat
 
 | Scenario | Recommendation |
 |---|---|
-| Solo farmer | Use your personal Google/service account |
-| Family operation | Use a shared account (e.g., farm@gmail.com) that all partners can access |
-| Farm with employees | Use a dedicated farm account to avoid mixing personal and business data |
+| Solo user | Use your personal Google/service account |
+| Small team | Use a shared account (e.g., team@gmail.com) that all members can access |
+| Organization with employees | Use a dedicated team account to avoid mixing personal and business data |
 
 ### Multiple accounts
 
-If you have multiple Google accounts (personal and farm), make sure to select the correct one during the OAuth flow. The account chooser screen lets you pick which account to authorize.
+If you have multiple Google accounts (personal and work), make sure to select the correct one during the OAuth flow. The account chooser screen lets you pick which account to authorize.
 
 <Callout variant="warning" title="One connection per service">
-Each toolkit connects to one account. If you connect Google Sheets with your personal account and later want to switch to a farm account, disconnect the service first and then reconnect with the other account.
+Each toolkit connects to one account. If you connect Google Sheets with your personal account and later want to switch to a team account, disconnect the service first and then reconnect with the other account.
 </Callout>
 
 ## Managing connections
@@ -77,7 +77,7 @@ Each toolkit connects to one account. If you connect Google Sheets with your per
 The **Connected Accounts** section in Settings > Integrations shows all selected toolkits that require authentication. Each entry displays:
 
 - **Service name** -- The toolkit name (e.g., Google Sheets)
-- **Account identifier** -- The email or username associated with the connection (e.g., farmer@gmail.com)
+- **Account identifier** -- The email or username associated with the connection
 - **Status badge** -- Current connection state
 - **Action button** -- Connect or Disconnect
 
@@ -101,12 +101,12 @@ Disconnecting does the following:
 
 - Removes the OAuth tokens from Composio
 - Updates your connection status to "Disconnected"
-- Your assistant can no longer access that service
+- Your agents can no longer access that service
 
 Disconnecting does **not** deselect the toolkit. The toolkit remains selected in your configuration -- it just has no active connection. You can reconnect at any time.
 
 <Callout variant="success" title="Instant revocation">
-When you disconnect a service, access is revoked immediately. There is no delay or grace period. Your assistant will get an authorization error if it tries to call that service's actions after disconnection.
+When you disconnect a service, access is revoked immediately. There is no delay or grace period. Your agents will get an authorization error if they try to call that service's actions after disconnection.
 </Callout>
 
 ## Connection states

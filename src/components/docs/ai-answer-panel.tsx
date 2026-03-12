@@ -49,7 +49,7 @@ export function AiAnswerPanel({
       {/* Error state */}
       {hasError && error && (
         <div className="flex items-start gap-2.5">
-          <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+          <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
           <div>
             <p className="text-sm text-red-300">{error}</p>
             <button
@@ -138,7 +138,7 @@ export function AiAnswerPanel({
               <button
                 type="button"
                 onClick={() => onFeedback(false)}
-                className="text-text-dim hover:text-red-400 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70 rounded"
+                className="text-text-dim hover:text-destructive transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70 rounded"
                 aria-label="Not helpful"
               >
                 <ThumbsDown className="w-3.5 h-3.5" />

@@ -9,37 +9,36 @@ export default async function SchedulesPage() {
 
   if (!tenant) {
     return (
-      <div>
-        <h3 className="font-headline text-lg font-semibold mb-1">Schedules</h3>
-        <p className="text-foreground/60 text-sm">
-          Complete onboarding to manage scheduled tasks.
-        </p>
+      <div className="space-y-6 max-w-4xl">
+        <div>
+          <h1 className="font-headline text-2xl font-semibold">Schedules</h1>
+          <p className="text-sm text-foreground/60 mt-1">
+            Complete onboarding to manage scheduled tasks.
+          </p>
+        </div>
       </div>
     );
   }
 
   const admin = createAdminClient();
 
-  // Fetch schedules with activity data (14-day heatmap, recent runs, health)
-  const schedulesWithActivity = await fetchScheduleActivity(admin, tenant.id);
-
-  // Fetch agents for the create form
-  const { data: agents } = await admin
-    .from("tenant_agents")
-    .select("id, display_name, agent_key, config")
-    .eq("tenant_id", tenant.id)
-    .eq("status", "active")
-    .order("sort_order");
+  // Fetch schedules + agents in parallel
+  const [schedulesWithActivity, { data: agents }] = await Promise.all([
+    fetchScheduleActivity(admin, tenant.id),
+    admin
+      .from("tenant_agents")
+      .select("id, display_name, agent_key, config")
+      .eq("tenant_id", tenant.id)
+      .eq("status", "active")
+      .order("sort_order"),
+  ]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-4xl">
       <div>
-        <h3 className="font-headline text-lg font-semibold mb-1">
-          Schedules
-        </h3>
-        <p className="text-foreground/60 text-sm">
-          Manage and monitor your scheduled tasks. See configuration, health,
-          and recent activity all in one place.
+        <h1 className="font-headline text-2xl font-semibold">Schedules</h1>
+        <p className="text-sm text-foreground/60 mt-1">
+          Manage and monitor your scheduled tasks, configuration, health, and recent activity
         </p>
       </div>
 

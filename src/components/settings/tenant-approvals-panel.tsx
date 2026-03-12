@@ -228,7 +228,7 @@ export function TenantApprovalsPanel({
                     </button>
                     <button
                       type="button"
-                      className="rounded-md border border-red-500/40 px-3 py-1 text-xs text-red-300"
+                      className="rounded-md border border-destructive/40 px-3 py-1 text-xs text-red-300"
                       onClick={() => {
                         void decide(approval.id, "rejected");
                       }}

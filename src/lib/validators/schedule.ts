@@ -27,12 +27,6 @@ const VALID_TIMEZONES = [
   "America/Regina",
 ] as const;
 
-const VALID_TOOLS = [
-  "farm-weather",
-  "farm-grain-bids",
-  "farm-scale-tickets",
-] as const;
-
 export const createCustomScheduleSchema = z.object({
   display_name: z
     .string()
@@ -48,7 +42,7 @@ export const createCustomScheduleSchema = z.object({
   }),
   agent_id: z.string().uuid("Invalid agent ID"),
   channel_id: z.string().min(1, "Channel ID is required"),
-  tools: z.array(z.enum(VALID_TOOLS)).default([]),
+  tools: z.array(z.string()).default([]),
 });
 
 export const updateCustomScheduleSchema = z.object({
@@ -66,7 +60,7 @@ export const updateCustomScheduleSchema = z.object({
   timezone: z
     .enum(VALID_TIMEZONES, { message: "Select a valid timezone" })
     .optional(),
-  tools: z.array(z.enum(VALID_TOOLS)).optional(),
+  tools: z.array(z.string()).optional(),
   enabled: z.boolean().optional(),
   notify_on_failure: z.boolean().optional(),
 });

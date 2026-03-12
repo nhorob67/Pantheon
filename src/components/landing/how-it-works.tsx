@@ -6,32 +6,32 @@ import { m, LazyMotion, domAnimation, AnimatePresence } from "motion/react";
 const steps = [
   { num: "01", title: "Tell us about your work", desc: "Industry, focus areas, tools you use, and what you need help with. Task tracking, SOPs, email, research, whatever your business demands. Takes about 3 minutes." },
   { num: "02", title: "Add Pantheon to Discord", desc: "Click the invite link and Pantheon joins your Discord server. No bot tokens, no developer portal, no configuration. Just add and go." },
-  { num: "03", title: "Everything stops falling through the cracks", desc: "Morning briefings. Task tracking. Email summaries. Follow-up reminders, communication tracking, and answers to whatever you ask. Your team learns your business and gets sharper every week." },
+  { num: "03", title: "Your pantheon gets to work", desc: "Morning briefings. Task tracking. Email summaries. Follow-up reminders, communication tracking, and answers to whatever you ask. Your pantheon learns your operation and gets sharper every week." },
 ];
 
 function StepVisual1() {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div style={{ fontSize: 13, color: "var(--accent)", fontWeight: 600, letterSpacing: 1, textTransform: "uppercase" as const, marginBottom: 4 }}>Your Business Profile</div>
-      <div style={{ background: "var(--bg-dark)", borderRadius: 10, padding: "14px 16px", border: "1px solid var(--border)" }}>
-        <div style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 4 }}>INDUSTRY</div>
-        <div style={{ fontSize: 15 }}>Professional Services</div>
+    <div className="flex flex-col gap-4">
+      <div className="text-[13px] text-accent font-semibold tracking-[1px] uppercase mb-1">Your Business Profile</div>
+      <div className="hiw-field-box">
+        <div className="hiw-field-label">INDUSTRY</div>
+        <div className="text-[15px]">Professional Services</div>
       </div>
-      <div style={{ background: "var(--bg-dark)", borderRadius: 10, padding: "14px 16px", border: "1px solid var(--border)" }}>
-        <div style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 4 }}>FOCUS AREAS</div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
-          <span style={{ background: "var(--green-dim)", color: "var(--green-bright)", padding: "4px 12px", borderRadius: 100, fontSize: 13 }}>Client Projects</span>
-          <span style={{ background: "var(--green-dim)", color: "var(--green-bright)", padding: "4px 12px", borderRadius: 100, fontSize: 13 }}>Operations</span>
-          <span style={{ background: "var(--green-dim)", color: "var(--green-bright)", padding: "4px 12px", borderRadius: 100, fontSize: 13 }}>Finance</span>
+      <div className="hiw-field-box">
+        <div className="hiw-field-label">FOCUS AREAS</div>
+        <div className="flex gap-2 flex-wrap">
+          <span className="hiw-tag">Client Projects</span>
+          <span className="hiw-tag">Operations</span>
+          <span className="hiw-tag">Finance</span>
         </div>
       </div>
-      <div style={{ background: "var(--bg-dark)", borderRadius: 10, padding: "14px 16px", border: "1px solid var(--border)" }}>
-        <div style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 4 }}>TOOLS</div>
-        <div style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.7 }}>Gmail &middot; Google Drive &middot; Slack &middot; QuickBooks</div>
+      <div className="hiw-field-box">
+        <div className="hiw-field-label">TOOLS</div>
+        <div className="text-sm text-text-secondary leading-[1.7]">Gmail &middot; Google Drive &middot; Slack &middot; QuickBooks</div>
       </div>
-      <div style={{ background: "var(--bg-dark)", borderRadius: 10, padding: "14px 16px", border: "1px solid var(--border)" }}>
-        <div style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 4 }}>TEAM SIZE</div>
-        <div style={{ fontSize: 15 }}>12 people</div>
+      <div className="hiw-field-box">
+        <div className="hiw-field-label">TEAM SIZE</div>
+        <div className="text-[15px]">12 people</div>
       </div>
     </div>
   );
@@ -39,36 +39,36 @@ function StepVisual1() {
 
 function StepVisual2() {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: "10px 0" }}>
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
-        <div style={{ width: 64, height: 64, borderRadius: 16, background: "rgba(88, 101, 242, 0.1)", border: "2px solid rgba(88, 101, 242, 0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, color: "#5865F2" }}>
+    <div className="flex flex-col gap-5 py-2.5">
+      <div className="flex justify-center mb-2">
+        <div className="w-16 h-16 rounded-2xl bg-discord-dim border-2 border-discord/30 flex items-center justify-center text-2xl text-discord">
           <svg width="28" height="22" viewBox="0 0 28 22" fill="currentColor"><path d="M23.7 1.8A23 23 0 0 0 18 0a.1.1 0 0 0-.1 0 16 16 0 0 0-.7 1.5 21.4 21.4 0 0 0-6.4 0A14.7 14.7 0 0 0 10 0h-.1A23 23 0 0 0 4.3 1.8 24 24 0 0 0 .1 16.9a23.3 23.3 0 0 0 7.1 3.6.1.1 0 0 0 .1 0 16 16 0 0 0 1.4-2.3.1.1 0 0 0 0-.1 15.3 15.3 0 0 1-2.4-1.2.1.1 0 0 1 0-.2l.5-.4h.1a16.6 16.6 0 0 0 14.2 0h.1l.5.4a.1.1 0 0 1 0 .2 14.4 14.4 0 0 1-2.4 1.2.1.1 0 0 0 0 .1c.4.8.9 1.6 1.4 2.3h.1a23.2 23.2 0 0 0 7.1-3.6A23.8 23.8 0 0 0 23.7 1.8zM9.3 13.9c-1.4 0-2.5-1.3-2.5-2.8S8 8.2 9.4 8.2s2.5 1.3 2.5 2.8-1.1 2.9-2.5 2.9zm9.3 0c-1.4 0-2.5-1.3-2.5-2.8s1.1-2.9 2.5-2.9 2.5 1.3 2.5 2.8-1.1 2.9-2.5 2.9z" /></svg>
         </div>
       </div>
 
-      <div style={{ background: "var(--bg-dark)", borderRadius: 12, padding: 20, border: "1px solid var(--border)" }}>
-        <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 12 }}>Add to Server</div>
-        <div style={{ fontSize: 12, color: "var(--text-dim)", marginBottom: 8, textTransform: "uppercase" as const, letterSpacing: 1 }}>SELECT A SERVER</div>
-        <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: 8, padding: "10px 14px", border: "1px solid var(--border-light)", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-          <span style={{ fontSize: 14, color: "var(--text-primary)" }}>Acme Corp</span>
-          <span style={{ fontSize: 11, color: "var(--text-dim)" }}>&#x25BC;</span>
+      <div className="hiw-discord-panel">
+        <div className="text-[15px] font-semibold mb-3">Add to Server</div>
+        <div className="text-xs text-text-dim mb-2 uppercase tracking-[1px]">SELECT A SERVER</div>
+        <div className="hiw-server-select">
+          <span className="text-sm text-text-primary">Acme Corp</span>
+          <span className="text-[11px] text-text-dim">&#x25BC;</span>
         </div>
-        <div style={{ fontSize: 12, color: "var(--text-dim)", marginBottom: 8, textTransform: "uppercase" as const, letterSpacing: 1 }}>PERMISSIONS</div>
-        <div style={{ display: "flex", flexDirection: "column" as const, gap: 6, marginBottom: 16 }}>
+        <div className="text-xs text-text-dim mb-2 uppercase tracking-[1px]">PERMISSIONS</div>
+        <div className="flex flex-col gap-1.5 mb-4">
           {["Send Messages", "Read Message History", "Embed Links"].map((p) => (
-            <div key={p} style={{ fontSize: 13, color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ color: "var(--green-bright)", fontSize: 14 }}>&#x2713;</span> {p}
+            <div key={p} className="text-[13px] text-text-secondary flex items-center gap-2">
+              <span className="text-green-bright text-sm">&#x2713;</span> {p}
             </div>
           ))}
         </div>
-        <div style={{ background: "rgba(88, 101, 242, 0.9)", color: "#fff", textAlign: "center" as const, padding: "12px 0", borderRadius: 8, fontSize: 14, fontWeight: 600 }}>
+        <div className="hiw-authorize-btn">
           Authorize
         </div>
       </div>
 
-      <div style={{ padding: 14, background: "var(--bg-dark)", borderRadius: 10, border: "1px solid var(--green-dim)", display: "flex", alignItems: "center", gap: 10 }}>
-        <span style={{ color: "var(--green-bright)", fontSize: 18 }}>&#x2713;</span>
-        <span style={{ fontSize: 13, color: "var(--green-bright)" }}>Pantheon has been added to Acme Corp</span>
+      <div className="hiw-success-bar">
+        <span className="text-green-bright text-lg">&#x2713;</span>
+        <span className="text-[13px] text-green-bright">Pantheon has been added to Acme Corp</span>
       </div>
     </div>
   );
@@ -78,7 +78,7 @@ function StepVisual3() {
   return (
     <div className="phone-mockup">
       <div className="phone-header">
-        <div className="phone-avatar" style={{ background: "var(--accent-dim)", color: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700 }}>P</div>
+        <div className="phone-avatar bg-accent-dim text-accent flex items-center justify-center text-sm font-bold">P</div>
         <div>
           <div className="phone-name">Pantheon</div>
           <div className="phone-status">online</div>
@@ -110,7 +110,7 @@ export function HowItWorks() {
         transition={{ duration: 0.7 }}
       >
         <div className="section-label">How It Works</div>
-        <h2 className="section-title-display">Three minutes to set up. Your AI team starts tomorrow.</h2>
+        <h2 className="section-title-display">Three minutes to set up. Your pantheon starts tomorrow.</h2>
 
         <div className="how-grid">
           <div className="how-steps">
@@ -128,7 +128,6 @@ export function HowItWorks() {
                       animate={{ maxHeight: 200, opacity: 1, marginTop: 12 }}
                       exit={{ maxHeight: 0, opacity: 0, marginTop: 0 }}
                       transition={{ duration: 0.4 }}
-                      style={{ overflow: "hidden", paddingLeft: 68 }}
                     >
                       {step.desc}
                     </m.div>

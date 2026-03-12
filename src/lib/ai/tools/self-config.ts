@@ -4,15 +4,6 @@ import type { Tool } from "ai";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { TenantAgent, TenantRole, TenantRuntimeRun } from "@/types/tenant-runtime";
 import {
-  PERSONALITY_PRESETS,
-  PERSONALITY_PRESET_SET,
-  PRESET_DEFAULT_SKILLS,
-  PRESET_DEFAULT_CRONS,
-  BUILT_IN_SKILL_SLUGS,
-  type PersonalityPreset,
-} from "@/types/agent";
-import { CROPS } from "@/types/farm";
-import {
   listTenantRuntimeAgents,
   createTenantRuntimeAgent,
   updateTenantRuntimeAgent,
@@ -44,7 +35,7 @@ function requireRole(minRole: TenantRole, actualRole: TenantRole): boolean {
 }
 
 function roleDenied(minRole: TenantRole): string {
-  return `This requires ${minRole} permissions. Ask your farm owner to make this change or link your Discord account.`;
+  return `This requires ${minRole} permissions. Ask your team owner to make this change or link your Discord account.`;
 }
 
 function undoExpiry(): string {
@@ -72,7 +63,7 @@ async function recordConfigChange(
     agentId: string | null;
     toolName: string;
     fieldChanged: string;
-    entityType: "agent" | "farm_profile";
+    entityType: "agent" | "team_profile";
     entityId: string | null;
     oldValue: unknown;
     newValue: unknown;
@@ -113,16 +104,6 @@ async function recordConfigChange(
   }
 }
 
-function hasInjectionAttempt(text: string): boolean {
-  const lower = text.toLowerCase();
-  return (
-    lower.includes("<script") ||
-    lower.includes("ignore previous instructions") ||
-    lower.includes("ignore all previous") ||
-    lower.includes("disregard previous")
-  );
-}
-
 export function createSelfConfigTools(
   input: SelfConfigToolsInput
 ): Record<string, Tool> {
@@ -146,17 +127,19 @@ export function createSelfConfigTools(
   // ── config_view_my_config (viewer) ───────────────────────────
   tools.config_view_my_config = tool({
     description:
-      "View the current agent's configuration: name, personality preset, skills, goal, backstory, channel binding, and cron jobs.",
+      "View the current agent's configuration: name, role, goal, backstory, autonomy, delegation, skills, channel binding, and cron jobs.",
     inputSchema: z.object({}),
     execute: async () => {
       return {
         agent_id: agent.id,
         display_name: agent.display_name,
-        personality_preset: agentConfig.personality_preset ?? "general",
-        custom_personality: agentConfig.custom_personality ?? null,
+        role: agentConfig.role ?? null,
         skills: agent.skills ?? [],
         goal: agentConfig.goal ?? null,
         backstory: agentConfig.backstory ?? null,
+        autonomy_level: agentConfig.autonomy_level ?? "copilot",
+        can_delegate: agentConfig.can_delegate ?? false,
+        can_receive_delegation: agentConfig.can_receive_delegation ?? false,
         discord_channel_id: agentConfig.discord_channel_id ?? null,
         discord_channel_name: agentConfig.discord_channel_name ?? null,
         cron_jobs: agentConfig.cron_jobs ?? {},
@@ -167,7 +150,7 @@ export function createSelfConfigTools(
 
   // ── config_list_agents (viewer) ──────────────────────────────
   tools.config_list_agents = tool({
-    description: "List all active agents on this farm.",
+    description: "List all active agents on this team.",
     inputSchema: z.object({}),
     execute: async () => {
       const agents = await listTenantRuntimeAgents(admin, ctx);
@@ -175,7 +158,8 @@ export function createSelfConfigTools(
         agents: agents.map((a) => ({
           id: a.id,
           display_name: a.display_name,
-          personality_preset: a.personality_preset,
+          role: a.role ?? null,
+          autonomy_level: a.autonomy_level,
           skills: a.skills,
           is_default: a.is_default,
           channel: a.discord_channel_name ?? a.discord_channel_id ?? "all channels",
@@ -203,6 +187,28 @@ export function createSelfConfigTools(
         oldValue: oldGoal, newValue: goal, actorRole, actorDiscordId, runId,
       });
       return changeResult(`Goal updated to: "${goal}"`, oldGoal, goal);
+    },
+  });
+
+  // ── config_set_my_role (operator) ────────────────────────────
+  tools.config_set_my_role = tool({
+    description:
+      "Set this agent's role (max 200 chars). Describes what this agent is responsible for.",
+    inputSchema: z.object({
+      role: z.string().min(1).max(200),
+    }),
+    execute: async ({ role }) => {
+      if (!requireRole("operator", actorRole)) {
+        return { error: roleDenied("operator") };
+      }
+      const oldRole = agentConfig.role ?? null;
+      await updateTenantRuntimeAgent(admin, ctx, agent.id, { role });
+      await recordConfigChange(admin, {
+        tenantId, customerId, agentId: agent.id, toolName: "config_set_my_role",
+        fieldChanged: "role", entityType: "agent", entityId: agent.id,
+        oldValue: oldRole, newValue: role, actorRole, actorDiscordId, runId,
+      });
+      return changeResult(`Role updated to: "${role}"`, oldRole, role);
     },
   });
 
@@ -249,36 +255,32 @@ export function createSelfConfigTools(
     },
   });
 
-  // ── config_set_personality_preset (admin) ────────────────────
-  tools.config_set_personality_preset = tool({
-    description: `Change this agent's personality preset. Valid presets: ${PERSONALITY_PRESETS.join(", ")}`,
+  // ── config_set_my_autonomy (admin) ───────────────────────────
+  tools.config_set_my_autonomy = tool({
+    description:
+      "Set this agent's autonomy level.",
     inputSchema: z.object({
-      preset: z.enum(PERSONALITY_PRESETS),
+      autonomy_level: z.enum(["assisted", "copilot", "autopilot"]),
     }),
-    execute: async ({ preset }) => {
+    execute: async ({ autonomy_level }) => {
       if (!requireRole("admin", actorRole)) {
         return { error: roleDenied("admin") };
       }
-      const oldPreset = agentConfig.personality_preset ?? "general";
-      const patch: Record<string, unknown> = { personality_preset: preset };
-      // Clear custom personality when switching away from "custom"
-      if (preset !== "custom" && agentConfig.custom_personality) {
-        patch.custom_personality = null;
-      }
-      await updateTenantRuntimeAgent(admin, ctx, agent.id, patch);
+      const oldAutonomy = agentConfig.autonomy_level ?? "copilot";
+      await updateTenantRuntimeAgent(admin, ctx, agent.id, { autonomy_level });
       await recordConfigChange(admin, {
-        tenantId, customerId, agentId: agent.id, toolName: "config_set_personality_preset",
-        fieldChanged: "personality_preset", entityType: "agent", entityId: agent.id,
-        oldValue: oldPreset, newValue: preset, actorRole, actorDiscordId, runId,
+        tenantId, customerId, agentId: agent.id, toolName: "config_set_my_autonomy",
+        fieldChanged: "autonomy_level", entityType: "agent", entityId: agent.id,
+        oldValue: oldAutonomy, newValue: autonomy_level, actorRole, actorDiscordId, runId,
       });
-      return changeResult(`Personality changed from "${oldPreset}" to "${preset}".`, oldPreset, preset);
+      return changeResult(`Autonomy updated to "${autonomy_level}".`, oldAutonomy, autonomy_level);
     },
   });
 
   // ── config_toggle_skill (admin) ──────────────────────────────
   tools.config_toggle_skill = tool({
     description:
-      "Add or remove a skill from this agent. Built-in skills: farm-grain-bids, farm-weather, farm-scale-tickets.",
+      "Add or remove a custom skill from this agent by slug.",
     inputSchema: z.object({
       skill: z.string().min(1),
       enable: z.boolean().describe("true to add, false to remove"),
@@ -286,9 +288,6 @@ export function createSelfConfigTools(
     execute: async ({ skill, enable }) => {
       if (!requireRole("admin", actorRole)) {
         return { error: roleDenied("admin") };
-      }
-      if (!BUILT_IN_SKILL_SLUGS.has(skill)) {
-        return { error: `Unknown skill "${skill}". Available: farm-grain-bids, farm-weather, farm-scale-tickets.` };
       }
       const currentSkills = [...(agent.skills ?? [])];
       const hasSkill = currentSkills.includes(skill);
@@ -315,93 +314,89 @@ export function createSelfConfigTools(
     },
   });
 
-  // ── config_set_custom_personality (owner) ────────────────────
-  tools.config_set_custom_personality = tool({
+  // ── config_set_my_delegation (admin) ─────────────────────────
+  tools.config_set_my_delegation = tool({
     description:
-      "Set a fully custom personality for this agent (10-5000 chars). Automatically switches preset to 'custom'.",
+      "Control whether this agent can delegate tasks and receive delegated tasks.",
     inputSchema: z.object({
-      personality: z.string().min(10).max(5000),
+      can_delegate: z.boolean(),
+      can_receive_delegation: z.boolean(),
     }),
-    execute: async ({ personality }) => {
-      if (!requireRole("owner", actorRole)) {
-        return { error: roleDenied("owner") };
+    execute: async ({ can_delegate, can_receive_delegation }) => {
+      if (!requireRole("admin", actorRole)) {
+        return { error: roleDenied("admin") };
       }
-      if (hasInjectionAttempt(personality)) {
-        return { error: "The personality text contains disallowed content. Please remove any script tags or instruction override attempts." };
-      }
-      const oldPersonality = agentConfig.custom_personality ?? null;
+      const oldDelegation = {
+        can_delegate: agentConfig.can_delegate ?? false,
+        can_receive_delegation: agentConfig.can_receive_delegation ?? false,
+      };
       await updateTenantRuntimeAgent(admin, ctx, agent.id, {
-        personality_preset: "custom" as PersonalityPreset,
-        custom_personality: personality,
+        can_delegate,
+        can_receive_delegation,
       });
       await recordConfigChange(admin, {
-        tenantId, customerId, agentId: agent.id, toolName: "config_set_custom_personality",
-        fieldChanged: "custom_personality", entityType: "agent", entityId: agent.id,
-        oldValue: oldPersonality, newValue: personality, actorRole, actorDiscordId, runId,
+        tenantId, customerId, agentId: agent.id, toolName: "config_set_my_delegation",
+        fieldChanged: "delegation_policy", entityType: "agent", entityId: agent.id,
+        oldValue: oldDelegation,
+        newValue: { can_delegate, can_receive_delegation },
+        actorRole, actorDiscordId, runId,
       });
-      return changeResult("Custom personality applied. Preset set to 'custom'.", oldPersonality, personality);
+      return changeResult(
+        "Delegation settings updated.",
+        oldDelegation,
+        { can_delegate, can_receive_delegation }
+      );
     },
   });
 
-  // ── config_update_farm_profile (owner) ───────────────────────
-  const VALID_CROPS_SET = new Set<string>(CROPS);
-
-  tools.config_update_farm_profile = tool({
+  // ── config_update_team_profile (owner) ───────────────────────
+  tools.config_update_team_profile = tool({
     description:
-      "Update basic farm profile fields: farm_name, acres, primary_crops, county. Other fields (state, coordinates, timezone) must be changed on the dashboard.",
+      "Update team profile fields: team_name, description, industry, team_goal. Timezone must be changed on the dashboard.",
     inputSchema: z.object({
-      farm_name: z.string().min(1).max(100).optional(),
-      acres: z.number().int().min(1).max(999999).optional(),
-      primary_crops: z.array(z.string()).min(1).max(10).optional(),
-      county: z.string().min(1).max(100).optional(),
+      team_name: z.string().min(1).max(100).optional(),
+      description: z.string().max(500).optional(),
+      industry: z.string().max(100).optional(),
+      team_goal: z.string().max(500).optional(),
     }),
     execute: async (params) => {
       if (!requireRole("owner", actorRole)) {
         return { error: roleDenied("owner") };
       }
 
-      // Validate crops
-      if (params.primary_crops) {
-        const invalid = params.primary_crops.filter((c) => !VALID_CROPS_SET.has(c));
-        if (invalid.length > 0) {
-          return { error: `Unknown crops: ${invalid.join(", ")}. Valid: ${CROPS.join(", ")}` };
-        }
-      }
-
-      // Read current profile
-      const { data: profile, error: profileError } = await admin
-        .from("farm_profiles")
-        .select("id, farm_name, acres, primary_crops, county")
+      const { data: teamProfile } = await admin
+        .from("team_profiles")
+        .select("id, team_name, description, industry, team_goal")
         .eq("customer_id", customerId)
         .maybeSingle();
 
-      if (profileError || !profile) {
-        return { error: "Farm profile not found." };
+      if (!teamProfile) {
+        return { error: "Team profile not found." };
       }
 
       const updateFields: Record<string, unknown> = {};
       const oldValues: Record<string, unknown> = {};
       const newValues: Record<string, unknown> = {};
 
-      if (params.farm_name !== undefined) {
-        oldValues.farm_name = profile.farm_name;
-        newValues.farm_name = params.farm_name;
-        updateFields.farm_name = params.farm_name;
+      if (params.team_name !== undefined) {
+        oldValues.team_name = teamProfile.team_name;
+        newValues.team_name = params.team_name;
+        updateFields.team_name = params.team_name;
       }
-      if (params.acres !== undefined) {
-        oldValues.acres = profile.acres;
-        newValues.acres = params.acres;
-        updateFields.acres = params.acres;
+      if (params.description !== undefined) {
+        oldValues.description = teamProfile.description;
+        newValues.description = params.description;
+        updateFields.description = params.description;
       }
-      if (params.primary_crops !== undefined) {
-        oldValues.primary_crops = profile.primary_crops;
-        newValues.primary_crops = params.primary_crops;
-        updateFields.primary_crops = params.primary_crops;
+      if (params.industry !== undefined) {
+        oldValues.industry = teamProfile.industry;
+        newValues.industry = params.industry;
+        updateFields.industry = params.industry;
       }
-      if (params.county !== undefined) {
-        oldValues.county = profile.county;
-        newValues.county = params.county;
-        updateFields.county = params.county;
+      if (params.team_goal !== undefined) {
+        oldValues.team_goal = teamProfile.team_goal;
+        newValues.team_goal = params.team_goal;
+        updateFields.team_goal = params.team_goal;
       }
 
       if (Object.keys(updateFields).length === 0) {
@@ -409,33 +404,46 @@ export function createSelfConfigTools(
       }
 
       const { error: updateError } = await admin
-        .from("farm_profiles")
+        .from("team_profiles")
         .update(updateFields)
-        .eq("id", profile.id);
+        .eq("id", teamProfile.id);
 
       if (updateError) {
-        return { error: "Failed to update farm profile." };
+        return { error: "Failed to update team profile." };
       }
 
       const changedFields = Object.keys(updateFields).join(", ");
       await recordConfigChange(admin, {
-        tenantId, customerId, agentId: null, toolName: "config_update_farm_profile",
-        fieldChanged: changedFields, entityType: "farm_profile", entityId: profile.id,
+        tenantId, customerId, agentId: null, toolName: "config_update_team_profile",
+        fieldChanged: changedFields, entityType: "team_profile", entityId: teamProfile.id,
         oldValue: oldValues, newValue: newValues, actorRole, actorDiscordId, runId,
       });
-      return changeResult(`Farm profile updated: ${changedFields}.`, oldValues, newValues);
+      return changeResult(`Team profile updated: ${changedFields}.`, oldValues, newValues);
     },
   });
 
   // ── config_create_agent (owner) ──────────────────────────────
   tools.config_create_agent = tool({
     description:
-      "Create a new agent for this farm. Optionally specify a personality preset for smart defaults.",
+      "Create a new agent for this team using explicit role, goal, backstory, autonomy, and delegation settings.",
     inputSchema: z.object({
       display_name: z.string().min(1).max(50),
-      personality_preset: z.enum(PERSONALITY_PRESETS).optional(),
+      role: z.string().min(1).max(200).optional(),
+      goal: z.string().max(300).optional(),
+      backstory: z.string().max(1000).optional(),
+      autonomy_level: z.enum(["assisted", "copilot", "autopilot"]).optional(),
+      can_delegate: z.boolean().optional(),
+      can_receive_delegation: z.boolean().optional(),
     }),
-    execute: async ({ display_name, personality_preset }) => {
+    execute: async ({
+      display_name,
+      role,
+      goal,
+      backstory,
+      autonomy_level,
+      can_delegate,
+      can_receive_delegation,
+    }) => {
       if (!requireRole("owner", actorRole)) {
         return { error: roleDenied("owner") };
       }
@@ -443,38 +451,46 @@ export function createSelfConfigTools(
       // Check max 6 agents
       const agents = await listTenantRuntimeAgents(admin, ctx);
       if (agents.length >= 6) {
-        return { error: "Maximum of 6 agents per farm. Archive an agent first." };
-      }
-
-      const preset = personality_preset ?? "general";
-      const defaultSkills = PRESET_DEFAULT_SKILLS[preset] ?? [];
-      const defaultCronList = PRESET_DEFAULT_CRONS[preset] ?? [];
-      const defaultCrons: Record<string, boolean> = {};
-      for (const cron of defaultCronList) {
-        defaultCrons[cron] = true;
+        return { error: "Maximum of 6 agents per team. Archive an agent first." };
       }
 
       const created = await createTenantRuntimeAgent(admin, ctx, {
         display_name,
-        personality_preset: preset,
+        role: role ?? "",
+        goal: goal ?? "",
+        backstory: backstory ?? "",
+        autonomy_level: autonomy_level ?? "copilot",
         is_default: false,
-        skills: [...defaultSkills],
-        cron_jobs: defaultCrons,
+        skills: [],
+        composio_toolkits: [],
+        can_delegate: can_delegate ?? false,
+        can_receive_delegation: can_receive_delegation ?? false,
+        tool_approval_overrides: {},
       });
 
       await recordConfigChange(admin, {
         tenantId, customerId, agentId: created.id, toolName: "config_create_agent",
         fieldChanged: "agent_created", entityType: "agent", entityId: created.id,
-        oldValue: null, newValue: { display_name, personality_preset: preset },
+        oldValue: null,
+        newValue: {
+          display_name,
+          role: role ?? null,
+          goal: goal ?? null,
+          backstory: backstory ?? null,
+          autonomy_level: autonomy_level ?? "copilot",
+          can_delegate: can_delegate ?? false,
+          can_receive_delegation: can_receive_delegation ?? false,
+        },
         actorRole, actorDiscordId, runId,
       });
 
       return {
         applied: true,
-        change_summary: `Created agent "${display_name}" with ${preset} preset.`,
+        change_summary: `Created agent "${display_name}".`,
         agent_id: created.id,
         display_name: created.display_name,
-        personality_preset: preset,
+        role: created.role,
+        autonomy_level: created.autonomy_level,
         skills: created.skills,
         undo_available: false,
         undo_note: "Use config_archive_agent to remove this agent.",
@@ -559,27 +575,38 @@ export function createSelfConfigTools(
 
         if (fieldChanged === "skills") {
           await updateTenantRuntimeAgent(admin, ctx, entry.entity_id, { skills: oldValue as string[] });
+        } else if (fieldChanged === "role") {
+          await updateTenantRuntimeAgent(admin, ctx, entry.entity_id, { role: (oldValue as string) || "" });
         } else if (fieldChanged === "goal") {
           await updateTenantRuntimeAgent(admin, ctx, entry.entity_id, { goal: (oldValue as string) || "" });
         } else if (fieldChanged === "backstory") {
           await updateTenantRuntimeAgent(admin, ctx, entry.entity_id, { backstory: (oldValue as string) || "" });
         } else if (fieldChanged === "display_name") {
           await updateTenantRuntimeAgent(admin, ctx, entry.entity_id, { display_name: oldValue as string });
-        } else if (fieldChanged === "personality_preset") {
-          await updateTenantRuntimeAgent(admin, ctx, entry.entity_id, { personality_preset: oldValue as PersonalityPreset });
-        } else if (fieldChanged === "custom_personality") {
+        } else if (fieldChanged === "autonomy_level") {
           await updateTenantRuntimeAgent(admin, ctx, entry.entity_id, {
-            custom_personality: (oldValue as string) || "",
-            personality_preset: oldValue ? ("custom" as PersonalityPreset) : ("general" as PersonalityPreset),
+            autonomy_level:
+              oldValue === "assisted" || oldValue === "copilot" || oldValue === "autopilot"
+                ? oldValue
+                : "copilot",
+          });
+        } else if (fieldChanged === "delegation_policy") {
+          const oldPolicy =
+            oldValue && typeof oldValue === "object" && !Array.isArray(oldValue)
+              ? (oldValue as Record<string, unknown>)
+              : {};
+          await updateTenantRuntimeAgent(admin, ctx, entry.entity_id, {
+            can_delegate: oldPolicy.can_delegate === true,
+            can_receive_delegation: oldPolicy.can_receive_delegation === true,
           });
         } else {
           return { error: `Cannot undo field "${fieldChanged}" automatically.` };
         }
-      } else if (entry.entity_type === "farm_profile" && entry.entity_id) {
+      } else if (entry.entity_type === "team_profile" && entry.entity_id) {
         const oldValues = entry.old_value as Record<string, unknown> | null;
         if (oldValues && Object.keys(oldValues).length > 0) {
           await admin
-            .from("farm_profiles")
+            .from("team_profiles")
             .update(oldValues)
             .eq("id", entry.entity_id);
         }

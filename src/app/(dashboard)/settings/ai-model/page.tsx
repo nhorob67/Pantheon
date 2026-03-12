@@ -11,24 +11,28 @@ export default async function AiModelSettingsPage() {
 
   if (!tenant) {
     return (
-      <div>
-        <h3 className="font-headline text-lg font-semibold mb-1">AI Model</h3>
-        <p className="text-foreground/60 text-sm">
-          Tenant workspace setup is required before configuring AI models.
-        </p>
+      <div className="space-y-6 max-w-4xl">
+        <div>
+          <h1 className="font-headline text-2xl font-semibold">AI Model</h1>
+          <p className="text-sm text-foreground/60 mt-1">
+            Tenant workspace setup is required before configuring AI models.
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="bg-card rounded-xl border border-border shadow-sm p-6">
-        <h3 className="font-headline text-lg font-semibold mb-1">AI Model</h3>
-        <p className="text-foreground/60 text-sm mb-6">
-          Choose which models power your farm assistant. The primary model handles
+    <div className="space-y-6 max-w-4xl">
+      <div>
+        <h1 className="font-headline text-2xl font-semibold">AI Model</h1>
+        <p className="text-sm text-foreground/60 mt-1">
+          Choose which models power your agents. The primary model handles
           conversations and complex tasks. The fast model handles background tasks
           like summarization and search.
         </p>
+      </div>
+      <div className="bg-card rounded-xl border border-border shadow-sm p-6">
         <ModelSelector tenantId={tenant.id} />
       </div>
       <ModelCostTips tenantId={tenant.id} />

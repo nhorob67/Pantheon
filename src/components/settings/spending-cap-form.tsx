@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useRef } from "react";
 import useSWR from "swr";
 import { Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,20 +17,33 @@ export function SpendingCapForm() {
   );
   const { saving, run } = useAsyncFormState();
   const { toast } = useToast();
-  const [capDollars, setCapDollars] = useState("");
-  const [autoPause, setAutoPause] = useState(false);
-  const [alertEmail, setAlertEmail] = useState("");
 
-  // Sync form state when server data first loads
-  useEffect(() => {
-    if (serverData) {
-      if (serverData.spending_cap_cents) {
-        setCapDollars(String(serverData.spending_cap_cents / 100));
-      }
-      setAutoPause(serverData.spending_cap_auto_pause || false);
-      setAlertEmail(serverData.alert_email || "");
-    }
-  }, [serverData]);
+  // Track user edits so we can derive initial values from server data
+  const [edits, setEdits] = useState<{
+    capDollars?: string;
+    autoPause?: boolean;
+    alertEmail?: string;
+  }>({});
+  const prevServerKey = useRef<string | undefined>(undefined);
+
+  // Reset edits when server data changes (e.g. after save + revalidation)
+  const serverKey = serverData
+    ? `${serverData.spending_cap_cents}-${serverData.spending_cap_auto_pause}-${serverData.alert_email}`
+    : undefined;
+  if (serverKey !== prevServerKey.current) {
+    prevServerKey.current = serverKey;
+    if (Object.keys(edits).length > 0) setEdits({});
+  }
+
+  const capDollars = edits.capDollars ?? (serverData?.spending_cap_cents
+    ? String(serverData.spending_cap_cents / 100)
+    : "");
+  const autoPause = edits.autoPause ?? (serverData?.spending_cap_auto_pause || false);
+  const alertEmail = edits.alertEmail ?? (serverData?.alert_email || "");
+
+  const setCapDollars = (v: string) => setEdits((e) => ({ ...e, capDollars: v }));
+  const setAutoPause = (v: boolean) => setEdits((e) => ({ ...e, autoPause: v }));
+  const setAlertEmail = (v: string) => setEdits((e) => ({ ...e, alertEmail: v }));
 
   const currentCents: number = serverData?.current_cents || 0;
   const percentage: number | null = serverData?.percentage ?? null;
@@ -141,7 +154,7 @@ export function SpendingCapForm() {
             type="email"
             value={alertEmail}
             onChange={(e) => setAlertEmail(e.target.value)}
-            placeholder="alerts@yourfarm.com"
+            placeholder="alerts@yourteam.com"
             className="w-full border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg bg-input px-4 py-2.5 outline-none transition-colors text-sm"
           />
         </div>

@@ -9,11 +9,11 @@ test("summarizeAgentSkillReferences computes totals and top skill names", () => 
   const summary = summarizeAgentSkillReferences([
     {
       id: "agent-a",
-      skills: ["weather", "grain", "weather"],
+      skills: ["reports", "analytics", "reports"],
     },
     {
       id: "agent-b",
-      skills: ["grain", "ops"],
+      skills: ["analytics", "ops"],
     },
     {
       id: "agent-c",
@@ -23,7 +23,7 @@ test("summarizeAgentSkillReferences computes totals and top skill names", () => 
 
   assert.equal(summary.total_assignments, 5);
   assert.equal(summary.unique_skill_names, 3);
-  assert.deepEqual(summary.top_skill_names, ["grain", "weather", "ops"]);
+  assert.deepEqual(summary.top_skill_names, ["analytics", "reports", "ops"]);
 });
 
 test("summarizeCustomSkillsMetadata tracks counts by status and slug list", () => {

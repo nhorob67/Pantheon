@@ -5,11 +5,6 @@ import { useRouter } from "next/navigation";
 import {
   Clock,
   CalendarPlus,
-  CloudSun,
-  TrendingUp,
-  ClipboardList,
-  Sun,
-  AlertTriangle,
   MessageCircle,
   Pencil,
   Trash2,
@@ -21,7 +16,6 @@ import {
   BellOff,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { CRON_JOB_INFO, type AvailableCronJob } from "@/types/agent";
 import type { ScheduleActivityData, RecentRun } from "@/lib/queries/schedule-activity";
 import { ScheduleFormDialog } from "./schedule-form-dialog";
 import { HeartbeatStrip } from "./heartbeat-strip";
@@ -40,25 +34,14 @@ interface UnifiedScheduleCardProps {
   agents: AgentOption[];
 }
 
-const PREDEFINED_ICONS: Record<string, typeof Clock> = {
-  morning_weather: CloudSun,
-  daily_grain_bids: TrendingUp,
-  morning_briefing: Sun,
-  ticket_anomaly_check: ClipboardList,
-  weather_alert_check: AlertTriangle,
-  price_alert_check: TrendingUp,
-};
+const PREDEFINED_ICONS: Record<string, typeof Clock> = {};
 
-const TOOL_LABELS: Record<string, string> = {
-  "farm-weather": "Weather",
-  "farm-grain-bids": "Grain Bids",
-  "farm-scale-tickets": "Scale Tickets",
-};
+const TOOL_LABELS: Record<string, string> = {};
 
 const HEALTH_COLORS: Record<string, string> = {
   healthy: "bg-[#5a8a3c]",
   degraded: "bg-[#D98C2E]",
-  failing: "bg-red-500",
+  failing: "bg-destructive",
   inactive: "bg-foreground/20",
 };
 
@@ -109,9 +92,6 @@ function describeCronClient(expression: string): string {
 
 function getScheduleLabel(schedule: ScheduleActivityData): string {
   if (schedule.display_name) return schedule.display_name;
-  const hyphenKey = schedule.schedule_key.replace(/_/g, "-");
-  const info = CRON_JOB_INFO[hyphenKey as AvailableCronJob];
-  if (info) return info.label;
   if (schedule.schedule_key === "morning_briefing") return "Morning Briefing";
   return schedule.schedule_key.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
@@ -138,8 +118,8 @@ function LastRunIndicator({ schedule }: { schedule: ScheduleActivityData }) {
 
   if (schedule.lastRunStatus === "failed") {
     return (
-      <span className="inline-flex items-center gap-1.5 text-xs text-red-400">
-        <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
+      <span className="inline-flex items-center gap-1.5 text-xs text-destructive">
+        <span className="w-1.5 h-1.5 rounded-full bg-destructive shrink-0" />
         Failed {timeAgo}
       </span>
     );
@@ -360,7 +340,7 @@ export function UnifiedScheduleCard({
                 <button
                   onClick={handleDelete}
                   disabled={deleting}
-                  className="p-1.5 rounded-lg text-foreground/40 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50"
+                  className="p-1.5 rounded-lg text-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
                   title="Delete"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -424,7 +404,7 @@ export function UnifiedScheduleCard({
                         </span>
                       )}
                       {run.error_message && (
-                        <span className="text-red-400 truncate ml-auto max-w-[200px]" title={run.error_message}>
+                        <span className="text-destructive truncate ml-auto max-w-[200px]" title={run.error_message}>
                           {run.error_message}
                         </span>
                       )}

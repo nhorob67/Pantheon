@@ -96,7 +96,7 @@ export default async function AdminRunsPage({
                       run.status === "completed"
                         ? "bg-green-500/10 text-green-500"
                         : run.status === "failed"
-                          ? "bg-red-500/10 text-red-500"
+                          ? "bg-destructive/10 text-destructive"
                           : run.status === "running"
                             ? "bg-blue-500/10 text-blue-500"
                             : "bg-foreground/10 text-foreground/60"

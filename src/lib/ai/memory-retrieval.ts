@@ -267,5 +267,5 @@ export function formatMemoriesForPrompt(memories: ScoredMemory[]): string {
   const lines = memories.map((m) =>
     `- [${m.memory_type}] ${m.content} (confidence: ${m.confidence})`
   );
-  return `## What you remember about this farm\n\n${lines.join("\n")}`;
+  return `## What you remember about this team\n\n${lines.join("\n")}`;
 }

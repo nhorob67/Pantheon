@@ -12,11 +12,6 @@ const VALID_TIMEZONES = [
 export const VALID_INTERVALS = [15, 30, 60, 120, 240] as const;
 
 export const heartbeatChecksSchema = z.object({
-  weather_severe: z.boolean(),
-  grain_price_movement: z.boolean(),
-  grain_price_threshold_cents: z.number().int().min(1).max(100),
-  unreviewed_tickets: z.boolean(),
-  unreviewed_tickets_threshold_hours: z.number().int().min(1).max(48),
   unanswered_emails: z.boolean(),
   unanswered_emails_threshold_hours: z.number().int().min(1).max(48),
 });

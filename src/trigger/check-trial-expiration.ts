@@ -81,7 +81,7 @@ export const checkTrialAndSpending = schedules.task({
         severity: "warning",
         title: "Last day: Your Pantheon trial ends tomorrow",
         message:
-          "After tomorrow, your AI team goes offline. Your farm data and settings stay safe — subscribe anytime to pick up right where you left off.",
+          "After tomorrow, your AI team goes offline. Your data and settings stay safe — subscribe anytime to pick up right where you left off.",
         metadata: { reminder: "day13" },
         delivery_channels: ["email", "dashboard"],
       });
@@ -133,7 +133,7 @@ async function sendTrialReminderEmail(
         </div>`
       : `<div style="font-family: sans-serif; max-width: 600px;">
           <h2 style="color: #d97706;">Last day: Your Pantheon trial ends tomorrow</h2>
-          <p>After tomorrow, your AI team goes offline. Your farm data and settings stay safe — subscribe anytime to pick up right where you left off.</p>
+          <p>After tomorrow, your AI team goes offline. Your data and settings stay safe — subscribe anytime to pick up right where you left off.</p>
           <p style="margin-top: 24px;">
             <a href="${appUrl}/settings/billing" style="background: #d97706; color: white; padding: 12px 24px; text-decoration: none; border-radius: 999px; font-weight: 600;">Subscribe Now</a>
           </p>

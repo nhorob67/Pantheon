@@ -3,6 +3,7 @@
 import { useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import type { WorkflowPlaybook, WorkflowTemplate } from "@/types/workflow";
 
@@ -195,19 +196,14 @@ export function WorkflowCreateForm({
           </div>
 
           <div className="space-y-2">
-            <label
-              htmlFor="workflow-description"
-              className="text-xs font-medium text-text-secondary"
-            >
-              Description (optional)
-            </label>
-            <textarea
+            <Textarea
               id="workflow-description"
+              label="Description (optional)"
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               maxLength={1000}
               rows={3}
-              className="w-full rounded-lg border border-border bg-bg-dark px-3 py-2.5 text-sm text-text-secondary outline-none transition-colors focus:border-border-light"
+              className="w-full bg-bg-dark text-sm text-text-secondary"
               placeholder="Describe what this workflow should do."
             />
           </div>
@@ -330,7 +326,7 @@ export function WorkflowCreateForm({
           </fieldset>
 
           {error && (
-            <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+            <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-red-200">
               {error}
             </p>
           )}

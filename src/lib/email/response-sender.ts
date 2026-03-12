@@ -22,7 +22,7 @@ interface SendEmailResponseResult {
 }
 
 /**
- * Send the AI-generated response back to the farmer via AgentMail,
+ * Send the AI-generated response back to the user via AgentMail,
  * with proper RFC 822 threading headers.
  */
 export async function sendEmailResponse(

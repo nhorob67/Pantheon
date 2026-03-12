@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Check, Shield } from "lucide-react";
 
 const features = [
-  "AI team configured for your business",
+  "Your pantheon, assembled for your operation",
   "$25/mo AI usage included, most teams stay under",
   "Discord for your team, unlimited users",
   "Task management and daily reminders",
@@ -22,7 +22,7 @@ export function Pricing() {
       id="pricing"
     >
       <div className="section-label">Simple Pricing</div>
-      <h2 className="section-title-display" style={{ margin: "0 auto" }}>The cheapest hire on your team.</h2>
+      <h2 className="section-title-display mx-auto">The cheapest hire on your team.</h2>
 
       <div className="pricing-card">
         <div className="pricing-trial-label">Try it free for 14 days</div>
@@ -57,14 +57,14 @@ export function Pricing() {
           </div>
         </div>
 
-        <Link href="/signup" className="btn-primary pricing-cta">Start 14-Day Free Trial</Link>
+        <Link href="/signup" className="btn-primary pricing-cta">Start Free Trial</Link>
         <p className="text-center text-text-dim text-sm mt-2">No credit card required</p>
       </div>
 
       <div className="pricing-value-note">
         <strong>Think about it this way:</strong> One missed client follow-up.
         One forgotten contract renewal. One procedure a new hire didn&apos;t know about.
-        Any one of these costs more than a full year of Pantheon. Your AI team keeps track so
+        Any one of these costs more than a full year of Pantheon. Your pantheon keeps track so
         nothing falls through the cracks.
       </div>
     </section>

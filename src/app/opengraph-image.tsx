@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "Pantheon — AI That Works Your Farm";
+export const alt = "Pantheon — Build and Deploy Your AI Agent Team";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -16,7 +16,7 @@ export default function OGImage() {
           flexDirection: "column",
           justifyContent: "center",
           alignItems: "center",
-          backgroundColor: "#0f1209",
+          backgroundColor: "#0E0C0A",
           padding: "60px",
         }}
       >
@@ -28,7 +28,7 @@ export default function OGImage() {
             left: 0,
             right: 0,
             height: "6px",
-            backgroundColor: "#5a8a3c",
+            backgroundColor: "#5E8C61",
             display: "flex",
           }}
         />
@@ -45,7 +45,7 @@ export default function OGImage() {
             style={{
               fontSize: "72px",
               fontWeight: 800,
-              color: "#D98C2E",
+              color: "#C4883F",
               lineHeight: 1,
               display: "flex",
             }}
@@ -57,18 +57,18 @@ export default function OGImage() {
             style={{
               fontSize: "36px",
               fontWeight: 600,
-              color: "#f0ece4",
+              color: "#EDE6DB",
               lineHeight: 1.2,
               display: "flex",
             }}
           >
-            AI That Works Your Farm
+            Build Your AI Agent Team
           </div>
 
           <div
             style={{
               fontSize: "20px",
-              color: "#f0ece4",
+              color: "#EDE6DB",
               opacity: 0.6,
               textAlign: "center",
               maxWidth: "700px",
@@ -76,8 +76,8 @@ export default function OGImage() {
               display: "flex",
             }}
           >
-            Managed AI assistant for Upper Midwest row crop farmers.
-            Grain bids, weather, scale tickets, and more — right in Discord.
+            Build and deploy your AI agent team.
+            Skills, schedules, knowledge, and more — right in Discord.
           </div>
         </div>
 
@@ -89,7 +89,7 @@ export default function OGImage() {
             left: 0,
             right: 0,
             height: "6px",
-            backgroundColor: "#D98C2E",
+            backgroundColor: "#C4883F",
             display: "flex",
           }}
         />

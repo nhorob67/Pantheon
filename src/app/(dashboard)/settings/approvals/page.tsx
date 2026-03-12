@@ -8,11 +8,11 @@ export default async function TenantApprovalsPage() {
 
   if (!tenant) {
     return (
-      <div>
-        <div className="mb-6">
-          <h3 className="font-headline text-lg font-semibold mb-1">Approvals</h3>
-          <p className="text-foreground/60 text-sm">
-            Tenant workspace setup is required before reviewing runtime approvals.
+      <div className="space-y-6 max-w-4xl">
+        <div>
+          <h1 className="font-headline text-2xl font-semibold">Approvals</h1>
+          <p className="text-sm text-foreground/60 mt-1">
+            Complete onboarding to review runtime approvals.
           </p>
         </div>
       </div>
@@ -31,11 +31,11 @@ export default async function TenantApprovalsPage() {
   const approvals = Array.isArray(data) ? data : [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-4xl">
       <div>
-        <h3 className="font-headline text-lg font-semibold mb-1">Approvals</h3>
-        <p className="text-foreground/60 text-sm">
-          Review high-risk tenant tool calls and heartbeat alerts, then approve or reject queued requests.
+        <h1 className="font-headline text-2xl font-semibold">Approvals</h1>
+        <p className="text-sm text-foreground/60 mt-1">
+          Review high-risk tool calls and heartbeat alerts, then approve or reject queued requests
         </p>
       </div>
 

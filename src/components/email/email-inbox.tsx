@@ -38,7 +38,7 @@ function StatusPill({ status }: { status: string }) {
       );
     case "ai_failed":
       return (
-        <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-red-500/10 text-red-400">
+        <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-destructive/10 text-destructive">
           <AlertCircle className="w-3 h-3" />
           Failed
         </span>

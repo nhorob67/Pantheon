@@ -11,7 +11,7 @@ import { recordTokenUsage } from "@/lib/ai/usage-tracker";
 const SKILL_GENERATE_WINDOW_SECONDS = 60;
 const SKILL_GENERATE_MAX_ATTEMPTS = 5;
 
-const SYSTEM_PROMPT = `You are an expert at writing OpenClaw SKILL.md files for an agricultural AI assistant platform called Pantheon.
+const SYSTEM_PROMPT = `You are an expert at writing SKILL.md files for a multi-agent AI platform called Pantheon.
 
 A SKILL.md file has this format:
 1. YAML frontmatter between --- delimiters
@@ -38,10 +38,7 @@ The markdown body contains:
 Guidelines:
 - Write clear, specific instructions that an AI can follow
 - Include example output formats using code blocks
-- Use agricultural terminology appropriate for Upper Midwest row crop farmers
 - Keep instructions practical and actionable
-- The skill will be used by farmers in ND, SD, MN, MT, IA, NE
-- Common crops: Corn, Soybeans, Spring Wheat, Winter Wheat, Durum, Barley, Sunflowers, Canola
 - Do NOT include any script execution or package installation instructions
 - Focus on prompt-based instructions the AI can follow using built-in tools (read, write, web_search, web_fetch, browser, exec)`;
 
@@ -86,9 +83,9 @@ export async function POST(request: Request) {
     );
   }
 
-  const { prompt, template_id, farm_context } = parsed.data;
+  const { prompt, template_id, team_context } = parsed.data;
 
-  // Look up customer (used for farm context and usage tracking)
+  // Look up customer (used for team context and usage tracking)
   const { data: customer } = await supabase
     .from("customers")
     .select("id, tenant_id")
@@ -96,22 +93,20 @@ export async function POST(request: Request) {
     .single();
 
   // Build context
-  let farmContextStr = "";
-  if (farm_context && customer) {
+  let teamContextStr = "";
+  if (team_context && customer) {
     const admin = createAdminClient();
     const { data: profile } = await admin
-      .from("farm_profiles")
-      .select("farm_name, state, county, primary_crops, acres, elevators, timezone")
+      .from("team_profiles")
+      .select("team_name, team_goal, industry, timezone")
       .eq("customer_id", customer.id)
-      .single();
+      .maybeSingle();
 
     if (profile) {
-      farmContextStr = `\n\nFarm Context (use this to personalize the skill):
-- Farm: ${profile.farm_name}
-- Location: ${profile.county || ""}, ${profile.state}
-- Crops: ${profile.primary_crops.join(", ")}
-- Acres: ${profile.acres || "unknown"}
-- Elevators: ${profile.elevators.join(", ")}
+      teamContextStr = `\n\nTeam Context (use this to personalize the skill):
+- Team: ${profile.team_name}
+- Goal: ${profile.team_goal || "General assistance"}
+- Industry: ${profile.industry || "Not specified"}
 - Timezone: ${profile.timezone}`;
     }
   }
@@ -124,7 +119,7 @@ export async function POST(request: Request) {
     }
   }
 
-  const userMessage = `Create a SKILL.md file for this request:\n\n${prompt}${farmContextStr}${templateContext}
+  const userMessage = `Create a SKILL.md file for this request:\n\n${prompt}${teamContextStr}${templateContext}
 
 Generate ONLY the SKILL.md content (YAML frontmatter + markdown body). Use "custom-" prefix for the name field.`;
 

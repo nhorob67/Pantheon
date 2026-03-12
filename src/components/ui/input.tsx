@@ -10,6 +10,7 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 
 function Input({ label, error, className = "", id, ref, ...rest }: InputProps) {
   const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, "-") : undefined);
+  const errorId = inputId ? `${inputId}-error` : undefined;
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -25,13 +26,15 @@ function Input({ label, error, className = "", id, ref, ...rest }: InputProps) {
       <input
         ref={ref}
         id={inputId}
+        aria-invalid={!!error}
+        aria-describedby={error ? errorId : undefined}
         className={[
-          "border border-border-light focus:border-primary focus:ring-2 focus:ring-primary/20",
+          "border border-border-light focus:border-primary focus:ring-2 focus:ring-primary/40",
           "rounded-lg bg-input px-4 py-3 font-body text-foreground",
           "outline-none transition-colors duration-150",
           "placeholder:text-foreground/50",
           "disabled:opacity-50 disabled:cursor-not-allowed",
-          error ? "border-destructive focus:border-destructive focus:ring-destructive/20" : "",
+          error ? "border-destructive focus:border-destructive focus:ring-destructive/40" : "",
           className,
         ]
           .filter(Boolean)
@@ -40,7 +43,7 @@ function Input({ label, error, className = "", id, ref, ...rest }: InputProps) {
       />
 
       {error && (
-        <p className="font-body text-sm text-destructive">{error}</p>
+        <p id={errorId} className="font-body text-sm text-destructive">{error}</p>
       )}
     </div>
   );

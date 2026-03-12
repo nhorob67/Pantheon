@@ -23,11 +23,6 @@ function buildConfig(input: Partial<HeartbeatExecutionConfig>): HeartbeatExecuti
     active_hours_start: input.active_hours_start || "05:00",
     active_hours_end: input.active_hours_end || "21:00",
     checks: input.checks || {
-      weather_severe: true,
-      grain_price_movement: true,
-      grain_price_threshold_cents: 10,
-      unreviewed_tickets: true,
-      unreviewed_tickets_threshold_hours: 4,
       unanswered_emails: true,
       unanswered_emails_threshold_hours: 2,
     },
@@ -45,7 +40,7 @@ function buildConfig(input: Partial<HeartbeatExecutionConfig>): HeartbeatExecuti
   };
 }
 
-test("resolveEffectiveScheduledConfigs keeps tenant default farm checks alongside enabled overrides", () => {
+test("resolveEffectiveScheduledConfigs keeps tenant default checks alongside enabled overrides", () => {
   const defaultConfig = buildConfig({ id: "default", agent_id: null });
   const agentOverride = buildConfig({ id: "override", agent_id: "agent-1" });
 
@@ -116,27 +111,21 @@ test("resolveEffectiveManualConfigs allows explicitly targeting a disabled confi
 
 test("buildHeartbeatFreshnessMetadata keeps only observability payloads", () => {
   const results: Record<string, CheapCheckResult> = {
-    weather_severe: {
-      status: "ok",
-      summary: "No severe weather alerts",
-      observability: { latest_expires_at: null, zone_id: "IAC001" },
-    },
     unanswered_emails: {
       status: "alert",
       summary: "3 unanswered email(s) older than 2h",
       data: { count: 3, threshold_hours: 2 },
       observability: { oldest_matching_created_at: "2026-03-09T08:00:00.000Z" },
     },
-    grain_price_movement: {
-      status: "ok",
-      summary: "No significant grain price movement",
+    custom_checks: {
+      status: "alert",
+      summary: "2 custom check(s) need LLM evaluation",
     },
   };
 
   const freshness = buildHeartbeatFreshnessMetadata(results);
 
   assert.deepEqual(freshness, {
-    weather_severe: { latest_expires_at: null, zone_id: "IAC001" },
     unanswered_emails: { oldest_matching_created_at: "2026-03-09T08:00:00.000Z" },
   });
 });
@@ -151,9 +140,9 @@ test("buildHeartbeatDecisionTrace captures selected signals and runtime defermen
         status: "alert",
         summary: "3 unanswered email(s) older than 2h",
       },
-      weather_severe: {
+      custom_checks: {
         status: "ok",
-        summary: "No severe weather alerts",
+        summary: "No custom checks configured",
       },
     },
     signalFingerprints: ["fp-1"],

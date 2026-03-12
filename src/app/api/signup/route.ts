@@ -93,20 +93,21 @@ async function handleCreateSubscription(body: unknown, request: Request) {
 
   const { email, password } = parsed.data;
 
-  // Rate limit by email + IP
-  const emailAllowed = await consumeDurableRateLimit({
-    action: "signup_email",
-    key: email,
-    windowSeconds: SIGNUP_EMAIL_WINDOW_SECONDS,
-    maxAttempts: SIGNUP_EMAIL_MAX_ATTEMPTS,
-  }).catch(() => null);
-
-  const networkAllowed = await consumeDurableRateLimit({
-    action: "signup_network",
-    key: getClientNetworkKey(request),
-    windowSeconds: SIGNUP_NETWORK_WINDOW_SECONDS,
-    maxAttempts: SIGNUP_NETWORK_MAX_ATTEMPTS,
-  }).catch(() => null);
+  // Rate limit by email + IP (parallel)
+  const [emailAllowed, networkAllowed] = await Promise.all([
+    consumeDurableRateLimit({
+      action: "signup_email",
+      key: email,
+      windowSeconds: SIGNUP_EMAIL_WINDOW_SECONDS,
+      maxAttempts: SIGNUP_EMAIL_MAX_ATTEMPTS,
+    }).catch(() => null),
+    consumeDurableRateLimit({
+      action: "signup_network",
+      key: getClientNetworkKey(request),
+      windowSeconds: SIGNUP_NETWORK_WINDOW_SECONDS,
+      maxAttempts: SIGNUP_NETWORK_MAX_ATTEMPTS,
+    }).catch(() => null),
+  ]);
 
   if (emailAllowed === null || networkAllowed === null) {
     return NextResponse.json(
@@ -124,12 +125,15 @@ async function handleCreateSubscription(body: unknown, request: Request) {
 
   const admin = createAdminClient();
 
-  // Check for existing customer
-  const { data: existingCustomer } = await admin
-    .from("customers")
-    .select("id")
-    .eq("email", email)
-    .single();
+  // Check for existing customer + auth user (parallel)
+  const [{ data: existingCustomer }, { data: authUsers }] = await Promise.all([
+    admin
+      .from("customers")
+      .select("id")
+      .eq("email", email)
+      .single(),
+    admin.auth.admin.listUsers(),
+  ]);
 
   if (existingCustomer) {
     return NextResponse.json(
@@ -138,8 +142,6 @@ async function handleCreateSubscription(body: unknown, request: Request) {
     );
   }
 
-  // Check for existing auth user
-  const { data: authUsers } = await admin.auth.admin.listUsers();
   const existingUser = authUsers?.users?.find((u) => u.email === email);
   if (existingUser) {
     return NextResponse.json(
@@ -378,20 +380,21 @@ async function handleCreateTrial(body: unknown, request: Request) {
 
     const { email, password } = parsed.data;
 
-    // Rate limit by email + IP (same windows as paid signup)
-    const emailAllowed = await consumeDurableRateLimit({
-      action: "signup_email",
-      key: email,
-      windowSeconds: SIGNUP_EMAIL_WINDOW_SECONDS,
-      maxAttempts: SIGNUP_EMAIL_MAX_ATTEMPTS,
-    }).catch(() => null);
-
-    const networkAllowed = await consumeDurableRateLimit({
-      action: "signup_network",
-      key: getClientNetworkKey(request),
-      windowSeconds: SIGNUP_NETWORK_WINDOW_SECONDS,
-      maxAttempts: SIGNUP_NETWORK_MAX_ATTEMPTS,
-    }).catch(() => null);
+    // Rate limit by email + IP (parallel)
+    const [emailAllowed, networkAllowed] = await Promise.all([
+      consumeDurableRateLimit({
+        action: "signup_email",
+        key: email,
+        windowSeconds: SIGNUP_EMAIL_WINDOW_SECONDS,
+        maxAttempts: SIGNUP_EMAIL_MAX_ATTEMPTS,
+      }).catch(() => null),
+      consumeDurableRateLimit({
+        action: "signup_network",
+        key: getClientNetworkKey(request),
+        windowSeconds: SIGNUP_NETWORK_WINDOW_SECONDS,
+        maxAttempts: SIGNUP_NETWORK_MAX_ATTEMPTS,
+      }).catch(() => null),
+    ]);
 
     if (emailAllowed === null || networkAllowed === null) {
       return NextResponse.json(
@@ -409,12 +412,15 @@ async function handleCreateTrial(body: unknown, request: Request) {
 
     const admin = createAdminClient();
 
-    // Check for existing customer
-    const { data: existingCustomer } = await admin
-      .from("customers")
-      .select("id")
-      .eq("email", email)
-      .single();
+    // Check for existing customer + auth user (parallel)
+    const [{ data: existingCustomer }, { data: authUsers }] = await Promise.all([
+      admin
+        .from("customers")
+        .select("id")
+        .eq("email", email)
+        .single(),
+      admin.auth.admin.listUsers(),
+    ]);
 
     if (existingCustomer) {
       return NextResponse.json(
@@ -423,8 +429,6 @@ async function handleCreateTrial(body: unknown, request: Request) {
       );
     }
 
-    // Check for existing auth user
-    const { data: authUsers } = await admin.auth.admin.listUsers();
     const existingUser = authUsers?.users?.find((u) => u.email === email);
     if (existingUser) {
       return NextResponse.json(

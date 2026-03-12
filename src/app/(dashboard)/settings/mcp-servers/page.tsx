@@ -23,38 +23,38 @@ export default async function ToolsSettingsPage() {
 
 async function ToolsContent({ customerId }: { customerId: string }) {
   const admin = createAdminClient();
-  const tenant = await getCustomerTenant(customerId);
 
-  if (!tenant) {
-    return (
-      <div>
-        <div className="mb-6">
-          <h3 className="font-headline text-lg font-semibold mb-1">
-            Tools
-          </h3>
-          <p className="text-foreground/60 text-sm">
-            Tenant workspace setup is required before configuring tools.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  const [mappingResult, composioResult] = await Promise.all([
-    admin
-      .from("instance_tenant_mappings")
-      .select("instance_id")
-      .eq("tenant_id", tenant.id)
-      .eq("mapping_status", "active")
-      .order("updated_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
+  // Fetch tenant + composio config in parallel (composio doesn't depend on tenant)
+  const [tenant, composioResult] = await Promise.all([
+    getCustomerTenant(customerId),
     admin
       .from("composio_configs")
       .select("*")
       .eq("customer_id", customerId)
       .maybeSingle(),
   ]);
+
+  if (!tenant) {
+    return (
+      <div className="space-y-6 max-w-4xl">
+        <div>
+          <h1 className="font-headline text-2xl font-semibold">Tools</h1>
+          <p className="text-sm text-foreground/60 mt-1">
+            Complete onboarding to configure tools and integrations.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const mappingResult = await admin
+    .from("instance_tenant_mappings")
+    .select("instance_id")
+    .eq("tenant_id", tenant.id)
+    .eq("mapping_status", "active")
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
   let mcpServers: McpServerConfig[] = [];
   if (mappingResult.data?.instance_id) {
@@ -74,12 +74,11 @@ async function ToolsContent({ customerId }: { customerId: string }) {
     : null;
 
   return (
-    <div>
-      <div className="mb-6">
-        <h3 className="font-headline text-lg font-semibold mb-1">Tools</h3>
-        <p className="text-foreground/60 text-sm">
-          Connect your assistant to MCP tool servers and third-party
-          integrations.
+    <div className="space-y-6 max-w-4xl">
+      <div>
+        <h1 className="font-headline text-2xl font-semibold">Tools</h1>
+        <p className="text-sm text-foreground/60 mt-1">
+          Connect your agents to MCP tool servers and third-party integrations
         </p>
       </div>
 
@@ -110,9 +109,9 @@ async function ToolsContent({ customerId }: { customerId: string }) {
 
 function ToolsSkeleton() {
   return (
-    <div>
-      <div className="mb-6">
-        <Skeleton className="h-6 w-20 mb-1" />
+    <div className="space-y-6 max-w-4xl">
+      <div>
+        <Skeleton className="h-8 w-20 mb-1" />
         <Skeleton className="h-4 w-80" />
       </div>
       <div className="mb-8">

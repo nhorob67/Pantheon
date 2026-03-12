@@ -76,14 +76,14 @@ export function DocsSidebar({ navigation }: DocsSidebarProps) {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden md:block w-72 border-r border-border-light bg-bg-dark sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto shrink-0">
+      <aside className="hidden md:block w-72 border-r border-border bg-bg-dark sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto shrink-0">
         <SidebarContent navigation={navigation} />
       </aside>
 
       {/* Mobile FAB */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="md:hidden fixed bottom-6 right-6 z-40 w-12 h-12 bg-accent rounded-full flex items-center justify-center shadow-lg shadow-accent/20 cursor-pointer"
+        className="md:hidden fixed bottom-6 right-6 z-40 w-12 h-12 bg-accent rounded-full flex items-center justify-center shadow-lg shadow-[rgba(196,136,63,0.2)] cursor-pointer"
       >
         <Menu className="w-5 h-5 text-bg-deep" />
       </button>
@@ -98,8 +98,7 @@ export function DocsSidebar({ navigation }: DocsSidebarProps) {
           <aside className="md:hidden fixed inset-y-0 left-0 z-50 w-72 bg-bg-dark border-r border-border overflow-y-auto">
             <div className="flex items-center justify-between px-4 py-4 border-b border-border">
               <span
-                className="text-sm font-semibold"
-                style={{ fontFamily: "var(--headline)" }}
+                className="text-sm font-semibold font-headline"
               >
                 Navigation
               </span>

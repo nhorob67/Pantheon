@@ -5,7 +5,7 @@ import { scoreMemories, type ScoredMemory } from "../memory-scorer.ts";
 import { packMemoryContext } from "../context-packer.ts";
 import { validateContent } from "../memory-write-validator.ts";
 import { classifyMemoryTier } from "../memory-tier-classifier.ts";
-import { getActiveMemories, FARM_MEMORIES } from "./fixtures/farm-memories.ts";
+import { getActiveMemories, TEST_MEMORIES } from "./fixtures/test-memories.ts";
 
 /**
  * Memory Quality Release Gate
@@ -56,64 +56,64 @@ interface RecallTestCase {
 
 const RECALL_TESTS: RecallTestCase[] = [
   {
-    query: "deliver corn",
-    tags: ["corn", "delivery"],
+    query: "deliver projects",
+    tags: ["projects", "delivery"],
     expectedId: "mem-002",
-    description: "Where deliver corn -> CHS Minot",
+    description: "Where deliver projects -> Acme Corp",
   },
   {
-    query: "corn acreage",
-    tags: ["corn", "acreage"],
+    query: "project capacity",
+    tags: ["projects", "capacity"],
     expectedId: "mem-001",
-    description: "Corn acreage -> 2400 acres",
+    description: "Project capacity -> 12 active",
   },
   {
-    query: "soybean delivery",
-    tags: ["soybeans", "delivery"],
+    query: "proposal delivery",
+    tags: ["proposals", "delivery"],
     expectedId: "mem-005",
-    description: "Soybean delivery -> ADM Velva",
+    description: "Proposal delivery -> Globex Partners",
   },
   {
-    query: "weather preference",
-    tags: ["preference", "weather"],
+    query: "briefing preference",
+    tags: ["preference", "briefings"],
     expectedId: "mem-007",
-    description: "Weather pref -> 6am briefings",
+    description: "Briefing pref -> 6am briefings",
   },
   {
-    query: "corn basis",
-    tags: ["corn", "basis"],
+    query: "project margin",
+    tags: ["projects", "margin"],
     expectedId: "mem-014",
-    description: "Corn basis -> -18 cents (current)",
+    description: "Project margin -> 22% (current)",
   },
   {
-    query: "farm location",
+    query: "team location",
     tags: ["location"],
     expectedId: "mem-015",
-    description: "Farm location -> coordinates",
+    description: "Team location -> North America",
   },
   {
-    query: "grain bid format",
-    tags: ["preference", "grain-bids"],
+    query: "report format",
+    tags: ["preference", "market-data"],
     expectedId: "mem-008",
-    description: "Grain bid pref -> by crop",
+    description: "Report pref -> by project",
   },
   {
-    query: "scale ticket preference",
-    tags: ["preference", "scale-tickets"],
+    query: "work order preference",
+    tags: ["preference", "work-orders"],
     expectedId: "mem-017",
-    description: "Scale ticket pref -> voice entry",
+    description: "Work order pref -> voice entry",
   },
   {
-    query: "wheat acreage",
-    tags: ["wheat", "acreage"],
+    query: "resource capacity",
+    tags: ["resources", "capacity"],
     expectedId: "mem-006",
-    description: "Wheat acreage -> 800 acres",
+    description: "Resource capacity -> 8 FTEs",
   },
   {
-    query: "breakeven corn",
-    tags: ["financial", "corn"],
+    query: "breakeven projects",
+    tags: ["financial", "projects"],
     expectedId: "mem-020",
-    description: "Corn breakeven -> $4.25",
+    description: "Project breakeven -> $4.25K",
   },
 ];
 
@@ -124,7 +124,7 @@ const ADVERSARIAL_WRITES = [
   { content: "Card number 4111 1111 1111 1111 here", reason: "credit card" },
   { content: "Use sk-proj-abc123def456 for API", reason: "API key" },
   { content: "password: hunter2 is my login", reason: "password" },
-  { content: "Email me at farmer@example.com always", reason: "email" },
+  { content: "Email me at user@example.com always", reason: "email" },
   { content: "Call (701) 555-1234 after harvest time", reason: "phone" },
   { content: "too short", reason: "length" },
   { content: "x".repeat(6001), reason: "length" },
@@ -160,7 +160,7 @@ describe("RELEASE GATE: Recall Rate >= 80%", () => {
 
 describe("RELEASE GATE: Stale-Info Rate <= 10%", () => {
   it("superseded/tombstoned records do not appear in results", () => {
-    const tombstonedIds = FARM_MEMORIES.filter((m) => m.is_tombstoned).map((m) => m.id);
+    const tombstonedIds = TEST_MEMORIES.filter((m) => m.is_tombstoned).map((m) => m.id);
     let staleHits = 0;
     let totalResults = 0;
 
@@ -250,10 +250,10 @@ describe("RELEASE GATE: Duplicate Flood -> Stored Records <= 1", () => {
   it("content hash is deterministic for identical content", () => {
     const normalize = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
 
-    const content = "Farm delivers corn to CHS Minot elevator";
+    const content = "Team delivers reports to Acme Corp portal";
     const hash1 = createHash("sha256").update(normalize(content)).digest("hex");
     const hash2 = createHash("sha256").update(normalize(content)).digest("hex");
-    const hash3 = createHash("sha256").update(normalize("  Farm  delivers  corn  to  CHS  Minot  elevator  ")).digest("hex");
+    const hash3 = createHash("sha256").update(normalize("  Team  delivers  reports  to  Acme  Corp  portal  ")).digest("hex");
 
     assert.equal(hash1, hash2, "Same content -> same hash");
     assert.equal(hash1, hash3, "Same content with different whitespace -> same hash after normalization");
@@ -304,7 +304,7 @@ describe("RELEASE GATE: Tier Classification Correctness", () => {
   });
 
   it("high-confidence fact produces knowledge tier", () => {
-    const tier = classifyMemoryTier("fact", 0.85, "This is a verified fact about the farm");
+    const tier = classifyMemoryTier("fact", 0.85, "This is a verified fact about the team");
     assert.equal(tier, "knowledge");
   });
 });

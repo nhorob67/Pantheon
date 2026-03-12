@@ -4,54 +4,56 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
-  Settings,
+  Bot,
+  MessageCircle,
   BarChart3,
-  Wheat,
-  Users,
   Zap,
   CreditCard,
   Wrench,
   Brain,
-  Bell,
-  GitBranch,
-  Download,
-  HelpCircle,
   KeyRound,
   Mail,
-  MessageCircle,
-  Sun,
-  Activity,
   CalendarClock,
-  HeartPulse,
+  HelpCircle,
+  Puzzle,
+  BookOpen,
+  MessageSquare,
+  Settings,
   type LucideIcon,
 } from "lucide-react";
 import { useHelp } from "./help-provider";
 import { TrialCountdownBadge } from "./trial-countdown-badge";
 import type { SettingsNavItem } from "@/lib/navigation/settings";
 
-const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/conversations", label: "Conversations", icon: MessageCircle },
-  { href: "/email", label: "Email", icon: Mail },
-  { href: "/usage", label: "Usage", icon: BarChart3 },
-  { href: "/alerts", label: "Alerts", icon: Bell },
+interface NavGroup {
+  label: string;
+  items: { href: string; label: string; icon: LucideIcon }[];
+}
+
+const navGroups: NavGroup[] = [
+  {
+    label: "Overview",
+    items: [
+      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/agents", label: "Agents", icon: Bot },
+      { href: "/conversations", label: "Conversations", icon: MessageCircle },
+    ],
+  },
 ];
 
 const settingsIconsByHref: Record<string, LucideIcon> = {
-  "/settings/farm": Wheat,
-  "/settings/channels": Users,
-  "/settings/workflows": GitBranch,
+  "/settings/channels": MessageSquare,
   "/settings/skills": Zap,
-  "/settings/briefings": Sun,
+  "/settings/knowledge": BookOpen,
   "/settings/schedules": CalendarClock,
-  "/settings/heartbeat": HeartPulse,
-  "/settings/activity": Activity,
+  "/settings/email": Mail,
+  "/settings/extensions": Puzzle,
   "/settings/memory": Brain,
-  "/settings/exports": Download,
   "/settings/mcp-servers": Wrench,
   "/settings/secrets": KeyRound,
-  "/settings/alerts": Bell,
+  "/settings/ai-model": Settings,
   "/settings/billing": CreditCard,
+  "/settings/workflows": Settings,
 };
 
 interface SidebarProps {
@@ -69,42 +71,52 @@ export function Sidebar({ settingsItems, subscriptionStatus, trialEndsAt }: Side
   return (
     <aside className="w-64 border-r border-border bg-card min-h-screen px-4 py-6 hidden md:flex flex-col">
       <div className="flex-1">
-        <Link href="/dashboard" className="flex items-center gap-2 px-3 mb-8">
-          <Wheat className="w-5 h-5 text-energy" />
+        <Link href="/dashboard" className="flex items-center gap-2.5 px-3 mb-8">
+          <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+            <Bot className="w-4 h-4 text-primary" />
+          </div>
           <span className="font-display text-xl font-bold text-foreground">
-            Farm<span className="text-energy">Claw</span>
+            Pantheon
           </span>
         </Link>
 
-        <nav className="space-y-1">
-          {navItems.map((item) => {
-            const active =
-              pathname === item.href || pathname.startsWith(`${item.href}/`);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={active ? "page" : undefined}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors border-l-2 ${
-                  active
-                    ? "border-primary bg-primary/10 text-primary font-medium"
-                    : "border-transparent text-foreground/60 hover:text-foreground hover:bg-muted"
-                }`}
-              >
-                <item.icon className="w-4 h-4" />
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
+        {navGroups.map((group) => (
+          <div key={group.label} className="mb-6">
+            <h3 className="px-3 mb-2 font-headline text-[10px] font-semibold uppercase tracking-widest text-foreground/40">
+              {group.label}
+            </h3>
+            <nav className="space-y-0.5">
+              {group.items.map((item) => {
+                const active =
+                  item.href === "/dashboard"
+                    ? pathname === "/dashboard"
+                    : pathname === item.href || pathname.startsWith(`${item.href}/`);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    aria-current={active ? "page" : undefined}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                      active
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "text-foreground/60 hover:text-foreground hover:bg-muted"
+                    }`}
+                  >
+                    <item.icon className="w-4 h-4" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+        ))}
 
-        <div className="mt-8 relative">
+        <div className="relative">
           <div className="absolute top-0 left-3 right-3 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-          <h3 className="px-3 mb-2 pt-4 font-headline text-xs font-semibold uppercase tracking-wider text-foreground/60">
-            <Settings className="w-3 h-3 inline mr-1.5" />
-            Settings
+          <h3 className="px-3 mb-2 pt-4 font-headline text-[10px] font-semibold uppercase tracking-widest text-foreground/40">
+            Configure
           </h3>
-          <nav className="space-y-1">
+          <nav className="space-y-0.5">
             {settingsItems.map((item) => {
               const Icon = settingsIconsByHref[item.href] || Settings;
               const active =
@@ -114,10 +126,10 @@ export function Sidebar({ settingsItems, subscriptionStatus, trialEndsAt }: Side
                   key={item.href}
                   href={item.href}
                   aria-current={active ? "page" : undefined}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors border-l-2 ${
+                  className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                     active
-                      ? "border-primary bg-primary/10 text-primary font-medium"
-                      : "border-transparent text-foreground/60 hover:text-foreground hover:bg-muted"
+                      ? "bg-primary/10 text-primary font-medium"
+                      : "text-foreground/60 hover:text-foreground hover:bg-muted"
                   }`}
                 >
                   <Icon className="w-4 h-4" />
@@ -133,9 +145,16 @@ export function Sidebar({ settingsItems, subscriptionStatus, trialEndsAt }: Side
         {subscriptionStatus === "trialing" && trialEndsAt && (
           <TrialCountdownBadge trialEndsAt={trialEndsAt} />
         )}
+        <Link
+          href="/usage"
+          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors text-foreground/60 hover:text-foreground hover:bg-muted"
+        >
+          <BarChart3 className="w-4 h-4" />
+          Usage
+        </Link>
         <button
           onClick={openHelp}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors text-foreground/60 hover:text-foreground hover:bg-muted w-full"
+          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors text-foreground/60 hover:text-foreground hover:bg-muted w-full"
         >
           <HelpCircle className="w-4 h-4" />
           Help

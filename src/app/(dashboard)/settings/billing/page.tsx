@@ -38,12 +38,14 @@ async function BillingContent({ customerId }: { customerId: string }) {
     (isTrialing && trialEndsAt && new Date(trialEndsAt).getTime() < serverNow);
 
   return (
-    <div className="space-y-6">
-      <div className="bg-card rounded-xl border border-border shadow-sm p-6">
-        <h3 className="font-headline text-lg font-semibold mb-1">Billing</h3>
-        <p className="text-foreground/60 text-sm mb-6">
+    <div className="space-y-6 max-w-4xl">
+      <div>
+        <h1 className="font-headline text-2xl font-semibold">Billing</h1>
+        <p className="text-sm text-foreground/60 mt-1">
           Manage your subscription and payment method.
         </p>
+      </div>
+      <div className="bg-card rounded-xl border border-border shadow-sm p-6">
 
         {isExpired ? (
           <TrialExpiredCard trialEndsAt={trialEndsAt} />
@@ -133,7 +135,7 @@ function TrialExpiredCard({ trialEndsAt }: { trialEndsAt: string | null }) {
             </p>
           </div>
         </div>
-        <span className="font-mono text-xs uppercase tracking-wider px-2.5 py-1 rounded-full bg-red-500/10 text-red-400">
+        <span className="font-mono text-xs uppercase tracking-wider px-2.5 py-1 rounded-full bg-destructive/10 text-destructive">
           Expired
         </span>
       </div>

@@ -12,8 +12,8 @@ function computeContentHash(content: string): string {
 describe("memory-record-writer", () => {
   describe("content hash computation", () => {
     it("normalizes whitespace before hashing", () => {
-      const hash1 = computeContentHash("  Farm has   2400  acres  ");
-      const hash2 = computeContentHash("farm has 2400 acres");
+      const hash1 = computeContentHash("  Team has   12 active  projects  ");
+      const hash2 = computeContentHash("team has 12 active projects");
       assert.equal(hash1, hash2);
     });
 
@@ -24,8 +24,8 @@ describe("memory-record-writer", () => {
     });
 
     it("produces different hashes for different content", () => {
-      const hash1 = computeContentHash("Farm grows corn");
-      const hash2 = computeContentHash("Farm grows soybeans");
+      const hash1 = computeContentHash("Team tracks revenue");
+      const hash2 = computeContentHash("Team tracks expenses");
       assert.notEqual(hash1, hash2);
     });
 
@@ -38,13 +38,13 @@ describe("memory-record-writer", () => {
 
   describe("hash-first dedup ordering", () => {
     it("hash computation does not require an embedding", () => {
-      const hash = computeContentHash("Farm has 2400 acres of corn");
+      const hash = computeContentHash("Team has 12 active projects in Q1");
       assert.ok(hash.length === 64, "Hash should be computed without any embedding");
     });
 
     it("identical content produces identical hash regardless of formatting", () => {
-      const hash1 = computeContentHash("  Farm  has\t2400\n acres  ");
-      const hash2 = computeContentHash("farm has 2400 acres");
+      const hash1 = computeContentHash("  Team  has\t12 active\n projects  ");
+      const hash2 = computeContentHash("team has 12 active projects");
       assert.equal(hash1, hash2);
     });
   });
@@ -110,8 +110,8 @@ describe("memory-record-writer", () => {
       assert.ok(ssnPattern.test(content));
     });
 
-    it("accepts valid farm content", () => {
-      const content = "Farm has 2400 acres of corn and soybeans near Bismarck ND";
+    it("accepts valid team content", () => {
+      const content = "Team manages 12 active projects and 5 proposals across departments";
       assert.ok(content.length >= 10);
       assert.ok(content.length <= 6000);
       const ssnPattern = /\b\d{3}-\d{2}-\d{4}\b/;
@@ -155,7 +155,7 @@ describe("memory-record-writer", () => {
     });
 
     it("allows content not matching any excluded category", () => {
-      const content = "Corn yield was 180 bushels per acre";
+      const content = "Monthly revenue was $180K per region";
       const excludeCategories = ["financial", "personal"];
       const lower = content.toLowerCase();
       const blocked = excludeCategories.some((cat) => lower.includes(cat.toLowerCase()));

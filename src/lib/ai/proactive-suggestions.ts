@@ -64,7 +64,7 @@ export function formatSuggestionsForPrompt(suggestions: ProactiveSuggestion[]): 
 
   return `## Proactive Suggestions
 
-Based on this farmer's known patterns, the following may be relevant right now. Only bring these up if they naturally fit the current conversation — do not force them.
+Based on this user's known patterns, the following may be relevant right now. Only bring these up if they naturally fit the current conversation — do not force them.
 
 ${lines.join("\n")}`;
 }
@@ -86,9 +86,9 @@ export function getCurrentTemporalContext(): {
 
   const month = now.getUTCMonth();
   let season: string;
-  if (month >= 2 && month <= 4) season = "planting season";
-  else if (month >= 5 && month <= 7) season = "growing season";
-  else if (month >= 8 && month <= 10) season = "harvest season";
+  if (month >= 2 && month <= 4) season = "spring";
+  else if (month >= 5 && month <= 7) season = "summer";
+  else if (month >= 8 && month <= 10) season = "fall";
   else season = "winter";
 
   return {

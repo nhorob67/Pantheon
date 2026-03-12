@@ -3,7 +3,6 @@ import Link from "next/link";
 import { buildNavigation } from "@/lib/docs/navigation";
 import {
   Rocket,
-  Tractor,
   MessageSquare,
   Bot,
   Wrench,
@@ -17,7 +16,7 @@ import {
 export const metadata: Metadata = {
   title: "Documentation",
   description:
-    "Learn how to set up and use Pantheon, the AI assistant for Upper Midwest row crop farmers.",
+    "Learn how to set up and use Pantheon, the multi-agent AI platform for teams.",
 };
 
 const SECTION_META: Record<
@@ -29,11 +28,6 @@ const SECTION_META: Record<
     description:
       "Create your account, walk through onboarding, and send your first message.",
   },
-  "Farm Setup": {
-    icon: <Tractor className="w-6 h-6" />,
-    description:
-      "Configure your farm profile, select crops, and set up elevator connections.",
-  },
   "Discord Integration": {
     icon: <MessageSquare className="w-6 h-6" />,
     description:
@@ -42,7 +36,7 @@ const SECTION_META: Record<
   "AI Agents": {
     icon: <Bot className="w-6 h-6" />,
     description:
-      "Set up multiple agents with personality presets, skills, and channel bindings.",
+      "Set up multiple agents with explicit roles, goals, skills, and channel bindings.",
   },
   Tools: {
     icon: <Wrench className="w-6 h-6" />,
@@ -52,7 +46,7 @@ const SECTION_META: Record<
   Skills: {
     icon: <Wrench className="w-6 h-6" />,
     description:
-      "Enable grain bids, weather forecasts, scale ticket management, and more.",
+      "Enable built-in skills, custom skills, and manage skill configurations.",
   },
   "MCP Servers": {
     icon: <Server className="w-6 h-6" />,
@@ -94,8 +88,8 @@ export default function DocsPage() {
           Pantheon Documentation
         </h1>
         <p className="mt-4 text-lg text-text-secondary max-w-2xl leading-relaxed">
-          Everything you need to set up and get the most out of your AI farm
-          assistant. From first login to advanced multi-agent configurations.
+          Everything you need to set up and get the most out of your AI agent
+          team. From first login to advanced multi-agent configurations.
         </p>
       </div>
 

@@ -73,7 +73,7 @@ export function McpServerCard({
           <button
             type="button"
             onClick={() => onDelete(server)}
-            className="inline-flex items-center justify-center rounded-lg p-2 text-foreground/50 hover:bg-red-500/10 hover:text-red-400 transition-colors cursor-pointer"
+            className="inline-flex items-center justify-center rounded-lg p-2 text-foreground/50 hover:bg-destructive/10 hover:text-destructive transition-colors cursor-pointer"
             aria-label={`Delete ${server.display_name}`}
           >
             <Trash2 className="w-4 h-4" />

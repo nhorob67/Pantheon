@@ -1,83 +1,83 @@
 ---
 title: Skills
-description: Skills are the capabilities that power your AI assistant — grain bids, weather forecasts, scale ticket management, and more.
+description: Skills are custom capabilities that teach your AI agents how to handle specific tasks.
 section: Skills
 order: 0
 icon: Wrench
-tags: [skills, overview, capabilities]
+tags: [skills, overview, capabilities, custom]
 ---
 
 # Skills
 
-Skills define what your AI assistant can actually do. Each skill provides a set of instructions, tools, and workflows that enable your assistant to perform specific farm tasks -- from fetching grain bids off elevator websites to reading scale tickets from a photo.
+Skills define what your AI agents can do. Each skill is a Markdown-based instruction set (SKILL.md format) that teaches an agent how to perform a specific task — from looking up FAQs to generating reports to processing inbound requests.
 
-## Built-in skills
+## All skills are custom
 
-Every Pantheon workspace ships with three built-in skills. These cover the core tasks that Upper Midwest row crop farmers use daily.
+Pantheon's skill system is 100% custom. You create skills tailored to your exact use case. There are no locked-in built-in skills.
 
-| Skill | What it does | Key capability |
-|---|---|---|
-| [Grain Bids](/docs/skills/grain-bids) | Scrapes elevator websites for cash grain prices | Real-time bid comparison across all your elevators |
-| [Weather Forecasts](/docs/skills/weather-forecasts) | Agriculture-focused weather from the National Weather Service | Spray window analysis, GDD tracking, morning briefings |
-| [Scale Tickets](/docs/skills/scale-tickets) | Logs grain deliveries via photo, voice, or guided entry | OCR from ticket photos, natural language parsing, export to spreadsheet |
+### Three ways to create skills
 
-<Callout variant="info" title="All three skills are available on every plan">
-The $50/month subscription includes all built-in skills. There is no tiered feature gating. The only variable cost is metered API usage based on how often you interact with your assistant.
+| Method | How it works |
+|--------|-------------|
+| **Skill Forge** | Write a skill from scratch using the built-in Markdown editor |
+| **AI Generation** | Describe what you want in plain English and Pantheon generates the skill |
+| **Extension Marketplace** | Install pre-built skills shared by the community |
+
+<Callout variant="info" title="Included on every plan">
+Custom skills are included in the $50/month subscription. The only variable cost is metered API usage when agents use skills to process messages.
 </Callout>
 
 ## How skills work
 
-Skills define the tools and instructions available to your assistant. Each skill contains:
+Each skill contains:
 
-- **Instructions** -- Detailed guidance that tells the assistant how to perform the task, what data to look for, and how to format the output.
-- **Tools** -- Access to browser automation, APIs, databases, or file creation capabilities needed to complete the task.
-- **Configuration** -- Farm-specific settings like your elevator list, weather coordinates, or which scale ticket fields to display.
+- **Instructions** — Detailed guidance that tells the agent how to perform the task, what data to look for, and how to format output
+- **Tools** — Access to APIs, databases, or file creation capabilities needed to complete the task
+- **Configuration** — Any settings or parameters the skill needs
 
-When you ask your assistant a question, it determines which skill applies and follows the skill's instructions to produce a response. For example, asking "What's corn at?" triggers the Grain Bids skill, which navigates to your elevator websites and extracts the current posted prices.
+When you ask an agent a question, it determines which of its assigned skills applies and follows the skill's instructions to produce a response.
 
-## Enabling and disabling skills
+## Managing skills
 
-You can toggle skills on or off from the Pantheon dashboard.
+### Creating a skill
 
-1. Go to **Settings > Skills**.
-2. Toggle the switch next to each skill to enable or disable it.
-3. Click **Save Changes**.
+1. Go to **Settings > Skills**
+2. Click **Create Skill** or **Generate with AI**
+3. Write or generate the skill content
+4. Save
 
-<Callout variant="info" title="Changes take effect immediately">
-When you save skill settings, Pantheon applies the changes to your assistant. Updates take effect on the next message.
-</Callout>
+### Assigning skills to agents
 
-Disabling a skill removes it from your assistant's configuration entirely. The assistant will not attempt tasks related to a disabled skill, even if asked directly.
+Skills are assigned per-agent. Each agent only has access to its assigned skills.
+
+1. Go to **Agents** in the sidebar
+2. Select the agent you want to configure
+3. Under **Skills**, toggle each skill on or off
+4. Save
+
+This lets you create focused specialists:
+
+- A **Support Lead** with "FAQ Lookup" and "Ticket Triage" skills
+- A **Research Analyst** with "Web Search" and "Report Generator" skills
+- A **General Assistant** with all skills for catch-all questions
+
+### Version history
+
+Every skill edit creates a new version. You can view the version history and roll back to any previous version from the skill editor.
 
 ## Skills and agents
 
-If you run a [multi-agent setup](/docs/agents/skills-per-agent), each agent gets its own subset of the globally-enabled skills. This lets you create focused specialists:
-
-- A **Grain Desk** agent with only the Grain Bids skill
-- A **Weather Watch** agent with only the Weather Forecasts skill
-- A **Ticket Clerk** agent with only the Scale Tickets skill
-- A **General Advisor** that has all skills for catch-all questions
-
-A skill must be enabled globally before it can be assigned to any agent. Disabling a skill globally removes it from all agents.
+If you run a [multi-agent setup](/docs/agents/skills-per-agent), each agent gets its own subset of skills:
 
 | Configuration level | Where to change it | What it controls |
 |---|---|---|
-| Global skill toggle | Settings > Skills | Whether the skill is available at all |
-| Per-agent assignment | Settings > Agents > [Agent] | Which agents can use the skill |
+| Skill creation | Settings > Skills | Creates and manages the skill definition |
+| Per-agent assignment | Agents > [Agent] > Skills | Which agents can use the skill |
 
-## Skill configuration
-
-Each skill has its own configuration that comes from your farm profile and onboarding data:
-
-- **Grain Bids** reads your elevator list (name, URL, crops to track) from your farm setup.
-- **Weather Forecasts** reads your latitude, longitude, location name, and timezone.
-- **Scale Tickets** reads your crop list for bushel weight conversions and your visible/required field preferences.
-
-To update these settings, edit the relevant section in your farm profile or skill-specific settings page. See each skill's documentation for details.
+A skill created in Settings > Skills is available for assignment to any agent. Deleting a skill removes it from all agents.
 
 ## What's next
 
-- [Grain Bids](/docs/skills/grain-bids) -- Real-time cash grain prices from your elevators
-- [Weather Forecasts](/docs/skills/weather-forecasts) -- NWS-powered forecasts, spray windows, and GDD
-- [Scale Tickets](/docs/skills/scale-tickets) -- Three ways to log grain deliveries
-- [Skills & Scheduling](/docs/agents/skills-per-agent) -- Assign skills to specific agents and set up cron jobs
+- [Custom Skills](/docs/skills/custom-skills) — Deep dive into creating and managing skills
+- [Skills & Scheduling](/docs/agents/skills-per-agent) — Assign skills to specific agents
+- [Extension Marketplace](/docs/extensions/marketplace) — Browse and install community skills

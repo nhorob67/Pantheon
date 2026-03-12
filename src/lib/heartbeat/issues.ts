@@ -150,7 +150,7 @@ function summarizeSuppressedReason(reasons: string[]): string {
 }
 
 function isUrgentHeartbeatIssue(issue: Pick<HeartbeatIssue, "signal_type" | "severity">): boolean {
-  return issue.signal_type === "weather_severe" && issue.severity >= 4;
+  return issue.severity >= 4;
 }
 
 function getPendingIssueReferenceTime(

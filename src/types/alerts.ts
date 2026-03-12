@@ -1,9 +1,6 @@
 export type AlertType =
   | "spending_threshold"
-  | "spending_anomaly"
-  | "weather_severe"
-  | "price_movement"
-  | "ticket_anomaly";
+  | "spending_anomaly";
 
 export type AlertSeverity = "info" | "warning" | "critical";
 
@@ -28,13 +25,6 @@ export interface AlertPreferences {
   spending_alerts_enabled: boolean;
   spending_alert_email: boolean;
   spending_alert_dashboard: boolean;
-  weather_severe_enabled: boolean;
-  weather_severe_discord: boolean;
-  price_movement_enabled: boolean;
-  price_movement_threshold_cents: number;
-  price_movement_discord: boolean;
-  ticket_anomaly_enabled: boolean;
-  ticket_anomaly_discord: boolean;
   created_at: string;
   updated_at: string;
 }

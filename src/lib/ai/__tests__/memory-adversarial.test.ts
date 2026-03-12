@@ -60,7 +60,7 @@ describe("Adversarial: Contradiction Handling", () => {
   it("higher confidence + knowledge tier scores first", () => {
     const highConfidence: ScoredMemory = {
       id: "high-conf",
-      content: "Farm has 2400 acres of corn",
+      content: "Team manages 12 active projects",
       memory_type: "fact",
       memory_tier: "knowledge",
       confidence: 0.95,
@@ -71,7 +71,7 @@ describe("Adversarial: Contradiction Handling", () => {
     };
     const lowConfidence: ScoredMemory = {
       id: "low-conf",
-      content: "Farm has 1000 acres of corn",
+      content: "Team manages 5 active projects",
       memory_type: "fact",
       memory_tier: "episodic",
       confidence: 0.5,
@@ -103,16 +103,16 @@ describe("Adversarial: Duplicate Flood", () => {
     // We verify the validator interface returns the right shape
     const validation1 = validateContent({
       ...baseValidation,
-      content: "Farm delivers corn to CHS Minot elevator every Tuesday",
+      content: "Team delivers reports to Acme Corp portal every Tuesday",
     });
     assert.equal(validation1.valid, true, "First write should pass validation");
 
     // The actual dedup is async (requires DB + embedding), tested via integration.
     // Here we verify the content hash approach:
     const normalize = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
-    const hash1 = createHash("sha256").update(normalize("Farm delivers corn to CHS Minot")).digest("hex");
-    const hash2 = createHash("sha256").update(normalize("Farm delivers corn to CHS Minot")).digest("hex");
-    const hash3 = createHash("sha256").update(normalize("Farm delivers wheat to ADM")).digest("hex");
+    const hash1 = createHash("sha256").update(normalize("Team delivers reports to Acme Corp")).digest("hex");
+    const hash2 = createHash("sha256").update(normalize("Team delivers reports to Acme Corp")).digest("hex");
+    const hash3 = createHash("sha256").update(normalize("Team delivers invoices to Globex")).digest("hex");
 
     assert.equal(hash1, hash2, "Identical content should produce same hash");
     assert.notEqual(hash1, hash3, "Different content should produce different hash");
@@ -155,7 +155,7 @@ describe("Adversarial: Outdated Fact", () => {
 describe("Adversarial: Unicode Zero-Width Characters", () => {
   it("zero-width chars in content are preserved but don't break validation", () => {
     // Zero-width chars: U+200B (zero width space), U+FEFF (BOM), U+200D (ZWJ)
-    const content = "Farm has 2400\u200B acres of corn near\u200D Minot";
+    const content = "Team has 12\u200B active projects across\u200D departments";
     const result = validateContent({ ...baseValidation, content });
     // Content is valid — zero-width chars don't trigger any filter
     assert.equal(result.valid, true);
@@ -175,7 +175,7 @@ describe("Adversarial: Content Exceeding Length Limit", () => {
 
 describe("Adversarial: SQL Injection in Content", () => {
   it("SQL injection in content passes validation (stored safely via parameterized queries)", () => {
-    const content = "Farm info'; DROP TABLE tenant_memory_records; --";
+    const content = "Team info'; DROP TABLE tenant_memory_records; --";
     const result = validateContent({ ...baseValidation, content });
     // This passes validation — it's just content.
     // Defense is parameterized queries in Supabase client, not content validation.
@@ -204,7 +204,7 @@ describe("Adversarial: PII Patterns", () => {
   it("rejects SSN", () => {
     const result = validateContent({
       ...baseValidation,
-      content: "The farmer's SSN is 123-45-6789 for tax filing",
+      content: "The user's SSN is 123-45-6789 for tax filing",
     });
     assert.equal(result.valid, false);
   });
@@ -212,7 +212,7 @@ describe("Adversarial: PII Patterns", () => {
   it("rejects credit card", () => {
     const result = validateContent({
       ...baseValidation,
-      content: "Farm account card number is 4111111111111111",
+      content: "Team account card number is 4111111111111111",
     });
     assert.equal(result.valid, false);
   });

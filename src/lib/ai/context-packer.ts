@@ -120,7 +120,7 @@ export function packMemoryContext(
   eligible = filterContradictions(eligible, bigramCache);
 
   // Header
-  const header = "## What you remember about this farm\n\n";
+  const header = "## What you remember about this team\n\n";
   const headerTokens = estimateTokens(header);
   let remainingBudget = budget - headerTokens;
 

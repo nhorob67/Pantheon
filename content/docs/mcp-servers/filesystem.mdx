@@ -1,6 +1,6 @@
 ---
 title: Filesystem Server
-description: Give your AI assistant access to read and write files using the Filesystem MCP server.
+description: Give your AI agent access to read and write files using the Filesystem MCP server.
 section: MCP Servers
 order: 1
 icon: FolderOpen
@@ -9,7 +9,7 @@ tags: [mcp, filesystem, files]
 
 # Filesystem Server
 
-The Filesystem MCP server gives your AI assistant the ability to read, write, and manage files. This is useful for saving reports, keeping notes, storing exported data, and working with files that persist across conversations.
+The Filesystem MCP server gives your AI agent the ability to read, write, and manage files. This is useful for saving reports, keeping notes, storing exported data, and working with files that persist across conversations.
 
 ## Overview
 
@@ -20,11 +20,11 @@ The Filesystem MCP server gives your AI assistant the ability to read, write, an
 | **Arguments** | `-y @modelcontextprotocol/server-filesystem` |
 | **Scope** | Workspace (available to all agents) |
 
-The Filesystem server is a custom MCP server you can add to your workspace if you need file read/write capabilities. It is not required for any built-in farm tools -- scale tickets, grain bids, weather, and memory all work without it.
+The Filesystem server is a custom MCP server you can add to your workspace if you need file read/write capabilities. It is not required for any built-in platform tools -- memory, knowledge files, and email all work without it.
 
 ## What it enables
 
-With the Filesystem server active, your assistant can:
+With the Filesystem server active, your agent can:
 
 - **Read files** -- Open and read the contents of any file in its workspace directory.
 - **Write files** -- Create new files or overwrite existing ones. Useful for saving reports, exporting data, or generating documents.
@@ -36,28 +36,28 @@ With the Filesystem server active, your assistant can:
 
 ### Saving reports
 
-Ask your assistant to generate a summary and save it to a file:
+Ask your agent to generate a summary and save it to a file:
 
-> "Summarize this week's grain bids across all elevators and save the report to `reports/weekly-bids-2025-10-13.md`."
+> "Summarize this week's key metrics and save the report to `reports/weekly-summary-2025-10-13.md`."
 
-The assistant will compile the data and write it to the specified path.
+The agent will compile the data and write it to the specified path.
 
-### Exporting scale ticket data
+### Exporting data
 
-If you want a local copy of your scale ticket records:
+If you want a local copy of records or reports:
 
-> "Export all corn deliveries from October as a CSV file."
+> "Export all completed tasks from October as a CSV file."
 
-The assistant writes the CSV to the workspace where it persists between conversations.
+The agent writes the CSV to the workspace where it persists between conversations.
 
 ### Keeping operational notes
 
-Your assistant can maintain running notes, checklists, or logs:
+Your agent can maintain running notes, checklists, or logs:
 
-> "Add a note to `field-notes.md` that the south quarter of section 12 had standing water after last night's rain."
+> "Add a note to `meeting-notes.md` that the design review is rescheduled to Thursday."
 
 <Callout variant="info" title="Files persist across conversations">
-Files saved by the Filesystem server persist between conversations and are available any time you interact with your assistant.
+Files saved by the Filesystem server persist between conversations and are available any time you interact with your agent.
 </Callout>
 
 ## Adding the Filesystem server
@@ -68,11 +68,11 @@ Files saved by the Filesystem server persist between conversations and are avail
 4. Click **Filesystem** from the preset list.
 5. Review the pre-filled fields and click **Add Server**.
 
-The server is available to your assistant after saving.
+The server is available to your agent after saving.
 
 ## Enabling and disabling
 
-You can toggle the Filesystem server on or off at any time using the switch on its card in **Settings > MCP Servers**. Disabling the server removes it from your assistant's active tools. Your files are not deleted when the server is disabled.
+You can toggle the Filesystem server on or off at any time using the switch on its card in **Settings > MCP Servers**. Disabling the server removes it from your agent's active tools. Your files are not deleted when the server is disabled.
 
 ## What's next
 

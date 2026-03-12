@@ -14,11 +14,11 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    "bg-gradient-to-br from-energy to-amber-500 text-white font-semibold rounded-full shadow-[0_4px_20px_rgba(217,140,46,0.2)] hover:shadow-[0_8px_30px_rgba(217,140,46,0.35)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-[0_2px_10px_rgba(217,140,46,0.15)] transition-all duration-150",
+    "bg-gradient-to-br from-energy to-accent-light text-white font-semibold rounded-full shadow-[0_4px_20px_rgba(196,136,63,0.2)] hover:shadow-[0_8px_30px_rgba(196,136,63,0.35)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-[0_2px_10px_rgba(196,136,63,0.15)] transition-all duration-150",
   secondary:
     "border border-border hover:bg-muted text-foreground rounded-full",
   destructive:
-    "bg-destructive hover:bg-red-700 text-white rounded-full",
+    "bg-destructive hover:bg-destructive/80 text-white rounded-full",
   ghost: "hover:bg-muted text-foreground rounded-full",
 };
 
@@ -44,8 +44,10 @@ function Button({
     <button
       ref={ref}
       disabled={isDisabled}
+      aria-live="polite"
+      aria-busy={loading}
       className={[
-        "inline-flex items-center justify-center gap-2 font-body transition-colors duration-150 cursor-pointer",
+        "inline-flex items-center justify-center gap-2 font-body transition-colors duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         "disabled:opacity-50 disabled:cursor-not-allowed",
         variantClasses[variant],
         sizeClasses[size],

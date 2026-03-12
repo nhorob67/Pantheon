@@ -134,7 +134,7 @@ export function SkillTestPanel({ skillId, skillStatus }: SkillTestPanelProps) {
 
       {/* Error */}
       {error && (
-        <div className="px-4 py-2 text-red-400 text-xs">{error}</div>
+        <div className="px-4 py-2 text-destructive text-xs">{error}</div>
       )}
 
       {/* Input */}

@@ -31,7 +31,7 @@ export function AlertsList({ initialAlerts, total }: AlertsListProps) {
         <EmptyState
           icon={Bell}
           title="No alerts yet"
-          description="Alerts will appear here when spending thresholds are reached or farm events occur."
+          description="Alerts will appear here when spending thresholds are reached or system events occur."
         />
       </div>
     );

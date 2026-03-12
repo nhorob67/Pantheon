@@ -3,38 +3,46 @@
 import { useForm, useWatch, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createAgentSchema, type CreateAgentData } from "@/lib/validators/agent";
-import {
-  PRESET_DEFAULT_SKILLS,
-  PRESET_DEFAULT_CRONS,
-} from "@/types/agent";
-import type {
-  Agent,
-  PersonalityPreset,
-  AvailableCronJob,
-} from "@/types/agent";
+import { AUTONOMY_OPTIONS, type Agent, type AutonomyLevel, type ToolApprovalLevel } from "@/types/agent";
 import type { CustomSkill } from "@/types/custom-skill";
 import type { SkillConfig } from "@/types/database";
 import type { ComposioConfig } from "@/types/composio";
+import { AGENT_TEMPLATES, type AgentTemplateDraft } from "@/lib/templates/agent-templates";
 import { Dialog } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import type { ToolApprovalLevel } from "@/types/agent";
 import { useState, useEffect, useMemo } from "react";
-import { Loader2, ChevronDown, RotateCcw } from "lucide-react";
-import { PresetGrid } from "./preset-grid";
+import { Loader2, ChevronDown, ShieldCheck, Sparkles, Zap, Wand2 } from "lucide-react";
+
+const AUTONOMY_ICONS: Record<string, React.ElementType> = {
+  assisted: ShieldCheck,
+  copilot: Sparkles,
+  autopilot: Zap,
+};
 import { SkillToggles } from "./skill-toggles";
-import { CronToggles } from "./cron-toggles";
 import { ComposioToolkitToggles } from "./composio-toolkit-toggles";
 import { ToolControls } from "./tool-controls";
 import { CustomScheduleForm } from "./custom-schedule-form";
+import { CronToggles } from "./cron-toggles";
+import { useNlGeneration } from "./use-nl-generation";
 
 const EMPTY_CUSTOM_SKILLS: CustomSkill[] = [];
-const EMPTY_DEFAULT_PROMPTS: Partial<Record<PersonalityPreset, string>> = {};
 
 interface CustomScheduleSummary {
   id: string;
   display_name: string | null;
   cron_expression: string;
   enabled: boolean;
+}
+
+function parseCustomSchedules(schedules: unknown[]): CustomScheduleSummary[] {
+  return (schedules as Record<string, unknown>[])
+    .filter((s) => s.schedule_type === "custom")
+    .map((s) => ({
+      id: s.id as string,
+      display_name: s.display_name as string | null,
+      cron_expression: s.cron_expression as string,
+      enabled: s.enabled as boolean,
+    }));
 }
 
 interface AgentFormProps {
@@ -45,7 +53,6 @@ interface AgentFormProps {
   globalSkillConfigs: SkillConfig[];
   customSkills?: CustomSkill[];
   composioConfig?: ComposioConfig | null;
-  defaultPrompts?: Partial<Record<PersonalityPreset, string>>;
   tenantId?: string;
 }
 
@@ -57,13 +64,16 @@ export function AgentForm({
   globalSkillConfigs,
   customSkills = EMPTY_CUSTOM_SKILLS,
   composioConfig = null,
-  defaultPrompts = EMPTY_DEFAULT_PROMPTS,
   tenantId,
 }: AgentFormProps) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("scratch");
   const [customSchedules, setCustomSchedules] = useState<CustomScheduleSummary[]>([]);
+  const [schedulesLoading, setSchedulesLoading] = useState(false);
   const [customScheduleFormOpen, setCustomScheduleFormOpen] = useState(false);
+  const [advancedExpanded, setAdvancedExpanded] = useState(false);
+  const [activeTab, setActiveTab] = useState<'identity' | 'skills' | 'advanced'>('identity');
 
   const isGloballyDisabled = (skillName: string) => {
     const config = globalSkillConfigs.find((s) => s.skill_name === skillName);
@@ -75,30 +85,30 @@ export function AgentForm({
       editAgent
         ? {
             display_name: editAgent.display_name,
-            personality_preset: editAgent.personality_preset,
-            custom_personality: editAgent.custom_personality || undefined,
+            role: editAgent.role || "",
+            autonomy_level: editAgent.autonomy_level || "copilot",
             discord_channel_id: editAgent.discord_channel_id || "",
             discord_channel_name: editAgent.discord_channel_name || "",
             is_default: editAgent.is_default,
             skills: (Array.isArray(editAgent.skills) ? editAgent.skills : []) as CreateAgentData["skills"],
-            cron_jobs: (editAgent.cron_jobs && typeof editAgent.cron_jobs === "object" ? editAgent.cron_jobs : {}) as CreateAgentData["cron_jobs"],
             composio_toolkits: Array.isArray(editAgent.composio_toolkits) ? editAgent.composio_toolkits : [],
+            can_delegate: editAgent.can_delegate ?? false,
+            can_receive_delegation: editAgent.can_receive_delegation ?? false,
             goal: editAgent.goal || "",
             backstory: editAgent.backstory || "",
             tool_approval_overrides: editAgent.tool_approval_overrides && typeof editAgent.tool_approval_overrides === "object" ? editAgent.tool_approval_overrides : {},
           }
         : {
             display_name: "",
-            personality_preset: "general",
-            custom_personality: undefined,
+            role: "",
+            autonomy_level: "copilot" as const,
             discord_channel_id: "",
             discord_channel_name: "",
             is_default: false,
-            skills: ([...(PRESET_DEFAULT_SKILLS.general || [])]) as CreateAgentData["skills"],
-            cron_jobs: Object.fromEntries(
-              (PRESET_DEFAULT_CRONS.general || []).map((c) => [c, true])
-            ) as CreateAgentData["cron_jobs"],
+            skills: [] as CreateAgentData["skills"],
             composio_toolkits: [],
+            can_delegate: false,
+            can_receive_delegation: false,
             goal: "",
             backstory: "",
             tool_approval_overrides: {},
@@ -116,68 +126,73 @@ export function AgentForm({
   } = useForm<CreateAgentData>({
     resolver: zodResolver(createAgentSchema),
     defaultValues,
+    mode: "onBlur",
   });
 
-  const [promptExpanded, setPromptExpanded] = useState(false);
-  const [goalExpanded, setGoalExpanded] = useState(false);
-  const [toolControlsExpanded, setToolControlsExpanded] = useState(false);
-
-  const personalityPreset = useWatch({ control, name: "personality_preset" });
   const skills = useWatch({ control, name: "skills" }) || [];
-  const cronJobs = useWatch({ control, name: "cron_jobs" }) || {};
   const composioToolkits = useWatch({ control, name: "composio_toolkits" }) || [];
+  const toolApprovalOverrides = useWatch({ control, name: "tool_approval_overrides" }) || {};
+
+  const {
+    nlDescription, setNlDescription,
+    nlGenerating, nlError,
+    resetNl, handleNlGenerate,
+  } = useNlGeneration({
+    defaultValues,
+    reset,
+    setSelectedTemplateId,
+    setActiveTab,
+  });
 
   useEffect(() => {
     if (open) {
       reset(defaultValues);
       setError(null);
-      // Auto-expand if editing an agent with a custom prompt override on a non-custom preset
-      const hasCustom = editAgent?.custom_personality && editAgent.custom_personality.length > 0;
-      setPromptExpanded(editAgent?.personality_preset === "custom" || !!hasCustom);
-      setGoalExpanded(!!(editAgent?.goal || editAgent?.backstory));
-      setToolControlsExpanded(!!editAgent?.tool_approval_overrides && Object.keys(editAgent.tool_approval_overrides).length > 0);
+      setSelectedTemplateId("scratch");
+      resetNl();
+      setAdvancedExpanded(
+        !!(editAgent?.tool_approval_overrides && Object.keys(editAgent.tool_approval_overrides).length > 0) ||
+        !!(editAgent?.composio_toolkits && editAgent.composio_toolkits.length > 0)
+      );
 
       // Load custom schedules for this agent
       if (editAgent && tenantId) {
+        setSchedulesLoading(true);
         fetch(`/api/tenants/${tenantId}/schedules?agent_id=${editAgent.id}`)
           .then((res) => res.ok ? res.json() : { data: { schedules: [] } })
           .then((payload) => {
             const schedules = Array.isArray(payload?.data?.schedules) ? payload.data.schedules : [];
-            setCustomSchedules(
-              schedules
-                .filter((s: Record<string, unknown>) => s.schedule_type === "custom")
-                .map((s: Record<string, unknown>) => ({
-                  id: s.id as string,
-                  display_name: s.display_name as string | null,
-                  cron_expression: s.cron_expression as string,
-                  enabled: s.enabled as boolean,
-                }))
-            );
+            setCustomSchedules(parseCustomSchedules(schedules));
           })
-          .catch(() => setCustomSchedules([]));
+          .catch(() => setCustomSchedules([]))
+          .finally(() => setSchedulesLoading(false));
       } else {
         setCustomSchedules([]);
       }
     }
   }, [open, defaultValues, reset, editAgent, tenantId]);
 
-  const currentDefaultPrompt = useMemo(
-    () => (personalityPreset !== "custom" ? defaultPrompts[personalityPreset] ?? "" : ""),
-    [personalityPreset, defaultPrompts]
-  );
-
-  const handlePresetChange = (preset: PersonalityPreset) => {
-    setValue("personality_preset", preset, { shouldValidate: true });
-    setValue("custom_personality", undefined, { shouldValidate: true });
-    setPromptExpanded(preset === "custom");
-    if (!editAgent) {
-      const defaultSkills = PRESET_DEFAULT_SKILLS[preset];
-      setValue("skills", [...defaultSkills] as CreateAgentData["skills"]);
-      const defaultCrons = Object.fromEntries(
-        PRESET_DEFAULT_CRONS[preset].map((c) => [c, true])
-      ) as CreateAgentData["cron_jobs"];
-      setValue("cron_jobs", defaultCrons);
+  const applyTemplate = (template: AgentTemplateDraft | null) => {
+    if (editAgent) {
+      return;
     }
+
+    setSelectedTemplateId(template?.id ?? "scratch");
+    reset(
+      template
+        ? {
+            ...defaultValues,
+            display_name: template.suggested_name,
+            role: template.role,
+            goal: template.goal,
+            backstory: template.backstory,
+            autonomy_level: template.autonomy_level,
+            can_delegate: template.can_delegate,
+            can_receive_delegation: template.can_receive_delegation,
+            skills: template.skills,
+          }
+        : defaultValues
+    );
   };
 
   const toggleSkill = (skill: string) => {
@@ -190,15 +205,6 @@ export function AgentForm({
     });
   };
 
-  const toggleCron = (cron: AvailableCronJob) => {
-    const current = cronJobs as Record<string, boolean>;
-    setValue(
-      "cron_jobs",
-      { ...current, [cron]: !current[cron] } as CreateAgentData["cron_jobs"],
-      { shouldValidate: true }
-    );
-  };
-
   const toggleComposioToolkit = (id: string) => {
     const current = composioToolkits as string[];
     const next = current.includes(id)
@@ -206,8 +212,6 @@ export function AgentForm({
       : [...current, id];
     setValue("composio_toolkits", next, { shouldValidate: true });
   };
-
-  const toolApprovalOverrides = useWatch({ control, name: "tool_approval_overrides" }) || {};
 
   const setToolApproval = (toolKey: string, level: ToolApprovalLevel) => {
     const current = { ...(toolApprovalOverrides as Record<string, ToolApprovalLevel>) };
@@ -248,22 +252,12 @@ export function AgentForm({
   };
 
   const handleCustomScheduleCreated = () => {
-    // Reload schedules
     if (editAgent && tenantId) {
       fetch(`/api/tenants/${tenantId}/schedules?agent_id=${editAgent.id}`)
         .then((res) => res.ok ? res.json() : { data: { schedules: [] } })
         .then((payload) => {
           const schedules = Array.isArray(payload?.data?.schedules) ? payload.data.schedules : [];
-          setCustomSchedules(
-            schedules
-              .filter((s: Record<string, unknown>) => s.schedule_type === "custom")
-              .map((s: Record<string, unknown>) => ({
-                id: s.id as string,
-                display_name: s.display_name as string | null,
-                cron_expression: s.cron_expression as string,
-                enabled: s.enabled as boolean,
-              }))
-          );
+          setCustomSchedules(parseCustomSchedules(schedules));
         })
         .catch(() => {});
     }
@@ -297,248 +291,441 @@ export function AgentForm({
     <Dialog
       open={open}
       onClose={onClose}
-      title={editAgent ? "Edit Assistant" : "Add Assistant"}
+      title={editAgent ? "Edit Agent" : "Create Agent"}
       size="lg"
     >
       <form onSubmit={handleSubmit(doSubmit)} className="space-y-6">
-        {/* Name */}
-        <div>
-          <label className="block text-sm text-text-secondary mb-1.5">
-            Name
-          </label>
-          <input
-            {...register("display_name")}
-            placeholder="e.g., Grain Market Helper"
-            className="w-full border border-border focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-lg bg-bg-dark px-4 py-3 outline-none transition-colors text-text-primary placeholder:text-text-dim"
-          />
-          {errors.display_name && (
-            <p className="text-red-400 text-sm mt-1">
-              {errors.display_name.message}
+        {!editAgent && (
+          <>
+          {/* NL Agent Generation */}
+          <div className="rounded-xl border border-border bg-bg-dark p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <Wand2 className="w-4 h-4 text-accent" />
+              <p className="text-sm font-semibold text-text-primary">
+                Describe your agent
+              </p>
+            </div>
+            <textarea
+              value={nlDescription}
+              onChange={(e) => setNlDescription(e.target.value)}
+              rows={2}
+              placeholder="e.g. I need an agent that handles customer support tickets, is friendly but professional, and escalates complex issues"
+              className="w-full border border-border focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-lg bg-bg-deep px-4 py-3 text-sm text-text-primary placeholder:text-text-dim outline-none transition-colors resize-none"
+            />
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleNlGenerate}
+                disabled={nlGenerating}
+                className="inline-flex items-center gap-2 rounded-lg bg-accent hover:bg-accent-light px-4 py-2 text-sm font-semibold text-bg-deep transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                {nlGenerating ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Wand2 className="w-4 h-4" />
+                )}
+                {nlGenerating ? "Generating..." : "Generate Agent"}
+              </button>
+              {nlError && (
+                <p className="text-xs text-destructive">{nlError}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-xs text-text-dim">Or pick a starting point</span>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+
+          <fieldset className="space-y-4 rounded-xl border border-border p-4">
+            <legend className="text-xs font-semibold uppercase tracking-wider text-text-dim px-2">
+              Templates
+            </legend>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => applyTemplate(null)}
+                className={`rounded-xl border p-4 text-left transition-colors cursor-pointer ${
+                  selectedTemplateId === "scratch"
+                    ? "border-accent bg-accent/10"
+                    : "border-border bg-bg-dark hover:border-border-light"
+                }`}
+              >
+                <p className="text-sm font-semibold text-text-primary">Start from scratch</p>
+                <p className="mt-1 text-xs text-text-dim">
+                  Begin with a blank agent and define every field yourself.
+                </p>
+              </button>
+
+              {AGENT_TEMPLATES.map((template) => {
+                const selected = selectedTemplateId === template.id;
+
+                return (
+                  <button
+                    key={template.id}
+                    type="button"
+                    onClick={() => applyTemplate(template)}
+                    className={`rounded-xl border p-4 text-left transition-colors cursor-pointer ${
+                      selected
+                        ? "border-accent bg-accent/10"
+                        : "border-border bg-bg-dark hover:border-border-light"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-text-primary">
+                          {template.label}
+                        </p>
+                        <p className="mt-1 text-xs text-text-dim">
+                          {template.description}
+                        </p>
+                      </div>
+                      <span className="rounded-full border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-text-dim">
+                        {template.autonomy_level}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <p className="text-xs text-text-dim">
+              Templates only prefill the form. Saved agents keep explicit fields only and are not linked to a template at runtime.
             </p>
-          )}
+          </fieldset>
+          </>
+        )}
+
+        {/* ── TAB BAR ─────────────────────────────── */}
+        <div className="flex border-b border-border mb-6">
+          {[
+            { id: 'identity', label: 'Identity', fields: ['name', 'role', 'goal', 'backstory'] },
+            { id: 'skills', label: 'Skills & Tools' },
+            { id: 'advanced', label: 'Schedules & Advanced' },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id as typeof activeTab)}
+              className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === tab.id
+                  ? 'border-primary text-foreground'
+                  : 'border-transparent text-foreground/50 hover:text-foreground/70'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
 
-        {/* Role / Personality Preset */}
-        <PresetGrid
-          selected={personalityPreset}
-          onSelect={handlePresetChange}
-        />
+        {/* ── IDENTITY TAB ───────────────────────────── */}
+        {activeTab === 'identity' && (
+          <>
+            <fieldset className="space-y-4 rounded-xl border border-border p-4">
+              <legend className="text-xs font-semibold uppercase tracking-wider text-text-dim px-2">
+                Identity
+              </legend>
 
-        {/* Goal & Context (collapsible) */}
-        <div>
-          <button
-            type="button"
-            onClick={() => setGoalExpanded((v) => !v)}
-            className="flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary transition-colors cursor-pointer w-full text-left"
-          >
-            <ChevronDown
-              className={`w-4 h-4 transition-transform ${goalExpanded ? "rotate-0" : "-rotate-90"}`}
-            />
-            <span className="font-medium">Goal & Context</span>
-            {!goalExpanded && (
-              <span className="text-text-dim text-xs ml-1">
-                — optional farm-specific context for this assistant
-              </span>
-            )}
-          </button>
-
-          {goalExpanded && (
-            <div className="mt-2 space-y-3">
+              {/* Agent Name */}
               <div>
-                <label className="block text-xs text-text-dim mb-1">
-                  Goal <span className="text-text-dim">(max 300 chars)</span>
+                <label className="block text-sm text-text-secondary mb-1.5">
+                  Agent Name <span className="text-destructive">*</span>
+                </label>
+                <input
+                  {...register("display_name")}
+                  placeholder="e.g. Support Bot"
+                  className="w-full border border-border focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-lg bg-bg-dark px-4 py-3 outline-none transition-colors text-text-primary placeholder:text-text-dim"
+                />
+                {errors.display_name && (
+                  <p className="text-destructive text-sm mt-1">
+                    {errors.display_name.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Role */}
+              <div>
+                <label className="block text-sm text-text-secondary mb-1.5">
+                  Role <span className="text-destructive">*</span>
+                  <span className="ml-2 text-xs font-normal text-text-dim">
+                    What is this agent?
+                  </span>
+                </label>
+                <input
+                  {...register("role")}
+                  placeholder="e.g. Customer support specialist"
+                  className="w-full border border-border focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-lg bg-bg-dark px-4 py-3 outline-none transition-colors text-text-primary placeholder:text-text-dim"
+                />
+                {errors.role && (
+                  <p className="text-destructive text-sm mt-1">{errors.role.message}</p>
+                )}
+              </div>
+
+              {/* Goal */}
+              <div>
+                <label className="block text-sm text-text-secondary mb-1.5">
+                  Goal
+                  <span className="ml-2 text-xs font-normal text-text-dim">
+                    What should this agent accomplish?
+                  </span>
                 </label>
                 <textarea
                   {...register("goal")}
                   rows={2}
-                  maxLength={300}
-                  placeholder="e.g., Help me maximize basis and find the best delivery windows for my corn and soybeans"
-                  className="w-full border border-border focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-lg bg-bg-dark px-4 py-2.5 outline-none transition-colors text-text-primary placeholder:text-text-dim text-sm resize-y"
+                  placeholder="e.g. Resolve customer questions quickly and accurately"
+                  className="w-full border border-border focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-lg bg-bg-dark px-4 py-3 outline-none transition-colors text-text-primary placeholder:text-text-dim text-sm resize-y"
                 />
+                {errors.goal && (
+                  <p className="text-destructive text-sm mt-1">{errors.goal.message}</p>
+                )}
               </div>
+
+              {/* Backstory */}
               <div>
-                <label className="block text-xs text-text-dim mb-1">
-                  Backstory <span className="text-text-dim">(max 1000 chars)</span>
+                <label className="block text-sm text-text-secondary mb-1.5">
+                  Backstory
+                  <span className="ml-2 text-xs font-normal text-text-dim">
+                    (optional) Personality, tone, and constraints
+                  </span>
                 </label>
                 <textarea
                   {...register("backstory")}
                   rows={3}
-                  maxLength={1000}
-                  placeholder="e.g., We farm 3,200 acres in the Red River Valley. We typically sell 60% at harvest and store the rest."
-                  className="w-full border border-border focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-lg bg-bg-dark px-4 py-2.5 outline-none transition-colors text-text-primary placeholder:text-text-dim text-sm resize-y"
+                  placeholder="e.g. You are friendly but concise. Always cite sources. Never make up information."
+                  className="w-full border border-border focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-lg bg-bg-dark px-4 py-3 outline-none transition-colors text-text-primary placeholder:text-text-dim text-sm resize-y"
                 />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* System Prompt */}
-        {personalityPreset === "custom" ? (
-          <div>
-            <label className="block text-sm text-text-secondary mb-1.5">
-              System Prompt
-            </label>
-            <textarea
-              {...register("custom_personality")}
-              rows={6}
-              placeholder="Describe this assistant's personality, focus areas, and communication style..."
-              className="w-full border border-border focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-lg bg-bg-dark px-4 py-3 outline-none transition-colors text-text-primary placeholder:text-text-dim resize-y text-sm font-mono"
-            />
-            {errors.custom_personality && (
-              <p className="text-red-400 text-sm mt-1">
-                {errors.custom_personality.message}
-              </p>
-            )}
-          </div>
-        ) : (
-          <div>
-            <button
-              type="button"
-              onClick={() => setPromptExpanded((v) => !v)}
-              className="flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary transition-colors cursor-pointer w-full text-left"
-            >
-              <ChevronDown
-                className={`w-4 h-4 transition-transform ${promptExpanded ? "rotate-0" : "-rotate-90"}`}
-              />
-              <span className="font-medium">System Prompt</span>
-              {!promptExpanded && (
-                <span className="text-text-dim text-xs ml-1">
-                  — using default. Click to customize.
-                </span>
-              )}
-            </button>
-
-            {promptExpanded && (
-              <div className="mt-2 space-y-2">
-                <textarea
-                  {...register("custom_personality")}
-                  rows={8}
-                  placeholder={currentDefaultPrompt}
-                  className="w-full border border-border focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-lg bg-bg-dark px-4 py-3 outline-none transition-colors text-text-primary placeholder:text-text-dim/40 resize-y text-sm font-mono"
-                />
-                <div className="flex items-center justify-between">
-                  <p className="text-xs text-text-dim">
-                    Edit to change how this assistant thinks and responds.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setValue("custom_personality", undefined, { shouldValidate: true })}
-                    className="inline-flex items-center gap-1.5 text-xs text-text-dim hover:text-text-secondary transition-colors cursor-pointer"
-                  >
-                    <RotateCcw className="w-3 h-3" />
-                    Reset to Default
-                  </button>
-                </div>
-                {errors.custom_personality && (
-                  <p className="text-red-400 text-sm mt-1">
-                    {errors.custom_personality.message}
-                  </p>
+                {errors.backstory && (
+                  <p className="text-destructive text-sm mt-1">{errors.backstory.message}</p>
                 )}
               </div>
-            )}
-          </div>
+            </fieldset>
+
+            {/* ── BEHAVIOR ─────────────────────────────── */}
+            <fieldset className="space-y-4 rounded-xl border border-border p-4">
+              <legend className="text-xs font-semibold uppercase tracking-wider text-text-dim px-2">
+                Behavior
+              </legend>
+
+              {/* Autonomy Level */}
+              <div>
+                <label className="block text-sm text-text-secondary mb-3">
+                  Autonomy Level
+                </label>
+                <Controller
+                  control={control}
+                  name="autonomy_level"
+                  render={({ field }) => (
+                    <div className="grid grid-cols-3 gap-3">
+                      {AUTONOMY_OPTIONS.map((opt) => {
+                        const selected = field.value === opt.value;
+                        const Icon = AUTONOMY_ICONS[opt.value] ?? Sparkles;
+                        return (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            onClick={() => field.onChange(opt.value)}
+                            className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all cursor-pointer ${
+                              selected
+                                ? "border-accent bg-accent/10 shadow-[0_0_16px_rgba(196,136,63,0.08)]"
+                                : "border-border hover:border-border-light hover:bg-border"
+                            }`}
+                          >
+                            <Icon
+                              className={`w-4 h-4 ${selected ? "text-accent" : "text-text-dim"}`}
+                            />
+                            <div className="text-center">
+                              <p className={`text-xs font-semibold ${selected ? "text-accent" : "text-text-primary"}`}>
+                                {opt.label}
+                              </p>
+                              <p className="text-[10px] text-text-dim mt-0.5">
+                                {opt.desc}
+                              </p>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                />
+              </div>
+
+              {/* Delegation */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-text-primary">
+                    Can delegate tasks
+                  </p>
+                  <p className="text-xs text-text-dim">
+                    Allow this agent to hand off tasks to other agents
+                  </p>
+                </div>
+                <Controller
+                  control={control}
+                  name="can_delegate"
+                  render={({ field }) => (
+                    <Switch
+                      checked={field.value ?? false}
+                      onChange={field.onChange}
+                    />
+                  )}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-text-primary">
+                    Can receive delegated tasks
+                  </p>
+                  <p className="text-xs text-text-dim">
+                    Allow other agents to send work to this agent
+                  </p>
+                </div>
+                <Controller
+                  control={control}
+                  name="can_receive_delegation"
+                  render={({ field }) => (
+                    <Switch
+                      checked={field.value ?? false}
+                      onChange={field.onChange}
+                    />
+                  )}
+                />
+              </div>
+            </fieldset>
+
+            {/* ── DISCORD CHANNEL ─────────────────────── */}
+            <fieldset className="space-y-3 rounded-xl border border-border p-4">
+              <legend className="text-xs font-semibold uppercase tracking-wider text-text-dim px-2">
+                Discord Channel
+              </legend>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <input
+                    {...register("discord_channel_id")}
+                    placeholder="Channel ID (17-20 digits)"
+                    className="w-full border border-border focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-lg bg-bg-dark px-4 py-3 outline-none transition-colors text-text-primary placeholder:text-text-dim font-mono text-sm"
+                  />
+                  {errors.discord_channel_id && (
+                    <p className="text-destructive text-sm mt-1">
+                      {errors.discord_channel_id.message}
+                    </p>
+                  )}
+                </div>
+                <input
+                  {...register("discord_channel_name")}
+                  placeholder="Display name (e.g. #support)"
+                  className="w-full border border-border focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-lg bg-bg-dark px-4 py-3 outline-none transition-colors text-text-primary placeholder:text-text-dim text-sm"
+                />
+              </div>
+              <p className="text-xs text-text-dim">
+                Leave empty for the default agent (handles all unbound channels & DMs).
+              </p>
+
+              {/* Default toggle */}
+              <div className="flex items-center justify-between pt-2 border-t border-border">
+                <div>
+                  <p className="text-sm font-medium text-text-primary">
+                    Default Agent
+                  </p>
+                  <p className="text-xs text-text-dim">
+                    Handles all channels without a specific assignment, plus DMs
+                  </p>
+                </div>
+                <Controller
+                  control={control}
+                  name="is_default"
+                  render={({ field }) => (
+                    <Switch
+                      checked={field.value}
+                      onChange={field.onChange}
+                    />
+                  )}
+                />
+              </div>
+            </fieldset>
+          </>
         )}
 
-        {/* Discord Channel */}
-        <div>
-          <label className="block text-sm text-text-secondary mb-1.5">
-            Discord Channel
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <input
-                {...register("discord_channel_id")}
-                placeholder="Channel ID (e.g., 1234567890123456789)"
-                className="w-full border border-border focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-lg bg-bg-dark px-4 py-3 outline-none transition-colors text-text-primary placeholder:text-text-dim font-mono text-sm"
+        {/* ── SKILLS & TOOLS TAB ─────────────────────── */}
+        {activeTab === 'skills' && (
+          <>
+            <SkillToggles
+              skills={skills as string[]}
+              customSkills={customSkills}
+              isGloballyDisabled={isGloballyDisabled}
+              onToggle={toggleSkill}
+            />
+
+            <ToolControls
+              skills={skills as string[]}
+              overrides={toolApprovalOverrides as Record<string, ToolApprovalLevel>}
+              onChangeLevel={setToolApproval}
+              expanded={true}
+              onToggleExpanded={() => {}}
+            />
+
+            {composioEnabled && (
+              <ComposioToolkitToggles
+                enabledToolkits={composioConfig!.selected_toolkits}
+                connectedAppIds={connectedAppIds}
+                selected={composioToolkits as string[]}
+                onToggle={toggleComposioToolkit}
               />
-              {errors.discord_channel_id && (
-                <p className="text-red-400 text-sm mt-1">
-                  {errors.discord_channel_id.message}
-                </p>
+            )}
+          </>
+        )}
+
+        {/* ── SCHEDULES & ADVANCED TAB ───────────────── */}
+        {activeTab === 'advanced' && (
+          <>
+            {schedulesLoading ? (
+              <div className="flex items-center gap-2 py-6 justify-center text-sm text-foreground/50">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Loading schedules…
+              </div>
+            ) : (
+            <CronToggles
+              customSchedules={customSchedules}
+              onAddCustomSchedule={editAgent && tenantId ? () => setCustomScheduleFormOpen(true) : undefined}
+              onToggleCustomSchedule={tenantId ? handleToggleCustomSchedule : undefined}
+              onDeleteCustomSchedule={tenantId ? handleDeleteCustomSchedule : undefined}
+            />
+            )}
+
+            <div>
+              <button
+                type="button"
+                onClick={() => setAdvancedExpanded((v) => !v)}
+                className="flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary transition-colors cursor-pointer w-full text-left"
+              >
+                <ChevronDown
+                  className={`w-4 h-4 transition-transform ${advancedExpanded ? "rotate-0" : "-rotate-90"}`}
+                />
+                <span className="font-medium">Advanced Options</span>
+              </button>
+
+              {advancedExpanded && (
+                <div className="mt-3 space-y-4">
+                  {/* Reserved for future advanced settings */}
+                </div>
               )}
             </div>
-            <input
-              {...register("discord_channel_name")}
-              placeholder="Display name (e.g., #grain-bids)"
-              className="w-full border border-border focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-lg bg-bg-dark px-4 py-3 outline-none transition-colors text-text-primary placeholder:text-text-dim text-sm"
-            />
-          </div>
-          <p className="text-xs text-text-dim mt-1.5">
-            Right-click a channel in Discord → Copy Channel ID. Leave empty for the default agent.
-          </p>
-        </div>
-
-        {/* Skills */}
-        <SkillToggles
-          skills={skills as string[]}
-          customSkills={customSkills}
-          isGloballyDisabled={isGloballyDisabled}
-          onToggle={toggleSkill}
-        />
-
-        {/* Connected Integrations (Composio) */}
-        {composioEnabled && (
-          <ComposioToolkitToggles
-            enabledToolkits={composioConfig!.selected_toolkits}
-            connectedAppIds={connectedAppIds}
-            selected={composioToolkits as string[]}
-            onToggle={toggleComposioToolkit}
-          />
+          </>
         )}
-
-        {/* Tool Controls */}
-        <ToolControls
-          skills={skills as string[]}
-          overrides={toolApprovalOverrides as Record<string, ToolApprovalLevel>}
-          onChangeLevel={setToolApproval}
-          expanded={toolControlsExpanded}
-          onToggleExpanded={() => setToolControlsExpanded((v) => !v)}
-        />
-
-        {/* Scheduled Messages */}
-        <CronToggles
-          cronJobs={cronJobs as Record<string, boolean>}
-          skills={skills as string[]}
-          isGloballyDisabled={isGloballyDisabled}
-          onToggle={toggleCron}
-          customSchedules={customSchedules}
-          onAddCustomSchedule={editAgent && tenantId ? () => setCustomScheduleFormOpen(true) : undefined}
-          onToggleCustomSchedule={tenantId ? handleToggleCustomSchedule : undefined}
-          onDeleteCustomSchedule={tenantId ? handleDeleteCustomSchedule : undefined}
-        />
-
-        {/* Default toggle */}
-        <div className="flex items-center justify-between pt-2 border-t border-border">
-          <div>
-            <p className="text-sm font-medium text-text-primary">
-              Default Assistant
-            </p>
-            <p className="text-xs text-text-dim">
-              Handles all channels without a specific assignment, plus DMs
-            </p>
-          </div>
-          <Controller
-            control={control}
-            name="is_default"
-            render={({ field }) => (
-              <Switch
-                checked={field.value}
-                onChange={field.onChange}
-              />
-            )}
-          />
-        </div>
 
         {/* Error + Submit */}
         {error && (
-          <p className="text-red-400 text-sm">{error}</p>
+          <p className="text-destructive text-sm">{error}</p>
         )}
 
         <div className="flex justify-end gap-3 pt-2">
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2.5 rounded-lg text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors cursor-pointer"
+            className="px-5 py-2.5 rounded-lg text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-border transition-colors cursor-pointer"
           >
             Cancel
           </button>
@@ -548,7 +735,7 @@ export function AgentForm({
             className="bg-accent hover:bg-accent-light text-bg-deep font-semibold rounded-lg px-5 py-2.5 text-sm transition-colors disabled:opacity-50 flex items-center gap-2 cursor-pointer"
           >
             {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-            {editAgent ? "Save Changes" : "Add Assistant"}
+            {editAgent ? "Save Changes" : "Create Agent"}
           </button>
         </div>
       </form>

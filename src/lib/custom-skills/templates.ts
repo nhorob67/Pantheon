@@ -2,467 +2,366 @@ import type { SkillTemplate } from "@/types/custom-skill";
 
 export const SKILL_TEMPLATES: SkillTemplate[] = [
   {
-    id: "crop-scouting",
-    name: "Crop Scouting Report",
-    category: "crop-management",
-    description: "Structured pest, disease, and growth-stage reporting by field",
+    id: "customer-intake",
+    name: "Customer Intake Form",
+    category: "customer-support",
+    description: "Structured customer intake and issue reporting",
     icon: "Search",
-    prompt_hint: "Include growth stage tracking, pest identification guidance, and structured reporting format",
+    prompt_hint: "Include structured data collection, priority classification, and follow-up tracking",
     starter_skill_md: `---
-name: custom-crop-scouting
-description: Structured crop scouting reports with pest and growth stage tracking.
+name: custom-customer-intake
+description: Structured customer intake forms with issue classification and tracking.
 user-invocable: true
 ---
 
-# Crop Scouting Report
+# Customer Intake Form
 
 ## Purpose
-Help the farmer create structured crop scouting reports for their fields.
-Track growth stages, pest pressure, disease observations, and weed issues
-throughout the growing season.
+Help the team create structured customer intake reports.
+Track customer details, issue classification, and resolution status.
 
-## Report Format
+## Intake Format
 
-When the farmer wants to log a scouting report, collect:
-1. **Field name** — which field was scouted
-2. **Date** — when the scouting occurred (default to today)
-3. **Crop & Growth Stage** — e.g., Corn V6, Soybeans R1
-4. **Pest observations** — insects found, estimated pressure (low/moderate/high)
-5. **Disease observations** — any disease symptoms noted
-6. **Weed pressure** — species and density
-7. **General notes** — stand count, moisture, damage, etc.
+When a team member wants to log a customer intake, collect:
+1. **Customer name** — who is the customer
+2. **Date** — when the intake occurred (default to today)
+3. **Issue category** — e.g., Technical, Billing, Feature Request
+4. **Priority** — Low, Medium, High, Critical
+5. **Description** — detailed description of the issue
+6. **Steps taken** — any troubleshooting already attempted
+7. **Notes** — additional context, timeline, etc.
 
 Format the report as:
 
 \`\`\`
-🔍 SCOUTING REPORT — {{field_name}}
+INTAKE REPORT — {{customer_name}}
 Date: {{date}}
-Crop: {{crop}} | Stage: {{growth_stage}}
+Category: {{category}} | Priority: {{priority}}
 
-PEST PRESSURE: {{level}}
-  {{pest_observations}}
+DESCRIPTION:
+  {{description}}
 
-DISEASE: {{level}}
-  {{disease_observations}}
-
-WEED PRESSURE: {{level}}
-  {{weed_observations}}
+STEPS TAKEN:
+  {{steps_taken}}
 
 NOTES:
-  {{general_notes}}
+  {{notes}}
 \`\`\`
-
-## Growth Stage Reference
-
-### Corn
-- VE: Emergence
-- V1-V6: Vegetative (leaf collar count)
-- VT: Tasseling
-- R1-R6: Reproductive (silking through maturity)
-
-### Soybeans
-- VE-VC: Emergence to cotyledon
-- V1-V6: Vegetative (node count)
-- R1-R8: Reproductive (flowering through maturity)
 
 ## When Asked for a Summary
-Provide a season summary across all scouting reports logged, noting trends in pest pressure and key observations by field.
+Provide a summary across all intake reports, noting trends in issue categories and resolution rates.
 `,
   },
   {
-    id: "input-cost-calculator",
-    name: "Input Cost Calculator",
+    id: "budget-tracker",
+    name: "Budget Tracker",
     category: "financial",
-    description: "Calculate seed, fertilizer, and chemical costs per acre",
+    description: "Track project or department budget allocations and spending",
     icon: "Calculator",
-    prompt_hint: "Include per-acre cost breakdown, comparison across fields, and total operation cost summary",
+    prompt_hint: "Include per-category cost breakdown, comparison across projects, and total budget summary",
     starter_skill_md: `---
-name: custom-input-cost-calculator
-description: Calculate and track seed, fertilizer, and chemical input costs per acre.
+name: custom-budget-tracker
+description: Track and calculate budget allocations and spending by category.
 user-invocable: true
 ---
 
-# Input Cost Calculator
+# Budget Tracker
 
 ## Purpose
-Help the farmer track and calculate input costs for each field and crop.
-Break down costs per acre for seed, fertilizer, chemicals, and other inputs.
+Help the team track and calculate budget allocations and spending.
+Break down costs by category for projects, departments, or initiatives.
 
-## Input Categories
+## Budget Categories
 
-### Seed
-- Crop type and variety
-- Seeding rate (seeds/acre or lbs/acre)
-- Cost per bag/unit
-- Acres applied
+### Personnel
+- Role / position
+- Hours allocated
+- Rate per hour
+- Duration
 
-### Fertilizer
-- Product name (e.g., 28-0-0 UAN, 11-52-0 MAP, 0-0-60 Potash)
-- Rate (lbs/acre or gallons/acre)
-- Cost per ton or per gallon
-- Acres applied
+### Tools & Services
+- Service name (e.g., SaaS subscriptions, hosting)
+- Monthly or annual cost
+- Number of seats / units
 
-### Chemicals
-- Product name
-- Rate (oz/acre, pt/acre, etc.)
-- Cost per jug/container and container size
-- Acres applied
+### Contractors
+- Vendor name
+- Scope of work
+- Cost per deliverable or hourly rate
 
 ### Other
-- Crop insurance premium per acre
-- Custom hire / application cost per acre
-- Any other per-acre costs
+- Travel and expenses
+- Training and development
+- Miscellaneous costs
 
-## Cost Summary Format
+## Budget Summary Format
 
 \`\`\`
-💰 INPUT COSTS — {{field_name}} ({{acres}} acres)
-Crop: {{crop}}
+BUDGET — {{project_name}}
+Period: {{period}}
 
-SEED:       \${{seed_per_acre}}/acre    Total: \${{seed_total}}
-FERTILIZER: \${{fert_per_acre}}/acre    Total: \${{fert_total}}
-CHEMICALS:  \${{chem_per_acre}}/acre    Total: \${{chem_total}}
-OTHER:      \${{other_per_acre}}/acre   Total: \${{other_total}}
+PERSONNEL:   \${{personnel_amount}}   ({{personnel_pct}}%)
+TOOLS:       \${{tools_amount}}       ({{tools_pct}}%)
+CONTRACTORS: \${{contractors_amount}} ({{contractors_pct}}%)
+OTHER:       \${{other_amount}}       ({{other_pct}}%)
 ─────────────────────────────────────────
-TOTAL:      \${{total_per_acre}}/acre   Total: \${{grand_total}}
+TOTAL:       \${{grand_total}}
+REMAINING:   \${{remaining}}
 \`\`\`
 
-## Breakeven Calculation
-When the farmer provides expected yield and a target price, calculate the breakeven price per bushel:
-- Breakeven = Total cost per acre / Expected yield per acre
+## Burn Rate
+When the user provides a timeline and total budget, calculate the burn rate:
+- Monthly burn = Total spent / Months elapsed
+- Projected total = Monthly burn × Total months
 `,
   },
   {
-    id: "harvest-yield-tracker",
-    name: "Harvest Yield Tracker",
-    category: "crop-management",
-    description: "Log and analyze harvest yields by field with season summaries",
+    id: "project-status-tracker",
+    name: "Project Status Tracker",
+    category: "project-management",
+    description: "Log and track project milestones, deliverables, and status updates",
     icon: "BarChart3",
-    prompt_hint: "Include per-field yield logging, moisture adjustments, and season comparison",
+    prompt_hint: "Include milestone tracking, status updates, and timeline comparison",
     starter_skill_md: `---
-name: custom-harvest-yield-tracker
-description: Log harvest yields by field and analyze performance across the season.
+name: custom-project-status-tracker
+description: Log project milestones and track status across the team.
 user-invocable: true
 ---
 
-# Harvest Yield Tracker
+# Project Status Tracker
 
 ## Purpose
-Help the farmer log harvest data field-by-field and provide yield analysis,
-moisture-adjusted yields, and season summaries.
+Help the team log project milestones, track deliverables, and provide
+status summaries across active projects.
 
 ## Data Collection
 
-When the farmer reports harvest data, collect:
-1. **Field name**
-2. **Crop**
-3. **Date harvested**
-4. **Wet yield** (bu/acre from combine monitor)
-5. **Moisture %** at harvest
-6. **Acres harvested**
-7. **Notes** — any issues, hybrid/variety if known
+When the user reports a project update, collect:
+1. **Project name**
+2. **Milestone / deliverable**
+3. **Date**
+4. **Status** — Not Started, In Progress, Blocked, Complete
+5. **Owner** — who is responsible
+6. **Completion %**
+7. **Notes** — blockers, dependencies, next steps
 
-## Moisture Adjustment
-
-Adjust yields to standard moisture:
-- Corn: 15.0%
-- Soybeans: 13.0%
-- Wheat: 13.5%
-- Barley: 14.5%
-- Sunflowers: 10.0%
-
-Formula: Adjusted yield = Wet yield × (100 - Actual moisture) / (100 - Standard moisture)
-
-## Harvest Log Format
+## Status Log Format
 
 \`\`\`
-🌾 HARVEST LOG — {{field_name}}
-Date: {{date}} | Crop: {{crop}}
-Acres: {{acres}}
-Wet Yield: {{wet_yield}} bu/acre @ {{moisture}}%
-Adjusted Yield: {{adjusted_yield}} bu/acre @ {{standard_moisture}}%
-Total Bushels: {{total_bushels}}
-{{notes}}
-\`\`\`
-
-## Season Summary
-
-When asked for a harvest summary, provide:
-- Total acres harvested by crop
-- Average adjusted yield by crop
-- Best and worst performing fields
-- Total bushels by crop
-- Comparison to county/state averages if known
-`,
-  },
-  {
-    id: "equipment-maintenance",
-    name: "Equipment Maintenance Log",
-    category: "equipment",
-    description: "Track service records, hours, and maintenance schedules",
-    icon: "Wrench",
-    prompt_hint: "Include hour tracking, service intervals, and upcoming maintenance alerts",
-    starter_skill_md: `---
-name: custom-equipment-maintenance
-description: Track equipment service records, hours, and upcoming maintenance schedules.
-user-invocable: true
----
-
-# Equipment Maintenance Log
-
-## Purpose
-Help the farmer track equipment maintenance, service records, and hours.
-Alert when service intervals are approaching.
-
-## Equipment Registration
-
-When the farmer adds a piece of equipment, collect:
-1. **Type** — Tractor, Combine, Sprayer, Planter, Drill, Truck, etc.
-2. **Make & Model** — e.g., John Deere 8R 370
-3. **Year**
-4. **Serial number** (optional)
-5. **Current hours** or miles
-
-## Service Log Entry
-
-When logging a service, collect:
-1. **Equipment** (by name/type)
-2. **Date**
-3. **Hours/miles at service**
-4. **Service type** — Oil change, Filters, Greasing, Repair, Annual, etc.
-5. **Parts used** (optional)
-6. **Cost** (optional)
-7. **Notes**
-
-## Service Format
-
-\`\`\`
-🔧 SERVICE LOG — {{equipment_name}}
-Date: {{date}} | Hours: {{hours}}
-Service: {{service_type}}
-Parts: {{parts}}
-Cost: \${{cost}}
+PROJECT UPDATE — {{project_name}}
+Date: {{date}} | Milestone: {{milestone}}
+Owner: {{owner}}
+Status: {{status}} | Progress: {{completion_pct}}%
 Notes: {{notes}}
 \`\`\`
 
-## Standard Intervals
-- **Engine oil & filter:** Every 250-500 hours
-- **Hydraulic filter:** Every 500-1000 hours
-- **Air filter:** Every 500 hours or as needed
-- **Fuel filter:** Every 500 hours
-- **Transmission/axle fluid:** Every 1000-2000 hours
-- **Grease points:** Every 10-50 hours depending on component
+## Project Summary
 
-## Upcoming Maintenance
-
-When asked, check equipment hours against last service and recommend upcoming maintenance based on standard intervals.
+When asked for a project summary, provide:
+- Total milestones by status
+- Overdue items
+- Upcoming deadlines
+- Team workload distribution
+- Risk areas and blockers
 `,
   },
   {
-    id: "livestock-feed-ration",
-    name: "Livestock Feed Ration",
-    category: "livestock",
-    description: "Feed formulation and daily cost per head calculations",
-    icon: "Beef",
-    prompt_hint: "Include ration balancing, cost per head per day, and ingredient substitution suggestions",
+    id: "meeting-notes",
+    name: "Meeting Notes",
+    category: "productivity",
+    description: "Structured meeting notes with action items and follow-ups",
+    icon: "Wrench",
+    prompt_hint: "Include attendee tracking, action item extraction, and follow-up reminders",
     starter_skill_md: `---
-name: custom-livestock-feed-ration
-description: Formulate feed rations and calculate daily cost per head.
+name: custom-meeting-notes
+description: Record structured meeting notes with action items and follow-ups.
 user-invocable: true
 ---
 
-# Livestock Feed Ration
+# Meeting Notes
 
 ## Purpose
-Help the farmer formulate balanced feed rations and calculate
-daily feed costs per head for cattle, hogs, or other livestock.
+Help the team capture structured meeting notes, extract action items,
+and track follow-ups across recurring meetings.
 
-## Ration Entry
+## Meeting Entry
 
-When the farmer wants to build or log a ration, collect:
-1. **Animal class** — e.g., Finishing steers, Bred cows, Feeder calves
-2. **Head count**
-3. **Target weight / stage**
-4. **Ingredients** — each with:
-   - Feed name (corn, silage, hay, DDGs, supplement, etc.)
-   - Lbs per head per day (as-fed)
-   - Cost per ton (as-fed)
+When the user wants to log meeting notes, collect:
+1. **Meeting name** — e.g., Weekly standup, Client sync
+2. **Date** — when the meeting occurred (default to today)
+3. **Attendees** — who was present
+4. **Agenda items** — topics discussed
+5. **Decisions made** — key decisions and rationale
+6. **Action items** — tasks assigned with owners and due dates
+7. **Notes** — additional context
 
-## Ration Summary Format
+## Meeting Format
 
 \`\`\`
-🐄 FEED RATION — {{animal_class}} ({{head_count}} head)
+MEETING NOTES — {{meeting_name}}
+Date: {{date}}
+Attendees: {{attendees}}
 
-Ingredient          lbs/hd/day   $/ton    $/hd/day
-─────────────────────────────────────────────────
-{{ingredient_rows}}
-─────────────────────────────────────────────────
-TOTAL               {{total_lbs}}          \${{total_per_head}}
+AGENDA:
+  {{agenda_items}}
 
-Daily cost (all head): \${{daily_total}}
-Monthly estimate:      \${{monthly_total}}
+DECISIONS:
+  {{decisions}}
+
+ACTION ITEMS:
+  {{action_items}}
+
+NOTES:
+  {{notes}}
 \`\`\`
 
-## Nutritional Guidelines (Beef Cattle)
-- **Finishing steers (1100-1300 lb target):** ~2.5-3% body weight DMI, 12-13% CP
-- **Bred cows (mid-gestation):** ~2% BW DMI, 7-8% CP
-- **Growing calves:** ~2.5-3% BW DMI, 13-14% CP
+## Follow-Up Tracking
 
-## When Adjusting Rations
-If the farmer wants to substitute an ingredient, calculate the cost difference per head per day and note any nutritional trade-offs.
+When asked, show all open action items from recent meetings, grouped by owner and sorted by due date.
 `,
   },
   {
-    id: "fsa-crop-insurance",
-    name: "FSA / Crop Insurance Reporter",
-    category: "compliance",
-    description: "Format acreage reports and insurance claim data for submission",
+    id: "team-standup",
+    name: "Team Standup Reporter",
+    category: "productivity",
+    description: "Daily standup collection and team status summaries",
     icon: "FileText",
-    prompt_hint: "Include acreage report formatting, claim documentation, and deadline reminders",
+    prompt_hint: "Include daily status collection, blocker tracking, and weekly summary",
     starter_skill_md: `---
-name: custom-fsa-crop-insurance
-description: Format acreage reports, crop insurance data, and compliance documentation.
+name: custom-team-standup
+description: Collect daily standup updates and generate team status summaries.
 user-invocable: true
 ---
 
-# FSA / Crop Insurance Reporter
+# Team Standup Reporter
 
 ## Purpose
-Help the farmer organize and format data for FSA acreage reports,
-crop insurance claims, and compliance documentation.
+Help the team collect and organize daily standup updates.
+Track progress, blockers, and generate weekly summaries.
 
-## Acreage Report
+## Standup Entry
 
-Collect per-field data for the FSA-578 acreage report:
-1. **Farm/Tract/Field number** (FSA identifiers)
-2. **Crop planted**
-3. **Intended use** — Grain, Silage, Cover Crop, Hay, etc.
-4. **Acres**
-5. **Planting date**
-6. **Share** — percent the farmer owns/operates
-7. **Practice** — Irrigated or Non-irrigated
+When a team member shares their update, collect:
+1. **Name** — team member
+2. **Date** (default today)
+3. **Yesterday** — what they completed
+4. **Today** — what they plan to work on
+5. **Blockers** — anything preventing progress
 
-## Acreage Report Format
+## Standup Format
 
 \`\`\`
-📋 ACREAGE REPORT SUMMARY
-Reporting Year: {{year}}
+STANDUP — {{name}}
+Date: {{date}}
 
-Farm   Tract  Field  Crop          Acres   Planted    Use      Practice
-──────────────────────────────────────────────────────────────────────
-{{field_rows}}
-──────────────────────────────────────────────────────────────────────
-TOTALS:                            {{total_acres}}
+DONE:
+  {{yesterday}}
+
+PLANNED:
+  {{today}}
+
+BLOCKERS:
+  {{blockers}}
 \`\`\`
 
-## Key Deadlines (Upper Midwest)
-- **Acreage Report:** July 15 (most crops)
-- **Small Grains Acreage:** July 15
-- **Fall-Seeded Crops:** November 15
-- **NAP Coverage Application:** Before planting
-- **Production Report:** Due within 15 days of completing harvest
+## Weekly Summary
 
-## Insurance Claim Data
-When documenting a potential claim, collect:
-- Policy number and crop
-- Field(s) affected
-- Date of loss
-- Cause of loss (drought, hail, excess moisture, frost, etc.)
-- Estimated damage percentage
-- Photos if available
-
-Remind the farmer to contact their crop insurance agent within 72 hours of discovering damage.
+When asked for a weekly summary, provide:
+- Completed items per team member
+- Recurring blockers
+- Overall team velocity trends
+- Items that carried over multiple days
 `,
   },
   {
-    id: "field-notes",
-    name: "Field Notes",
-    category: "crop-management",
-    description: "Structured field observations organized by field and date",
+    id: "activity-log",
+    name: "Activity Log",
+    category: "operations",
+    description: "Structured activity observations organized by topic and date",
     icon: "NotebookPen",
-    prompt_hint: "Include structured note-taking, field tagging, and seasonal timeline views",
+    prompt_hint: "Include structured note-taking, topic tagging, and timeline views",
     starter_skill_md: `---
-name: custom-field-notes
-description: Record structured field observations organized by field, date, and category.
+name: custom-activity-log
+description: Record structured activity logs organized by topic, date, and category.
 user-invocable: true
 ---
 
-# Field Notes
+# Activity Log
 
 ## Purpose
-Help the farmer keep organized field notes throughout the season.
-Notes are tagged by field, date, and category for easy recall.
+Help the team keep organized activity logs throughout the week.
+Entries are tagged by topic, date, and category for easy recall.
 
-## Note Categories
-- **Planting** — seeding rates, populations, dates, varieties
-- **Application** — spraying, fertilizing, side-dressing
-- **Observation** — stand counts, emergence, crop condition
-- **Weather event** — storm damage, flooding, drought stress
-- **Harvest** — yield observations, combine settings, issues
-- **General** — tile work, drainage, soil sampling, landlord notes
+## Log Categories
+- **Task** — work completed, deliverables finished
+- **Decision** — choices made, rationale noted
+- **Issue** — problems encountered, incidents
+- **Communication** — key emails, calls, messages
+- **Review** — code reviews, document reviews, approvals
+- **General** — miscellaneous notes
 
-## Note Entry
+## Log Entry
 
-When the farmer shares a field note, record:
-1. **Field name**
+When the user shares an activity, record:
+1. **Topic**
 2. **Date** (default today)
 3. **Category**
-4. **Note content**
+4. **Content**
 
-## Note Format
+## Log Format
 
 \`\`\`
-📝 FIELD NOTE — {{field_name}}
+ACTIVITY LOG — {{topic}}
 Date: {{date}} | Category: {{category}}
 
-{{note_content}}
+{{content}}
 \`\`\`
 
 ## Recall
 
-When the farmer asks about a field or topic:
-- Search previous notes by field name
+When the user asks about a topic:
+- Search previous logs by topic
 - Filter by category or date range
-- Show chronological timeline of activity for a field
+- Show chronological timeline of activity
 
-## Season Timeline
+## Weekly Timeline
 
-When asked for a field's season summary, present all notes for that field in chronological order, grouped by month.
+When asked for a weekly summary, present all logs in chronological order, grouped by day.
 `,
   },
   {
-    id: "market-alert",
-    name: "Market Alert Watcher",
-    category: "financial",
-    description: "Custom price alerts and market threshold notifications",
+    id: "metric-alert",
+    name: "Metric Alert Watcher",
+    category: "operations",
+    description: "Custom threshold alerts and metric monitoring notifications",
     icon: "Bell",
-    prompt_hint: "Include price threshold alerts, basis monitoring, and daily market summary",
+    prompt_hint: "Include threshold alerts, trend monitoring, and daily metric summary",
     starter_skill_md: `---
-name: custom-market-alert
-description: Set custom price alerts and monitor market thresholds for grain commodities.
+name: custom-metric-alert
+description: Set custom threshold alerts and monitor key metrics.
 user-invocable: true
 ---
 
-# Market Alert Watcher
+# Metric Alert Watcher
 
 ## Purpose
-Help the farmer set and manage price alerts for grain commodities.
-Notify when prices cross configured thresholds.
+Help the team set and manage threshold alerts for key metrics.
+Notify when metrics cross configured thresholds.
 
 ## Alert Setup
 
-When the farmer wants to set an alert, collect:
-1. **Commodity** — Corn, Soybeans, Wheat, etc.
+When the user wants to set an alert, collect:
+1. **Metric name** — e.g., Response time, Error rate, Revenue
 2. **Direction** — Above or Below
-3. **Target price** — per bushel
-4. **Alert type** — Futures, Cash bid (specify elevator), or Basis
-5. **Notes** — why this price matters (e.g., "covers input costs", "target to sell 25%")
+3. **Threshold value** — the target number
+4. **Alert type** — Instant, Rolling average, Daily check
+5. **Notes** — why this threshold matters (e.g., "SLA breach", "budget limit")
 
 ## Alert Format
 
 \`\`\`
-🔔 PRICE ALERT SET
-{{commodity}} {{direction}} \${{target_price}}/bu
+ALERT SET
+{{metric_name}} {{direction}} {{threshold_value}}
 Type: {{alert_type}}
 Notes: {{notes}}
 \`\`\`
@@ -470,19 +369,19 @@ Notes: {{notes}}
 ## Alert Triggered
 
 \`\`\`
-🚨 PRICE ALERT TRIGGERED
-{{commodity}} is now \${{current_price}}/bu ({{direction}} your target of \${{target_price}})
+ALERT TRIGGERED
+{{metric_name}} is now {{current_value}} ({{direction}} your threshold of {{threshold_value}})
 Change: {{change_amount}} ({{change_percent}}%)
-Your note: "{{notes}}"
+Note: "{{notes}}"
 \`\`\`
 
 ## Active Alerts Summary
 
-When asked to show active alerts, list all configured alerts with current prices and distance from target.
+When asked to show active alerts, list all configured alerts with current values and distance from threshold.
 
-## Daily Market Summary
+## Daily Metric Summary
 
-When asked or on schedule, provide a summary of watched commodities with current prices and distance from any alert targets.
+When asked or on schedule, provide a summary of watched metrics with current values and trend direction.
 `,
   },
 ];

@@ -3,9 +3,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { TenantAgent } from "@/types/tenant-runtime";
 import type { TenantRole, TenantRuntimeRun } from "@/types/tenant-runtime";
 import type { MemoryCaptureLevel } from "@/types/memory";
-import { createWeatherTools } from "./weather";
-import { createScaleTicketTools } from "./scale-tickets";
-import { createGrainBidTools } from "./grain-bids";
 import { createMemoryTools } from "./memory";
 import { createScheduleTools } from "./schedules";
 import { createComposioTools } from "./composio";
@@ -20,8 +17,6 @@ export interface ToolRegistryInput {
   tenantId: string;
   customerId: string;
   agent: TenantAgent;
-  farmLat: number | null;
-  farmLng: number | null;
   memoryCaptureLevel?: MemoryCaptureLevel;
   memoryExcludeCategories?: string[];
   channelId?: string;
@@ -44,15 +39,7 @@ function buildMemoryTools(input: ToolRegistryInput): ToolMap {
   });
 }
 
-const SKILL_TO_TOOLS: Record<string, (input: ToolRegistryInput) => ToolMap> = {
-  "farm-weather": (input) =>
-    createWeatherTools(input.farmLat, input.farmLng),
-  "farm-scale-tickets": (input) =>
-    createScaleTicketTools(input.admin, input.tenantId, input.customerId),
-  "farm-grain-bids": (input) =>
-    createGrainBidTools(input.admin, input.customerId),
-  "farm-memory": (input) => buildMemoryTools(input),
-};
+const SKILL_TO_TOOLS: Record<string, (input: ToolRegistryInput) => ToolMap> = {};
 
 export async function resolveToolsForAgent(input: ToolRegistryInput): Promise<ToolMap> {
   const tools: ToolMap = {};
@@ -66,9 +53,7 @@ export async function resolveToolsForAgent(input: ToolRegistryInput): Promise<To
   }
 
   // Memory tools are always available
-  if (!skills.includes("farm-memory")) {
-    Object.assign(tools, buildMemoryTools(input));
-  }
+  Object.assign(tools, buildMemoryTools(input));
 
   // Schedule tools are always available
   const channelId = input.channelId || "";

@@ -233,7 +233,7 @@ export function SkillEditorClient({ initialSkill, initialVersions }: SkillEditor
       </div>
 
       {/* Feedback */}
-      {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
+      {error && <p className="text-destructive text-sm mb-4">{error}</p>}
       {success && <p className="text-green-400 text-sm mb-4">{success}</p>}
 
       {/* Metadata bar */}

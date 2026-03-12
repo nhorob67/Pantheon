@@ -1,9 +1,6 @@
 import type { HeartbeatChecks } from "@/types/heartbeat";
 
 export type HeartbeatCheapCheckKey =
-  | "weather_severe"
-  | "grain_price_movement"
-  | "unreviewed_tickets"
   | "unanswered_emails"
   | "custom_checks";
 
@@ -59,9 +56,6 @@ export function buildHeartbeatCheckExecutionPlan(input: {
   scope: "all_checks" | "tenant_scoped_only" | "agent_scoped_only";
 }): HeartbeatCheckExecutionPlanItem[] {
   return [
-    buildPlanItem("weather_severe", input.checks.weather_severe, input.scope),
-    buildPlanItem("grain_price_movement", input.checks.grain_price_movement, input.scope),
-    buildPlanItem("unreviewed_tickets", input.checks.unreviewed_tickets, input.scope),
     buildPlanItem("unanswered_emails", input.checks.unanswered_emails, input.scope),
     buildPlanItem("custom_checks", input.customChecks.length > 0, input.scope),
   ];

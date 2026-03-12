@@ -8,11 +8,11 @@ export default async function ExportsSettingsPage() {
 
   if (!tenant) {
     return (
-      <div>
-        <div className="mb-6">
-          <h3 className="font-headline text-lg font-semibold mb-1">Exports</h3>
-          <p className="text-foreground/60 text-sm">
-            Tenant workspace setup is required before requesting data exports.
+      <div className="space-y-6 max-w-4xl">
+        <div>
+          <h1 className="font-headline text-2xl font-semibold">Exports</h1>
+          <p className="text-sm text-foreground/60 mt-1">
+            Complete onboarding to request data exports.
           </p>
         </div>
       </div>
@@ -32,11 +32,11 @@ export default async function ExportsSettingsPage() {
   const initialExports = Array.isArray(data) ? data : [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-4xl">
       <div>
-        <h3 className="font-headline text-lg font-semibold mb-1">Exports</h3>
-        <p className="text-foreground/60 text-sm">
-          Queue tenant export bundles, review job history, and download signed manifest files.
+        <h1 className="font-headline text-2xl font-semibold">Exports</h1>
+        <p className="text-sm text-foreground/60 mt-1">
+          Queue export bundles, review job history, and download signed manifest files
         </p>
       </div>
 

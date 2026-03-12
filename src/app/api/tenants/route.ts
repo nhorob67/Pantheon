@@ -2,37 +2,29 @@ import { NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  buildTenantAgentContext,
+  createTenantRuntimeAgent,
+} from "@/lib/runtime/tenant-agents";
 
 const createTenantSchema = z.object({
-  farm_profile: z.object({
-    farm_name: z.string().min(1),
-    country: z.string().default("US"),
-    state: z.string().min(1),
-    county: z.string().optional(),
-    business_type: z.string().optional(),
-    primary_crops: z.array(z.string()).optional().default([]),
-    acres: z.number().positive().nullable().optional(),
-    elevators: z
-      .array(
-        z.object({
-          name: z.string(),
-          url: z.string(),
-          crops: z.array(z.string()),
-        })
-      )
-      .optional()
-      .default([]),
-    weather_location: z.string(),
-    weather_lat: z.number(),
-    weather_lng: z.number(),
-    timezone: z.string(),
+  team_profile: z.object({
+    team_name: z.string().min(3).max(50),
+    team_goal: z.string().min(10),
+    timezone: z.string().min(1),
+  }),
+  first_agent: z.object({
+    display_name: z.string().min(2).max(50),
+    role: z.string().min(5),
+    goal: z.string().min(10),
+    backstory: z.string().max(2000).optional(),
+    autonomy_level: z.enum(["assisted", "copilot", "autopilot"]),
   }),
   discord_guild_id: z.string().optional(),
-  template_id: z.string().optional(),
 });
 
-function generateSlug(farmName: string): string {
-  const base = farmName
+function generateSlug(name: string): string {
+  const base = name
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
@@ -83,43 +75,34 @@ export async function POST(request: Request) {
   }
 
   const customerId = customer.id;
-  const { farm_profile } = parsed.data;
+  const { team_profile, first_agent, discord_guild_id } = parsed.data;
 
-  // Upsert farm profile
-  const { error: profileError } = await admin.from("farm_profiles").upsert(
+  // Upsert team profile
+  const { error: profileError } = await admin.from("team_profiles").upsert(
     {
       customer_id: customerId,
-      farm_name: farm_profile.farm_name,
-      country: farm_profile.country,
-      state: farm_profile.state,
-      county: farm_profile.county || null,
-      business_type: farm_profile.business_type || null,
-      primary_crops: farm_profile.primary_crops,
-      acres: farm_profile.acres ?? null,
-      elevators: farm_profile.elevators,
-      weather_location: farm_profile.weather_location,
-      weather_lat: farm_profile.weather_lat,
-      weather_lng: farm_profile.weather_lng,
-      timezone: farm_profile.timezone,
+      team_name: team_profile.team_name,
+      team_goal: team_profile.team_goal,
+      timezone: team_profile.timezone,
     },
     { onConflict: "customer_id" }
   );
 
   if (profileError) {
     return NextResponse.json(
-      { error: "Failed to save farm profile" },
+      { error: "Failed to create team profile" },
       { status: 500 }
     );
   }
 
   // Create tenant
-  const slug = generateSlug(farm_profile.farm_name);
+  const slug = generateSlug(team_profile.team_name);
   const { data: tenant, error: tenantError } = await admin
     .from("tenants")
     .insert({
       customer_id: customerId,
       slug,
-      name: farm_profile.farm_name,
+      name: team_profile.team_name,
       status: "active",
       primary_channel_type: "discord",
     })
@@ -133,31 +116,85 @@ export async function POST(request: Request) {
     );
   }
 
-  // Link instance if one exists
-  const { data: instance } = await admin
-    .from("instances")
-    .select("id")
-    .eq("customer_id", customerId)
-    .limit(1)
-    .maybeSingle();
+  // Look up instance + add tenant owner in parallel
+  const [{ data: instance }] = await Promise.all([
+    admin
+      .from("instances")
+      .select("id")
+      .eq("customer_id", customerId)
+      .limit(1)
+      .maybeSingle(),
+    admin.from("tenant_members").insert({
+      tenant_id: tenant.id,
+      user_id: user.id,
+      role: "owner",
+      status: "active",
+    }),
+  ]);
 
   if (instance) {
-    await admin.from("instance_tenant_mappings").insert({
+    const linkPromise = admin.from("instance_tenant_mappings").insert({
       instance_id: instance.id,
       tenant_id: tenant.id,
       customer_id: customerId,
       mapping_source: "runtime",
       mapping_status: "active",
     });
+
+    if (discord_guild_id) {
+      const { data: currentInstance } = await admin
+        .from("instances")
+        .select("channel_config")
+        .eq("id", instance.id)
+        .maybeSingle();
+
+      const currentConfig =
+        currentInstance?.channel_config &&
+        typeof currentInstance.channel_config === "object" &&
+        !Array.isArray(currentInstance.channel_config)
+          ? currentInstance.channel_config
+          : {};
+
+      await Promise.all([
+        linkPromise,
+        admin
+          .from("instances")
+          .update({
+            channel_config: {
+              ...currentConfig,
+              guild_id: discord_guild_id,
+              discord_guild_id,
+            },
+          })
+          .eq("id", instance.id),
+      ]);
+    } else {
+      await linkPromise;
+    }
   }
 
-  // Add user as tenant owner
-  await admin.from("tenant_members").insert({
-    tenant_id: tenant.id,
-    user_id: user.id,
-    role: "owner",
-    status: "active",
+  const context = buildTenantAgentContext(
+    tenant.id,
+    customerId,
+    instance?.id ?? null
+  );
+  const createdAgent = await createTenantRuntimeAgent(admin, context, {
+    display_name: first_agent.display_name,
+    role: first_agent.role,
+    goal: first_agent.goal,
+    backstory: first_agent.backstory || "",
+    autonomy_level: first_agent.autonomy_level,
+    is_default: true,
+    skills: [],
+    composio_toolkits: [],
+    can_delegate: false,
+    can_receive_delegation: false,
+    tool_approval_overrides: {},
   });
 
-  return NextResponse.json({ tenant_id: tenant.id, slug: tenant.slug });
+  return NextResponse.json({
+    tenant_id: tenant.id,
+    slug: tenant.slug,
+    agent_id: createdAgent.id,
+  });
 }

@@ -31,6 +31,7 @@ import {
   WorkflowCanvas,
   type WorkflowCanvasHandle,
 } from "@/components/workflows/workflow-canvas";
+import { Textarea } from "@/components/ui/textarea";
 import { NodeInspector } from "@/components/workflows/node-inspector";
 import { ValidationPanel } from "@/components/workflows/validation-panel";
 import { WorkflowPerformanceBeacon } from "@/components/workflows/workflow-performance-beacon";
@@ -2608,15 +2609,13 @@ export function WorkflowBuilderShell({
               </span>
             </div>
 
-            <label htmlFor="workflow-description-input" className="sr-only">
-              Workflow description
-            </label>
-            <textarea
+            <Textarea
               id="workflow-description-input"
+              label="Workflow description"
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               rows={2}
-              className={`mt-2 w-full rounded-lg border border-border bg-bg-dark px-3 py-2 text-sm text-text-secondary ${FOCUS_RING_DARK_CLASS}`}
+              className={`mt-2 w-full bg-bg-dark text-sm text-text-secondary ${FOCUS_RING_DARK_CLASS}`}
               placeholder="Describe this workflow"
             />
 
@@ -2854,7 +2853,7 @@ export function WorkflowBuilderShell({
               <p
                 className={`rounded-lg border px-3 py-2 text-xs ${
                   publishError
-                    ? "border-red-500/30 bg-red-500/10 text-red-200"
+                    ? "border-destructive/30 bg-destructive/10 text-red-200"
                     : "border-green-500/30 bg-green-500/10 text-green-200"
                 }`}
               >
@@ -2865,7 +2864,7 @@ export function WorkflowBuilderShell({
               <div
                 className={`rounded-lg border px-3 py-2 text-xs ${
                   runError
-                    ? "border-red-500/30 bg-red-500/10 text-red-200"
+                    ? "border-destructive/30 bg-destructive/10 text-red-200"
                     : "border-green-500/30 bg-green-500/10 text-green-200"
                 }`}
               >
@@ -2884,7 +2883,7 @@ export function WorkflowBuilderShell({
               <p
                 className={`rounded-lg border px-3 py-2 text-xs ${
                   rollbackError
-                    ? "border-red-500/30 bg-red-500/10 text-red-200"
+                    ? "border-destructive/30 bg-destructive/10 text-red-200"
                     : "border-green-500/30 bg-green-500/10 text-green-200"
                 }`}
               >
@@ -2895,7 +2894,7 @@ export function WorkflowBuilderShell({
               <p
                 className={`rounded-lg border px-3 py-2 text-xs ${
                   exportError
-                    ? "border-red-500/30 bg-red-500/10 text-red-200"
+                    ? "border-destructive/30 bg-destructive/10 text-red-200"
                     : "border-green-500/30 bg-green-500/10 text-green-200"
                 }`}
               >
@@ -2906,7 +2905,7 @@ export function WorkflowBuilderShell({
               <p
                 className={`rounded-lg border px-3 py-2 text-xs ${
                   importError
-                    ? "border-red-500/30 bg-red-500/10 text-red-200"
+                    ? "border-destructive/30 bg-destructive/10 text-red-200"
                     : "border-green-500/30 bg-green-500/10 text-green-200"
                 }`}
               >
@@ -2914,7 +2913,7 @@ export function WorkflowBuilderShell({
               </p>
             )}
             {simulationError && (
-              <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+              <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-red-200">
                 {simulationError}
               </p>
             )}
@@ -2984,15 +2983,15 @@ export function WorkflowBuilderShell({
             <p className="mt-1 text-xs text-text-dim">
               Describe the workflow in plain language and replace the current draft.
             </p>
-            <textarea
+            <Textarea
               value={draftPrompt}
               onChange={(event) => setDraftPrompt(event.target.value)}
               rows={3}
-              className={`mt-2 w-full rounded-lg border border-border bg-bg-dark px-2 py-2 text-xs text-text-secondary ${FOCUS_RING_DARK_CLASS}`}
+              className={`mt-2 w-full bg-bg-dark px-2 py-2 text-xs text-text-secondary ${FOCUS_RING_DARK_CLASS}`}
               placeholder="Example: Every weekday at 6am, run diagnostics, if risk score is high require manager approval, otherwise continue and end."
             />
             {draftGenerationError && (
-              <p className="mt-2 rounded-md border border-red-500/30 bg-red-500/10 px-2 py-1 text-[11px] text-red-200">
+              <p className="mt-2 rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1 text-[11px] text-red-200">
                 {draftGenerationError}
               </p>
             )}
@@ -3088,7 +3087,7 @@ export function WorkflowBuilderShell({
             </p>
 
             {experimentError && (
-              <p className="mt-2 rounded-md border border-red-500/30 bg-red-500/10 px-2 py-1 text-[11px] text-red-200">
+              <p className="mt-2 rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1 text-[11px] text-red-200">
                 {experimentError}
               </p>
             )}
@@ -3216,7 +3215,7 @@ export function WorkflowBuilderShell({
             </div>
 
             {promotionError && (
-              <p className="mt-2 rounded-md border border-red-500/30 bg-red-500/10 px-2 py-1 text-[11px] text-red-200">
+              <p className="mt-2 rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1 text-[11px] text-red-200">
                 {promotionError}
               </p>
             )}
@@ -3301,7 +3300,7 @@ export function WorkflowBuilderShell({
             </div>
 
             {playbookError && (
-              <p className="mt-2 rounded-md border border-red-500/30 bg-red-500/10 px-2 py-1 text-[11px] text-red-200">
+              <p className="mt-2 rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1 text-[11px] text-red-200">
                 {playbookError}
               </p>
             )}
@@ -3338,7 +3337,7 @@ export function WorkflowBuilderShell({
             </p>
 
             {versionHistoryError && (
-              <p className="mt-2 rounded-md border border-red-500/30 bg-red-500/10 px-2 py-1 text-[11px] text-red-200">
+              <p className="mt-2 rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1 text-[11px] text-red-200">
                 {versionHistoryError}
               </p>
             )}

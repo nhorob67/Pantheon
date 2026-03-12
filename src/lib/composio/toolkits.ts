@@ -5,7 +5,7 @@ export const COMPOSIO_TOOLKITS: ComposioToolkit[] = [
     id: "googlesheets",
     name: "Google Sheets",
     description:
-      "Read and write spreadsheets — track field records, expenses, and yields.",
+      "Read and write spreadsheets — track records, expenses, and metrics.",
     icon: "sheet",
     category: "recommended",
     requires_auth: true,
@@ -20,7 +20,7 @@ export const COMPOSIO_TOOLKITS: ComposioToolkit[] = [
     id: "googlecalendar",
     name: "Google Calendar",
     description:
-      "Manage schedules — planting windows, spray timing, and equipment bookings.",
+      "Manage schedules — meetings, deadlines, and resource bookings.",
     icon: "calendar",
     category: "recommended",
     requires_auth: true,
@@ -35,7 +35,7 @@ export const COMPOSIO_TOOLKITS: ComposioToolkit[] = [
     id: "gmail",
     name: "Gmail",
     description:
-      "Send and read emails — forward grain contracts, share field reports.",
+      "Send and read emails — forward documents, share reports, and manage correspondence.",
     icon: "mail",
     category: "recommended",
     requires_auth: true,
@@ -50,7 +50,7 @@ export const COMPOSIO_TOOLKITS: ComposioToolkit[] = [
     id: "notion",
     name: "Notion",
     description:
-      "Organize farm knowledge — SOPs, crop plans, and seasonal notes.",
+      "Organize team knowledge — SOPs, procedures, and reference documents.",
     icon: "file-text",
     category: "productivity",
     requires_auth: true,
@@ -65,7 +65,7 @@ export const COMPOSIO_TOOLKITS: ComposioToolkit[] = [
     id: "airtable",
     name: "Airtable",
     description:
-      "Structured data management — equipment inventory, seed lots, input tracking.",
+      "Structured data management — inventory, assets, and operational tracking.",
     icon: "table",
     category: "data",
     requires_auth: true,
@@ -80,7 +80,7 @@ export const COMPOSIO_TOOLKITS: ComposioToolkit[] = [
     id: "slack",
     name: "Slack",
     description:
-      "Cross-post updates — share weather alerts and market reports to Slack channels.",
+      "Cross-post updates — share alerts and reports to Slack channels.",
     icon: "message-square",
     category: "communication",
     requires_auth: true,
@@ -94,7 +94,7 @@ export const COMPOSIO_TOOLKITS: ComposioToolkit[] = [
     id: "googledrive",
     name: "Google Drive",
     description:
-      "Access and organize documents — store field maps, contracts, and reports.",
+      "Access and organize documents — store files, contracts, and reports.",
     icon: "hard-drive",
     category: "productivity",
     requires_auth: true,
@@ -109,7 +109,7 @@ export const COMPOSIO_TOOLKITS: ComposioToolkit[] = [
     id: "todoist",
     name: "Todoist",
     description:
-      "Task management — track to-dos for maintenance, fieldwork, and deliveries.",
+      "Task management — track to-dos for projects, maintenance, and follow-ups.",
     icon: "check-square",
     category: "productivity",
     requires_auth: true,

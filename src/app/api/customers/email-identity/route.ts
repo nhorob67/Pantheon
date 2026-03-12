@@ -37,8 +37,8 @@ async function loadIdentityContext(customerId: string) {
   const [{ data: profile, error: profileError }, { data: instance, error: instanceError }] =
     await Promise.all([
       admin
-        .from("farm_profiles")
-        .select("farm_name")
+        .from("team_profiles")
+        .select("team_name")
         .eq("customer_id", customerId)
         .maybeSingle(),
       admin
@@ -59,7 +59,7 @@ async function loadIdentityContext(customerId: string) {
   }
 
   return {
-    farmName: profile?.farm_name || null,
+    teamName: profile?.team_name || null,
     instanceId: instance?.id || null,
   };
 }
@@ -121,11 +121,11 @@ export async function POST() {
       return NextResponse.json({ error: "Customer not found" }, { status: 404 });
     }
 
-    const { farmName, instanceId } = await loadIdentityContext(customer.id);
+    const { teamName, instanceId } = await loadIdentityContext(customer.id);
     const identity = await ensureEmailIdentity({
       customerId: customer.id,
       instanceId,
-      farmName,
+      teamName,
       customerEmail: customer.email || null,
     });
 

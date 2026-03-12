@@ -162,7 +162,7 @@ export function McpServerList({
           </h4>
           <p className="text-sm text-foreground/50 max-w-xs mb-4">
             Add an MCP server to give your assistant access to additional
-            tools beyond the built-in farm tools.
+            tools beyond the built-in platform tools.
           </p>
           <button
             type="button"
@@ -213,7 +213,7 @@ export function McpServerList({
             type="button"
             onClick={handleDelete}
             disabled={deleting}
-            className="bg-red-500/20 hover:bg-red-500/30 text-red-400 font-semibold rounded-lg px-5 py-2.5 text-sm transition-colors disabled:opacity-50 cursor-pointer"
+            className="bg-destructive/20 hover:bg-destructive/30 text-destructive font-semibold rounded-lg px-5 py-2.5 text-sm transition-colors disabled:opacity-50 cursor-pointer"
           >
             {deleting ? "Deleting..." : "Delete"}
           </button>

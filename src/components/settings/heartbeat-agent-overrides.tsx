@@ -158,7 +158,7 @@ export function HeartbeatAgentOverrides({
         Per-Agent Overrides
       </h3>
       <p className="text-xs text-foreground/50 mb-4">
-        Enabled overrides add agent-scoped unanswered-email monitoring for that agent. Farm-wide weather, grain, ticket, and custom checks stay on the tenant-default heartbeat.
+        Enabled overrides add agent-scoped unanswered-email monitoring for that agent. Tenant-wide custom checks stay on the tenant-default heartbeat.
       </p>
 
       <div className="space-y-3">
@@ -279,7 +279,7 @@ export function HeartbeatAgentOverrides({
                         type="button"
                         onClick={() => handleDelete(agent.id)}
                         disabled={savingAgent !== null || deletingAgent !== null}
-                        className="inline-flex items-center gap-1.5 rounded-full border border-red-200 px-4 py-2 text-xs font-medium text-red-500 transition-colors hover:bg-red-50 disabled:opacity-50"
+                        className="inline-flex items-center gap-1.5 rounded-full border border-red-200 px-4 py-2 text-xs font-medium text-destructive transition-colors hover:bg-red-50 disabled:opacity-50"
                       >
                         {deletingAgent === agent.id ? (
                           <Loader2 className="h-3.5 w-3.5 animate-spin" />

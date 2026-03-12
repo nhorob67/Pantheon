@@ -57,7 +57,7 @@ export function CustomSkillCard({ skill, onDelete }: CustomSkillCardProps) {
           <button
             type="button"
             onClick={() => onDelete(skill)}
-            className="inline-flex items-center justify-center rounded-lg p-2 text-text-secondary hover:bg-red-500/10 hover:text-red-400 transition-colors cursor-pointer"
+            className="inline-flex items-center justify-center rounded-lg p-2 text-text-secondary hover:bg-destructive/10 hover:text-destructive transition-colors cursor-pointer"
             aria-label={`Delete ${skill.display_name}`}
           >
             <Trash2 className="w-4 h-4" />

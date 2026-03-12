@@ -34,7 +34,7 @@ export function createMemoryTools(
   return {
     memory_write: tool({
       description:
-        "Save a fact, preference, or commitment to long-term memory. Use this when the farmer states something you should remember for future conversations.",
+        "Save a fact, preference, or commitment to long-term memory. Use this when the user states something you should remember for future conversations.",
       inputSchema: z.object({
         content: z.string().describe("The fact or preference to remember"),
         memory_type: z
@@ -74,7 +74,7 @@ export function createMemoryTools(
 
     memory_search: tool({
       description:
-        "Search long-term memory for previously saved facts, preferences, and commitments about this farm. Results are ranked by relevance (semantic similarity + recency + confidence).",
+        "Search long-term memory for previously saved facts, preferences, and commitments. Results are ranked by relevance (semantic similarity + recency + confidence).",
       inputSchema: z.object({
         query: z.string().describe("What to search for in memory"),
         limit: z.number().optional().describe("Max results (default 5)"),

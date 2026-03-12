@@ -2,13 +2,15 @@
 
 import { memo } from "react";
 import type { WorkflowNode } from "@/types/workflow";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { Copy, Trash2 } from "lucide-react";
 
 const FOCUS_RING_CLASS =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-card";
 const INPUT_CLASS = `w-full rounded-lg border border-border bg-bg-dark px-3 py-2 text-sm text-text-primary ${FOCUS_RING_CLASS}`;
 const SECONDARY_BUTTON_CLASS = `min-h-11 rounded-md border border-border px-3 py-2 text-xs text-text-secondary transition-colors hover:border-border-light hover:text-text-primary ${FOCUS_RING_CLASS}`;
-const DANGER_BUTTON_CLASS = `min-h-11 rounded-md border border-red-400/30 px-3 py-2 text-xs text-red-300 transition-colors hover:bg-red-500/10 ${FOCUS_RING_CLASS}`;
+const DANGER_BUTTON_CLASS = `min-h-11 rounded-md border border-destructive/30 px-3 py-2 text-xs text-red-300 transition-colors hover:bg-destructive/10 ${FOCUS_RING_CLASS}`;
 
 function getConfigString(node: WorkflowNode, key: string): string {
   const value = node.config[key];
@@ -306,7 +308,7 @@ export const NodeInspector = memo(
                 >
                   Prompt Template
                 </label>
-                <textarea
+                <Textarea
                   id={fieldId("action-prompt-template")}
                   rows={4}
                   value={getConfigString(node, "prompt_template")}
@@ -342,7 +344,7 @@ export const NodeInspector = memo(
                       `Update ${node.id} reviewer group`
                     )
                   }
-                  placeholder="farm-ops"
+                  placeholder="ops-team"
                   className={INPUT_CLASS}
                 />
               </div>
@@ -396,7 +398,7 @@ export const NodeInspector = memo(
                 >
                   Instructions
                 </label>
-                <textarea
+                <Textarea
                   id={fieldId("approval-instructions")}
                   rows={4}
                   value={getConfigString(node, "instructions")}
@@ -411,25 +413,18 @@ export const NodeInspector = memo(
                 />
               </div>
 
-              <label
-                htmlFor={fieldId("approval-reject-comment")}
-                className={`flex min-h-11 items-center gap-2 rounded-lg border border-border bg-bg-dark px-3 py-2 text-sm text-text-secondary ${FOCUS_RING_CLASS}`}
-              >
-                <input
-                  id={fieldId("approval-reject-comment")}
-                  type="checkbox"
-                  checked={getConfigBoolean(node, "require_comment_on_reject", true)}
-                  onChange={(event) =>
-                    updateConfigField(
-                      "require_comment_on_reject",
-                      event.target.checked,
-                      `Update ${node.id} reject comment policy`
-                    )
-                  }
-                  className="h-4 w-4 rounded border-border bg-bg-dark"
-                />
-                Require comment on reject
-              </label>
+              <Checkbox
+                id={fieldId("approval-reject-comment")}
+                label="Require comment on reject"
+                checked={getConfigBoolean(node, "require_comment_on_reject", true)}
+                onChange={(event) =>
+                  updateConfigField(
+                    "require_comment_on_reject",
+                    event.currentTarget.checked,
+                    `Update ${node.id} reject comment policy`
+                  )
+                }
+              />
             </>
           )}
 
@@ -441,7 +436,7 @@ export const NodeInspector = memo(
               >
                 Expression
               </label>
-              <textarea
+              <Textarea
                 id={fieldId("condition-expression")}
                 rows={4}
                 value={getConfigString(node, "expression")}

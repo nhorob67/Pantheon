@@ -66,7 +66,7 @@ test("buildHeartbeatAnalytics summarizes delivery, signal, suppression, and issu
       tokens_used: 180,
       duration_ms: 500,
       decision_trace: {
-        selected_signal_types: ["weather_severe"],
+        selected_signal_types: ["unanswered_emails"],
       },
     }),
     buildRun({
@@ -116,7 +116,7 @@ test("buildHeartbeatAnalytics summarizes delivery, signal, suppression, and issu
     analytics.delivery_breakdown.some((item) => item.key === "deferred"),
     true
   );
-  assert.equal(analytics.signal_breakdown[0]?.key, "custom_checks");
+  assert.equal(analytics.signal_breakdown[0]?.key, "unanswered_emails");
   assert.equal(
     analytics.suppression_breakdown.some((item) => item.key === "guardrail_output_pii_detected"),
     true

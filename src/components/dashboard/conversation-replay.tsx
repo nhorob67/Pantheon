@@ -40,6 +40,102 @@ interface Trace {
   created_at: string;
 }
 
+function TraceMetadata({ trace }: { trace: Trace }) {
+  return (
+    <>
+      <div className="flex gap-4 text-foreground/60">
+        {trace.agent_name && <span>Agent: {trace.agent_name}</span>}
+        {trace.model_id && <span>Model: {trace.model_id}</span>}
+      </div>
+      <div className="flex gap-4 text-foreground/60">
+        {trace.input_tokens != null && (
+          <span>Input: {trace.input_tokens.toLocaleString()} tokens</span>
+        )}
+        {trace.output_tokens != null && (
+          <span>Output: {trace.output_tokens.toLocaleString()} tokens</span>
+        )}
+        {trace.total_latency_ms != null && (
+          <span>Latency: {trace.total_latency_ms}ms</span>
+        )}
+      </div>
+    </>
+  );
+}
+
+function TraceToolsInvoked({
+  tools,
+}: {
+  tools: Trace["tools_invoked"];
+}) {
+  if (!Array.isArray(tools) || tools.length === 0) return null;
+  return (
+    <div>
+      <p className="font-medium text-foreground/80 mb-1">Tools Used</p>
+      <div className="space-y-1">
+        {tools.map((t, i) => (
+          <div key={i} className="rounded bg-card border border-border p-2">
+            <p className="font-mono text-foreground/80">{t.name}</p>
+            {t.input_summary && (
+              <p className="text-foreground/50 mt-0.5">
+                Input: {t.input_summary}
+              </p>
+            )}
+            {t.output_summary && (
+              <p className="text-foreground/50 mt-0.5">
+                Output: {t.output_summary}
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TraceMemories({
+  memories,
+}: {
+  memories: Trace["memories_referenced"];
+}) {
+  if (!Array.isArray(memories) || memories.length === 0) return null;
+  return (
+    <div>
+      <p className="font-medium text-foreground/80 mb-1">Memories Used</p>
+      <ul className="space-y-1">
+        {memories.map((m, i) => (
+          <li key={i} className="text-foreground/60 flex justify-between">
+            <span className="truncate">{m.content_preview}</span>
+            <span className="text-foreground/30 shrink-0 ml-2">
+              {(m.score * 100).toFixed(0)}%
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function TraceKnowledge({
+  knowledge,
+}: {
+  knowledge: Trace["knowledge_referenced"];
+}) {
+  if (!Array.isArray(knowledge) || knowledge.length === 0) return null;
+  return (
+    <div>
+      <p className="font-medium text-foreground/80 mb-1">Knowledge Used</p>
+      <ul className="space-y-1">
+        {knowledge.map((k, i) => (
+          <li key={i} className="text-foreground/60">
+            <span className="text-foreground/40">[{k.source}]</span>{" "}
+            {k.chunk_preview}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 interface ConversationReplayProps {
   messages: Message[];
   traces: Trace[];
@@ -109,7 +205,7 @@ export function ConversationReplay({
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-medium text-foreground/40 uppercase tracking-wider">
-                  {isOutbound ? "AI Assistant" : "Farmer"}
+                  {isOutbound ? "AI Assistant" : "User"}
                 </span>
                 <span className="text-xs text-foreground/40">
                   {formatDistanceToNow(new Date(msg.created_at), {
@@ -140,107 +236,10 @@ export function ConversationReplay({
 
                 {expandedTraces.has(trace.id) && (
                   <div className="mt-2 rounded-lg border border-border bg-background p-4 space-y-3 text-xs">
-                    {/* Agent & Model */}
-                    <div className="flex gap-4 text-foreground/60">
-                      {trace.agent_name && (
-                        <span>Agent: {trace.agent_name}</span>
-                      )}
-                      {trace.model_id && <span>Model: {trace.model_id}</span>}
-                    </div>
-
-                    {/* Tokens & Latency */}
-                    <div className="flex gap-4 text-foreground/60">
-                      {trace.input_tokens != null && (
-                        <span>
-                          Input: {trace.input_tokens.toLocaleString()} tokens
-                        </span>
-                      )}
-                      {trace.output_tokens != null && (
-                        <span>
-                          Output: {trace.output_tokens.toLocaleString()} tokens
-                        </span>
-                      )}
-                      {trace.total_latency_ms != null && (
-                        <span>Latency: {trace.total_latency_ms}ms</span>
-                      )}
-                    </div>
-
-                    {/* Tools Invoked */}
-                    {Array.isArray(trace.tools_invoked) &&
-                      trace.tools_invoked.length > 0 && (
-                        <div>
-                          <p className="font-medium text-foreground/80 mb-1">
-                            Tools Used
-                          </p>
-                          <div className="space-y-1">
-                            {trace.tools_invoked.map((t, i) => (
-                              <div
-                                key={i}
-                                className="rounded bg-card border border-border p-2"
-                              >
-                                <p className="font-mono text-foreground/80">
-                                  {t.name}
-                                </p>
-                                {t.input_summary && (
-                                  <p className="text-foreground/50 mt-0.5">
-                                    Input: {t.input_summary}
-                                  </p>
-                                )}
-                                {t.output_summary && (
-                                  <p className="text-foreground/50 mt-0.5">
-                                    Output: {t.output_summary}
-                                  </p>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                    {/* Memories Referenced */}
-                    {Array.isArray(trace.memories_referenced) &&
-                      trace.memories_referenced.length > 0 && (
-                        <div>
-                          <p className="font-medium text-foreground/80 mb-1">
-                            Memories Used
-                          </p>
-                          <ul className="space-y-1">
-                            {trace.memories_referenced.map((m, i) => (
-                              <li
-                                key={i}
-                                className="text-foreground/60 flex justify-between"
-                              >
-                                <span className="truncate">
-                                  {m.content_preview}
-                                </span>
-                                <span className="text-foreground/30 shrink-0 ml-2">
-                                  {(m.score * 100).toFixed(0)}%
-                                </span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                    {/* Knowledge Referenced */}
-                    {Array.isArray(trace.knowledge_referenced) &&
-                      trace.knowledge_referenced.length > 0 && (
-                        <div>
-                          <p className="font-medium text-foreground/80 mb-1">
-                            Knowledge Used
-                          </p>
-                          <ul className="space-y-1">
-                            {trace.knowledge_referenced.map((k, i) => (
-                              <li key={i} className="text-foreground/60">
-                                <span className="text-foreground/40">
-                                  [{k.source}]
-                                </span>{" "}
-                                {k.chunk_preview}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
+                    <TraceMetadata trace={trace} />
+                    <TraceToolsInvoked tools={trace.tools_invoked} />
+                    <TraceMemories memories={trace.memories_referenced} />
+                    <TraceKnowledge knowledge={trace.knowledge_referenced} />
                   </div>
                 )}
               </div>

@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Textarea } from "@/components/ui/textarea";
 import { X } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useAsyncFormState } from "@/hooks/use-async-form-state";
 import { SCHEDULE_TEMPLATES, type ScheduleTemplate } from "@/lib/schedules/schedule-templates";
 
@@ -40,11 +42,7 @@ const TIMEZONE_OPTIONS = [
   { value: "America/Regina", label: "Saskatchewan" },
 ];
 
-const TOOL_OPTIONS = [
-  { value: "farm-weather", label: "Weather" },
-  { value: "farm-grain-bids", label: "Grain Bids" },
-  { value: "farm-scale-tickets", label: "Scale Tickets" },
-];
+const TOOL_OPTIONS: { value: string; label: string }[] = [];
 
 const FREQUENCY_PRESETS = [
   { label: "Every day", cron: (h: number, m: number) => `${m} ${h} * * *` },
@@ -233,17 +231,15 @@ export function ScheduleFormDialog({
 
           {/* Prompt */}
           <div>
-            <label className="block text-xs font-medium text-foreground/60 mb-1.5">
-              Prompt
-            </label>
-            <textarea
+            <Textarea
+              label="Prompt"
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               placeholder="The instruction your agent follows when this fires..."
               required
               maxLength={2000}
               rows={3}
-              className="w-full px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+              className="w-full text-sm bg-background resize-none"
             />
           </div>
 
@@ -392,21 +388,18 @@ export function ScheduleFormDialog({
             </label>
             <div className="flex gap-3">
               {TOOL_OPTIONS.map((t) => (
-                <label key={t.value} className="flex items-center gap-1.5 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={tools.includes(t.value)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setTools([...tools, t.value]);
-                      } else {
-                        setTools(tools.filter((x) => x !== t.value));
-                      }
-                    }}
-                    className="rounded border-border"
-                  />
-                  {t.label}
-                </label>
+                <Checkbox
+                  key={t.value}
+                  label={t.label}
+                  checked={tools.includes(t.value)}
+                  onChange={(e) => {
+                    if (e.currentTarget.checked) {
+                      setTools([...tools, t.value]);
+                    } else {
+                      setTools(tools.filter((x) => x !== t.value));
+                    }
+                  }}
+                />
               ))}
             </div>
             <p className="text-[10px] text-foreground/40 mt-1">
@@ -421,7 +414,7 @@ export function ScheduleFormDialog({
           </div>
 
           {error && (
-            <p className="text-xs text-red-400">{error}</p>
+            <p className="text-xs text-destructive">{error}</p>
           )}
 
           {/* Actions */}

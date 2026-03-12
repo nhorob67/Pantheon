@@ -38,11 +38,6 @@ import type {
 } from "@/types/heartbeat";
 
 const DEFAULT_CHECKS: HeartbeatChecks = {
-  weather_severe: true,
-  grain_price_movement: true,
-  grain_price_threshold_cents: 10,
-  unreviewed_tickets: true,
-  unreviewed_tickets_threshold_hours: 4,
   unanswered_emails: true,
   unanswered_emails_threshold_hours: 2,
 };
@@ -154,17 +149,6 @@ function parseChecks(raw: unknown): HeartbeatChecks {
   if (typeof raw === "object" && raw !== null) {
     const obj = raw as Record<string, unknown>;
     return {
-      weather_severe: obj.weather_severe === true,
-      grain_price_movement: obj.grain_price_movement === true,
-      grain_price_threshold_cents:
-        typeof obj.grain_price_threshold_cents === "number"
-          ? obj.grain_price_threshold_cents
-          : DEFAULT_CHECKS.grain_price_threshold_cents,
-      unreviewed_tickets: obj.unreviewed_tickets === true,
-      unreviewed_tickets_threshold_hours:
-        typeof obj.unreviewed_tickets_threshold_hours === "number"
-          ? obj.unreviewed_tickets_threshold_hours
-          : DEFAULT_CHECKS.unreviewed_tickets_threshold_hours,
       unanswered_emails: obj.unanswered_emails === true,
       unanswered_emails_threshold_hours:
         typeof obj.unanswered_emails_threshold_hours === "number"
@@ -314,23 +298,23 @@ async function updateHeartbeatRunRuntimeLink(
     .eq("id", heartbeatRunId);
 }
 
-async function fetchFarmName(
+async function fetchTeamName(
   admin: SupabaseClient,
   customerId: string
 ): Promise<string> {
   const { data: profile } = await admin
-    .from("farm_profiles")
-    .select("farm_name")
+    .from("team_profiles")
+    .select("team_name")
     .eq("customer_id", customerId)
     .maybeSingle();
 
-  return profile?.farm_name ?? "the farm";
+  return profile?.team_name ?? "the team";
 }
 
 export async function queueHeartbeatDelivery(
   input: QueueHeartbeatDeliveryInput
 ): Promise<string> {
-  const farmName = await fetchFarmName(input.admin, input.config.customer_id);
+  const teamName = await fetchTeamName(input.admin, input.config.customer_id);
   const run = await enqueueDiscordRuntimeRun(input.admin, {
     runKind: "discord_heartbeat",
     tenantId: input.config.tenant_id,
@@ -353,7 +337,7 @@ export async function queueHeartbeatDelivery(
       issue_contexts: input.issueContexts ?? [],
       heartbeat_instructions: input.config.heartbeat_instructions,
       heartbeat_run_id: input.heartbeatRunId,
-      farm_name: farmName,
+      team_name: teamName,
       test_mode: input.testMode === true,
     },
     metadata: {

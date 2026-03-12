@@ -1,165 +1,118 @@
 ---
-title: Multi-Agent Setups
-description: Pre-built 2, 3, and 4-agent configurations for one-click deployment. Agents can delegate tasks to each other.
+title: Multi-Agent System
+description: How multiple agents collaborate, delegate tasks, and share a workspace in Pantheon.
 section: AI Agents
 order: 1
 icon: Users
-tags: [agents, multi-agent, presets, delegation]
+tags: [agents, multi-agent, delegation, team]
 ---
 
 ## Overview
 
-Pantheon offers three pre-built multi-agent configurations that you can deploy with one click. Each setup is designed around real farm workflows — you pick the configuration that matches your operation's needs, and Pantheon handles the rest.
+Pantheon workspaces can run multiple agents, each with their own role, goal, skills, and Discord channel. Agents can delegate tasks to each other, creating a team of specialists that collaborates seamlessly.
 
-You can also build a custom setup from scratch, but these suggested configurations are a good starting point for most operations.
+## Building a multi-agent team
 
-## Suggested setups
+Every team starts with one agent created during onboarding. Add more agents from the Agents page as your needs grow.
 
-### Two-Agent: General + Grain
+### Example: Customer Support Team
 
-An all-purpose assistant for daily operations and a specialist for grain markets and elevator bids.
+| Agent | Role | Channel | Autonomy |
+|-------|------|---------|----------|
+| **General Assistant** | General operations assistant | All channels + DMs | Copilot |
+| **Support Lead** | Customer support specialist | `#support-tickets` | Copilot |
+| **Research Analyst** | Research analyst | `#research` | Assisted |
 
-| Agent | Personality | Skills | Cron Jobs | Default |
-|-------|------------|--------|-----------|---------|
-| **Farm Assistant** | General Advisor | Grain Bids, Weather, Scale Tickets | Morning Weather (6:00 AM) | Yes |
-| **Grain Desk** | Grain Specialist | Grain Bids | Daily Grain Bids (9:00 AM Mon-Fri) | No |
+### Example: Operations Team
 
-**Best for:** Operations that want a dedicated grain market channel with daily bid updates, while keeping one general agent for everything else.
+| Agent | Role | Channel | Autonomy |
+|-------|------|---------|----------|
+| **Executive Assistant** | General operations assistant | All channels + DMs | Copilot |
+| **Operations Lead** | Operations lead | `#operations` | Autopilot |
+| **Research Analyst** | Research analyst | `#research` | Assisted |
+| **Comms Manager** | Communications manager | `#comms` | Copilot |
 
-**Typical channel setup:**
+These are examples — you define the roles, goals, and channel assignments. There are no fixed configurations.
 
-| Channel | Agent |
-|---------|-------|
-| `#grain-desk` | Grain Desk |
-| All other channels + DMs | Farm Assistant |
-
-<Callout variant="tip" title="Most popular setup">
-The two-agent configuration is the most common choice. It gives you a focused grain channel without overcomplicating things.
+<Callout variant="tip" title="Start small">
+Start with one or two agents and add specialists as you identify specific needs. 2-4 agents is the practical sweet spot for most teams.
 </Callout>
 
----
+## How delegation works
 
-### Three-Agent: General + Grain + Scale Tickets
-
-Full coverage: general operations, grain marketing, and a dedicated clerk for logging deliveries.
-
-| Agent | Personality | Skills | Cron Jobs | Default |
-|-------|------------|--------|-----------|---------|
-| **Farm Assistant** | General Advisor | Grain Bids, Weather | Morning Weather (6:00 AM) | Yes |
-| **Grain Desk** | Grain Specialist | Grain Bids | Daily Grain Bids (9:00 AM Mon-Fri) | No |
-| **Ticket Clerk** | Scale Ticket Clerk | Scale Tickets | None | No |
-
-**Best for:** Operations that haul a lot of grain and want a fast, focused ticket logging experience separate from general conversation.
-
-**Typical channel setup:**
-
-| Channel | Agent |
-|---------|-------|
-| `#grain-desk` | Grain Desk |
-| `#scale-tickets` | Ticket Clerk |
-| All other channels + DMs | Farm Assistant |
-
-The Ticket Clerk is optimized for speed. It supports three entry methods — snap a photo of your scale ticket, dictate the numbers, or walk through a guided form. Having it in its own channel keeps ticket logging clean and separate from other conversations.
-
----
-
-### Four-Agent: Full Team
-
-Four specialists: general advisor, grain markets, weather and field ops, and scale ticket logging.
-
-| Agent | Personality | Skills | Cron Jobs | Default |
-|-------|------------|--------|-----------|---------|
-| **Farm Assistant** | General Advisor | Grain Bids, Weather, Scale Tickets | None | Yes |
-| **Grain Desk** | Grain Specialist | Grain Bids | Daily Grain Bids (9:00 AM Mon-Fri) | No |
-| **Weather Watch** | Weather & Field Ops | Weather | Morning Weather (6:00 AM) | No |
-| **Ticket Clerk** | Scale Ticket Clerk | Scale Tickets | None | No |
-
-**Best for:** Larger operations that want fully specialized channels with dedicated agents and automated daily updates in the right place.
-
-**Typical channel setup:**
-
-| Channel | Agent |
-|---------|-------|
-| `#grain-desk` | Grain Desk |
-| `#weather` | Weather Watch |
-| `#scale-tickets` | Ticket Clerk |
-| All other channels + DMs | Farm Assistant |
-
-<Callout variant="info" title="Cron jobs follow the agent">
-Notice that in the four-agent setup, the morning weather cron job moves to Weather Watch and is removed from the Farm Assistant. Daily grain bids are posted by Grain Desk. Each cron job runs in the agent's bound channel, so the information lands where it belongs.
-</Callout>
-
-## How inter-agent delegation works
-
-When you run multiple agents, they can communicate with each other. This is built into each agent's personality — you don't need to configure any delegation rules.
+When agents have delegation enabled, they can route questions to the right specialist automatically.
 
 ### The tools
 
-Each agent has access to two inter-agent communication tools:
+Each agent with delegation enabled has access to two communication tools:
 
 | Tool | Purpose |
 |------|---------|
-| `agents_list` | Lists all other agents in the workspace, their specialties, and their channel bindings |
-| `sessions_send` | Sends a message or question to another agent and receives a response |
+| `agents_list` | Lists all other agents, their roles, and channel bindings |
+| `sessions_send` | Sends a message to another agent and receives a response |
 
-### How it works in practice
+### Example flow
 
-1. A farmer asks the Farm Assistant in `#general`: "What's the best corn bid right now?"
-2. The Farm Assistant recognizes this is a grain marketing question
-3. It checks `agents_list` and sees Grain Desk is available
-4. It tells the farmer: "Let me check with our grain specialist..."
-5. It uses `sessions_send` to pass the question to Grain Desk
-6. Grain Desk processes the request, pulls elevator bids, and returns the answer
-7. The Farm Assistant relays the response in `#general`
+1. A user asks the General Assistant in `#general`: "Can you research our competitor's pricing?"
+2. The General Assistant checks `agents_list` and sees the Research Analyst is available
+3. It tells the user: "Let me hand this off to our research specialist..."
+4. It uses `sessions_send` to pass the question to the Research Analyst
+5. The Research Analyst processes the request and returns findings
+6. The General Assistant relays the response in `#general`
 
-The farmer gets a detailed, specialist-quality answer without leaving their channel.
+The user gets a specialist-quality answer without leaving their channel.
 
-### Delegation by preset
+### Delegation settings
 
-Each personality preset includes guidance on when to defer to other agents:
+Each agent has two delegation toggles:
 
-| Agent Preset | Defers grain questions to | Defers weather questions to | Defers ticket questions to | Defers field ops questions to |
-|-------------|--------------------------|---------------------------|---------------------------|------------------------------|
-| General Advisor | Grain Specialist | Weather & Field Ops | Scale Ticket Clerk | Field Operations |
-| Grain Specialist | -- | Weather & Field Ops | Scale Ticket Clerk | Field Operations |
-| Weather & Field Ops | Grain Specialist | -- | Scale Ticket Clerk | Field Operations |
-| Scale Ticket Clerk | Grain Specialist | Weather & Field Ops | -- | Field Operations |
-| Field Operations | Grain Specialist | Weather & Field Ops | Scale Ticket Clerk | -- |
+| Setting | What it controls |
+|---------|-----------------|
+| **Can delegate** | This agent can send tasks to other agents |
+| **Can receive delegation** | This agent accepts tasks from other agents |
 
-<Callout variant="info" title="Delegation is optional">
-If a specialist agent is not present in the workspace, the delegating agent will handle the question itself with whatever skills it has available. Delegation only happens when the target agent actually exists.
+Delegation is driven by the agent's role and goal. Agents learn which questions to handle themselves and which to pass along based on these fields.
+
+<Callout variant="info" title="Delegation is automatic but optional">
+If the target agent doesn't exist or delegation is disabled, the originating agent handles the question itself. You don't need to configure routing rules — agents figure it out from their role definitions.
 </Callout>
 
-## Deploying a suggested setup
+## Channel routing
 
-1. Go to **Settings > Agents** in your Pantheon dashboard
-2. Click **Suggested Setups**
-3. Select one of the three configurations
-4. Review the agents, skills, and cron jobs
-5. Click **Deploy**
+Each agent can be bound to a specific Discord channel. The **default agent** handles all unbound channels and DMs.
 
-Pantheon will create all the agents, assign skills and cron jobs, and apply the configuration. Changes take effect on the next message.
+| Configuration | What happens |
+|--------------|-------------|
+| Agent bound to `#support-tickets` | Only responds in that channel |
+| Default agent | Handles `#general`, DMs, and any other unbound channels |
+| No channel binding | Agent only responds to delegated tasks |
 
-<Callout variant="warning" title="Deploying a setup replaces existing agents">
-Choosing a suggested setup replaces your current agent configuration. If you have custom agents with specific settings, make note of them before deploying a preset. You can always reconfigure agents individually afterward.
+Every workspace must have exactly one default agent.
+
+## Creating agents
+
+1. Go to **Agents** in the sidebar
+2. Click **+ New Agent**
+3. Choose to start from a **template** or **from scratch**
+4. Define the role, goal, backstory, and autonomy level
+5. Optionally bind to a Discord channel
+6. Add custom skills and schedules
+7. Save
+
+<Callout variant="info" title="Templates are starting points">
+Agent templates pre-fill role, goal, and backstory to help you get started quickly. You can customize every field after selecting a template.
 </Callout>
 
-## Building a custom setup
+## Practical tips
 
-If the suggested configurations don't match your needs, you can build your own:
-
-1. Go to **Settings > Agents**
-2. Click **Add Agent**
-3. Choose a personality preset (or select Custom to write your own)
-4. Assign skills and cron jobs
-5. Optionally bind the agent to a Discord channel
-6. Repeat for as many agents as you need
-7. Make sure one agent is marked as the default
-
-There's no hard limit on the number of agents, but 2-4 agents is the practical sweet spot. More agents mean more specialized responses but also more complexity in routing and delegation.
+- **One default agent is required.** It catches everything that doesn't have a dedicated specialist.
+- **Use clear, non-overlapping roles.** If two agents have similar goals, they may compete on the same questions.
+- **Enable delegation on the default agent.** It should be able to route questions to specialists.
+- **Specialists can be receive-only.** Set "Can delegate" to off for focused agents that shouldn't redirect questions elsewhere.
+- **Test with the Preview feature.** Send test messages to see how routing and delegation work before going live.
 
 ## Next steps
 
-- [Personality Presets](/docs/agents/personality-presets) — Detailed breakdown of what each preset does and its boundaries
-- [Channel Configuration](/docs/discord/channel-config) — How to bind agents to Discord channels
-- [Skills Overview](/docs/skills) — Learn about grain bids, weather, and scale tickets in depth
+- [Agent Roles & Identity](/docs/agents/personality-presets) — How to define role, goal, backstory, and autonomy
+- [Skills & Scheduling](/docs/agents/skills-per-agent) — Assign skills and schedules to agents
+- [Channel Configuration](/docs/discord/channel-config) — Bind agents to specific Discord channels

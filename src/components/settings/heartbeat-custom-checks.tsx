@@ -55,7 +55,7 @@ export function HeartbeatCustomChecks({
                 type="button"
                 disabled={disabled}
                 onClick={() => removeItem(i)}
-                className="text-foreground/40 hover:text-red-500 transition-colors"
+                className="text-foreground/40 hover:text-destructive transition-colors"
               >
                 <X className="w-3.5 h-3.5" />
               </button>

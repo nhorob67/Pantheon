@@ -9,17 +9,17 @@ tags: [usage, metering, tokens, costs]
 
 ## How metering works
 
-Every interaction with your AI assistant consumes tokens — the unit of measurement for AI model usage. Pantheon tracks token usage daily and bills it as a separate line item on top of your $50/month subscription.
+Every interaction with your AI agent consumes tokens -- the unit of measurement for AI model usage. Pantheon tracks token usage daily and bills it as a separate line item on top of your $50/month subscription.
 
 ### What are tokens?
 
 Tokens are the building blocks of AI text processing. Roughly:
 
-- **1 token** ≈ 4 characters of English text
-- **100 tokens** ≈ 75 words
-- A typical question and answer uses **500–2,000 tokens**
+- **1 token** ~ 4 characters of English text
+- **100 tokens** ~ 75 words
+- A typical question and answer uses **500--2,000 tokens**
 
-Both the message you send and the response your assistant generates count toward token usage.
+Both the message you send and the response your agent generates count toward token usage.
 
 ## Usage by task
 
@@ -27,25 +27,24 @@ Different tasks consume different amounts of tokens:
 
 | Task | Typical Token Usage |
 |------|-------------------|
-| Simple question/answer | 500–1,000 |
-| Grain bid lookup (single elevator) | 1,500–2,500 |
-| Grain bid comparison (multiple elevators) | 2,000–4,000 |
-| Weather forecast | 1,000–2,000 |
-| Morning weather briefing (cron) | 1,500–3,000 |
-| Scale ticket — text entry | 1,000–2,000 |
-| Scale ticket — photo OCR | 3,000–5,000 |
-| Scale ticket — structured entry | 2,000–4,000 |
-| Scale ticket query/report | 500–1,500 |
+| Simple question/answer | 500--1,000 |
+| Data lookup or retrieval | 1,500--2,500 |
+| Multi-source comparison | 2,000--4,000 |
+| Report generation | 1,000--2,000 |
+| Scheduled briefing | 1,500--3,000 |
+| Document analysis | 1,000--2,000 |
+| Image analysis (OCR) | 3,000--5,000 |
+| Complex multi-step task | 2,000--4,000 |
 
 ## Typical monthly costs
 
-For most farm operations, metered API usage runs **$5–15/month**:
+For most teams, metered API usage runs **$5--15/month**:
 
 | Usage Level | Description | Estimated Cost |
 |-------------|-------------|---------------|
-| Light | A few questions per day, automated briefings | $5–8/month |
-| Moderate | Regular bid checks, ticket logging, weather queries | $8–12/month |
-| Heavy | Frequent comparisons, multiple agents, lots of OCR | $12–20/month |
+| Light | A few questions per day, automated briefings | $5--8/month |
+| Moderate | Regular queries, report generation, scheduled tasks | $8--12/month |
+| Heavy | Frequent interactions, multiple agents, image processing | $12--20/month |
 
 ## Tracking your usage
 
@@ -53,10 +52,10 @@ For most farm operations, metered API usage runs **$5–15/month**:
 
 Your Pantheon dashboard shows real-time usage analytics:
 
-- **Daily token consumption** — Bar chart showing tokens used per day
-- **Cost breakdown** — Running total for the current billing period
-- **Per-model breakdown** — Token usage split by AI model
-- **Trend lines** — See how your usage changes over time
+- **Daily token consumption** -- Bar chart showing tokens used per day
+- **Cost breakdown** -- Running total for the current billing period
+- **Per-model breakdown** -- Token usage split by AI model
+- **Trend lines** -- See how your usage changes over time
 
 ### Usage table
 
@@ -73,16 +72,16 @@ Access your usage data anytime from **Settings > Usage** or the main dashboard.
 ## Cost transparency
 
 <Callout variant="success" title="No surprises">
-Pantheon bills API usage at cost — we don't mark up token prices. You pay exactly what the underlying AI model charges, with full visibility into your usage.
+Pantheon bills API usage at cost -- we don't mark up token prices. You pay exactly what the underlying AI model charges, with full visibility into your usage.
 </Callout>
 
-The AI model powering your assistant is **Claude by Anthropic**. Current token pricing is displayed in your usage dashboard and updated if model pricing changes.
+The AI model powering your agents is **Claude by Anthropic**. Current token pricing is displayed in your usage dashboard and updated if model pricing changes.
 
 ## Reducing usage
 
 If you want to keep costs down:
 
-- **Disable unused cron jobs** — Automated briefings run daily even if you're not reading them
-- **Use fewer agents** — Each agent in a multi-agent setup consumes tokens independently
-- **Be specific** — Clear, direct questions use fewer tokens than vague ones
-- **Use text entry** for scale tickets instead of photo OCR when possible — OCR uses significantly more tokens due to image processing
+- **Disable unused cron jobs** -- Automated briefings run on schedule even if you're not reading them
+- **Use fewer agents** -- Each agent in a multi-agent setup consumes tokens independently
+- **Be specific** -- Clear, direct questions use fewer tokens than vague ones
+- **Use text input** instead of images when possible -- image processing uses significantly more tokens

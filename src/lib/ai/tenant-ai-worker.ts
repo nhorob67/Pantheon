@@ -51,17 +51,29 @@ function resolveActorRole(payload: Record<string, unknown>): TenantRole {
 }
 
 const CRON_PROMPTS: Record<string, string> = {
+  morning_briefing_fallback:
+    "Generate a morning operations briefing for the team. Include today's priorities, timing-sensitive items, and any conditions or blockers that could affect execution. Be concise.",
+  daily_digest:
+    "Generate a daily digest for the team. Highlight important external signals, notable changes since yesterday, and what needs attention today. Be concise.",
+  evening_recap:
+    "Generate an evening summary of today's activity. Show what was completed, what changed, and any notable details that should carry into tomorrow. If nothing happened, say so briefly.",
+  // Legacy keys — kept for existing DB rows until schedule migration completes
   morning_weather:
-    "Generate a morning weather briefing for the farm. Include today's forecast, temperature range, wind conditions, precipitation chances, and any severe weather alerts. If there are spray windows available, mention the best ones. Be concise — this is a daily briefing.",
-  daily_grain_bids:
-    "Generate a daily grain bids summary. Show current cash bids from all configured elevators for each crop the farm grows. Highlight the best bids and any significant basis changes from yesterday. Be concise — this is a daily briefing.",
+    "Generate a morning operations briefing for the team. Include today's priorities, timing-sensitive items, and any conditions or blockers that could affect execution. Be concise.",
+  daily_market_summary:
+    "Generate a daily digest for the team. Highlight important external signals, notable changes since yesterday, and what needs attention today. Be concise.",
   evening_ticket_summary:
-    "Generate an evening summary of today's scale ticket activity. Show how many loads were delivered today, total bushels by crop, and any notable details. If no tickets were logged today, say so briefly.",
+    "Generate an evening summary of today's activity. Show what was completed, what changed, and any notable details that should carry into tomorrow. If nothing happened, say so briefly.",
 };
 
 interface BriefingSections {
+  // Current generic keys
+  conditions?: boolean;
+  external_updates?: boolean;
+  activity_recap?: boolean;
+  // Legacy keys — accepted for backward compatibility
   weather?: boolean;
-  grain_bids?: boolean;
+  market_data?: boolean;
   ticket_summary?: boolean;
 }
 
@@ -80,28 +92,32 @@ function buildCronPrompt(
   if (scheduleKey === "morning_briefing" && payload) {
     const sections = (payload.briefing_sections || {}) as BriefingSections;
     const parts: string[] = [];
-    if (sections.weather !== false) {
+    // Accept both new and legacy section keys
+    const hasConditions = sections.conditions ?? sections.weather;
+    const hasExternalUpdates = sections.external_updates ?? sections.market_data;
+    const hasActivityRecap = sections.activity_recap ?? sections.ticket_summary;
+    if (hasConditions !== false) {
       parts.push(
-        "Include today's weather forecast: temperature range, wind, precipitation, spray windows."
+        "Include timing-sensitive conditions or external constraints that could affect today's work."
       );
     }
-    if (sections.grain_bids !== false) {
+    if (hasExternalUpdates !== false) {
       parts.push(
-        "Include current cash grain bids from configured elevators, best bids, basis changes."
+        "Include relevant external updates, plus any meaningful changes since yesterday."
       );
     }
-    if (sections.ticket_summary) {
+    if (hasActivityRecap) {
       parts.push(
-        "Include yesterday's scale ticket summary: loads delivered, bushels by crop."
+        "Include a short summary of yesterday's completed work and outstanding follow-ups."
       );
     }
-    return `Generate a morning briefing for the farm. ${parts.join(" ")} Be concise — this is a daily briefing.`;
+    return `Generate a morning briefing for the team. ${parts.join(" ")} Be concise.`;
   }
 
   if (scheduleKey && CRON_PROMPTS[scheduleKey]) {
     return CRON_PROMPTS[scheduleKey];
   }
-  return "Generate a proactive update for the farmer based on your specialty.";
+  return "Generate a proactive update for the team based on your role and the current context.";
 }
 
 export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker {
@@ -215,16 +231,12 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
         let resolvedTools = assembled.tools;
         if (isCron) {
           // Exclude Composio tools from cron runs — they require interactive OAuth context
-          const BUILT_IN_PREFIXES = ["weather_", "grain_bid_", "scale_ticket_", "memory_", "schedule_"];
+          const BUILT_IN_PREFIXES = ["memory_", "schedule_"];
           const filtered: typeof resolvedTools = {};
 
           if (Array.isArray(payload.custom_tools) && payload.custom_tools.length > 0) {
             const allowedSkills = new Set(payload.custom_tools as string[]);
-            const SKILL_TOOL_PREFIXES: Record<string, string[]> = {
-              "farm-weather": ["weather_"],
-              "farm-grain-bids": ["grain_bid_"],
-              "farm-scale-tickets": ["scale_ticket_"],
-            };
+            const SKILL_TOOL_PREFIXES: Record<string, string[]> = {};
             const allowedPrefixes = Array.from(allowedSkills).flatMap(
               (s) => SKILL_TOOL_PREFIXES[s] || []
             );

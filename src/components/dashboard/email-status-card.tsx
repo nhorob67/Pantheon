@@ -36,11 +36,11 @@ export function EmailStatusCard({
           <div className="text-xs text-foreground/50">Responded</div>
         </div>
         <div>
-          <div className={`text-2xl font-bold ${failedCount > 0 ? "text-red-400" : "text-foreground"}`}>
+          <div className={`text-2xl font-bold ${failedCount > 0 ? "text-destructive" : "text-foreground"}`}>
             {failedCount}
           </div>
           <div className="text-xs text-foreground/50 flex items-center gap-1">
-            {failedCount > 0 && <AlertCircle className="w-3 h-3 text-red-400" />}
+            {failedCount > 0 && <AlertCircle className="w-3 h-3 text-destructive" />}
             Failed
           </div>
         </div>

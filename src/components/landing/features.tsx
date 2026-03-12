@@ -20,27 +20,27 @@ const scenarios: { label: string; frames: ConversationFrame[] }[] = [
         text: "Today's Task Board, Mar 3",
         delay: 600,
         richContent: (
-          <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid var(--border)", borderRadius: 10, padding: 16, marginTop: 8 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr auto auto", gap: "8px 16px", fontSize: 13 }}>
-              <div style={{ color: "var(--text-dim)", fontSize: 11, textTransform: "uppercase" as const, letterSpacing: 1 }}>Task</div>
-              <div style={{ color: "var(--text-dim)", fontSize: 11, textTransform: "uppercase" as const, letterSpacing: 1 }}>Priority</div>
-              <div style={{ color: "var(--text-dim)", fontSize: 11, textTransform: "uppercase" as const, letterSpacing: 1 }}>Status</div>
+          <div className="showcase-table">
+            <div className="showcase-table-grid showcase-table-grid-3">
+              <div className="showcase-col-header">Task</div>
+              <div className="showcase-col-header">Priority</div>
+              <div className="showcase-col-header">Status</div>
 
-              <div style={{ color: "var(--text-primary)" }}>Q1 budget review</div>
-              <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>HIGH</div>
+              <div className="showcase-cell-primary">Q1 budget review</div>
+              <div className="showcase-cell-secondary">HIGH</div>
               <div><span className="response-tag good">READY</span></div>
 
-              <div style={{ color: "var(--text-primary)" }}>Client proposal — Meridian Group</div>
-              <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>MED</div>
-              <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>2:00 PM</div>
+              <div className="showcase-cell-primary">Client proposal — Meridian Group</div>
+              <div className="showcase-cell-secondary">MED</div>
+              <div className="showcase-cell-secondary">2:00 PM</div>
 
-              <div style={{ color: "var(--text-primary)" }}>Vendor contract renewal</div>
-              <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>MED</div>
+              <div className="showcase-cell-primary">Vendor contract renewal</div>
+              <div className="showcase-cell-secondary">MED</div>
               <div><span className="response-tag caution">DUE FRI</span></div>
 
-              <div style={{ color: "var(--text-primary)" }}>Review contractor invoices</div>
-              <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>LOW</div>
-              <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>NEW</div>
+              <div className="showcase-cell-primary">Review contractor invoices</div>
+              <div className="showcase-cell-secondary">LOW</div>
+              <div className="showcase-cell-secondary">NEW</div>
             </div>
           </div>
         ),
@@ -57,25 +57,25 @@ const scenarios: { label: string; frames: ConversationFrame[] }[] = [
         text: "New Employee Onboarding Checklist",
         delay: 600,
         richContent: (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
-              <span style={{ fontSize: 13, color: "var(--text-dim)", minWidth: 24 }}>1.</span>
-              <span style={{ fontSize: 13, color: "var(--text-primary)", flex: 1 }}>IT setup: laptop, email, software access</span>
+          <div className="showcase-list">
+            <div className="showcase-list-item">
+              <span className="showcase-list-num">1.</span>
+              <span className="showcase-list-text">IT setup: laptop, email, software access</span>
               <span className="response-tag bad">REQUIRED</span>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
-              <span style={{ fontSize: 13, color: "var(--text-dim)", minWidth: 24 }}>2.</span>
-              <span style={{ fontSize: 13, color: "var(--text-primary)", flex: 1 }}>HR paperwork and benefits enrollment</span>
+            <div className="showcase-list-item">
+              <span className="showcase-list-num">2.</span>
+              <span className="showcase-list-text">HR paperwork and benefits enrollment</span>
               <span className="response-tag bad">REQUIRED</span>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
-              <span style={{ fontSize: 13, color: "var(--text-dim)", minWidth: 24 }}>3.</span>
-              <span style={{ fontSize: 13, color: "var(--text-primary)", flex: 1 }}>Team introductions and org chart walkthrough</span>
+            <div className="showcase-list-item">
+              <span className="showcase-list-num">3.</span>
+              <span className="showcase-list-text">Team introductions and org chart walkthrough</span>
               <span className="response-tag good">SCHEDULED</span>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0" }}>
-              <span style={{ fontSize: 13, color: "var(--text-dim)", minWidth: 24 }}>4.</span>
-              <span style={{ fontSize: 13, color: "var(--text-primary)", flex: 1 }}>Project orientation and tool training</span>
+            <div className="showcase-list-item">
+              <span className="showcase-list-num">4.</span>
+              <span className="showcase-list-text">Project orientation and tool training</span>
               <span className="response-tag caution">WEEK 1</span>
             </div>
           </div>
@@ -93,20 +93,20 @@ const scenarios: { label: string; frames: ConversationFrame[] }[] = [
         text: "Vendor Comparison: Cloud Infrastructure",
         delay: 600,
         richContent: (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
-              <span style={{ fontSize: 12, color: "var(--text-dim)", minWidth: 100 }}>Vendor A</span>
-              <span style={{ fontSize: 13, color: "var(--text-primary)", flex: 1 }}>$4,200/mo &middot; 99.9% SLA &middot; 24/7 support</span>
+          <div className="showcase-list">
+            <div className="showcase-list-item">
+              <span className="showcase-list-vendor">Vendor A</span>
+              <span className="showcase-list-text">$4,200/mo &middot; 99.9% SLA &middot; 24/7 support</span>
               <span className="response-tag good">BEST VALUE</span>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
-              <span style={{ fontSize: 12, color: "var(--text-dim)", minWidth: 100 }}>Vendor B</span>
-              <span style={{ fontSize: 13, color: "var(--text-primary)", flex: 1 }}>$3,800/mo &middot; 99.5% SLA &middot; Business hours</span>
+            <div className="showcase-list-item">
+              <span className="showcase-list-vendor">Vendor B</span>
+              <span className="showcase-list-text">$3,800/mo &middot; 99.5% SLA &middot; Business hours</span>
               <span className="response-tag caution">CHEAPEST</span>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0" }}>
-              <span style={{ fontSize: 12, color: "var(--text-dim)", minWidth: 100 }}>Vendor C</span>
-              <span style={{ fontSize: 13, color: "var(--text-primary)", flex: 1 }}>$5,100/mo &middot; 99.99% SLA &middot; Dedicated rep</span>
+            <div className="showcase-list-item">
+              <span className="showcase-list-vendor">Vendor C</span>
+              <span className="showcase-list-text">$5,100/mo &middot; 99.99% SLA &middot; Dedicated rep</span>
               <span className="response-tag bad">PREMIUM</span>
             </div>
           </div>
@@ -124,26 +124,26 @@ const scenarios: { label: string; frames: ConversationFrame[] }[] = [
         text: "Open Follow-Ups: This Week",
         delay: 600,
         richContent: (
-          <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid var(--border)", borderRadius: 10, padding: 16, marginTop: 8 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: "8px 16px", fontSize: 13 }}>
-              <div style={{ color: "var(--text-dim)", fontSize: 11, textTransform: "uppercase" as const, letterSpacing: 1 }}>Person</div>
-              <div style={{ color: "var(--text-dim)", fontSize: 11, textTransform: "uppercase" as const, letterSpacing: 1 }}>Topic</div>
-              <div style={{ color: "var(--text-dim)", fontSize: 11, textTransform: "uppercase" as const, letterSpacing: 1 }}>Status</div>
+          <div className="showcase-table">
+            <div className="showcase-table-grid showcase-table-grid-3alt">
+              <div className="showcase-col-header">Person</div>
+              <div className="showcase-col-header">Topic</div>
+              <div className="showcase-col-header">Status</div>
 
-              <div style={{ color: "var(--text-primary)" }}>Lisa (accountant)</div>
-              <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>Q1 tax documents</div>
+              <div className="showcase-cell-primary">Lisa (accountant)</div>
+              <div className="showcase-cell-secondary">Q1 tax documents</div>
               <div><span className="response-tag bad">DUE WED</span></div>
 
-              <div style={{ color: "var(--text-primary)" }}>Meridian Group</div>
-              <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>Partnership proposal</div>
+              <div className="showcase-cell-primary">Meridian Group</div>
+              <div className="showcase-cell-secondary">Partnership proposal</div>
               <div><span className="response-tag caution">WAITING</span></div>
 
-              <div style={{ color: "var(--text-primary)" }}>Dave (contractor)</div>
-              <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>Project timeline update</div>
+              <div className="showcase-cell-primary">Dave (contractor)</div>
+              <div className="showcase-cell-secondary">Project timeline update</div>
               <div><span className="response-tag caution">WAITING</span></div>
 
-              <div style={{ color: "var(--text-primary)" }}>AWS support</div>
-              <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>Billing inquiry</div>
+              <div className="showcase-cell-primary">AWS support</div>
+              <div className="showcase-cell-secondary">Billing inquiry</div>
               <div><span className="response-tag good">SENT</span></div>
             </div>
           </div>
@@ -161,22 +161,22 @@ const scenarios: { label: string; frames: ConversationFrame[] }[] = [
         text: "Team Meeting Summary: Feb 28",
         delay: 600,
         richContent: (
-          <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid var(--border)", borderRadius: 10, padding: 16, marginTop: 8 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: "8px 16px", fontSize: 13 }}>
-              <div style={{ color: "var(--text-dim)", fontSize: 11, textTransform: "uppercase" as const, letterSpacing: 1 }}>Decision</div>
-              <div style={{ color: "var(--text-dim)", fontSize: 11, textTransform: "uppercase" as const, letterSpacing: 1 }}>Owner</div>
-              <div style={{ color: "var(--text-dim)", fontSize: 11, textTransform: "uppercase" as const, letterSpacing: 1 }}>Due</div>
+          <div className="showcase-table">
+            <div className="showcase-table-grid showcase-table-grid-3alt">
+              <div className="showcase-col-header">Decision</div>
+              <div className="showcase-col-header">Owner</div>
+              <div className="showcase-col-header">Due</div>
 
-              <div style={{ color: "var(--text-primary)" }}>Switch to Vendor A for hosting</div>
-              <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>You</div>
+              <div className="showcase-cell-primary">Switch to Vendor A for hosting</div>
+              <div className="showcase-cell-secondary">You</div>
               <div><span className="response-tag caution">MAR 7</span></div>
 
-              <div style={{ color: "var(--text-primary)" }}>Hire second contractor for Q2</div>
-              <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>Dave</div>
+              <div className="showcase-cell-primary">Hire second contractor for Q2</div>
+              <div className="showcase-cell-secondary">Dave</div>
               <div><span className="response-tag good">IN PROGRESS</span></div>
 
-              <div style={{ color: "var(--text-primary)" }}>Update client SLA templates</div>
-              <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>Sarah</div>
+              <div className="showcase-cell-primary">Update client SLA templates</div>
+              <div className="showcase-cell-secondary">Sarah</div>
               <div><span className="response-tag bad">OVERDUE</span></div>
             </div>
           </div>
@@ -332,7 +332,7 @@ export function ConversationShowcase() {
         <div className="showcase-header">
           <div className="section-label">See It In Action</div>
           <h2 className="section-title-display">Tasks, people, and decisions: handled.</h2>
-          <p className="section-sub">No more juggling apps, threads, and sticky notes. Ask your team anything, from what you need to do today to what your vendor quoted last Tuesday.</p>
+          <p className="section-sub">No more juggling apps, threads, and sticky notes. Ask your pantheon anything, from what you need to do today to what your vendor quoted last Tuesday.</p>
         </div>
 
         <div className="scenario-tabs">

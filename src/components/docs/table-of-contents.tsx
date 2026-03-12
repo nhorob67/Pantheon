@@ -35,7 +35,7 @@ export function TableOfContents({ headings }: TableOfContentsProps) {
   if (headings.length === 0) return null;
 
   return (
-    <aside className="hidden xl:block w-56 shrink-0 sticky top-24 h-fit py-10 pr-6">
+    <aside className="hidden lg:block w-56 shrink-0 sticky top-24 h-fit py-10 pr-6">
       <p className="text-[11px] font-semibold uppercase tracking-wider text-text-dim mb-4">
         On this page
       </p>

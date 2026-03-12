@@ -5,15 +5,10 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ChannelAgentMap } from "@/components/dashboard/channel-agent-map";
 import { AssistantsList } from "@/components/dashboard/assistants-list";
-
-export const metadata: Metadata = { title: "Assistants" };
 import type { Agent } from "@/types/agent";
-import type { PersonalityPreset } from "@/types/agent";
 import type { SkillConfig } from "@/types/database";
 import type { CustomSkill } from "@/types/custom-skill";
 import type { ComposioConfig, ComposioConnectedApp } from "@/types/composio";
-import { renderSoulPreset, type SoulPresetData } from "@/lib/templates/soul-presets";
-import { PERSONALITY_PRESETS } from "@/types/agent";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   requireDashboardCustomer,
@@ -22,6 +17,8 @@ import {
 } from "@/lib/auth/dashboard-session";
 import { DiscordSetupBanner } from "@/components/dashboard/discord-setup-banner";
 import { Skeleton } from "@/components/ui/skeleton";
+
+export const metadata: Metadata = { title: "Discord" };
 
 export default async function ChannelsSettingsPage() {
   const { customerId } = await requireDashboardCustomer();
@@ -37,7 +34,7 @@ async function ChannelsContent({ customerId }: { customerId: string }) {
   const admin = createAdminClient();
   const supabase = await createClient();
 
-  const [instance, tenant, { data: skillConfigs }, { data: customSkills }, { data: emailIdentity }, { data: composioRow }, { data: farmProfile }] = await Promise.all([
+  const [instance, tenant, { data: skillConfigs }, { data: customSkills }, { data: emailIdentity }, { data: composioRow }] = await Promise.all([
     getCustomerInstance(customerId),
     getCustomerTenant(customerId),
     supabase
@@ -59,11 +56,6 @@ async function ChannelsContent({ customerId }: { customerId: string }) {
       .select("*")
       .eq("customer_id", customerId)
       .maybeSingle(),
-    supabase
-      .from("farm_profiles")
-      .select("farm_name, state, county, acres, crops, elevators, timezone, soil_ph, soil_cec, organic_matter_pct, avg_annual_rainfall_in")
-      .eq("customer_id", customerId)
-      .maybeSingle(),
   ]);
 
   if (!tenant) redirect("/onboarding");
@@ -75,53 +67,24 @@ async function ChannelsContent({ customerId }: { customerId: string }) {
       }
     : null;
 
-  interface FarmProfileQueryRow {
-    farm_name: string | null;
-    state: string | null;
-    county: string | null;
-    acres: number | null;
-    crops: string[] | null;
-    elevators: ({ name?: string } | string)[] | null;
-    timezone: string | null;
-    soil_ph: number | null;
-    soil_cec: number | null;
-    organic_matter_pct: number | null;
-    avg_annual_rainfall_in: number | null;
-  }
-  const fp = farmProfile as FarmProfileQueryRow | null;
-  const elevatorNames = Array.isArray(fp?.elevators)
-    ? fp.elevators.map((e) => (typeof e === "string" ? e : e?.name || "Unknown")).join(", ")
-    : "Not configured";
-  const farmPresetData: SoulPresetData = {
-    farm_name: fp?.farm_name || "Your Farm",
-    agent_name: "Assistant",
-    state: fp?.state || "ND",
-    county: fp?.county || "Unknown",
-    acres: fp?.acres || 0,
-    crops_list: Array.isArray(fp?.crops) ? fp.crops.join(", ") : "Not configured",
-    elevator_names: elevatorNames,
-    timezone: fp?.timezone || "America/Chicago",
-    soil_ph: fp?.soil_ph ?? null,
-    soil_cec: fp?.soil_cec ?? null,
-    organic_matter_pct: fp?.organic_matter_pct ?? null,
-    avg_annual_rainfall_in: fp?.avg_annual_rainfall_in ?? null,
-  };
+  // Fetch tenant agents + legacy agents in parallel to avoid waterfall on fallback path
+  const legacyAgentsPromise = instance
+    ? supabase
+        .from("agents")
+        .select("*")
+        .eq("instance_id", instance.id)
+        .order("sort_order", { ascending: true })
+    : Promise.resolve({ data: null });
 
-  // Pre-compute default prompts server-side so soul-presets.ts stays out of the client bundle
-  const defaultPrompts: Partial<Record<string, string>> = {};
-  for (const preset of PERSONALITY_PRESETS) {
-    if (preset !== "custom") {
-      defaultPrompts[preset] = renderSoulPreset(preset, farmPresetData);
-    }
-  }
-
-  // Fetch tenant-first agents (needs tenant.id) — no further parallelization possible since this depends on tenant
-  const { data: tenantAgents } = await supabase
-    .from("tenant_agents")
-    .select("id, customer_id, legacy_agent_id, agent_key, display_name, is_default, skills, sort_order, created_at, updated_at, config")
-    .eq("tenant_id", tenant.id)
-    .neq("status", "archived")
-    .order("sort_order", { ascending: true });
+  const [{ data: tenantAgents }, { data: legacyAgents }] = await Promise.all([
+    supabase
+      .from("tenant_agents")
+      .select("id, customer_id, legacy_agent_id, agent_key, display_name, is_default, skills, sort_order, created_at, updated_at, config")
+      .eq("tenant_id", tenant.id)
+      .neq("status", "archived")
+      .order("sort_order", { ascending: true }),
+    legacyAgentsPromise,
+  ]);
 
   const tenantBackedAgents: Agent[] = Array.isArray(tenantAgents)
     ? tenantAgents.map((row) => {
@@ -129,14 +92,6 @@ async function ChannelsContent({ customerId }: { customerId: string }) {
           row.config && typeof row.config === "object" && !Array.isArray(row.config)
             ? (row.config as Record<string, unknown>)
             : {};
-        const personalityPreset =
-          typeof config.personality_preset === "string"
-            ? (config.personality_preset as PersonalityPreset)
-            : "general";
-        const customPersonality =
-          typeof config.custom_personality === "string"
-            ? config.custom_personality
-            : null;
         const discordChannelId =
           typeof config.discord_channel_id === "string"
             ? config.discord_channel_id
@@ -145,10 +100,6 @@ async function ChannelsContent({ customerId }: { customerId: string }) {
           typeof config.discord_channel_name === "string"
             ? config.discord_channel_name
             : null;
-        const cronJobs =
-          config.cron_jobs && typeof config.cron_jobs === "object" && !Array.isArray(config.cron_jobs)
-            ? (config.cron_jobs as Record<string, boolean>)
-            : {};
         const composioToolkits = Array.isArray(config.composio_toolkits)
           ? (config.composio_toolkits as string[])
           : [];
@@ -159,22 +110,28 @@ async function ChannelsContent({ customerId }: { customerId: string }) {
             ? (config.tool_approval_overrides as Record<string, import("@/types/agent").ToolApprovalLevel>)
             : {};
 
+        const role = typeof config.role === "string" ? config.role : row.display_name;
+        const autonomyLevel = typeof config.autonomy_level === "string"
+          ? (config.autonomy_level as import("@/types/agent").AutonomyLevel)
+          : "copilot";
+
         return {
           id: row.legacy_agent_id || row.id,
           instance_id: instance?.id || tenant.id,
           customer_id: row.customer_id,
           agent_key: row.agent_key,
           display_name: row.display_name,
-          personality_preset: personalityPreset,
-          custom_personality: customPersonality,
+          role,
+          autonomy_level: autonomyLevel,
           discord_channel_id: discordChannelId,
           discord_channel_name: discordChannelName,
           is_default: row.is_default,
           skills: Array.isArray(row.skills) ? (row.skills as string[]) : [],
-          cron_jobs: cronJobs,
           composio_toolkits: composioToolkits,
           goal,
           backstory,
+          can_delegate: config.can_delegate === true,
+          can_receive_delegation: config.can_receive_delegation === true,
           tool_approval_overrides: toolApprovalOverrides,
           sort_order: row.sort_order,
           created_at: row.created_at,
@@ -184,13 +141,8 @@ async function ChannelsContent({ customerId }: { customerId: string }) {
     : [];
 
   let typedAgents = tenantBackedAgents;
-  if (typedAgents.length === 0 && instance) {
-    const { data: legacyAgents } = await supabase
-      .from("agents")
-      .select("*")
-      .eq("instance_id", instance.id)
-      .order("sort_order", { ascending: true });
-    typedAgents = (legacyAgents || []) as Agent[];
+  if (typedAgents.length === 0 && legacyAgents) {
+    typedAgents = legacyAgents as Agent[];
   }
 
   const typedSkillConfigs = (skillConfigs || []) as SkillConfig[];
@@ -200,15 +152,15 @@ async function ChannelsContent({ customerId }: { customerId: string }) {
   const hasLinkedChannels = typedAgents.some((a) => !!a.discord_channel_id);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-4xl">
       {/* Page Header */}
       <div>
-        <h2 className="font-headline text-xl font-bold text-text-primary">
-          Channels & Assistants
-        </h2>
-        <p className="text-sm text-text-secondary mt-1">
-          Assign specialized AI assistants to your Discord channels. Each assistant
-          can have its own personality, skills, and scheduled messages.
+        <h1 className="font-headline text-2xl font-semibold">
+          Discord & Agents
+        </h1>
+        <p className="text-sm text-foreground/60 mt-1">
+          Assign specialized AI agents to your Discord channels. Each agent
+          can have its own role, skills, and scheduled work.
         </p>
       </div>
 
@@ -245,7 +197,7 @@ async function ChannelsContent({ customerId }: { customerId: string }) {
         </div>
       )}
 
-      {/* Assistants List */}
+      {/* Agents List */}
       <div className="bg-bg-card rounded-xl border border-border shadow-sm p-5">
         <AssistantsList
           initialAgents={typedAgents}
@@ -253,7 +205,6 @@ async function ChannelsContent({ customerId }: { customerId: string }) {
           globalSkillConfigs={typedSkillConfigs}
           customSkills={typedCustomSkills}
           composioConfig={composioConfig}
-          defaultPrompts={defaultPrompts}
         />
       </div>
     </div>

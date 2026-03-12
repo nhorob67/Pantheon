@@ -1,6 +1,6 @@
 ---
 title: Schedules & Briefings
-description: Configure automated scheduled messages -- morning briefings with weather, grain bids, and scale ticket summaries.
+description: Configure automated scheduled messages -- recurring briefings, reports, and updates delivered to your Discord channels.
 section: Tools
 order: 8
 icon: Clock
@@ -9,21 +9,20 @@ tags: [schedules, cron, automation, briefings]
 
 # Schedules & Briefings
 
-Schedules let you automate recurring messages from your assistant. The main feature is the **daily briefing** -- a configurable morning summary posted to your Discord channel covering weather, grain bids, and scale ticket activity.
+Schedules let you automate recurring messages from your agents. The main feature is the **daily briefing** -- a configurable summary posted to your Discord channel on a schedule you define.
 
 ## Daily briefing
 
-The briefing is a single scheduled message that combines multiple sections. Configure it from **Settings > Briefings**.
+The briefing is a single scheduled message that combines multiple sections. Configure it from **Settings > Schedules**.
 
 ### Briefing sections
 
-Toggle each section on or off:
+Toggle each section on or off. The available sections depend on the custom skills you have enabled. Common examples include:
 
 | Section | What it includes |
 |---|---|
-| **Weather Forecast** | Temperature, wind, precipitation, spray windows |
-| **Grain Bids** | Cash bids from configured elevators, basis changes |
-| **Scale Ticket Summary** | Yesterday's deliveries, bushels by crop, load counts |
+| **Summary** | A digest of recent activity, key updates, and pending items |
+| **Custom reports** | Data pulled from your configured skills and knowledge files |
 
 ### Configuration
 
@@ -40,21 +39,21 @@ To get a Discord channel ID: enable Developer Mode in Discord (User Settings > A
 
 ## Per-agent cron jobs
 
-In addition to the briefing system, individual agents can have their own scheduled jobs:
+In addition to the briefing system, individual agents can have their own scheduled jobs. You can configure any agent to run a scheduled task at a specific time and frequency. Common examples:
 
-| Schedule | Default Time | Required Skill | What it posts |
-|---|---|---|---|
-| Morning Weather | 6:00 AM daily | Weather | Full morning briefing with forecast, alerts, and spray window assessment |
-| Daily Grain Bids | 9:00 AM Mon--Fri | Grain Bids | Cash grain bids from all configured elevators |
+- Morning summary briefings
+- Daily status reports
+- Weekly digest messages
+- Recurring data collection tasks
 
-Configure per-agent cron jobs from **Settings > Agents** on each agent's card. Times are in your farm's local timezone.
+Configure per-agent cron jobs from **Settings > Agents** on each agent's card. Times are in your workspace's configured timezone.
 
 ## Cost considerations
 
 Each scheduled run consumes API tokens:
 
-- Morning weather briefing: ~1,500--3,000 tokens
-- Daily grain bids: ~2,000--4,000 tokens
+- A typical briefing: ~1,500--3,000 tokens
+- Data-heavy reports: ~2,000--4,000 tokens
 - Full briefing (all sections): ~3,000--6,000 tokens
 
 Factor this into your [spending cap](/docs/billing/spending-cap) and usage estimates. Disabling unused schedules is the easiest way to reduce costs.

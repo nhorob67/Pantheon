@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import type { SkillTemplate } from "@/types/custom-skill";
+import { Textarea } from "@/components/ui/textarea";
 import { SkillTemplatePicker } from "./skill-template-picker";
 import { Sparkles, Loader2, ChevronDown } from "lucide-react";
 
@@ -35,7 +36,7 @@ export function SkillAiGenerator({ templates, onGenerated }: SkillAiGeneratorPro
         body: JSON.stringify({
           prompt: prompt.trim(),
           template_id: selectedTemplate?.id,
-          farm_context: true,
+          team_context: true,
         }),
         signal: abortRef.current.signal,
       });
@@ -97,15 +98,13 @@ export function SkillAiGenerator({ templates, onGenerated }: SkillAiGeneratorPro
     <div className="space-y-4">
       {/* Prompt textarea */}
       <div>
-        <label className="block text-sm text-text-secondary mb-1.5">
-          Describe what you want your skill to do
-        </label>
-        <textarea
+        <Textarea
+          label="Describe what you want your skill to do"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           rows={4}
-          placeholder="e.g., I want a skill that helps me track field tile drainage projects, including locations, costs, contractor info, and drainage patterns..."
-          className="w-full border border-border focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-lg bg-bg-dark px-4 py-3 outline-none transition-colors text-text-primary placeholder:text-text-dim resize-y"
+          placeholder="e.g., I want a skill that helps me track ongoing projects, including status updates, deadlines, owner assignments, and blockers..."
+          className="w-full bg-bg-dark"
           disabled={generating}
         />
         <p className="text-xs text-text-dim mt-1">
@@ -139,7 +138,7 @@ export function SkillAiGenerator({ templates, onGenerated }: SkillAiGeneratorPro
 
       {/* Error */}
       {error && (
-        <p className="text-red-400 text-sm">{error}</p>
+        <p className="text-destructive text-sm">{error}</p>
       )}
 
       {/* Streaming output */}

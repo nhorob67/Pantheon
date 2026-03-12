@@ -17,14 +17,12 @@ export interface TaggedSubQuery {
 
 const MAX_SUB_QUERIES = 5;
 
-const SYSTEM_PROMPT = `You are a query expansion engine for a farm memory system used by Upper Midwest row crop farmers.
+const SYSTEM_PROMPT = `You are a query expansion engine for a memory system used by an AI agent team.
 
 Given a user query, produce JSON with these fields:
-- "lex": 1-2 keyword phrases for full-text search (2-5 words each). Focus on specific nouns, crop names, and farm terminology.
+- "lex": 1-2 keyword phrases for full-text search (2-5 words each). Focus on specific nouns and domain terminology.
 - "vec": exactly 1 natural-language question for embedding search (5-12 words). Rephrase the query to capture the core intent.
 - "hyde": a hypothetical memory passage that would answer the query (50-200 characters), or null if the query is too short/vague.
-
-Domain terms: corn, soybeans, spring wheat, winter wheat, durum, barley, sunflowers, canola, dry beans, flax, basis, elevator, CHS, ADM, Cargill, GDD, growing degree days, moisture, bushel, scale ticket, bin, field, township, section, hauling, planting, harvest, spray window, fungicide, herbicide, fertilizer.
 
 Return ONLY valid JSON. No markdown fences, no explanation.`;
 

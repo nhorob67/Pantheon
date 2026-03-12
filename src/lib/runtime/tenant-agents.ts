@@ -1,14 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CreateAgentData, UpdateAgentData } from "@/lib/validators/agent";
-import { toPersonalityPreset, type PersonalityPreset, type ToolApprovalLevel } from "@/types/agent";
+import { toAutonomyLevel, type AutonomyLevel, type ToolApprovalLevel } from "@/types/agent";
 import { safeErrorMessage } from "@/lib/security/safe-error";
-
-import { syncPredefinedSchedulesToTable } from "@/lib/schedules/sync-predefined-schedules";
 
 const TENANT_AGENT_SELECT =
   "id, tenant_id, customer_id, legacy_agent_id, agent_key, display_name, status, policy_profile, is_default, sort_order, skills, config, created_at, updated_at";
 const LEGACY_AGENT_SELECT =
-  "id, instance_id, customer_id, agent_key, display_name, personality_preset, custom_personality, discord_channel_id, discord_channel_name, is_default, skills, cron_jobs, sort_order, created_at, updated_at";
+  "id, instance_id, customer_id, agent_key, display_name, personality_preset, custom_personality, role, agent_goal, autonomy_level, discord_channel_id, discord_channel_name, is_default, skills, cron_jobs, sort_order, created_at, updated_at";
 
 interface TenantAgentRow {
   id: string;
@@ -33,8 +31,11 @@ interface LegacyAgentRow {
   customer_id: string;
   agent_key: string;
   display_name: string;
-  personality_preset: PersonalityPreset;
+  personality_preset: string;
   custom_personality: string | null;
+  role: string | null;
+  agent_goal: string | null;
+  autonomy_level: string | null;
   discord_channel_id: string | null;
   discord_channel_name: string | null;
   is_default: boolean;
@@ -49,11 +50,22 @@ interface TenantInstanceMappingRow {
   instance_id: string;
 }
 
+/**
+ * Internal config shape stored in the tenant_agents.config JSONB column.
+ * Contains both active runtime fields and deprecated compatibility fields.
+ */
 interface TenantAgentConfig {
-  personality_preset: PersonalityPreset;
+  /** @deprecated Always "custom". Kept for legacy agents table sync only. */
+  personality_preset: string;
+  /** @deprecated Mirrors backstory. Kept for legacy agents table sync only. */
   custom_personality: string | null;
+  role: string | null;
+  autonomy_level: AutonomyLevel;
+  can_delegate: boolean;
+  can_receive_delegation: boolean;
   discord_channel_id: string | null;
   discord_channel_name: string | null;
+  /** @deprecated Schedules moved to tenant_scheduled_messages. Kept for legacy agents table sync only. */
   cron_jobs: Record<string, boolean>;
   composio_toolkits: string[];
   goal: string | null;
@@ -62,16 +74,25 @@ interface TenantAgentConfig {
 }
 
 interface TenantAgentConfigPatch {
-  personality_preset?: PersonalityPreset;
+  /** @deprecated Always "custom". */
+  personality_preset?: string;
+  /** @deprecated Mirrors backstory. */
   custom_personality?: string | null;
+  role?: string | null;
+  autonomy_level?: AutonomyLevel;
+  can_delegate?: boolean;
+  can_receive_delegation?: boolean;
   discord_channel_id?: string | null;
   discord_channel_name?: string | null;
+  /** @deprecated Schedules moved to tenant_scheduled_messages. */
   cron_jobs?: Record<string, boolean>;
   composio_toolkits?: string[];
   goal?: string | null;
   backstory?: string | null;
   tool_approval_overrides?: Record<string, ToolApprovalLevel>;
 }
+
+const COMPATIBILITY_PERSONALITY_PRESET = "custom";
 
 export interface TenantRuntimeAgent {
   id: string;
@@ -80,8 +101,10 @@ export interface TenantRuntimeAgent {
   legacy_agent_id: string | null;
   agent_key: string;
   display_name: string;
-  personality_preset: PersonalityPreset;
-  custom_personality: string | null;
+  role: string | null;
+  autonomy_level: AutonomyLevel;
+  can_delegate: boolean;
+  can_receive_delegation: boolean;
   discord_channel_id: string | null;
   discord_channel_name: string | null;
   is_default: boolean;
@@ -139,11 +162,40 @@ function parseToolApprovalOverrides(raw: unknown): Record<string, ToolApprovalLe
   return result;
 }
 
+function asNullableString(value: unknown): string | null {
+  return typeof value === "string" ? value : null;
+}
+
+function buildTenantAgentConfigFromLegacy(legacyAgent: LegacyAgentRow): Record<string, unknown> {
+  const backstory = asNullableString(legacyAgent.custom_personality);
+
+  return buildTenantAgentConfig(
+    {},
+    {
+      role: asNullableString(legacyAgent.role),
+      autonomy_level: toAutonomyLevel(legacyAgent.autonomy_level),
+      can_delegate: false,
+      can_receive_delegation: false,
+      discord_channel_id: asNullableString(legacyAgent.discord_channel_id),
+      discord_channel_name: asNullableString(legacyAgent.discord_channel_name),
+      cron_jobs: legacyAgent.cron_jobs || {},
+      composio_toolkits: [],
+      goal: asNullableString(legacyAgent.agent_goal),
+      backstory,
+      tool_approval_overrides: {},
+    }
+  );
+}
+
 function parseTenantAgentConfig(config: unknown): TenantAgentConfig {
   if (!isRecord(config)) {
     return {
-      personality_preset: "general",
+      personality_preset: COMPATIBILITY_PERSONALITY_PRESET,
       custom_personality: null,
+      role: null,
+      autonomy_level: "copilot",
+      can_delegate: false,
+      can_receive_delegation: false,
       discord_channel_id: null,
       discord_channel_name: null,
       cron_jobs: {},
@@ -154,30 +206,29 @@ function parseTenantAgentConfig(config: unknown): TenantAgentConfig {
     };
   }
 
-  const personalityPreset = toPersonalityPreset(config["personality_preset"]);
-  const customPersonality =
-    typeof config["custom_personality"] === "string"
-      ? config["custom_personality"]
-      : null;
-  const discordChannelId =
-    typeof config["discord_channel_id"] === "string"
-      ? config["discord_channel_id"]
-      : null;
-  const discordChannelName =
-    typeof config["discord_channel_name"] === "string"
-      ? config["discord_channel_name"]
-      : null;
+  const role = asNullableString(config["role"]);
+  const autonomyLevel = toAutonomyLevel(config["autonomy_level"]);
+  const canDelegate = config["can_delegate"] === true;
+  const canReceiveDelegation = config["can_receive_delegation"] === true;
+  const discordChannelId = asNullableString(config["discord_channel_id"]);
+  const discordChannelName = asNullableString(config["discord_channel_name"]);
   const cronJobs = isBooleanRecord(config["cron_jobs"]) ? config["cron_jobs"] : {};
   const composioToolkits = Array.isArray(config["composio_toolkits"])
     ? (config["composio_toolkits"] as unknown[]).filter((v): v is string => typeof v === "string")
     : [];
-  const goal = typeof config["goal"] === "string" ? config["goal"] : null;
-  const backstory = typeof config["backstory"] === "string" ? config["backstory"] : null;
+  const goal = asNullableString(config["goal"]);
+  const backstory = asNullableString(config["backstory"]);
   const toolApprovalOverrides = parseToolApprovalOverrides(config["tool_approval_overrides"]);
 
   return {
-    personality_preset: personalityPreset,
-    custom_personality: customPersonality,
+    // Preset identity is compatibility-only. Runtime behavior must come from
+    // explicit fields such as role, goal, backstory, autonomy, and tools.
+    personality_preset: COMPATIBILITY_PERSONALITY_PRESET,
+    custom_personality: null,
+    role,
+    autonomy_level: autonomyLevel,
+    can_delegate: canDelegate,
+    can_receive_delegation: canReceiveDelegation,
     discord_channel_id: discordChannelId,
     discord_channel_name: discordChannelName,
     cron_jobs: cronJobs,
@@ -193,13 +244,20 @@ function buildTenantAgentConfig(
   patch: TenantAgentConfigPatch
 ): Record<string, unknown> {
   const current = parseTenantAgentConfig(currentConfig);
+  const backstory =
+    patch.backstory !== undefined
+      ? patch.backstory
+      : current.backstory;
 
   return {
-    personality_preset: patch.personality_preset ?? current.personality_preset,
-    custom_personality:
-      patch.custom_personality !== undefined
-        ? patch.custom_personality
-        : current.custom_personality,
+    personality_preset: COMPATIBILITY_PERSONALITY_PRESET,
+    // Keep the deprecated freeform field as a compatibility mirror of
+    // explicit backstory while runtime ignores it.
+    custom_personality: backstory,
+    role: patch.role !== undefined ? patch.role : current.role,
+    autonomy_level: patch.autonomy_level ?? current.autonomy_level,
+    can_delegate: patch.can_delegate ?? current.can_delegate,
+    can_receive_delegation: patch.can_receive_delegation ?? current.can_receive_delegation,
     discord_channel_id:
       patch.discord_channel_id !== undefined
         ? patch.discord_channel_id
@@ -211,7 +269,7 @@ function buildTenantAgentConfig(
     cron_jobs: patch.cron_jobs ?? current.cron_jobs,
     composio_toolkits: patch.composio_toolkits ?? current.composio_toolkits,
     goal: patch.goal !== undefined ? patch.goal : current.goal,
-    backstory: patch.backstory !== undefined ? patch.backstory : current.backstory,
+    backstory,
     tool_approval_overrides: patch.tool_approval_overrides ?? current.tool_approval_overrides,
   };
 }
@@ -280,13 +338,7 @@ async function ensureTenantAgentsHydratedFromLegacy(
     is_default: legacyAgent.is_default,
     sort_order: legacyAgent.sort_order,
     skills: legacyAgent.skills,
-    config: {
-      personality_preset: legacyAgent.personality_preset,
-      custom_personality: legacyAgent.custom_personality,
-      discord_channel_id: legacyAgent.discord_channel_id,
-      discord_channel_name: legacyAgent.discord_channel_name,
-      cron_jobs: legacyAgent.cron_jobs || {},
-    },
+    config: buildTenantAgentConfigFromLegacy(legacyAgent),
   }));
 
   const { error: insertError } = await admin.from("tenant_agents").insert(rowsToInsert);
@@ -480,8 +532,11 @@ async function syncTenantAgentToLegacy(
         .update({
           agent_key: tenantAgent.agent_key,
           display_name: tenantAgent.display_name,
-          personality_preset: config.personality_preset,
-          custom_personality: config.custom_personality,
+          personality_preset: COMPATIBILITY_PERSONALITY_PRESET,
+          custom_personality: config.backstory,
+          role: config.role,
+          agent_goal: config.goal,
+          autonomy_level: config.autonomy_level,
           discord_channel_id: config.discord_channel_id,
           discord_channel_name: config.discord_channel_name,
           is_default: tenantAgent.is_default,
@@ -521,8 +576,11 @@ async function syncTenantAgentToLegacy(
       customer_id: context.customerId,
       agent_key: agentKey,
       display_name: tenantAgent.display_name,
-      personality_preset: config.personality_preset,
-      custom_personality: config.custom_personality,
+      personality_preset: COMPATIBILITY_PERSONALITY_PRESET,
+      custom_personality: config.backstory,
+      role: config.role,
+      agent_goal: config.goal,
+      autonomy_level: config.autonomy_level,
       discord_channel_id: config.discord_channel_id,
       discord_channel_name: config.discord_channel_name,
       is_default: tenantAgent.is_default,
@@ -648,8 +706,10 @@ function mapTenantAgentRow(row: TenantAgentRow): TenantRuntimeAgent {
     legacy_agent_id: row.legacy_agent_id,
     agent_key: row.agent_key,
     display_name: row.display_name,
-    personality_preset: config.personality_preset,
-    custom_personality: config.custom_personality,
+    role: config.role,
+    autonomy_level: config.autonomy_level,
+    can_delegate: config.can_delegate,
+    can_receive_delegation: config.can_receive_delegation,
     discord_channel_id: config.discord_channel_id,
     discord_channel_name: config.discord_channel_name,
     is_default: row.is_default,
@@ -664,6 +724,12 @@ function mapTenantAgentRow(row: TenantAgentRow): TenantRuntimeAgent {
     updated_at: row.updated_at,
   };
 }
+
+export const __tenantAgentConfigTestUtils = {
+  buildTenantAgentConfigFromLegacy,
+  buildTenantAgentConfig,
+  parseTenantAgentConfig,
+};
 
 
 export async function resolveTenantIdForInstance(
@@ -763,11 +829,14 @@ export async function createTenantRuntimeAgent(
   }
 
   const tenantConfig = buildTenantAgentConfig({}, {
-    personality_preset: data.personality_preset,
-    custom_personality: data.custom_personality || null,
+    role: data.role || null,
+    autonomy_level: data.autonomy_level || "copilot",
+    can_delegate: data.can_delegate ?? false,
+    can_receive_delegation: data.can_receive_delegation ?? false,
+    custom_personality: null,
     discord_channel_id: data.discord_channel_id || null,
     discord_channel_name: data.discord_channel_name || null,
-    cron_jobs: data.cron_jobs,
+    cron_jobs: data.cron_jobs ?? {},
     composio_toolkits: data.composio_toolkits || [],
     goal: data.goal || null,
     backstory: data.backstory || null,
@@ -807,23 +876,7 @@ export async function createTenantRuntimeAgent(
     throw error;
   }
 
-  const mapped = mapTenantAgentRow(tenantRow);
-
-  // Fire-and-forget: sync predefined cron toggles → scheduled_messages table
-  if (data.cron_jobs && Object.keys(data.cron_jobs).length > 0) {
-    syncPredefinedSchedulesToTable(
-      admin,
-      context.tenantId,
-      context.customerId,
-      mapped.id,
-      mapped.discord_channel_id,
-      data.cron_jobs
-    ).catch((err) => {
-      console.error("[create-agent] Schedule sync failed:", safeErrorMessage(err));
-    });
-  }
-
-  return mapped;
+  return mapTenantAgentRow(tenantRow);
 }
 
 export async function updateTenantRuntimeAgent(
@@ -869,11 +922,17 @@ export async function updateTenantRuntimeAgent(
   }
 
   const configPatch: TenantAgentConfigPatch = {};
-  if (data.personality_preset !== undefined) {
-    configPatch.personality_preset = data.personality_preset;
+  if (data.role !== undefined) {
+    configPatch.role = data.role || null;
   }
-  if (data.custom_personality !== undefined) {
-    configPatch.custom_personality = data.custom_personality || null;
+  if (data.autonomy_level !== undefined) {
+    configPatch.autonomy_level = data.autonomy_level;
+  }
+  if (data.can_delegate !== undefined) {
+    configPatch.can_delegate = data.can_delegate;
+  }
+  if (data.can_receive_delegation !== undefined) {
+    configPatch.can_receive_delegation = data.can_receive_delegation;
   }
   if (data.discord_channel_id !== undefined) {
     configPatch.discord_channel_id = data.discord_channel_id || null;
@@ -934,23 +993,7 @@ export async function updateTenantRuntimeAgent(
     refreshedTenant as TenantAgentRow
   );
 
-  const mappedUpdated = mapTenantAgentRow(synced);
-
-  // Fire-and-forget: sync predefined cron toggles → scheduled_messages table
-  if (data.cron_jobs !== undefined) {
-    syncPredefinedSchedulesToTable(
-      admin,
-      context.tenantId,
-      context.customerId,
-      mappedUpdated.id,
-      mappedUpdated.discord_channel_id,
-      mappedUpdated.cron_jobs
-    ).catch((err) => {
-      console.error("[update-agent] Schedule sync failed:", safeErrorMessage(err));
-    });
-  }
-
-  return mappedUpdated;
+  return mapTenantAgentRow(synced);
 }
 
 export async function deleteTenantRuntimeAgent(

@@ -7,7 +7,7 @@ import Link from "next/link";
 import {
   ArrowRight,
   Loader2,
-  Wheat,
+  Bot,
   Eye,
   EyeOff,
 } from "lucide-react";
@@ -80,7 +80,7 @@ export default function SignupPage() {
     <div className="bg-bg-card rounded-xl border border-border shadow-sm p-8 w-full max-w-md">
       <div className="text-center mb-8">
         <div className="mx-auto w-12 h-12 rounded-full bg-accent-dim flex items-center justify-center mb-4">
-          <Wheat className="w-6 h-6 text-accent" />
+          <Bot className="w-6 h-6 text-accent" />
         </div>
         <h1 className="font-headline text-3xl font-bold text-text-primary">
           Try Pantheon Free for 14 Days
@@ -103,7 +103,7 @@ export default function SignupPage() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@farm.com"
+            placeholder="you@company.com"
             required
             autoComplete="email"
             className="w-full border border-border focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-lg bg-bg-dark px-4 py-3 text-text-primary placeholder:text-text-dim outline-none transition-colors"
@@ -164,7 +164,7 @@ export default function SignupPage() {
           />
         </div>
 
-        {error && <p className="text-red-500 text-sm">{error}</p>}
+        {error && <p className="text-destructive text-sm">{error}</p>}
 
         <button
           type="submit"

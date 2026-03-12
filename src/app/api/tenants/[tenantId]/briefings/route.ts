@@ -9,6 +9,33 @@ import {
 
 const paramsSchema = z.object({ tenantId: z.uuid() });
 
+/** Map legacy briefing section keys to generic names for existing tenants. */
+function migrateBriefingSections(raw: unknown): {
+  conditions: boolean;
+  external_updates: boolean;
+  activity_recap: boolean;
+} {
+  const defaults = { conditions: true, external_updates: true, activity_recap: false };
+  if (!raw || typeof raw !== "object") return defaults;
+  const obj = raw as Record<string, unknown>;
+
+  // Accept new keys directly
+  if ("conditions" in obj) {
+    return {
+      conditions: obj.conditions !== false,
+      external_updates: obj.external_updates !== false,
+      activity_recap: obj.activity_recap === true,
+    };
+  }
+
+  // Migrate legacy keys
+  return {
+    conditions: obj.weather !== false,
+    external_updates: obj.market_data !== false,
+    activity_recap: obj.ticket_summary === true,
+  };
+}
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ tenantId: string }> }
@@ -56,11 +83,7 @@ export async function GET(
           send_time: metadata.send_time || "06:30",
           timezone: metadata.timezone || "America/Chicago",
           channel_id: data.channel_id || "",
-          sections: metadata.briefing_sections || {
-            weather: true,
-            grain_bids: true,
-            ticket_summary: false,
-          },
+          sections: migrateBriefingSections(metadata.briefing_sections),
         },
         next_run_at: data.next_run_at,
       });

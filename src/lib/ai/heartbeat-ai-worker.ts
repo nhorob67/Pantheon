@@ -93,7 +93,7 @@ export function createHeartbeatAiWorker(admin: SupabaseClient): TenantRuntimeWor
           typeof payload.heartbeat_instructions === "string"
             ? payload.heartbeat_instructions.trim()
             : "";
-        const farmName = typeof payload.farm_name === "string" ? payload.farm_name : "the farm";
+        const teamName = typeof payload.team_name === "string" ? payload.team_name : "the team";
         const testMode = payload.test_mode === true;
         let promptRef: Record<string, unknown> | null = null;
 
@@ -107,10 +107,10 @@ export function createHeartbeatAiWorker(admin: SupabaseClient): TenantRuntimeWor
 
         // Build focused heartbeat prompt — no conversation history
         const systemPrompt = [
-          `You are a proactive farm monitoring assistant for ${farmName}.`,
-          "You periodically check weather, grain markets, scale tickets, and email for items that need the farmer's attention.",
+          `You are a proactive monitoring assistant for ${teamName}.`,
+          "You periodically check for items that need attention and surface actionable information.",
           testMode
-            ? "This run is a synthetic delivery test requested by an operator. Clearly label it as a test and do not imply there is a real farm issue."
+            ? "This run is a synthetic delivery test requested by an operator. Clearly label it as a test and do not imply there is a real issue."
             : "Be direct and practical. This is a check-in, not a conversation.",
           testMode
             ? "Keep the message short and confirm that delivery is working."
@@ -122,7 +122,7 @@ export function createHeartbeatAiWorker(admin: SupabaseClient): TenantRuntimeWor
 
         const userPrompt = [
           testMode
-            ? "This is a synthetic heartbeat delivery test. No live farm issue is being reported."
+            ? "This is a synthetic heartbeat delivery test. No live issue is being reported."
             : "The following items need attention:",
           "",
           ...signalSummaries.map((s) => `- ${s}`),
@@ -133,7 +133,7 @@ export function createHeartbeatAiWorker(admin: SupabaseClient): TenantRuntimeWor
           "Signal details:",
           JSON.stringify(signalData, null, 2),
           "",
-          "Compose a brief, practical alert for the farmer.",
+          "Compose a brief, practical alert for the team.",
         ].join("\n");
         promptRef = {
           system_chars: systemPrompt.length,

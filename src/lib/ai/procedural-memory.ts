@@ -40,13 +40,13 @@ export async function extractBehavioralPatterns(
     model: input.model ?? pantheonFastModel,
     schema: patternSchema,
     temperature: 0.3,
-    system: `You are analyzing a conversation between a farmer and their AI assistant to extract behavioral patterns. Focus on:
-- Routines: regular activities the farmer does (e.g., "checks grain bids every Monday morning")
-- Preferences: stated or implied preferences (e.g., "prefers CHS elevator for corn")
-- Seasonal: seasonal activities or concerns (e.g., "starts planting in late April")
-- Workflows: multi-step processes the farmer follows
+    system: `You are analyzing a conversation between a user and their AI assistant to extract behavioral patterns. Focus on:
+- Routines: regular activities the user does (e.g., "reviews dashboards every Monday morning")
+- Preferences: stated or implied preferences (e.g., "prefers detailed summaries over bullet points")
+- Seasonal: time-based activities or concerns (e.g., "runs quarterly reviews in late March")
+- Workflows: multi-step processes the user follows
 
-Only extract clear, actionable patterns. Do NOT extract generic farming knowledge.
+Only extract clear, actionable patterns. Do NOT extract generic domain knowledge.
 Extract at most 3 patterns per conversation.
 
 Existing known patterns (avoid duplicates):

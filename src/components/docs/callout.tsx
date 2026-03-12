@@ -4,26 +4,26 @@ import type { ReactNode } from "react";
 const VARIANTS = {
   info: {
     icon: Info,
-    bg: "rgba(96, 165, 250, 0.05)",
-    border: "rgba(96, 165, 250, 0.2)",
-    iconColor: "rgb(96, 165, 250)",
+    bg: "rgba(122, 155, 191, 0.05)",
+    border: "rgba(122, 155, 191, 0.2)",
+    iconColor: "#7A9BBF",
   },
   warning: {
     icon: AlertTriangle,
-    bg: "rgba(217, 140, 46, 0.05)",
-    border: "rgba(217, 140, 46, 0.2)",
+    bg: "rgba(196, 136, 63, 0.05)",
+    border: "rgba(196, 136, 63, 0.2)",
     iconColor: "var(--accent)",
   },
   success: {
     icon: CheckCircle,
-    bg: "rgba(90, 138, 60, 0.05)",
-    border: "rgba(90, 138, 60, 0.2)",
+    bg: "rgba(94, 140, 97, 0.05)",
+    border: "rgba(94, 140, 97, 0.2)",
     iconColor: "var(--green-bright)",
   },
   tip: {
     icon: Lightbulb,
-    bg: "rgba(233, 164, 74, 0.05)",
-    border: "rgba(233, 164, 74, 0.2)",
+    bg: "rgba(217, 168, 98, 0.05)",
+    border: "rgba(217, 168, 98, 0.2)",
     iconColor: "var(--accent-light)",
   },
 } as const;

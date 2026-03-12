@@ -35,13 +35,6 @@ export async function GET() {
       spending_alerts_enabled: true,
       spending_alert_email: true,
       spending_alert_dashboard: true,
-      weather_severe_enabled: true,
-      weather_severe_discord: true,
-      price_movement_enabled: true,
-      price_movement_threshold_cents: 10,
-      price_movement_discord: true,
-      ticket_anomaly_enabled: true,
-      ticket_anomaly_discord: true,
     }
   );
 }

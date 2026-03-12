@@ -216,5 +216,5 @@ export function formatKnowledgeForPrompt(chunks: KnowledgeChunkResult[]): string
     return `[${i + 1}]${source} ${c.content}`;
   });
 
-  return `## Reference Information\n\nThe following information is from the farmer's uploaded documents:\n\n${sections.join("\n\n")}`;
+  return `## Reference Information\n\nThe following information is from the team's uploaded documents:\n\n${sections.join("\n\n")}`;
 }

@@ -34,8 +34,8 @@ export function isLiveHeartbeatTriggerMode(mode: HeartbeatTriggerMode): boolean 
   return mode === "scheduled" || mode === "manual_run";
 }
 
-function isUrgentWeatherIssue(issue: Pick<HeartbeatApprovalIssueContext, "signal_type" | "severity">): boolean {
-  return issue.signal_type === "weather_severe" && issue.severity >= 4;
+function isUrgentIssue(issue: Pick<HeartbeatApprovalIssueContext, "signal_type" | "severity">): boolean {
+  return issue.severity >= 4;
 }
 
 export function shouldRequireHeartbeatApproval(input: {
@@ -47,9 +47,9 @@ export function shouldRequireHeartbeatApproval(input: {
   }
 
   const hasCustomChecks = input.issueContexts.some((issue) => issue.signal_type === "custom_checks");
-  const hasUrgentWeather = input.issueContexts.some(isUrgentWeatherIssue);
+  const hasUrgentSignal = input.issueContexts.some(isUrgentIssue);
 
-  return hasCustomChecks && !hasUrgentWeather;
+  return hasCustomChecks && !hasUrgentSignal;
 }
 
 export function isHeartbeatApprovalPayload(value: unknown): value is HeartbeatApprovalRequestPayload {

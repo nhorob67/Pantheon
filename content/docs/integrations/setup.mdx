@@ -16,7 +16,7 @@ This guide walks you through enabling Composio integrations, selecting toolkits,
 Before you can enable integrations, you need:
 
 - An active Pantheon subscription
-- An active workspace (your AI assistant must already be set up)
+- An active workspace (your AI agents must already be set up)
 - Access to the Pantheon dashboard
 
 If your workspace is not yet set up, complete the [onboarding wizard](/docs/getting-started/quick-start) first.
@@ -35,7 +35,7 @@ When you enable Composio, Pantheon performs several setup steps behind the scene
 - Adds the Composio MCP server to your workspace configuration
 
 <Callout variant="info" title="Quick setup">
-Enabling Composio takes just a few seconds. Your assistant gains access to integration tools immediately.
+Enabling Composio takes just a few seconds. Your agents gain access to integration tools immediately.
 </Callout>
 
 This is a one-time setup. Once enabled, adding or removing toolkits and connecting services is instant.
@@ -49,10 +49,10 @@ After enabling Composio, the **Toolkits** section appears below the integration 
 3. Selected toolkits show a green checkmark and highlighted border.
 4. Click **Save Toolkits** when you have made your selections.
 
-Only the actions from your selected toolkits will be available to your assistant.
+Only the actions from your selected toolkits will be available to your agents.
 
 <Callout variant="tip" title="Start with recommended toolkits">
-The **Recommended** tab shows the toolkits most useful for farm operations: Google Sheets, Google Calendar, Gmail, and Slack. These cover the most common integration use cases -- spreadsheet tracking, scheduling, email, and notifications.
+The **Recommended** tab shows the toolkits most useful for common workflows: Google Sheets, Google Calendar, Gmail, and Slack. These cover the most common integration use cases -- spreadsheet tracking, scheduling, email, and notifications.
 </Callout>
 
 ### Changing toolkit selections
@@ -63,7 +63,7 @@ You can add or remove toolkits at any time:
 2. The **Save Toolkits** button becomes active when your selections differ from the saved configuration.
 3. Click **Save Toolkits** to apply changes.
 
-Removing a toolkit does not disconnect the service. If you have Google Sheets connected and you deselect the Google Sheets toolkit, the connection remains intact but the assistant loses the ability to call Google Sheets actions. Re-selecting the toolkit restores access without needing to reconnect.
+Removing a toolkit does not disconnect the service. If you have Google Sheets connected and you deselect the Google Sheets toolkit, the connection remains intact but the agents lose the ability to call Google Sheets actions. Re-selecting the toolkit restores access without needing to reconnect.
 
 ## Step 3: Connect a service
 
@@ -73,7 +73,7 @@ After selecting toolkits, the **Connected Accounts** section shows all selected 
 2. Click the **Connect** button next to it.
 3. A confirmation dialog appears showing:
    - The service name
-   - The specific actions your assistant will have access to
+   - The specific actions your agents will have access to
    - A privacy note about how credentials are handled
 4. Click **Authorize [Service Name]** to proceed.
 
@@ -98,14 +98,14 @@ After connecting, each service shows a status badge:
 
 | Badge | Meaning |
 |---|---|
-| **Connected** (green) | Active connection. Your assistant can use this service. |
+| **Connected** (green) | Active connection. Your agents can use this service. |
 | **Expired** (amber) | Token has expired. Click **Connect** to re-authorize. |
 | **Disconnected** (gray) | Not connected. Click **Connect** to start the OAuth flow. |
 | **Pending** (blue) | OAuth flow in progress. |
 
 ## Step 4: Test the integration
 
-Once a service is connected, test it by sending a message to your assistant in Discord:
+Once a service is connected, test it by sending a message to your agent in Discord:
 
 ### Google Sheets test
 
@@ -125,7 +125,7 @@ Send a test email to myself with the subject "Pantheon Integration Test"
 What events do I have on my calendar this week?
 ```
 
-If the assistant responds with data from the service, your integration is working correctly.
+If the agent responds with data from the service, your integration is working correctly.
 
 ## Disabling Composio
 
@@ -134,7 +134,7 @@ To disable the entire Composio integration:
 1. Navigate to **Settings > Integrations**.
 2. Toggle the Composio switch to **off**.
 3. The Composio MCP server is removed from your workspace configuration.
-4. Your assistant loses access to all integration actions.
+4. Your agents lose access to all integration actions.
 
 <Callout variant="info" title="Connections are preserved">
 Disabling Composio does not disconnect your service accounts. If you re-enable Composio later, your existing connections will still be active. To fully disconnect, remove each service connection before disabling.
@@ -154,7 +154,7 @@ Your browser may be blocking popups. Check your browser's popup blocker settings
 
 OAuth tokens expire periodically. Click **Connect** next to the expired service to re-authorize. The flow is the same as the initial connection.
 
-### Assistant says it cannot access a service
+### Agent says it cannot access a service
 
 Verify that:
 
@@ -163,10 +163,10 @@ Verify that:
 3. The service is connected (green "Connected" badge).
 4. You have saved your toolkit selections since the last change.
 
-If all four conditions are met and the assistant still cannot access the service, click **Refresh** in the Connected Accounts section to sync the latest connection status from Composio.
+If all four conditions are met and the agent still cannot access the service, click **Refresh** in the Connected Accounts section to sync the latest connection status from Composio.
 
 ## What's next
 
-- [Available Toolkits](/docs/integrations/toolkits) -- Full list of services with farming-specific descriptions
+- [Available Toolkits](/docs/integrations/toolkits) -- Full list of services with use-case descriptions
 - [Connecting Services](/docs/integrations/connecting-services) -- Deep dive into the OAuth flow and connection management
 - [Security and Privacy](/docs/integrations/security) -- How credentials are protected

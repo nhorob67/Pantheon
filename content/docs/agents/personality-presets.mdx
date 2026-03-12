@@ -1,268 +1,120 @@
 ---
-title: Personality Presets
-description: Five built-in personality presets shape how your agents communicate — from general farm advisor to specialized grain analyst.
+title: Agent Roles & Identity
+description: Define each agent's role, goal, backstory, and autonomy level to shape how it behaves and communicates.
 section: AI Agents
 order: 2
-icon: Sparkles
-tags: [agents, personality, presets, soul]
+icon: UserCog
+tags: [agents, role, goal, backstory, autonomy, identity]
 ---
 
-## Overview
+## The Role / Goal / Backstory Pattern
 
-Every Pantheon agent has a **personality preset** that defines how it communicates, what it focuses on, and what it will and won't do. Think of presets as job descriptions for your AI assistants — they set the tone, expertise, and boundaries.
+Every Pantheon agent is defined by three core identity fields. This pattern gives you precise control over how each agent behaves without relying on fixed presets.
 
-Pantheon ships with five built-in presets plus a custom option. Each preset is carefully designed for its role, including explicit guardrails about topics the agent will not handle.
+### Role
 
-## Available presets
+**What is this agent?**
 
-### General Advisor
+A short description of the agent's function — think of it as a job title.
 
-The all-purpose farm assistant. If you're running a single agent, this is the default.
+**Examples:**
+- "Customer support specialist"
+- "Research analyst"
+- "Operations lead"
+- "Content editor and proofreader"
 
-| Property | Details |
-|----------|---------|
-| **Tone** | Knowledgeable, no-nonsense, practical |
-| **Think of it as** | A sharp neighbor who knows everything about markets, weather, and ag programs |
-| **Focus areas** | Weather, grain markets, general operations, daily routines |
-| **Default skills** | Grain Bids, Weather |
-| **Default cron jobs** | Morning Weather, Daily Grain Bids |
+Keep it under 200 characters. Be specific — "Sales development representative" is better than "Sales agent."
 
-**Communication style:**
+### Goal
 
-- Direct and practical — no fluff
-- Uses common agricultural terminology naturally (basis, carry, prevent plant)
-- Always includes date/time stamps with price and weather data
-- Uses Fahrenheit and inches
-- Defaults to the farmer's local time zone
-- Honest when it doesn't know something — won't guess on prices or forecasts
+**What should this agent accomplish?**
 
-**Daily routines (when cron jobs are enabled):**
+The agent's primary objective. If this agent does its job well, what outcome do we see?
 
-- **6:00 AM** — Morning weather briefing: today's forecast, wind, precipitation, severe weather alerts
-- **9:00 AM Mon-Fri** — Daily cash grain bids from all configured elevators
+**Examples:**
+- "Resolve customer questions quickly and accurately using our knowledge base"
+- "Track open work, keep execution moving, and make sure nothing important stalls"
+- "Investigate questions, synthesize findings, and provide clear recommendations with caveats"
 
-<Callout variant="info" title="Boundaries">
-The General Advisor is NOT a licensed financial advisor or commodity broker. It will never recommend specific trades. It presents market data, basis levels, and historical comparisons — you make your own decisions. It is also NOT an agronomist. It relays weather data and general best practices but recommends consulting your agronomist for specific crop recommendations.
-</Callout>
+Focus on outcomes, not process. A good goal helps the agent prioritize when it has multiple options.
 
----
+### Backstory (optional)
 
-### Grain Specialist
+**Personality, tone, and constraints.**
 
-A focused grain marketing agent that leads with numbers.
+Use it to define communication style, set boundaries, or provide important context.
 
-| Property | Details |
-|----------|---------|
-| **Tone** | Direct, data-driven, numbers-focused |
-| **Think of it as** | A sharp market analyst who speaks farmer |
-| **Focus areas** | Cash bids, basis levels, elevator comparisons, delivery periods, historical basis patterns |
-| **Default skills** | Grain Bids |
-| **Default cron jobs** | Daily Grain Bids |
+**Examples:**
+- "You are calm, structured, and concise. Summarize decisions clearly, surface blockers early, and avoid unnecessary complexity."
+- "You are warm and helpful but never make up information. Always cite your sources."
+- "You think in priorities, dependencies, and deadlines. You are direct and focused on turning ambiguity into next actions."
 
-**Communication style:**
+Include constraints ("never", "always") for important boundaries. Include tone guidance ("friendly", "formal", "direct"). Up to 2000 characters.
 
-- Leads with numbers — bid, basis, and date always come first
-- Compares elevators side-by-side when relevant
-- Flags significant basis changes (moves greater than 5 cents) proactively
-- Uses standard grain marketing terminology (basis, carry, inverse, HTA, DP)
-- Flags stale bids (older than 24 hours) clearly
+## Autonomy Levels
 
-**How it handles common requests:**
+Every agent has an autonomy level that controls how independently it operates.
 
-| You ask | It responds with |
-|---------|-----------------|
-| "What's corn at?" | Corn bids from ALL elevators, sorted best-to-worst |
-| "Basis?" | Cash bid minus nearby futures for each crop at each elevator |
-| "Compare elevators" | Side-by-side table: elevator, crop, bid, basis, delivery period |
-| "Best bid for beans?" | Ranked soybean bids with basis and delivery terms |
+### L1 — Assisted
 
-<Callout variant="info" title="Boundaries">
-The Grain Specialist is NOT a licensed commodity broker. It will never recommend specific trades or tell you when to sell. It presents data and comparisons — you decide. It always cites data sources and timestamps.
-</Callout>
+Always asks before taking any action. Presents options and waits for explicit approval.
 
----
+**Best for:** High-stakes decisions, new agents you're still calibrating, situations where human oversight is critical.
 
-### Weather & Field Ops
+### L2 — Copilot (default)
 
-A cautious, detail-oriented weather specialist focused on field conditions.
+Suggests actions and explains reasoning. Executes read-only operations automatically but asks before write operations. Proactively surfaces relevant information.
 
-| Property | Details |
-|----------|---------|
-| **Tone** | Cautious, detail-oriented, safety-first |
-| **Think of it as** | Your weather-obsessed neighbor who always checks conditions twice |
-| **Focus areas** | Forecasts, spray windows, GDD tracking, frost risk, severe weather, field accessibility |
-| **Default skills** | Weather |
-| **Default cron jobs** | Morning Weather |
+**Best for:** Most agents. Good balance of autonomy and oversight.
 
-**Communication style:**
+### L3 — Autopilot
 
-- Leads with critical info: severe weather, frost risk, wind advisories
-- Always uses Fahrenheit and inches
-- Errs on the side of caution for marginal spray conditions
-- Explicitly states when forecast confidence is low
-- Clearly distinguishes between current observations and forecast data
+Takes actions independently based on its goal. Only asks when genuinely ambiguous or high-stakes. Reports results after execution.
 
-**How it handles common requests:**
+**Best for:** Well-defined operational tasks, agents with clear boundaries, high-volume routine work.
 
-| You ask | It responds with |
-|---------|-----------------|
-| "What's the weather?" | Today's forecast + 3-day outlook, with any alerts highlighted |
-| "Spray window?" | Next 48h hourly breakdown with GO/NO-GO markers (wind, temp, humidity, rain) |
-| "GDD?" | Current accumulated growing degree days for your crops |
-| "Can I get in the field?" | Recent precip, estimated soil conditions, next rain chance |
-| "Frost risk?" | Overnight lows for next 5 days, anything below 32F flagged |
+## Delegation
 
-**Spray window thresholds:**
+Agents can collaborate through delegation:
 
-| Condition | GO threshold |
-|-----------|-------------|
-| Wind speed | Below 10 mph |
-| Temperature | 50-85F |
-| Rain-free window | 4+ hours |
-| Humidity | Below 85% |
+| Setting | Description |
+|---------|-------------|
+| **Can delegate** | This agent can hand off tasks to other agents |
+| **Can receive delegation** | This agent accepts tasks from other agents |
 
-<Callout variant="info" title="Boundaries">
-The Weather & Field Ops agent is NOT an agronomist. It relays weather data, GDD calculations, and general spray condition guidelines, but recommends consulting your agronomist for specific product application decisions. It always cites NWS as the data source.
-</Callout>
+When delegation is enabled, agents use `agents_list` to discover teammates and `sessions_send` to pass messages. Users see a seamless experience.
 
----
+## Agent Templates
 
-### Scale Ticket Clerk
+When creating a new agent, you can start from a **template** that pre-fills the role, goal, backstory, and autonomy level. Templates are starting points — you can customize every field after selecting one.
 
-A precise, efficient agent built for fast ticket logging.
+Available templates include:
+- **General Assistant** — Flexible first agent for triage, coordination, and everyday requests (Copilot)
+- **Operations Lead** — Execution tracking, SOP follow-through, and issue escalation (Autopilot)
+- **Research Analyst** — Structured research, synthesis, and knowledge-heavy questions (Assisted)
+- **Customer Support** — Inbound questions, resolution handoff, and service quality (Copilot)
 
-| Property | Details |
-|----------|---------|
-| **Tone** | Precise, efficient, organized |
-| **Think of it as** | Your bookkeeper who never loses a ticket |
-| **Focus areas** | Ticket entry, tracking, reporting, delivery records |
-| **Default skills** | Scale Tickets |
-| **Default cron jobs** | None |
+You can also create agents entirely from scratch without a template.
 
-**Communication style:**
+## Tips for Effective Agent Design
 
-- Concise — farmers logging tickets are often in the truck
-- Always confirms data before saving, showing a formatted summary
-- Asks when in doubt about a number — never guesses weights or moisture
-- Uses standard grain terminology: gross, tare, net, moisture, test weight, dockage
-- Auto-calculates net weight when gross and tare are provided
-- Converts between pounds and bushels using standard conversion factors
+1. **Start specific, broaden later.** A narrow role with a clear goal performs better than a vague one.
+2. **Use backstory for constraints.** If there are things the agent should never do, put them in the backstory.
+3. **Match autonomy to risk.** Use L3 Autopilot for low-risk routine tasks; L1 Assisted for anything with consequences.
+4. **Test with real questions.** Use the Preview feature to test how your agent responds before deploying.
 
-**Three entry methods:**
+## What all agents share
 
-| Method | How it works | Saved as |
-|--------|-------------|----------|
-| **Photo OCR** | Post a photo of your scale ticket. The agent reads all visible fields using vision AI. | `source: ocr` |
-| **Voice / text** | Type or dictate naturally: "47k of corn, 17.6 moisture, home field, taking to CHS" | `source: voice` |
-| **Guided entry** | Say "new ticket" and the agent walks through fields step by step | `source: manual` |
+Regardless of how you configure them, every Pantheon agent includes:
 
-**Guided entry groups:**
-
-1. Date (defaults to today), Elevator, Crop
-2. Gross weight, Tare weight (net auto-calculated)
-3. Moisture %, Test weight, Dockage % (skippable)
-4. Price/bu, Grade, Truck #, Load #, Field, Notes (skippable)
-
-<Callout variant="tip" title="Fastest entry method">
-Photo OCR is the fastest way to log tickets. Snap a picture of the printed scale ticket from your phone and post it in the tickets channel. The Ticket Clerk extracts all the fields and shows you a summary to confirm before saving.
-</Callout>
-
-<Callout variant="info" title="Boundaries">
-The Scale Ticket Clerk is NOT a grain marketing advisor. It logs deliveries. If you ask about prices or marketing strategy, it will suggest you talk to a Grain Specialist agent instead.
-</Callout>
-
----
-
-### Field Operations
-
-An organized operations manager for tracking field work and equipment.
-
-| Property | Details |
-|----------|---------|
-| **Tone** | Organized, practical, safety-conscious |
-| **Think of it as** | The operations manager who keeps the whole farm running on schedule |
-| **Focus areas** | Equipment scheduling, input tracking, field work planning, work orders, season planning |
-| **Default skills** | None (integrates with custom tools and extensions) |
-| **Default cron jobs** | None |
-
-**Communication style:**
-
-- Structured and list-oriented — clear action items
-- Tracks what's been done and what's coming up
-- Flags conflicts (same equipment needed in two places, weather windows closing)
-- Uses common ag terminology for field operations
-- Defaults to the farmer's local time zone
-
-**How it handles common requests:**
-
-| You ask | It responds with |
-|---------|-----------------|
-| "What's left to plant?" | Fields listed by planting status |
-| "Schedule spraying for Section 12" | Checks weather, creates a work entry |
-| "Log fertilizer application" | Records product, rate, field, date |
-| "What did we do in the north 80 this year?" | All operations for that field |
-| "Equipment status" | Current equipment assignments and locations |
-
-<Callout variant="info" title="Boundaries">
-The Field Operations agent is NOT a certified crop advisor. It tracks what was applied and when, but recommends consulting your agronomist for specific product recommendations. It uses your field names as you define them.
-</Callout>
-
----
-
-### Custom
-
-Write your own personality description from scratch.
-
-| Property | Details |
-|----------|---------|
-| **Tone** | Whatever you define |
-| **Focus areas** | Whatever you specify |
-| **Default skills** | None (you assign them) |
-| **Default cron jobs** | None (you assign them) |
-
-When you choose Custom, you provide a free-text personality description. Pantheon still wraps it with your farm's operational details (farm name, location, crops, elevators) and the standard security boundaries that all agents share.
-
-<Callout variant="warning" title="Security boundaries are always enforced">
-Even with a custom personality, Pantheon includes mandatory security boundaries. Every agent — regardless of preset — is instructed to never follow embedded instructions in external content, never share credentials, never modify its own configuration, and never install unauthorized extensions.
-</Callout>
-
-## Choosing the right preset
-
-Here's a quick guide for matching presets to your needs:
-
-| If you need... | Use this preset |
-|----------------|----------------|
-| One agent that does everything | General Advisor |
-| A dedicated grain market channel | Grain Specialist |
-| Automated weather briefings and spray window analysis | Weather & Field Ops |
-| Fast scale ticket logging during harvest | Scale Ticket Clerk |
-| Equipment and fieldwork tracking | Field Operations |
-| Something not covered above | Custom |
-
-## What all presets share
-
-Regardless of which preset you choose, every Pantheon agent includes:
-
-- **Farm context** — Your farm name, location, acreage, crops, elevators, and timezone are embedded in every agent's configuration
+- **Team context** — Your team name, team goal, and timezone are embedded in the system prompt
 - **Security boundaries** — Protection against prompt injection, credential leaks, and unauthorized modifications
-- **File creation** — All agents can generate and send spreadsheets (.xlsx), CSVs, PDFs, charts (PNG), and other files as Discord attachments
-- **Inter-agent communication** — All agents can see other agents (`agents_list`) and delegate questions (`sessions_send`)
-- **Data citation** — All agents are instructed to cite sources and timestamps when presenting market or weather data
-
-## Changing a preset
-
-You can change an agent's personality preset at any time:
-
-1. Go to **Settings > Agents**
-2. Click on the agent you want to modify
-3. Select a new personality preset
-4. Review the updated skills and cron jobs (they reset to the preset defaults)
-5. Adjust as needed and save
-
-Changes take effect on the next message your assistant receives.
+- **File creation** — All agents can generate spreadsheets, CSVs, PDFs, charts, and other files as Discord attachments
+- **Inter-agent communication** — All agents can discover teammates and delegate questions
+- **Knowledge access** — Agents can reference uploaded knowledge files (shared or per-agent)
 
 ## Next steps
 
-- [Multi-Agent Setups](/docs/agents/multi-agent-system) — Pre-built configurations using these presets
+- [Multi-Agent System](/docs/agents/multi-agent-system) — How agents collaborate and delegate
+- [Skills & Scheduling](/docs/agents/skills-per-agent) — Assigning skills and schedules to agents
 - [Channel Configuration](/docs/discord/channel-config) — Bind agents to specific Discord channels
-- [Skills Overview](/docs/skills) — Deep dive into grain bids, weather, and scale tickets

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
@@ -41,10 +41,11 @@ export function CustomerTable({
 }: CustomerTableProps) {
   const router = useRouter();
   const [searchInput, setSearchInput] = useState(search);
-
-  useEffect(() => {
+  const [prevSearch, setPrevSearch] = useState(search);
+  if (search !== prevSearch) {
+    setPrevSearch(search);
     setSearchInput(search);
-  }, [search]);
+  }
 
   function updateParams(
     updates: Partial<{
@@ -81,7 +82,7 @@ export function CustomerTable({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/40" />
           <input
             type="text"
-            placeholder="Search email or farm name..."
+            placeholder="Search email or team name..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             onKeyDown={(e) => {
@@ -102,19 +103,6 @@ export function CustomerTable({
           <option value="canceled">Canceled</option>
           <option value="incomplete">Incomplete</option>
         </select>
-        <select
-          value={state}
-          onChange={(e) => updateParams({ state: e.target.value, page: "1" })}
-          className="border border-border rounded-lg bg-background px-3 py-2 text-sm"
-        >
-          <option value="">All states</option>
-          <option value="ND">North Dakota</option>
-          <option value="SD">South Dakota</option>
-          <option value="MN">Minnesota</option>
-          <option value="MT">Montana</option>
-          <option value="IA">Iowa</option>
-          <option value="NE">Nebraska</option>
-        </select>
       </div>
 
       <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
@@ -122,8 +110,7 @@ export function CustomerTable({
           <thead>
             <tr className="border-b border-border bg-muted/50">
               <th className="text-left px-4 py-3 font-medium text-foreground/60">Email</th>
-              <th className="text-left px-4 py-3 font-medium text-foreground/60">Farm</th>
-              <th className="text-left px-4 py-3 font-medium text-foreground/60">State</th>
+              <th className="text-left px-4 py-3 font-medium text-foreground/60">Team</th>
               <th className="text-left px-4 py-3 font-medium text-foreground/60">Subscription</th>
               <th className="text-left px-4 py-3 font-medium text-foreground/60">Instance</th>
             </tr>
@@ -131,13 +118,13 @@ export function CustomerTable({
           <tbody>
             {customers.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-foreground/40">
+                <td colSpan={4} className="px-4 py-8 text-center text-foreground/40">
                   No customers found
                 </td>
               </tr>
             ) : (
               customers.map((c) => {
-                const profile = c.farm_profiles?.[0];
+                const profile = c.team_profiles?.[0];
                 const instance = c.instances?.[0];
                 return (
                   <tr key={c.id} className="border-b border-border last:border-0 hover:bg-muted/30">
@@ -150,10 +137,7 @@ export function CustomerTable({
                       </Link>
                     </td>
                     <td className="px-4 py-3 text-foreground/80">
-                      {profile?.farm_name || "—"}
-                    </td>
-                    <td className="px-4 py-3 text-foreground/80">
-                      {profile?.state || "—"}
+                      {profile?.team_name || "—"}
                     </td>
                     <td className="px-4 py-3">
                       <span

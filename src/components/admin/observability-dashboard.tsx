@@ -67,7 +67,7 @@ export function ObservabilityDashboard({
           </div>
           <div className="rounded-lg border border-border px-3 py-2">
             <p className="text-xs text-foreground/60">Failed</p>
-            <p className="text-xl font-semibold text-red-500">
+            <p className="text-xl font-semibold text-destructive">
               {snapshot.runs_last_hour.failed}
             </p>
           </div>
@@ -93,7 +93,7 @@ export function ObservabilityDashboard({
                   <span className="font-mono text-foreground/80">
                     {t.tenant_id.slice(0, 8)}...
                   </span>
-                  <span className="text-red-500 font-medium">
+                  <span className="text-destructive font-medium">
                     {t.error_count} errors
                   </span>
                 </li>
@@ -145,7 +145,7 @@ function StatCard({
     <div
       className={`rounded-xl border shadow-sm p-4 ${
         alert
-          ? "border-red-500/30 bg-red-500/5"
+          ? "border-destructive/30 bg-destructive/5"
           : "border-border bg-card"
       }`}
     >
@@ -154,7 +154,7 @@ function StatCard({
       </p>
       <p
         className={`text-2xl font-bold mt-1 ${
-          alert ? "text-red-500" : "text-foreground"
+          alert ? "text-destructive" : "text-foreground"
         }`}
       >
         {value}

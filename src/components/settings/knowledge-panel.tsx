@@ -142,7 +142,7 @@ function KnowledgeFileCard({
               type="button"
               disabled={deleting}
               onClick={() => onDelete(file.id)}
-              className="w-full text-left px-3 py-1.5 text-xs text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              className="w-full text-left px-3 py-1.5 text-xs text-destructive hover:bg-destructive/10 transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50"
             >
               <Trash2 className="w-3 h-3" />
               {deleting ? "Removing..." : "Delete"}
@@ -181,8 +181,8 @@ export function KnowledgePanel({
           Knowledge Files
         </h3>
         <p className="text-foreground/60 text-sm">
-          Upload reference documents your agents can search — crop plans,
-          contracts, soil tests, equipment manuals.
+          Upload reference documents your agents can search — project plans,
+          contracts, reference guides, and manuals.
         </p>
       </div>
 
@@ -285,13 +285,13 @@ export function KnowledgePanel({
             .map((file) => (
               <div
                 key={file.id}
-                className="bg-card rounded-xl border border-red-500/20 p-3 flex items-center justify-between gap-3"
+                className="bg-card rounded-xl border border-destructive/20 p-3 flex items-center justify-between gap-3"
               >
                 <div className="min-w-0">
                   <p className="text-sm text-foreground/70 truncate">
                     {file.file_name}
                   </p>
-                  <p className="text-xs text-red-400">
+                  <p className="text-xs text-destructive">
                     {file.error_message || "Parsing failed"}
                   </p>
                 </div>
@@ -317,7 +317,7 @@ export function KnowledgePanel({
       )}
 
       {km.error && (
-        <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+        <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {km.error}
         </div>
       )}

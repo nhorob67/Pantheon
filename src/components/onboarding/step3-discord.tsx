@@ -1,6 +1,6 @@
 "use client";
 
-import { useOnboardingOperation, useOnboardingLocation, useOnboardingDiscord, useOnboardingActions } from "@/hooks/use-onboarding";
+import { useOnboardingTeam, useOnboardingAgent, useOnboardingDiscord, useOnboardingActions } from "@/hooks/use-onboarding";
 import { DiscordServerMockup } from "./discord-server-mockup";
 import {
   MessageSquare,
@@ -18,8 +18,8 @@ import { useRouter } from "next/navigation";
 import { m } from "motion/react";
 
 export function Step3Discord() {
-  const operation = useOnboardingOperation();
-  const location = useOnboardingLocation();
+  const team = useOnboardingTeam();
+  const agent = useOnboardingAgent();
   const discord = useOnboardingDiscord();
   const { setDiscord, setCurrentStep } = useOnboardingActions();
   const router = useRouter();
@@ -60,19 +60,17 @@ export function Step3Discord() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          farm_profile: {
-            farm_name: operation.operation_name,
-            country: operation.country ?? "US",
-            state: operation.state,
-            county: operation.county || undefined,
-            business_type: operation.business_type || undefined,
-            primary_crops: [],
-            acres: null,
-            elevators: [],
-            weather_location: location.weather_location,
-            weather_lat: location.weather_lat,
-            weather_lng: location.weather_lng,
-            timezone: location.timezone,
+          team_profile: {
+            team_name: team.team_name,
+            team_goal: team.team_goal,
+            timezone: team.timezone,
+          },
+          first_agent: {
+            display_name: agent.display_name,
+            role: agent.role,
+            goal: agent.goal,
+            backstory: agent.backstory || undefined,
+            autonomy_level: agent.autonomy_level,
           },
           discord_guild_id: guildId || undefined,
         }),
@@ -89,7 +87,6 @@ export function Step3Discord() {
         setDiscord({ discord_guild_id: guildId, skipped: false });
       }
 
-      // Redirect to dashboard with celebration param
       router.push("/dashboard?welcome=true");
     } catch (err) {
       setLaunchError(
@@ -113,13 +110,13 @@ export function Step3Discord() {
         transition={{ delay: 0.1 }}
       >
         <div className="flex items-center gap-3 mb-2">
-          <MessageSquare className="w-5 h-5 text-[#5865F2]" />
-          <h2 className="font-headline text-2xl font-bold text-[var(--text-primary)]">
+          <MessageSquare className="w-5 h-5 text-discord" />
+          <h2 className="font-headline text-2xl font-bold text-text-primary">
             Connect Discord
           </h2>
         </div>
-        <p className="text-sm text-[var(--text-secondary)]">
-          Pantheon lives in your Discord server. Connect now or set up later.
+        <p className="text-sm text-text-secondary">
+          Your agents will live in your Discord server. Connect now or set up later.
         </p>
       </m.div>
 
@@ -131,7 +128,7 @@ export function Step3Discord() {
         className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-start"
       >
         <DiscordServerMockup
-          operationName={operation.operation_name ?? "Your Operation"}
+          teamName={team.team_name ?? "Your Team"}
         />
 
         <div className="space-y-3">
@@ -144,7 +141,7 @@ export function Step3Discord() {
             {
               icon: Archive,
               label: "Organized channels",
-              desc: "Separate channels for weather, bids, and more",
+              desc: "Separate channels per agent or topic",
             },
             {
               icon: Users,
@@ -154,14 +151,14 @@ export function Step3Discord() {
           ].map((b) => (
             <div
               key={b.label}
-              className="flex items-start gap-3 p-3 rounded-lg bg-[var(--bg-card)] border border-[var(--border)]"
+              className="flex items-start gap-3 p-3 rounded-lg bg-bg-card border border-border"
             >
-              <b.icon className="w-4 h-4 text-[#5865F2] mt-0.5 shrink-0" />
+              <b.icon className="w-4 h-4 text-discord mt-0.5 shrink-0" />
               <div>
-                <p className="text-sm font-medium text-[var(--text-primary)]">
+                <p className="text-sm font-medium text-text-primary">
                   {b.label}
                 </p>
-                <p className="text-xs text-[var(--text-dim)]">{b.desc}</p>
+                <p className="text-xs text-text-dim">{b.desc}</p>
               </div>
             </div>
           ))}
@@ -180,13 +177,13 @@ export function Step3Discord() {
             href={oauthUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-xl bg-[#5865F2] hover:bg-[#4752C4] text-white font-semibold text-sm transition-all hover:shadow-[0_4px_20px_rgba(88,101,242,0.3)]"
+            className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-xl bg-discord hover:bg-[#4752C4] text-white font-semibold text-sm transition-all hover:shadow-[0_4px_20px_rgba(88,101,242,0.3)]"
           >
             Add Pantheon to Discord
             <ExternalLink className="w-4 h-4" />
           </a>
         ) : (
-          <p className="text-center text-sm text-[var(--text-dim)] py-3">
+          <p className="text-center text-sm text-text-dim py-3">
             Discord OAuth not configured. Use manual Server ID entry below.
           </p>
         )}
@@ -196,7 +193,7 @@ export function Step3Discord() {
           <button
             type="button"
             onClick={() => setShowManual(!showManual)}
-            className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+            className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors"
           >
             <ChevronDown
               className={`w-4 h-4 transition-transform ${showManual ? "rotate-180" : ""}`}
@@ -218,13 +215,13 @@ export function Step3Discord() {
                     setServerIdError(null);
                   }}
                   placeholder="e.g. 1234567890123456789"
-                  className="flex-1 bg-[var(--bg-card)] border border-[var(--border)] focus:border-[#5865F2] focus:ring-2 focus:ring-[rgba(88,101,242,0.2)] rounded-xl px-4 py-3 text-[var(--text-primary)] placeholder:text-[var(--text-dim)] outline-none transition-all font-mono text-sm"
+                  className="flex-1 bg-bg-card border border-border focus:border-discord focus:ring-2 focus:ring-discord-dim rounded-xl px-4 py-3 text-text-primary placeholder:text-text-dim outline-none transition-all font-mono text-sm"
                 />
                 <button
                   type="button"
                   onClick={handleManualLaunch}
                   disabled={launching}
-                  className="px-5 py-3 rounded-xl font-semibold text-sm bg-gradient-to-r from-[var(--accent)] to-[var(--accent-light)] text-[var(--bg-deep)] hover:shadow-[0_4px_20px_rgba(217,140,46,0.3)] transition-all flex items-center gap-2 disabled:opacity-50"
+                  className="px-5 py-3 rounded-xl font-semibold text-sm bg-gradient-to-r from-accent to-accent-light text-bg-deep hover:shadow-[0_4px_20px_rgba(196,136,63,0.3)] transition-all flex items-center gap-2 disabled:opacity-50"
                 >
                   {launching ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -235,12 +232,12 @@ export function Step3Discord() {
                 </button>
               </div>
               {serverIdError && (
-                <p className="text-red-400 text-xs">{serverIdError}</p>
+                <p className="text-destructive text-xs">{serverIdError}</p>
               )}
 
               {/* How to find Server ID */}
-              <div className="text-xs text-[var(--text-dim)] space-y-1 bg-[var(--bg-card)] p-3 rounded-lg border border-[var(--border)]">
-                <p className="font-medium text-[var(--text-secondary)]">
+              <div className="text-xs text-text-dim space-y-1 bg-bg-card p-3 rounded-lg border border-border">
+                <p className="font-medium text-text-secondary">
                   How to find your Server ID:
                 </p>
                 <ol className="list-decimal pl-4 space-y-0.5">
@@ -263,7 +260,7 @@ export function Step3Discord() {
         <button
           type="button"
           onClick={() => setShowGuide(!showGuide)}
-          className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+          className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors"
         >
           <ChevronDown
             className={`w-4 h-4 transition-transform ${showGuide ? "rotate-180" : ""}`}
@@ -275,7 +272,7 @@ export function Step3Discord() {
           <m.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
-            className="mt-3 space-y-2 bg-[var(--bg-card)] p-4 rounded-xl border border-[var(--border)] text-sm text-[var(--text-secondary)]"
+            className="mt-3 space-y-2 bg-bg-card p-4 rounded-xl border border-border text-sm text-text-secondary"
           >
             <ol className="list-decimal pl-4 space-y-2">
               <li>
@@ -284,13 +281,13 @@ export function Step3Discord() {
                   href="https://discord.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[#5865F2] hover:underline"
+                  className="text-discord hover:underline"
                 >
                   discord.com
                 </a>
               </li>
               <li>Create a free account</li>
-              <li>Create a server for your operation</li>
+              <li>Create a server for your team</li>
               <li>Come back here and click &quot;Add Pantheon to Discord&quot;</li>
             </ol>
           </m.div>
@@ -298,7 +295,7 @@ export function Step3Discord() {
       </m.div>
 
       {launchError && (
-        <p className="text-red-400 text-sm text-center">{launchError}</p>
+        <p className="text-destructive text-sm text-center">{launchError}</p>
       )}
 
       {/* Navigation */}
@@ -308,26 +305,26 @@ export function Step3Discord() {
         transition={{ delay: 0.3 }}
         className="flex flex-col gap-3 pt-2"
       >
-        {/* Skip option */}
+        {/* Launch button */}
         <button
           type="button"
           onClick={() => handleLaunch(undefined, true)}
           disabled={launching}
-          className="w-full bg-gradient-to-r from-[var(--accent)] to-[var(--accent-light)] text-[var(--bg-deep)] font-semibold py-3.5 rounded-full flex items-center justify-center gap-2 transition-all hover:shadow-[0_4px_20px_rgba(217,140,46,0.3)] hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50"
+          className="w-full bg-gradient-to-r from-accent to-accent-light text-bg-deep font-semibold py-3.5 rounded-full flex items-center justify-center gap-2 transition-all hover:shadow-[0_4px_20px_rgba(196,136,63,0.3)] hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50"
         >
           {launching ? (
             <Loader2 className="w-4 h-4 animate-spin" />
           ) : (
             <Rocket className="w-4 h-4" />
           )}
-          Launch Pantheon
+          Launch Team
         </button>
 
         <div className="flex items-center justify-between">
           <button
             type="button"
             onClick={() => setCurrentStep(1)}
-            className="px-6 py-3 rounded-full border border-[var(--border)] text-[var(--text-secondary)] font-medium hover:border-[var(--border-light)] hover:text-[var(--text-primary)] transition-all flex items-center gap-2"
+            className="px-6 py-3 rounded-full border border-border text-text-secondary font-medium hover:border-border-light hover:text-text-primary transition-all flex items-center gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
             Back
@@ -336,7 +333,7 @@ export function Step3Discord() {
             type="button"
             onClick={() => handleLaunch(undefined, true)}
             disabled={launching}
-            className="text-sm text-[var(--text-dim)] hover:text-[var(--text-secondary)] transition-colors disabled:opacity-50"
+            className="text-sm text-text-dim hover:text-text-secondary transition-colors disabled:opacity-50"
           >
             I&apos;ll set up Discord later
           </button>

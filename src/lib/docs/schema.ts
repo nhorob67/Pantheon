@@ -30,7 +30,6 @@ export interface NavItem {
 
 export const SECTION_ORDER = [
   "Getting Started",
-  "Farm Setup",
   "Discord Integration",
   "AI Agents",
   "Tools",

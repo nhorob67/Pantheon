@@ -193,7 +193,7 @@ export async function POST(
           requestTraceId,
           now,
           signalSummaries: [
-            `Synthetic heartbeat delivery test for the ${scopeLabel}. No live farm issue is being reported.`,
+            `Synthetic heartbeat delivery test for the ${scopeLabel}. No live issue is being reported.`,
           ],
           signalData: {
             synthetic_test: {
@@ -211,7 +211,7 @@ export async function POST(
               severity: 1,
               state: "new",
               summary:
-                "Synthetic heartbeat delivery test requested by an operator. This is not a live farm issue.",
+                "Synthetic heartbeat delivery test requested by an operator. This is not a live issue.",
               first_seen_at: nowIso,
               last_notified_at: null,
               snoozed_until: null,

@@ -1,6 +1,6 @@
 ---
 title: MCP Servers
-description: Model Context Protocol servers let you extend your AI assistant with custom tools and data access beyond the built-in farm tools.
+description: Model Context Protocol servers let you extend your AI agents with custom tools and data access beyond the built-in platform tools.
 section: MCP Servers
 order: 0
 icon: Server
@@ -9,23 +9,23 @@ tags: [mcp, servers, overview]
 
 # MCP Servers
 
-Model Context Protocol (MCP) servers let you extend your AI assistant with custom tools and data access beyond the built-in farm tools. MCP servers are for advanced or custom tooling -- the core farm capabilities (scale tickets, grain bids, weather, and memory) are handled natively by the Pantheon tenant runtime and do not require any MCP configuration.
+Model Context Protocol (MCP) servers let you extend your AI agents with custom tools and data access beyond the built-in platform tools. MCP servers are for advanced or custom tooling -- the core capabilities (memory, knowledge files, email, and custom skills) are handled natively by the Pantheon tenant runtime and do not require any MCP configuration.
 
 ## What is MCP?
 
-MCP is an open protocol that lets AI assistants connect to external tool servers using a standardized interface. Instead of building every tool directly into the AI model, MCP servers expose capabilities that the assistant can call on demand. This makes it possible to integrate specialized or third-party tools without modifying the core assistant.
+MCP is an open protocol that lets AI agents connect to external tool servers using a standardized interface. Instead of building every tool directly into the AI model, MCP servers expose capabilities that the agent can call on demand. This makes it possible to integrate specialized or third-party tools without modifying the core agent.
 
-When your assistant needs to use a custom tool provided by an MCP server, it sends a request to that server. The server processes the request and returns the result, which the assistant then uses to answer your question.
+When your agent needs to use a custom tool provided by an MCP server, it sends a request to that server. The server processes the request and returns the result, which the agent then uses to answer your question.
 
 <Callout variant="info" title="Built-in tools don't need MCP">
-Scale tickets, grain bids, weather forecasts, and memory are all built into the Pantheon platform. They work out of the box with no MCP server setup. MCP servers are only needed if you want to add custom or third-party tools.
+Memory, knowledge files, email, and custom skills are all built into the Pantheon platform. They work out of the box with no MCP server setup. MCP servers are only needed if you want to add custom or third-party tools.
 </Callout>
 
 ## When to use MCP servers
 
-MCP servers are useful when you need your assistant to access tools or data sources that are not covered by the built-in farm skills. Examples include:
+MCP servers are useful when you need your agents to access tools or data sources that are not covered by the built-in platform tools. Examples include:
 
-- A custom internal API for your farm management software
+- A custom internal API for your business software
 - A specialized data source or database
 - Third-party tool servers published by the MCP community
 - Filesystem access for saving and reading custom files
@@ -60,7 +60,7 @@ The `server_key` cannot be changed after creation. If you need a different key, 
 
 MCP servers are defined at the workspace level by default, meaning every agent in a multi-agent setup can use them. You can also scope a server to a specific agent if you want to restrict access.
 
-Each server is identified by a unique `server_key`. The key is used internally to reference the server in the assistant's configuration.
+Each server is identified by a unique `server_key`. The key is used internally to reference the server in the agent's configuration.
 
 ## What's next
 

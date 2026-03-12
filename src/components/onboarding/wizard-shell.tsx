@@ -1,14 +1,14 @@
 "use client";
 
 import { useOnboardingStep } from "@/hooks/use-onboarding";
-import { Building2, MapPin, MessageSquare, Check } from "lucide-react";
+import { Users, Bot, MessageSquare, Check } from "lucide-react";
 import { AnimatePresence, LazyMotion, domAnimation, m } from "motion/react";
 import { OnboardingBackground } from "./onboarding-background";
 
 const STEPS = [
-  { num: 0, label: "Operation", icon: Building2, accent: "var(--accent)" },
-  { num: 1, label: "Weather", icon: MapPin, accent: "var(--green-bright)" },
-  { num: 2, label: "Discord", icon: MessageSquare, accent: "#5865F2" },
+  { num: 0, label: "Team", icon: Users, accent: "var(--accent)" },
+  { num: 1, label: "Agent", icon: Bot, accent: "var(--accent)" },
+  { num: 2, label: "Discord", icon: MessageSquare, accent: "var(--discord)" },
 ];
 
 interface WizardShellProps {
@@ -37,10 +37,10 @@ export function WizardShell({ children }: WizardShellProps) {
                   <div
                     className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 ${
                       isCompleted
-                        ? "bg-[var(--green-bright)] text-white"
+                        ? "bg-green-bright text-white"
                         : isActive
-                          ? "border-2 shadow-[0_0_12px_rgba(217,140,46,0.3)]"
-                          : "border border-[var(--border)] text-[var(--text-dim)]"
+                          ? "border-2 shadow-[0_0_12px_rgba(196,136,63,0.3)]"
+                          : "border border-border text-text-dim"
                     }`}
                     style={
                       isActive
@@ -61,10 +61,10 @@ export function WizardShell({ children }: WizardShellProps) {
                   <span
                     className={`text-xs font-medium hidden sm:block transition-colors ${
                       isActive
-                        ? "text-[var(--text-primary)]"
+                        ? "text-text-primary"
                         : isCompleted
-                          ? "text-[var(--green-bright)]"
-                          : "text-[var(--text-dim)]"
+                          ? "text-green-bright"
+                          : "text-text-dim"
                     }`}
                   >
                     {step.label}
@@ -72,9 +72,9 @@ export function WizardShell({ children }: WizardShellProps) {
                 </div>
 
                 {i < STEPS.length - 1 && (
-                  <div className="flex-1 mx-3 h-0.5 rounded-full overflow-hidden bg-[var(--border)]">
+                  <div className="flex-1 mx-3 h-0.5 rounded-full overflow-hidden bg-border">
                     <div
-                      className="h-full rounded-full transition-all duration-500 bg-[var(--green-bright)]"
+                      className="h-full rounded-full transition-all duration-500 bg-green-bright"
                       style={{ width: isCompleted ? "100%" : "0%" }}
                     />
                   </div>

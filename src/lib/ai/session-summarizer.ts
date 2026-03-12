@@ -95,7 +95,7 @@ export async function maybeGenerateSummary(input: SummarizeInput): Promise<void>
   const transcript = messages
     .filter((m) => m.content_text)
     .map((m) => {
-      const role = m.direction === "inbound" ? "Farmer" : "Assistant";
+      const role = m.direction === "inbound" ? "User" : "Assistant";
       return `${role}: ${m.content_text}`;
     })
     .join("\n");
@@ -107,7 +107,7 @@ export async function maybeGenerateSummary(input: SummarizeInput): Promise<void>
     maxOutputTokens: MAX_OUTPUT_TOKENS,
     temperature: 0.3,
     system:
-      "You are summarizing a conversation between a farmer and their AI farm assistant. Extract a concise summary and up to 5 durable facts.",
+      "You are summarizing a conversation between a user and their AI agent. Extract a concise summary and up to 5 durable facts.",
     prompt: transcript,
   });
 

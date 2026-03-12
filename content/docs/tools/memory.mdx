@@ -1,6 +1,6 @@
 ---
 title: Memory Vault
-description: Persistent memory across conversations -- your assistant remembers important facts, preferences, and context.
+description: Persistent memory across conversations -- your agents remember important facts, preferences, and context.
 section: Tools
 order: 6
 icon: Brain
@@ -9,28 +9,28 @@ tags: [memory, vault, persistence, context]
 
 # Memory Vault
 
-The Memory Vault gives your assistant persistent memory across conversations. Important facts, preferences, and context are stored and automatically recalled when relevant -- so your assistant doesn't forget what you told it yesterday.
+The Memory Vault gives your agents persistent memory across conversations. Important facts, preferences, and context are stored and automatically recalled when relevant -- so your agents don't forget what you told them yesterday.
 
 ## How it works
 
-During conversations, your assistant stores observations in the Memory Vault. Each memory is classified by type and indexed with semantic embeddings for retrieval by meaning.
+During conversations, your agents store observations in the Memory Vault. Each memory is classified by type and indexed with semantic embeddings for retrieval by meaning.
 
-When your assistant receives a new message, it searches the vault for relevant memories and includes them in its context. This means your assistant can:
+When your agent receives a new message, it searches the vault for relevant memories and includes them in its context. This means your agents can:
 
-- Remember your preferences ("I prefer CHS over ADM for soybeans")
-- Recall past decisions ("We decided to hold corn until March")
-- Track ongoing situations ("The south quarter flooded last Tuesday")
+- Remember your preferences ("I prefer weekly reports on Mondays")
+- Recall past decisions ("We decided to use vendor X for the Q2 project")
+- Track ongoing situations ("The website migration is scheduled for next Friday")
 - Build on previous conversations without re-explaining context
 
 ## Memory types
 
 | Type | Example |
 |---|---|
-| **Fact** | "Farm is 2,500 acres of corn and soybeans" |
-| **Preference** | "Always check CHS bids first" |
-| **Commitment** | "Contracted 50% of corn at $4.80 in January" |
-| **Outcome** | "Corn yielded 180 bu/acre on the north field" |
-| **Summary** | "October harvest recap: 450,000 bushels total" |
+| **Fact** | "Team is a 10-person marketing agency" |
+| **Preference** | "Always format reports as bullet points" |
+| **Commitment** | "Agreed to deliver the proposal by March 15" |
+| **Outcome** | "Q4 campaign achieved 12% conversion rate" |
+| **Summary** | "October project recap: 3 projects completed, 2 in progress" |
 
 ## Memory tiers
 
@@ -46,7 +46,7 @@ Higher-tier memories are prioritized during retrieval.
 
 ## Retrieval
 
-Your assistant automatically searches the Memory Vault when processing messages. You can also ask directly:
+Your agents automatically search the Memory Vault when processing messages. You can also ask directly:
 
 ```
 What do you remember about our marketing plan?
@@ -102,5 +102,5 @@ The Memory settings page includes a diagnostics panel showing:
 ## What's next
 
 - [Knowledge Files](/docs/tools/knowledge) -- Upload reference documents
-- [Custom Skills](/docs/skills/custom-skills) -- Create new assistant capabilities
-- [AI Agents](/docs/agents) -- Configure your assistant team
+- [Custom Skills](/docs/skills/custom-skills) -- Create new agent capabilities
+- [AI Agents](/docs/agents) -- Configure your agent team

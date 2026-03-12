@@ -747,7 +747,7 @@ export function HeartbeatReportingWorkspace({
           />
 
           {runsError && (
-            <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
+            <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-red-200">
               {runsError}
             </div>
           )}
@@ -978,7 +978,7 @@ export function HeartbeatReportingWorkspace({
           </div>
 
           {trendsError && (
-            <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
+            <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-red-200">
               {trendsError}
             </div>
           )}
@@ -1146,7 +1146,7 @@ export function HeartbeatReportingWorkspace({
           </div>
 
           {auditError && (
-            <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
+            <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-red-200">
               {auditError}
             </div>
           )}

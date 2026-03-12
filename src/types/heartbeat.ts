@@ -1,9 +1,4 @@
 export interface HeartbeatChecks {
-  weather_severe: boolean;
-  grain_price_movement: boolean;
-  grain_price_threshold_cents: number;
-  unreviewed_tickets: boolean;
-  unreviewed_tickets_threshold_hours: number;
   unanswered_emails: boolean;
   unanswered_emails_threshold_hours: number;
 }

@@ -6,14 +6,11 @@ import {
   MAX_RAW_FILE_SIZE,
   MAX_TOTAL_PARSED_SIZE,
 } from "@/types/knowledge";
-import type { PersonalityPreset } from "@/types/agent";
-import { PRESET_INFO } from "@/types/agent";
 
 export interface AgentOption {
   id: string;
   agent_key: string;
   display_name: string;
-  personality_preset: PersonalityPreset;
 }
 
 export function useKnowledgeManager(opts: {
@@ -192,12 +189,9 @@ export function useKnowledgeManager(opts: {
   const getAgentAccent = useCallback(
     (agentId: string | null) => {
       if (!agentId) return "border-l-accent";
-      const agent = agentMap.get(agentId);
-      if (!agent) return "border-l-border";
-      const presetInfo = PRESET_INFO[agent.personality_preset];
-      return presetInfo?.accent?.replace("text-", "border-l-") || "border-l-accent";
+      return "border-l-border";
     },
-    [agentMap]
+    []
   );
 
   return {

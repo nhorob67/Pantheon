@@ -486,7 +486,7 @@ export function RunTimeline({
           <p
             className={`mt-3 rounded-lg border px-3 py-2 text-xs ${
               feedback.kind === "error"
-                ? "border-red-500/30 bg-red-500/10 text-red-200"
+                ? "border-destructive/30 bg-destructive/10 text-red-200"
                 : "border-green-500/30 bg-green-500/10 text-green-200"
             }`}
             role="status"
@@ -503,7 +503,7 @@ export function RunTimeline({
         </div>
 
         {activeRun.error_message && (
-          <div className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+          <div className="mt-3 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-red-200">
             <p>{activeRun.error_message}</p>
             {runErrorTaxonomy && (
               <div className="mt-2 space-y-1">
@@ -576,7 +576,7 @@ export function RunTimeline({
                   </div>
 
                   {step.error_message && (
-                    <div className="mt-2 rounded-lg border border-red-500/30 bg-red-500/10 px-2.5 py-2 text-xs text-red-200">
+                    <div className="mt-2 rounded-lg border border-destructive/30 bg-destructive/10 px-2.5 py-2 text-xs text-red-200">
                       <p>{step.error_message}</p>
                       {stepErrorTaxonomy && (
                         <div className="mt-2 space-y-1">

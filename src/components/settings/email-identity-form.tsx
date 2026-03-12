@@ -167,7 +167,7 @@ export function EmailIdentityForm({ initialIdentity }: EmailIdentityFormProps) {
           value={slug}
           onChange={(event) => setSlug(event.target.value)}
           error={error || undefined}
-          placeholder="your-farm-name"
+          placeholder="your-team-name"
           autoCapitalize="none"
           autoCorrect="off"
           spellCheck={false}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
+import { Textarea } from "@/components/ui/textarea";
 import { HeartbeatCheckCard } from "./heartbeat-check-card";
 import { HeartbeatCustomChecks } from "./heartbeat-custom-checks";
 import type { HeartbeatChecks } from "@/types/heartbeat";
@@ -32,11 +33,6 @@ for (let h = 0; h < 24; h++) {
 }
 
 export const DEFAULT_HEARTBEAT_CHECKS: HeartbeatChecks = {
-  weather_severe: true,
-  grain_price_movement: true,
-  grain_price_threshold_cents: 10,
-  unreviewed_tickets: true,
-  unreviewed_tickets_threshold_hours: 4,
   unanswered_emails: true,
   unanswered_emails_threshold_hours: 2,
 };
@@ -217,59 +213,6 @@ export function HeartbeatConfigEditor({
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <HeartbeatCheckCard
-            icon="cloud-alert"
-            title="Weather Alerts"
-            description="NWS severe weather warnings for your area"
-            checked={value.checks.weather_severe}
-            disabled={agentOverrideMode}
-            disabledReason={
-              agentOverrideMode
-                ? "Farm-wide weather monitoring stays on the tenant-default heartbeat."
-                : undefined
-            }
-            onToggle={(next) => updateCheck("weather_severe", next)}
-          />
-          <HeartbeatCheckCard
-            icon="trending-up"
-            title="Grain Prices"
-            description="Cash bid movements above threshold"
-            checked={value.checks.grain_price_movement}
-            disabled={agentOverrideMode}
-            disabledReason={
-              agentOverrideMode
-                ? "Farm-wide grain bid checks stay on the tenant-default heartbeat."
-                : undefined
-            }
-            onToggle={(next) => updateCheck("grain_price_movement", next)}
-            thresholdLabel="Threshold (cents/bu)"
-            thresholdValue={value.checks.grain_price_threshold_cents}
-            thresholdMin={1}
-            thresholdMax={50}
-            onThresholdChange={(next) =>
-              updateCheck("grain_price_threshold_cents", next)
-            }
-          />
-          <HeartbeatCheckCard
-            icon="clipboard-list"
-            title="Scale Tickets"
-            description="Unreviewed tickets older than threshold"
-            checked={value.checks.unreviewed_tickets}
-            disabled={agentOverrideMode}
-            disabledReason={
-              agentOverrideMode
-                ? "Farm-wide ticket backlog checks stay on the tenant-default heartbeat."
-                : undefined
-            }
-            onToggle={(next) => updateCheck("unreviewed_tickets", next)}
-            thresholdLabel="Max age (hours)"
-            thresholdValue={value.checks.unreviewed_tickets_threshold_hours}
-            thresholdMin={1}
-            thresholdMax={24}
-            onThresholdChange={(next) =>
-              updateCheck("unreviewed_tickets_threshold_hours", next)
-            }
-          />
-          <HeartbeatCheckCard
             icon="mail"
             title="Unanswered Email"
             description="Inbound emails without a reply"
@@ -298,7 +241,7 @@ export function HeartbeatConfigEditor({
         disabled={agentOverrideMode}
         disabledReason={
           agentOverrideMode
-            ? "Custom checklist items stay on the tenant-default heartbeat so they only run once per farm."
+            ? "Custom checklist items stay on the tenant-default heartbeat so they only run once per team."
             : undefined
         }
       />
@@ -410,13 +353,13 @@ export function HeartbeatConfigEditor({
         <p className="text-xs text-foreground/50 mb-3">
           Optional guidance for how heartbeat alerts should be framed once an issue is detected.
         </p>
-        <textarea
+        <Textarea
           value={value.heartbeat_instructions}
           onChange={(e) => setField("heartbeat_instructions", e.target.value)}
           maxLength={1000}
           rows={4}
           placeholder="Example: mention unresolved customer emails first, then summarize market moves."
-          className="w-full border border-border rounded-xl bg-input px-3 py-3 text-sm outline-none focus:border-primary"
+          className="w-full rounded-xl text-sm"
         />
         <p className="mt-2 text-xs text-foreground/45">
           {value.heartbeat_instructions.length}/1000 characters

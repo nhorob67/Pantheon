@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 
@@ -46,13 +45,6 @@ export function AlertPreferencesForm() {
     spending_alerts_enabled: true,
     spending_alert_email: true,
     spending_alert_dashboard: true,
-    weather_severe_enabled: true,
-    weather_severe_discord: true,
-    price_movement_enabled: true,
-    price_movement_threshold_cents: 10,
-    price_movement_discord: true,
-    ticket_anomaly_enabled: true,
-    ticket_anomaly_discord: true,
   });
 
   useEffect(() => {
@@ -111,60 +103,6 @@ export function AlertPreferencesForm() {
             description="Show alerts in your dashboard"
             checked={prefs.spending_alert_dashboard}
             onChange={(v) => update("spending_alert_dashboard", v)}
-          />
-        </div>
-      </div>
-
-      {/* Farm alerts */}
-      <div className="bg-card rounded-xl border border-border shadow-sm p-6">
-        <div className="flex items-center gap-2 mb-2">
-          <Bell className="w-4 h-4 text-primary" />
-          <h3 className="font-headline text-base font-semibold">
-            Farm Alerts
-          </h3>
-        </div>
-        <p className="text-xs text-foreground/50 mb-3">
-          These alerts are delivered through your Discord assistant.
-        </p>
-
-        <div className="divide-y divide-border">
-          <ToggleRow
-            label="Severe weather alerts"
-            description="NWS severe weather warnings for your area"
-            checked={prefs.weather_severe_enabled}
-            onChange={(v) => update("weather_severe_enabled", v)}
-          />
-          <ToggleRow
-            label="Price movement alerts"
-            description="Grain price changes above threshold"
-            checked={prefs.price_movement_enabled}
-            onChange={(v) => update("price_movement_enabled", v)}
-          />
-          {prefs.price_movement_enabled && (
-            <div className="py-3 pl-4">
-              <label className="block text-xs text-foreground/60 mb-1">
-                Price threshold (cents per bushel)
-              </label>
-              <input
-                type="number"
-                min="1"
-                max="100"
-                value={prefs.price_movement_threshold_cents}
-                onChange={(e) =>
-                  update(
-                    "price_movement_threshold_cents",
-                    parseInt(e.target.value, 10) || 10
-                  )
-                }
-                className="w-24 border border-border-light rounded-lg bg-input px-3 py-1.5 text-sm outline-none focus:border-primary"
-              />
-            </div>
-          )}
-          <ToggleRow
-            label="Scale ticket anomaly alerts"
-            description="Unusual weight or moisture readings"
-            checked={prefs.ticket_anomaly_enabled}
-            onChange={(v) => update("ticket_anomaly_enabled", v)}
           />
         </div>
       </div>

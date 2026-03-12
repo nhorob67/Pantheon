@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Dialog } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Clock } from "lucide-react";
 import { SCHEDULE_TEMPLATES, type ScheduleTemplate } from "@/lib/schedules/schedule-templates";
 
@@ -126,19 +127,14 @@ export function CustomScheduleForm({
         </div>
 
         {/* Prompt */}
-        <div>
-          <label className="block text-sm text-text-secondary mb-1">
-            Instructions
-          </label>
-          <textarea
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            rows={3}
-            placeholder="What should the assistant do when this schedule runs?"
-            maxLength={2000}
-            className="w-full border border-border focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-lg bg-bg-dark px-4 py-2.5 outline-none transition-colors text-text-primary placeholder:text-text-dim text-sm resize-y"
-          />
-        </div>
+        <Textarea
+          label="Instructions"
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          rows={3}
+          placeholder="What should the assistant do when this schedule runs?"
+          maxLength={2000}
+        />
 
         {/* Schedule */}
         <div>
@@ -195,7 +191,7 @@ export function CustomScheduleForm({
           )}
         </div>
 
-        {error && <p className="text-red-400 text-sm">{error}</p>}
+        {error && <p className="text-destructive text-sm">{error}</p>}
 
         <div className="flex justify-end gap-3 pt-2">
           <button

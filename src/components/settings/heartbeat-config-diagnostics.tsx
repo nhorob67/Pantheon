@@ -60,7 +60,7 @@ export function HeartbeatConfigDiagnostics() {
       </h3>
       <p className="text-xs text-foreground/50 mb-4">
         Per-config suppression, deferment, and quota state. Tenant default keeps
-        farm-wide checks active while overrides add agent-scoped email coverage.
+        tenant-wide checks active while overrides add agent-scoped email coverage.
       </p>
       <div className="space-y-3">
         {configDiagnostics.map((config) => (

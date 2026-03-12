@@ -9,11 +9,11 @@ tags: [skills, custom, forge, ai-generation]
 
 # Custom Skills
 
-Beyond the three built-in skills, Pantheon lets you create your own custom skills using the **Skill Forge**. Custom skills extend your assistant with new capabilities tailored to your specific operation.
+Pantheon lets you create custom skills using the **Skill Forge**. Custom skills extend your agents with new capabilities tailored to your specific workflows.
 
 ## What are custom skills?
 
-A custom skill is a set of instructions written in Markdown (SKILL.md format) that tells your assistant how to handle a specific type of request. You can create up to **20 active custom skills** per workspace, each up to 50KB in size.
+A custom skill is a set of instructions written in Markdown (SKILL.md format) that tells your agent how to handle a specific type of request. You can create up to **20 active custom skills** per workspace, each up to 50KB in size.
 
 ## Creating a skill
 
@@ -25,7 +25,7 @@ The fastest way to create a custom skill is with AI generation:
 2. Click **Create Skill**
 3. Select **Generate with AI**
 4. Describe what you want the skill to do in plain English (10--5,000 characters)
-5. Optionally toggle **Include farm context** to auto-include your farm name, location, crops, acres, and elevators
+5. Optionally toggle **Include team context** to auto-include your team name and description
 6. Pantheon streams a complete SKILL.md in real time
 7. Review the generated skill, make any adjustments, and save
 
@@ -39,18 +39,18 @@ You can also write a skill from scratch using the built-in Markdown editor with 
 
 ### Using templates
 
-Pantheon provides eight built-in templates for common farm skill patterns:
+Pantheon provides built-in templates for common skill patterns:
 
 | Template | Category |
 |---|---|
-| Crop Scouting Report | Crop Management |
-| Harvest Yield Tracker | Crop Management |
-| Field Notes | Crop Management |
-| Input Cost Calculator | Financial |
-| Market Alert Watcher | Financial |
-| Equipment Maintenance Log | Equipment |
-| Livestock Feed Ration | Livestock |
-| FSA/Crop Insurance Reporter | Compliance |
+| Report Generator | Reporting |
+| Data Tracker | Data Management |
+| Research Assistant | Research |
+| Task Manager | Productivity |
+| Meeting Notes | Productivity |
+| Client Brief | Communication |
+| Compliance Checker | Compliance |
+| Inventory Tracker | Operations |
 
 Select a template when creating a new skill to get a working starting point you can customize.
 
@@ -60,23 +60,23 @@ Custom skills use a Markdown-based format with YAML frontmatter:
 
 ```markdown
 ---
-name: custom-crop-scouting
-description: Structured crop scouting reports with pest and growth stage tracking.
+name: custom-weekly-report
+description: Generates a structured weekly status report from team activity.
 user-invocable: true
 ---
 
-# Crop Scouting Report
+# Weekly Status Report
 
 ## Description
 What this skill does and when it should be used.
 
 ## Instructions
-Step-by-step guidance for the assistant.
+Step-by-step guidance for the agent.
 
 ## Examples
-### Example 1: Field scout
-**User:** Scout the north 80 for corn
-**Assistant:** [expected response format]
+### Example 1: Weekly summary
+**User:** Generate the weekly report
+**Agent:** [expected response format]
 ```
 
 The `name` field must start with `custom-` and match the skill's slug.
@@ -91,15 +91,15 @@ Every time you save changes to a custom skill, Pantheon creates a new version. F
 
 ## Testing
 
-Test your skill before deploying it to your live assistant:
+Test your skill before deploying it to your live agents:
 
 1. Open the skill in the Forge editor
 2. Switch to the **Test** tab
 3. Enter a sample message that should trigger the skill
-4. Watch the assistant's streaming response in real time
+4. Watch the agent's streaming response in real time
 5. Continue the conversation with follow-up messages to iterate
 
-The test panel shows a full chat interface. Draft skills run in preview mode; active skills test against your live assistant.
+The test panel shows a full chat interface. Draft skills run in preview mode; active skills test against your live agents.
 
 ## Skill lifecycle
 
@@ -111,10 +111,9 @@ The test panel shows a full chat interface. Draft skills run in preview mode; ac
 
 ## Reference files
 
-You can attach up to **10 reference files** (max 50KB each) to a custom skill to give your assistant additional context -- product manuals, lookup tables, conversion charts, or farm-specific documentation.
+You can attach up to **10 reference files** (max 50KB each) to a custom skill to give your agent additional context -- product manuals, lookup tables, conversion charts, or domain-specific documentation.
 
 ## What's next
 
-- [Skills Overview](/docs/skills) -- Learn about the built-in skills
-- [Knowledge Files](/docs/tools/knowledge) -- Upload documents for your assistant to reference
+- [Knowledge Files](/docs/tools/knowledge) -- Upload documents for your agents to reference
 - [AI Agents](/docs/agents) -- Assign skills to specific agents

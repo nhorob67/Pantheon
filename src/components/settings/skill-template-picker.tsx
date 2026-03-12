@@ -19,11 +19,11 @@ const iconMap: Record<string, React.ReactNode> = {
 
 const CATEGORIES: { id: SkillTemplateCategory | "all"; label: string }[] = [
   { id: "all", label: "All" },
-  { id: "crop-management", label: "Crop Management" },
+  { id: "customer-support", label: "Customer Support" },
   { id: "financial", label: "Financial" },
-  { id: "equipment", label: "Equipment" },
-  { id: "livestock", label: "Livestock" },
-  { id: "compliance", label: "Compliance" },
+  { id: "project-management", label: "Project Management" },
+  { id: "productivity", label: "Productivity" },
+  { id: "operations", label: "Operations" },
 ];
 
 interface SkillTemplatePickerProps {

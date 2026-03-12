@@ -1,6 +1,5 @@
-export type PersonalityPreset = "general" | "grain" | "weather" | "scale-tickets" | "operations" | "agronomy" | "equipment" | "custom";
-
 export type ToolApprovalLevel = "auto" | "confirm" | "disabled";
+export type AutonomyLevel = "assisted" | "copilot" | "autopilot";
 
 export interface Agent {
   id: string;
@@ -8,202 +7,65 @@ export interface Agent {
   customer_id: string;
   agent_key: string;
   display_name: string;
-  personality_preset: PersonalityPreset;
-  custom_personality: string | null;
+  role: string;
+  goal: string | null;
+  backstory: string | null;
+  autonomy_level: AutonomyLevel;
   discord_channel_id: string | null;
   discord_channel_name: string | null;
   is_default: boolean;
   skills: string[];
-  cron_jobs: Record<string, boolean>;
+  /** @deprecated Schedules are managed via tenant_scheduled_messages. Always `{}` for new agents. */
+  cron_jobs?: Record<string, boolean>;
   composio_toolkits?: string[];
-  goal?: string | null;
-  backstory?: string | null;
+  can_delegate?: boolean;
+  can_receive_delegation?: boolean;
   tool_approval_overrides?: Record<string, ToolApprovalLevel>;
   sort_order: number;
   created_at: string;
   updated_at: string;
 }
 
-export const PERSONALITY_PRESETS = [
-  "general",
-  "grain",
-  "weather",
-  "scale-tickets",
-  "operations",
-  "agronomy",
-  "equipment",
-  "custom",
-] as const;
+export const AUTONOMY_LEVELS = ["assisted", "copilot", "autopilot"] as const;
 
-export const PRESET_INFO: Record<
-  PersonalityPreset,
-  { label: string; description: string; icon: string; accent: string }
+export const AUTONOMY_LEVEL_INFO: Record<
+  AutonomyLevel,
+  { label: string; description: string }
 > = {
-  general: {
-    label: "General Advisor",
-    description: "All-purpose farm assistant — weather, markets, and operations",
-    icon: "Wheat",
-    accent: "text-primary",
+  assisted: {
+    label: "Assisted",
+    description: "Asks before taking any action",
   },
-  grain: {
-    label: "Grain Specialist",
-    description: "Cash bids, basis, elevator comparison, and marketing timing",
-    icon: "TrendingUp",
-    accent: "text-amber-500",
+  copilot: {
+    label: "Copilot",
+    description: "Suggests actions, acts on read-only ops",
   },
-  weather: {
-    label: "Weather & Field Ops",
-    description: "Forecasts, spray windows, GDD, and field conditions",
-    icon: "CloudSun",
-    accent: "text-blue-400",
-  },
-  "scale-tickets": {
-    label: "Scale Ticket Clerk",
-    description: "Log deliveries via photo, voice, or structured entry",
-    icon: "ClipboardList",
-    accent: "text-orange-500",
-  },
-  operations: {
-    label: "Field Operations",
-    description: "Equipment scheduling, input tracking, and field work planning",
-    icon: "Tractor",
-    accent: "text-emerald-500",
-  },
-  agronomy: {
-    label: "Agronomy Advisor",
-    description: "Soil health, crop scouting, herbicide programs, and IPM",
-    icon: "Sprout",
-    accent: "text-lime-500",
-  },
-  equipment: {
-    label: "Equipment Advisor",
-    description: "Combine settings, maintenance, parts lookup, and diagnostics",
-    icon: "Wrench",
-    accent: "text-zinc-400",
-  },
-  custom: {
-    label: "Custom",
-    description: "Define your own personality and focus area",
-    icon: "Pen",
-    accent: "text-foreground/60",
+  autopilot: {
+    label: "Autopilot",
+    description: "Acts independently based on its goal",
   },
 };
 
-export const PERSONALITY_PRESET_SET = new Set<string>(PERSONALITY_PRESETS);
+export interface AutonomyOption {
+  value: AutonomyLevel;
+  label: string;
+  tag: string;
+  desc: string;
+}
 
-export function toPersonalityPreset(value: unknown): PersonalityPreset {
-  if (typeof value === "string" && PERSONALITY_PRESET_SET.has(value)) {
-    return value as PersonalityPreset;
+export const AUTONOMY_OPTIONS: AutonomyOption[] = [
+  { value: "assisted", label: "Assisted", tag: "L1", desc: "Asks before acting" },
+  { value: "copilot", label: "Copilot", tag: "L2", desc: "Suggests then acts" },
+  { value: "autopilot", label: "Autopilot", tag: "L3", desc: "Acts on its own" },
+];
+
+export function toAutonomyLevel(value: unknown): AutonomyLevel {
+  if (
+    typeof value === "string" &&
+    (value === "assisted" || value === "copilot" || value === "autopilot")
+  ) {
+    return value;
   }
-  return "general";
+  return "copilot";
 }
 
-export const BUILT_IN_SKILLS = [
-  "farm-grain-bids",
-  "farm-weather",
-  "farm-scale-tickets",
-] as const;
-
-export type BuiltInSkill = (typeof BUILT_IN_SKILLS)[number];
-
-/** @deprecated Use BUILT_IN_SKILLS */
-export const AVAILABLE_SKILLS = BUILT_IN_SKILLS;
-/** @deprecated Use BuiltInSkill */
-export type AvailableSkill = BuiltInSkill;
-
-export const BUILT_IN_SKILL_SLUGS = new Set<string>(BUILT_IN_SKILLS);
-
-export function isBuiltInSkill(slug: string): slug is BuiltInSkill {
-  return BUILT_IN_SKILL_SLUGS.has(slug);
-}
-
-export const SKILL_INFO: Record<
-  BuiltInSkill,
-  { label: string; description: string; icon: string }
-> = {
-  "farm-grain-bids": {
-    label: "Grain Bids",
-    description: "Scrapes elevator websites for cash grain prices",
-    icon: "BarChart3",
-  },
-  "farm-weather": {
-    label: "Weather",
-    description: "NWS forecasts, spray windows, and GDD calculations",
-    icon: "CloudSun",
-  },
-  "farm-scale-tickets": {
-    label: "Scale Tickets",
-    description: "Log grain deliveries via photo, voice, or structured entry",
-    icon: "ClipboardList",
-  },
-};
-
-export const AVAILABLE_CRON_JOBS = [
-  "morning-weather",
-  "daily-grain-bids",
-  "weather-alert-check",
-  "price-alert-check",
-  "ticket-anomaly-check",
-] as const;
-
-export type AvailableCronJob = (typeof AVAILABLE_CRON_JOBS)[number];
-
-export const CRON_JOB_INFO: Record<
-  AvailableCronJob,
-  { label: string; description: string; schedule: string; requiredSkill: BuiltInSkill }
-> = {
-  "morning-weather": {
-    label: "Morning Weather",
-    description: "Daily weather briefing at 6:00 AM",
-    schedule: "0 6 * * *",
-    requiredSkill: "farm-weather",
-  },
-  "daily-grain-bids": {
-    label: "Daily Grain Bids",
-    description: "Cash grain bids Mon-Fri at 9:00 AM",
-    schedule: "0 9 * * 1-5",
-    requiredSkill: "farm-grain-bids",
-  },
-  "weather-alert-check": {
-    label: "Severe Weather Alerts",
-    description: "Check for severe weather every 2 hours",
-    schedule: "0 */2 * * *",
-    requiredSkill: "farm-weather",
-  },
-  "price-alert-check": {
-    label: "Price Movement Alerts",
-    description: "Check grain price changes at 9 AM and 2 PM Mon-Fri",
-    schedule: "0 9,14 * * 1-5",
-    requiredSkill: "farm-grain-bids",
-  },
-  "ticket-anomaly-check": {
-    label: "Scale Ticket Anomalies",
-    description: "Check for ticket anomalies at 6 PM Mon-Fri",
-    schedule: "0 18 * * 1-5",
-    requiredSkill: "farm-scale-tickets",
-  },
-};
-
-/** Default skills auto-selected for each personality preset */
-export const PRESET_DEFAULT_SKILLS: Record<PersonalityPreset, BuiltInSkill[]> = {
-  general: ["farm-grain-bids", "farm-weather"],
-  grain: ["farm-grain-bids"],
-  weather: ["farm-weather"],
-  "scale-tickets": ["farm-scale-tickets"],
-  operations: [],
-  agronomy: ["farm-weather"],
-  equipment: [],
-  custom: [],
-};
-
-/** Default cron jobs auto-selected for each personality preset */
-export const PRESET_DEFAULT_CRONS: Record<PersonalityPreset, AvailableCronJob[]> = {
-  general: ["morning-weather", "daily-grain-bids"],
-  grain: ["daily-grain-bids"],
-  weather: ["morning-weather"],
-  "scale-tickets": [],
-  operations: [],
-  agronomy: ["morning-weather"],
-  equipment: [],
-  custom: [],
-};

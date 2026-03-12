@@ -20,7 +20,7 @@ function healthSummary(schedules: ScheduleActivityData[]) {
 
   if (failing > 0) {
     return (
-      <span className="inline-flex items-center rounded-full bg-red-500/20 text-red-400 px-3 py-1 text-xs font-medium">
+      <span className="inline-flex items-center rounded-full bg-destructive/20 text-destructive px-3 py-1 text-xs font-medium">
         {failing} failing
       </span>
     );
@@ -51,10 +51,10 @@ export function ScheduleActivityPanel({
           No scheduled tasks configured yet.
         </p>
         <Link
-          href="/settings/briefings"
+          href="/settings/schedules"
           className="text-sm text-primary hover:underline"
         >
-          Set up a morning briefing
+          Set up a schedule
         </Link>
       </div>
     );

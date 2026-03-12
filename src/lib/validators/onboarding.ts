@@ -1,32 +1,24 @@
 import { z } from "zod/v4";
-import { US_STATES, CA_PROVINCES, BUSINESS_TYPES } from "@/types/farm";
 
-const allRegionCodes: string[] = [
-  ...US_STATES.map((s) => s.code),
-  ...CA_PROVINCES.map((p) => p.code),
-];
-
-export const operationSchema = z.object({
-  operation_name: z.string().min(1, "Operation name is required").max(100),
-  business_type: z.enum(BUSINESS_TYPES).nullable().optional(),
-  country: z.enum(["US", "CA"] as const),
-  state: z.string().refine((v) => allRegionCodes.includes(v), {
-    message: "Select a state or province",
-  }),
-  county: z.string().optional(),
+export const teamSetupSchema = z.object({
+  team_name: z
+    .string()
+    .min(3, "Team name must be at least 3 characters")
+    .max(50, "Team name must be 50 characters or less"),
+  team_goal: z.string().min(10, "Describe what your team should accomplish").max(500),
+  timezone: z.string().min(1, "Timezone is required"),
 });
 
-export const locationSchema = z
-  .object({
-    weather_location: z.string().min(1, "Enter a town or zip/postal code"),
-    weather_lat: z.number(),
-    weather_lng: z.number(),
-    timezone: z.string().min(1, "Timezone is required"),
-  })
-  .refine((d) => d.weather_lat !== 0 || d.weather_lng !== 0, {
-    message: "Use the Locate button to set coordinates",
-    path: ["weather_lat"],
-  });
+export const firstAgentSchema = z.object({
+  display_name: z
+    .string()
+    .min(2, "Agent name must be at least 2 characters")
+    .max(50, "Agent name must be 50 characters or less"),
+  role: z.string().min(5, "Describe what this agent is").max(200),
+  goal: z.string().min(10, "Describe what this agent should accomplish").max(500),
+  backstory: z.string().max(2000).optional().or(z.literal("")),
+  autonomy_level: z.enum(["assisted", "copilot", "autopilot"] as const),
+});
 
 export const discordSchema = z.union([
   z.object({
@@ -40,6 +32,6 @@ export const discordSchema = z.union([
   z.object({ skipped: z.literal(true) }),
 ]);
 
-export type OperationData = z.infer<typeof operationSchema>;
-export type LocationData = z.infer<typeof locationSchema>;
+export type TeamSetupData = z.infer<typeof teamSetupSchema>;
+export type FirstAgentData = z.infer<typeof firstAgentSchema>;
 export type DiscordData = z.infer<typeof discordSchema>;

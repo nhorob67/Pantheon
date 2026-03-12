@@ -63,6 +63,7 @@ export async function getTenantHealth(
     { data: recentSessions, error: sessionsError },
     { data: allTenants, error: allTenantsError },
     { data: spendingData, error: spendingError },
+    { data: recentActivity, error: activityError },
   ] = await Promise.all([
     admin
       .from("tenants")
@@ -80,6 +81,10 @@ export async function getTenantHealth(
       p_start_date: monthStart,
       p_min_percentage: 70,
     }),
+    admin
+      .from("tenant_sessions")
+      .select("tenant_id, updated_at")
+      .gte("updated_at", sevenDaysAgo),
   ]);
 
   if (tenantsError) throw new Error(tenantsError.message);
@@ -105,13 +110,6 @@ export async function getTenantHealth(
     customer_id: string;
     customers: { email: string | null } | { email: string | null }[] | null;
   }>;
-
-  // Check each tenant for recent session activity
-  const { data: recentActivity, error: activityError } = await admin
-    .from("tenant_sessions")
-    .select("tenant_id, updated_at")
-    .in("tenant_id", allTenantRows.map((t) => t.id))
-    .gte("updated_at", sevenDaysAgo);
 
   if (!activityError) {
     const activeSet = new Set(

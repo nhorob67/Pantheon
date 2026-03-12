@@ -43,11 +43,11 @@ export function DiscordSetupBanner({
     : null;
 
   return (
-    <div className="bg-bg-card rounded-xl border border-border border-l-[3px] border-l-[#5865F2] shadow-sm p-5">
+    <div className="bg-bg-card rounded-xl border border-border border-l-[3px] border-l-discord shadow-sm p-5">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-2.5">
-          <MessageSquare className="h-5 w-5 text-[#5865F2] shrink-0" />
+          <MessageSquare className="h-5 w-5 text-discord shrink-0" />
           <h3 className="font-headline text-base font-semibold text-text-primary">
             Connect Your Discord Server
           </h3>
@@ -70,7 +70,7 @@ export function DiscordSetupBanner({
       <div className="mt-4 space-y-4 ml-[30px]">
         {/* Step 1 */}
         <div className="flex items-start gap-3">
-          <span className="flex items-center justify-center w-6 h-6 rounded-full bg-[#5865F2]/15 text-[#5865F2] text-xs font-bold shrink-0">
+          <span className="flex items-center justify-center w-6 h-6 rounded-full bg-discord-dim text-discord text-xs font-bold shrink-0">
             1
           </span>
           <div>
@@ -86,7 +86,7 @@ export function DiscordSetupBanner({
                 href={oauthUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-lg px-5 py-2.5 text-sm font-semibold transition-colors mt-2.5"
+                className="inline-flex items-center gap-2 bg-discord hover:bg-[#4752C4] text-white rounded-lg px-5 py-2.5 text-sm font-semibold transition-colors mt-2.5"
               >
                 Invite Bot
                 <ExternalLink className="h-3.5 w-3.5" />
@@ -101,7 +101,7 @@ export function DiscordSetupBanner({
 
         {/* Step 2 */}
         <div className="flex items-start gap-3">
-          <span className="flex items-center justify-center w-6 h-6 rounded-full bg-[#5865F2]/15 text-[#5865F2] text-xs font-bold shrink-0">
+          <span className="flex items-center justify-center w-6 h-6 rounded-full bg-discord-dim text-discord text-xs font-bold shrink-0">
             2
           </span>
           <div>

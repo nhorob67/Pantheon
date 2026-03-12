@@ -32,11 +32,11 @@ describe("shouldSkipExpansion", () => {
   });
 
   it("skips for 4-word query without question mark", () => {
-    assert.ok(shouldSkipExpansion("corn price per bushel"));
+    assert.ok(shouldSkipExpansion("monthly revenue report details"));
   });
 
   it("does not skip for exactly 5 words", () => {
-    assert.ok(!shouldSkipExpansion("corn price per bushel today"));
+    assert.ok(!shouldSkipExpansion("monthly revenue report details today"));
   });
 });
 

@@ -1,8 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { HeartbeatChecks, CheapCheckResult } from "@/types/heartbeat";
-import { checkWeatherSevere } from "./checks/weather-check";
-import { checkGrainPriceMovement } from "./checks/grain-price-check";
-import { checkUnreviewedTickets } from "./checks/ticket-check";
 import { checkUnansweredEmails } from "./checks/email-check";
 import { checkCustomItems } from "./checks/custom-check";
 import {
@@ -85,51 +82,6 @@ export async function runCheapChecks(input: CheapChecksInput): Promise<CheapChec
       checkDurations[key] = Date.now() - startedAt;
     }
   };
-
-  if (executionPlan.find((item) => item.key === "weather_severe")?.willRun) {
-    promises.push({
-      key: "weather_severe",
-      promise: withTiming("weather_severe", () =>
-        checkWeatherSevere(admin, tenantId, customerId)
-      ),
-    });
-  } else if (checks.weather_severe && effectiveScope === "agent_scoped_only") {
-    results.weather_severe = buildSkippedAgentScopedResult("weather_severe");
-    checkDurations.weather_severe = 0;
-  }
-
-  if (executionPlan.find((item) => item.key === "grain_price_movement")?.willRun) {
-    promises.push({
-      key: "grain_price_movement",
-      promise: withTiming("grain_price_movement", () =>
-        checkGrainPriceMovement(
-          admin,
-          tenantId,
-          customerId,
-          checks.grain_price_threshold_cents
-        )
-      ),
-    });
-  } else if (checks.grain_price_movement && effectiveScope === "agent_scoped_only") {
-    results.grain_price_movement = buildSkippedAgentScopedResult("grain_price_movement");
-    checkDurations.grain_price_movement = 0;
-  }
-
-  if (executionPlan.find((item) => item.key === "unreviewed_tickets")?.willRun) {
-    promises.push({
-      key: "unreviewed_tickets",
-      promise: withTiming("unreviewed_tickets", () =>
-        checkUnreviewedTickets(
-          admin,
-          tenantId,
-          checks.unreviewed_tickets_threshold_hours
-        )
-      ),
-    });
-  } else if (checks.unreviewed_tickets && effectiveScope === "agent_scoped_only") {
-    results.unreviewed_tickets = buildSkippedAgentScopedResult("unreviewed_tickets");
-    checkDurations.unreviewed_tickets = 0;
-  }
 
   if (executionPlan.find((item) => item.key === "unanswered_emails")?.willRun) {
     promises.push({

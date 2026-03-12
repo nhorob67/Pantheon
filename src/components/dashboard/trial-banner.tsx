@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Wheat } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 interface TrialBannerProps {
   trialEndsAt: string;
@@ -32,7 +32,7 @@ export function TrialBanner({ trialEndsAt }: TrialBannerProps) {
       }`}
     >
       <div className="flex items-center gap-2">
-        <Wheat
+        <Sparkles
           className={`w-4 h-4 ${isUrgent ? "text-primary" : "text-primary/60"}`}
         />
         <span
@@ -45,7 +45,7 @@ export function TrialBanner({ trialEndsAt }: TrialBannerProps) {
       </div>
       <Link
         href="/settings/billing"
-        className="bg-primary hover:bg-amber-600 text-white font-semibold rounded-full px-4 py-1.5 text-sm transition-colors"
+        className="bg-primary hover:bg-primary/80 text-white font-semibold rounded-full px-4 py-1.5 text-sm transition-colors"
       >
         Subscribe — $50/month
       </Link>

@@ -44,8 +44,8 @@ export function SkillForgeLibrary({ initialSkills }: SkillForgeLibraryProps) {
           Forge your first custom skill
         </h4>
         <p className="text-sm text-text-dim max-w-md mx-auto mb-6">
-          Create custom abilities for your assistant — from crop scouting templates to equipment tracking,
-          market alerts, and anything else your operation needs.
+          Create custom abilities for your agents — from status reports to project tracking,
+          alerts, and anything else your team needs.
         </p>
         <Link
           href="/settings/skills/forge/new"
@@ -94,7 +94,7 @@ export function SkillForgeLibrary({ initialSkills }: SkillForgeLibraryProps) {
               type="button"
               onClick={handleDelete}
               disabled={deleting}
-              className="bg-red-500/20 hover:bg-red-500/30 text-red-400 font-semibold rounded-lg px-4 py-2 text-sm transition-colors disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+              className="bg-destructive/20 hover:bg-destructive/30 text-destructive font-semibold rounded-lg px-4 py-2 text-sm transition-colors disabled:opacity-50 flex items-center gap-2 cursor-pointer"
             >
               {deleting && <Loader2 className="w-4 h-4 animate-spin" />}
               Archive

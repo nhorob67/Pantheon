@@ -246,8 +246,20 @@ export function DocsSearchModalBase({
             ))}
 
             {loaded && !query && (
-              <div className="px-5 py-8 text-center text-sm text-text-dim">
-                Type to search the documentation
+              <div className="px-5 py-6">
+                <p className="text-xs font-medium text-text-dim uppercase tracking-wider mb-3">Suggestions</p>
+                <div className="flex flex-wrap gap-2">
+                  {["Getting started", "Agent setup", "Custom skills", "Discord integration", "Billing", "MCP servers"].map((suggestion) => (
+                    <button
+                      key={suggestion}
+                      type="button"
+                      onClick={() => handleQueryChange(suggestion)}
+                      className="px-3 py-1.5 text-xs text-text-secondary bg-bg-dark border border-border rounded-full hover:border-border-light hover:text-text-primary transition-colors cursor-pointer"
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>

@@ -1,6 +1,6 @@
 ---
 title: AI Agents
-description: Pantheon supports multiple AI agents per workspace, each with their own personality, skills, and channel assignments.
+description: Pantheon supports multiple AI agents per workspace, each with their own role, goal, backstory, and channel assignments.
 section: AI Agents
 order: 0
 icon: Bot
@@ -9,77 +9,70 @@ tags: [agents, overview, multi-agent]
 
 ## Overview
 
-Every Pantheon workspace comes with at least one AI agent — your farm's assistant. Out of the box, a single general-purpose agent handles grain bids, weather, scale tickets, and anything else you ask about.
+Every Pantheon workspace has at least one AI agent — your team's first worker. Agents are fully custom: you define their role, goal, backstory, and autonomy level. There are no locked-in presets. You build the team you need.
 
-But Pantheon also supports **multiple agents** per workspace. Each agent can have its own personality, its own skill set, and its own Discord channel assignment. Think of it as building a small team of specialists for your operation.
+Pantheon supports **multiple agents** per workspace. Each agent can have its own identity, skills, and Discord channel assignment. Think of it as building a small team of AI specialists for your operation.
 
 ## Single agent vs. multi-agent
 
 ### Single agent (the default)
 
-When you first set up Pantheon, you get one agent with the **General Advisor** personality. It has access to all your enabled skills and handles every channel in your Discord server plus DMs.
+When you complete onboarding, you create one agent with a role and goal you define. It handles every channel in your Discord server plus DMs.
 
-This is the simplest setup and works well for most operations. One agent that does everything.
+This is the simplest setup and works well for many teams. One agent that does everything.
 
 ### Multi-agent setup
 
-As your operation grows or you want more focused responses, you can add specialist agents:
+As your team grows or you want more focused responses, add specialist agents:
 
-- A **Grain Specialist** that lives in `#grain-desk` and knows cash bids inside and out
-- A **Weather agent** in `#weather` that handles forecasts, spray windows, and GDD tracking
-- A **Scale Ticket Clerk** in `#scale-tickets` that logs deliveries quickly and precisely
-- A **Field Operations** manager for equipment scheduling and input tracking
+- A **Support Lead** in `#support-tickets` that resolves customer questions quickly
+- A **Research Analyst** in `#research` that investigates questions and synthesizes findings
+- An **Operations Lead** in `#operations` that tracks work and keeps execution moving
+- A **Comms Manager** in `#comms` that handles email follow-ups and scheduling
 
-Each specialist is tuned for its area. The Grain Specialist leads with numbers and basis comparisons. The Weather agent is cautious and safety-first. The Ticket Clerk is fast and precise. They each know their boundaries and will delegate to other agents when a question falls outside their expertise.
+Each specialist is tuned for its area. They know their boundaries and can delegate to other agents when a question falls outside their expertise.
 
 <Callout variant="tip" title="Start with one agent">
-You can always add more agents later. Start with the default General Advisor and see how it handles your day-to-day questions. When you find yourself wanting more focused responses on a specific topic, add a specialist.
+You can always add more agents later. Start with a single general-purpose agent and see how it handles your day-to-day questions. When you want more focused responses on a specific topic, add a specialist.
 </Callout>
 
-## What makes up an agent
+## Agent identity: Role, Goal, and Backstory
 
-Each agent in your Pantheon workspace has these configurable properties:
+Every agent is defined by three fields inspired by the CrewAI pattern:
 
-| Property | Description |
-|----------|-------------|
-| **Display name** | The name shown in Discord (e.g., "Farm Assistant", "Grain Desk") |
-| **Personality preset** | Determines the agent's tone, focus area, and boundaries |
-| **Skills** | Which Pantheon skills this agent can use (grain bids, weather, scale tickets) |
-| **Channel binding** | Which Discord channel this agent is assigned to (optional) |
-| **Cron jobs** | Scheduled messages like morning weather or daily grain bids |
-| **Default status** | Whether this is the default agent (handles unbound channels and DMs) |
+| Field | Purpose | Example |
+|-------|---------|---------|
+| **Role** | What the agent is — its job title or function | "Customer support specialist" |
+| **Goal** | What the agent aims to accomplish | "Resolve customer questions quickly and accurately" |
+| **Backstory** | Personality, tone, and constraints (optional) | "You are friendly but concise. Always cite sources." |
 
-## Skills
+These fields drive the agent's system prompt and shape how it responds. The more specific you are, the better the agent performs within its domain.
 
-Pantheon currently offers three core skills that can be assigned to agents:
+## Autonomy levels
 
-| Skill | What it does |
-|-------|-------------|
-| **Grain Bids** | Scrapes configured elevator websites for current cash grain prices |
-| **Weather** | NWS forecasts, spray window analysis, and GDD calculations |
-| **Scale Tickets** | Log grain deliveries via photo OCR, voice dictation, or guided entry |
+Each agent has an autonomy level that controls how independently it acts:
 
-Each agent can have any combination of skills. A Grain Specialist typically only has the Grain Bids skill. A General Advisor might have all three.
+| Level | Label | Behavior |
+|-------|-------|----------|
+| L1 | **Assisted** | Asks before taking any action. Presents options and waits for approval. |
+| L2 | **Copilot** | Suggests actions and explains reasoning. Executes read-only operations automatically. |
+| L3 | **Autopilot** | Acts independently based on its goal. Only asks when genuinely ambiguous. |
 
-## Cron jobs
+## Skills and schedules
 
-Agents can run scheduled tasks that post messages to their assigned channel automatically:
+Agents can be given **custom skills** — Markdown-based instructions that teach them how to handle specific tasks. Create skills from scratch or generate them with AI via the Skill Forge.
 
-| Cron Job | Schedule | Required Skill |
-|----------|----------|---------------|
-| **Morning Weather** | 6:00 AM daily | Weather |
-| **Daily Grain Bids** | 9:00 AM Mon-Fri | Grain Bids |
-
-Cron jobs are optional. Enable them per agent based on what information you want delivered proactively.
+Agents can also have **custom schedules** — cron-based scheduled messages that post to their assigned Discord channel automatically. For example, a daily summary at 8 AM or a weekly report every Monday.
 
 ## Inter-agent communication
 
-When you have multiple agents, they can talk to each other. If someone asks the Farm Assistant a detailed grain marketing question, it can delegate to the Grain Specialist using built-in communication tools (`agents_list` and `sessions_send`).
+When you have multiple agents, they can delegate tasks to each other using built-in communication tools (`agents_list` and `sessions_send`). If someone asks the general assistant a detailed research question, it can hand off to the Research Analyst.
 
-The farmer sees a seamless experience — they ask a question in any channel, and the right agent handles it.
+Users see a seamless experience — they ask a question in any channel, and the right agent handles it.
 
 ## Next steps
 
-- [Multi-Agent Setups](/docs/agents/multi-agent-system) — Pre-built 2, 3, and 4-agent configurations you can deploy with one click
-- [Personality Presets](/docs/agents/personality-presets) — Detailed breakdown of each personality type and its boundaries
+- [Multi-Agent System](/docs/agents/multi-agent-system) — How agents collaborate, delegate, and share a workspace
+- [Agent Roles & Identity](/docs/agents/personality-presets) — Deep dive into role, goal, backstory, and autonomy
+- [Skills & Scheduling](/docs/agents/skills-per-agent) — Assigning skills and schedules to agents
 - [Channel Configuration](/docs/discord/channel-config) — How to bind agents to specific Discord channels

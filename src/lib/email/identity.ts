@@ -61,13 +61,13 @@ export function buildAddressFromSlug(slug: string): string {
 interface EnsureEmailIdentityInput {
   customerId: string;
   instanceId?: string | null;
-  farmName?: string | null;
+  teamName?: string | null;
   customerEmail?: string | null;
 }
 
 function buildSlugSeed(input: EnsureEmailIdentityInput): string {
-  if (input.farmName && input.farmName.trim().length > 0) {
-    return input.farmName;
+  if (input.teamName && input.teamName.trim().length > 0) {
+    return input.teamName;
   }
 
   if (input.customerEmail && input.customerEmail.includes("@")) {

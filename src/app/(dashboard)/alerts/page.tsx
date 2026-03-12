@@ -18,7 +18,7 @@ export default async function AlertsPage() {
           Alerts
         </h2>
         <p className="text-foreground/60 text-sm mt-1">
-          Spending alerts, farm notifications, and system events.
+          Spending alerts, proactive notifications, and system events.
         </p>
       </div>
 

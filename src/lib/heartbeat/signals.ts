@@ -63,50 +63,8 @@ export function deriveHeartbeatSignalSeverity(
   key: string,
   data: unknown
 ): number {
-  if (key === "weather_severe" && Array.isArray(data)) {
-    const severities = data
-      .map((entry) =>
-        typeof entry === "object" && entry !== null
-          ? (entry as { severity?: unknown }).severity
-          : null
-      )
-      .filter((value): value is string => typeof value === "string");
-
-    if (severities.some((value) => value === "Extreme")) {
-      return 5;
-    }
-
-    if (severities.some((value) => value === "Severe")) {
-      return 4;
-    }
-
-    return 3;
-  }
-
-  if (key === "grain_price_movement" && Array.isArray(data)) {
-    const maxChange = data.reduce<number>((maxValue, entry) => {
-      if (
-        typeof entry === "object"
-        && entry !== null
-        && typeof (entry as { change_cents?: unknown }).change_cents === "number"
-      ) {
-        return Math.max(
-          maxValue,
-          Math.abs((entry as { change_cents: number }).change_cents)
-        );
-      }
-
-      return maxValue;
-    }, 0);
-
-    if (maxChange >= 50) return 5;
-    if (maxChange >= 25) return 4;
-    if (maxChange >= 10) return 3;
-    return 2;
-  }
-
   if (
-    (key === "unreviewed_tickets" || key === "unanswered_emails")
+    key === "unanswered_emails"
     && typeof data === "object"
     && data !== null
     && typeof (data as { count?: unknown }).count === "number"

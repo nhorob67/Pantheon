@@ -1,6 +1,6 @@
 ---
 title: Available Toolkits
-description: Full list of curated Composio toolkits available in Pantheon, with farming-specific use cases and actions.
+description: Full list of curated Composio toolkits available in Pantheon, with use cases and actions for each service.
 section: Integrations
 order: 2
 icon: Package
@@ -9,11 +9,11 @@ tags: [integrations, toolkits, google sheets, gmail, calendar, slack, notion, ai
 
 # Available Toolkits
 
-Pantheon curates a set of Composio toolkits with descriptions and recommendations tailored to Upper Midwest row crop farming. Each toolkit bundles the most useful actions for a single service.
+Pantheon curates a set of Composio toolkits with descriptions and recommendations for common team workflows. Each toolkit bundles the most useful actions for a single service.
 
 ## Recommended toolkits
 
-These four toolkits cover the most common integration use cases for farmers. They are highlighted in the **Recommended** tab when selecting toolkits.
+These four toolkits cover the most common integration use cases. They are highlighted in the **Recommended** tab when selecting toolkits.
 
 ### Google Sheets
 
@@ -25,29 +25,29 @@ These four toolkits cover the most common integration use cases for farmers. The
 
 **What it does:** Read and write Google Sheets spreadsheets directly from Discord.
 
-**Farm use cases:**
+**Use cases:**
 
-- Track harvest deliveries in a shared spreadsheet alongside scale ticket data
-- Log daily field observations and input applications
-- Pull cost-per-acre numbers from a planning spreadsheet
-- Build season summary reports that update automatically
+- Track project deliverables and metrics in a shared spreadsheet
+- Log daily observations and activity data
+- Pull budget numbers from a planning spreadsheet
+- Build summary reports that update automatically
 
 **Example prompts:**
 
 ```
-Add today's corn deliveries to the Harvest 2025 spreadsheet
+Add today's metrics to the Q1 tracking spreadsheet
 ```
 
 ```
-What does my input cost tracker show for soybeans?
+What does the budget tracker show for marketing?
 ```
 
 ```
-Create a new spreadsheet called "Fall Field Notes" with columns for date, field, observation, and action
+Create a new spreadsheet called "Project Notes" with columns for date, topic, notes, and action items
 ```
 
-<Callout variant="tip" title="Combine with scale tickets">
-Google Sheets works great alongside the Scale Tickets skill. Ask your assistant to "export this week's tickets to my harvest tracker spreadsheet" and it will read your ticket data and write to Google Sheets in one step.
+<Callout variant="tip" title="Combine with custom skills">
+Google Sheets works great alongside custom skills. Ask your agent to "export this week's data to my tracking spreadsheet" and it will read your skill data and write to Google Sheets in one step.
 </Callout>
 
 ### Google Calendar
@@ -60,30 +60,26 @@ Google Sheets works great alongside the Scale Tickets skill. Ask your assistant 
 
 **What it does:** Manage Google Calendar events -- create, read, and update scheduling entries.
 
-**Farm use cases:**
+**Use cases:**
 
-- Schedule planting and spraying windows based on weather forecasts
-- Block time for equipment maintenance and field work
-- Track delivery appointments at elevators
-- Set reminders for crop insurance deadlines
+- Schedule meetings and work sessions
+- Block time for focused work or team activities
+- Track deadlines and deliverable dates
+- Set reminders for important milestones
 
 **Example prompts:**
 
 ```
-Schedule corn planting for the north section next Monday through Wednesday
+Schedule the design review for next Monday at 2 PM
 ```
 
 ```
-What's on the farm calendar this week?
+What's on the team calendar this week?
 ```
 
 ```
-Move the spray window to Thursday -- the forecast looks better
+Move the client call to Thursday -- the schedule is clearer
 ```
-
-<Callout variant="tip" title="Combine with weather skill">
-Ask your assistant to check the forecast and schedule accordingly: "Find the next 3-day window with no rain and schedule bean spraying."
-</Callout>
 
 ### Gmail
 
@@ -93,31 +89,31 @@ Ask your assistant to check the forecast and schedule accordingly: "Find the nex
 | **Requires auth** | Yes (Google account) |
 | **Actions** | Send Email, List Emails, Read Email |
 
-**What it does:** Send and read Gmail messages through your assistant.
+**What it does:** Send and read Gmail messages through your agents.
 
-**Farm use cases:**
+**Use cases:**
 
-- Forward grain contract summaries to partners or family
-- Email daily delivery reports to your accountant
-- Share weather alerts with crew members
-- Send equipment breakdown notifications
+- Forward project summaries to stakeholders
+- Email daily or weekly reports to team members
+- Share updates with external collaborators
+- Send notifications about important events
 
 **Example prompts:**
 
 ```
-Email today's delivery summary to john@example.com
+Email today's project summary to john@example.com
 ```
 
 ```
-Send the weekly grain bid comparison to my wife
+Send the weekly status report to the team
 ```
 
 ```
-Check if I have any emails from CHS about contract pricing
+Check if I have any emails from the client about the proposal
 ```
 
 <Callout variant="warning" title="Email sends are real">
-When your assistant sends an email through Gmail, it sends from your actual Gmail account. Double-check recipients and content before confirming sends, especially for the first few uses.
+When your agent sends an email through Gmail, it sends from your actual Gmail account. Double-check recipients and content before confirming sends, especially for the first few uses.
 </Callout>
 
 ### Slack
@@ -128,22 +124,22 @@ When your assistant sends an email through Gmail, it sends from your actual Gmai
 | **Requires auth** | Yes (Slack workspace) |
 | **Actions** | Send Message, List Channels |
 
-**What it does:** Post messages to Slack channels from your assistant.
+**What it does:** Post messages to Slack channels from your agents.
 
-**Farm use cases:**
+**Use cases:**
 
-- Cross-post weather alerts and market reports from Discord to Slack
-- Notify a shared Slack channel when a large delivery is logged
-- Share daily grain bid summaries with a team channel
+- Cross-post summaries and reports from Discord to Slack
+- Notify a shared Slack channel when important events occur
+- Share daily briefings with a team channel
 
 **Example prompts:**
 
 ```
-Post today's weather summary to the #farm-updates Slack channel
+Post today's summary to the #updates Slack channel
 ```
 
 ```
-Send the morning grain bids to Slack
+Send the morning briefing to Slack
 ```
 
 ## Productivity toolkits
@@ -156,23 +152,23 @@ Send the morning grain bids to Slack
 | **Requires auth** | Yes (Notion account) |
 | **Actions** | Create Page, Search, Update Page |
 
-**What it does:** Create and search Notion pages from your assistant.
+**What it does:** Create and search Notion pages from your agents.
 
-**Farm use cases:**
+**Use cases:**
 
-- Build a searchable knowledge base of field notes and SOPs
-- Document crop plans and seasonal strategies
-- Store equipment maintenance logs
-- Keep running notes on field performance year over year
+- Build a searchable knowledge base of notes and SOPs
+- Document plans and strategies
+- Store logs and records
+- Keep running notes on project progress
 
 **Example prompts:**
 
 ```
-Create a Notion page for the north quarter scouting report with today's observations
+Create a Notion page for the Q2 planning notes with today's discussion points
 ```
 
 ```
-Search Notion for last year's corn planting notes
+Search Notion for last quarter's retrospective notes
 ```
 
 ### Google Drive
@@ -185,20 +181,20 @@ Search Notion for last year's corn planting notes
 
 **What it does:** Access and organize files in Google Drive.
 
-**Farm use cases:**
+**Use cases:**
 
-- Store and retrieve field maps, soil test results, and aerial imagery
-- Access grain contracts and insurance documents
-- Organize photos by field and season
+- Store and retrieve reference documents, reports, and templates
+- Access contracts and policy documents
+- Organize files by project and date
 
 **Example prompts:**
 
 ```
-What files are in my Farm Documents folder?
+What files are in my Project Documents folder?
 ```
 
 ```
-Find the soil test results from last spring
+Find the brand guidelines from last quarter
 ```
 
 ### Todoist
@@ -211,16 +207,16 @@ Find the soil test results from last spring
 
 **What it does:** Manage tasks and to-do lists.
 
-**Farm use cases:**
+**Use cases:**
 
-- Track maintenance tasks for equipment
-- Create to-do lists for fieldwork preparation
-- Manage delivery schedules and logistics
+- Track action items and deliverables
+- Create to-do lists for projects
+- Manage recurring tasks and deadlines
 
 **Example prompts:**
 
 ```
-Add "Change oil in combine" to my equipment maintenance list
+Add "Review Q2 proposal" to my tasks list
 ```
 
 ```
@@ -228,7 +224,7 @@ What tasks are due this week?
 ```
 
 ```
-Mark the grain bin cleanout as done
+Mark the website update as done
 ```
 
 ## Data toolkits
@@ -243,32 +239,32 @@ Mark the grain bin cleanout as done
 
 **What it does:** Read and write records in Airtable bases.
 
-**Farm use cases:**
+**Use cases:**
 
-- Manage equipment inventory with structured records
-- Track seed lot information across fields and years
-- Log chemical and fertilizer applications with rates and dates
+- Manage inventory with structured records
+- Track project data across teams and timelines
+- Log activities with detailed fields and dates
 - Build custom databases for any tracking need
 
 **Example prompts:**
 
 ```
-Add the new seed lot to the Airtable inventory -- Pioneer P0589, 8 bags, North field
+Add the new vendor to the Airtable directory -- Acme Corp, contact: jane@acme.com
 ```
 
 ```
-Show all equipment records that need service before harvest
+Show all projects in the tracker that are past their deadline
 ```
 
 ## Toolkit selection tips
 
 ### Start small
 
-Enable only the toolkits you will actively use. Each toolkit adds actions to your assistant's tool list, and a smaller tool list means faster, more focused responses. You can always add more toolkits later.
+Enable only the toolkits you will actively use. Each toolkit adds actions to your agent's tool list, and a smaller tool list means faster, more focused responses. You can always add more toolkits later.
 
 ### Recommended first
 
-The four recommended toolkits (Google Sheets, Google Calendar, Gmail, Slack) cover 90% of integration use cases for most farms. Start with these and expand as needed.
+The four recommended toolkits (Google Sheets, Google Calendar, Gmail, Slack) cover 90% of integration use cases for most teams. Start with these and expand as needed.
 
 ### Combine with skills
 
@@ -276,10 +272,10 @@ The most powerful workflows combine Pantheon skills with integration actions:
 
 | Skill | + Integration | Result |
 |---|---|---|
-| Scale Tickets | Google Sheets | Auto-export delivery data to spreadsheets |
-| Weather | Google Calendar | Schedule field work around forecast windows |
-| Grain Bids | Gmail | Email daily bid reports to partners |
-| Weather | Slack | Cross-post alerts to team channels |
+| Custom data skill | Google Sheets | Auto-export data to spreadsheets |
+| Scheduling skill | Google Calendar | Schedule tasks around availability |
+| Reporting skill | Gmail | Email reports to stakeholders |
+| Briefing skill | Slack | Cross-post updates to team channels |
 
 ## What's next
 

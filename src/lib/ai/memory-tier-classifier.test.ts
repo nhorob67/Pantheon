@@ -16,7 +16,7 @@ describe("classifyMemoryTier", () => {
   });
 
   it("classifies low confidence as working regardless of type", () => {
-    assert.equal(classifyMemoryTier("fact", 0.3, "The farmer mentioned something about corn"), "working");
+    assert.equal(classifyMemoryTier("fact", 0.3, "The user mentioned something about the project"), "working");
     assert.equal(classifyMemoryTier("preference", 0.49, "Prefers to sell at CHS"), "working");
   });
 
@@ -26,12 +26,12 @@ describe("classifyMemoryTier", () => {
   });
 
   it("classifies high-confidence fact as knowledge", () => {
-    assert.equal(classifyMemoryTier("fact", 0.85, "Farm has 2400 acres of corn near Minot, ND"), "knowledge");
-    assert.equal(classifyMemoryTier("fact", 1.0, "Always delivers corn to CHS Minot elevator"), "knowledge");
+    assert.equal(classifyMemoryTier("fact", 0.85, "Team manages 12 active projects across 3 departments in North America"), "knowledge");
+    assert.equal(classifyMemoryTier("fact", 1.0, "Always routes deliverables to Acme Corp client portal"), "knowledge");
   });
 
   it("classifies high-confidence preference as knowledge", () => {
-    assert.equal(classifyMemoryTier("preference", 0.9, "Prefers to sell corn at CHS Minot rather than ADM"), "knowledge");
+    assert.equal(classifyMemoryTier("preference", 0.9, "Prefers to route deliverables through Acme Corp rather than Globex"), "knowledge");
     assert.equal(classifyMemoryTier("preference", 1.0, "Likes morning weather briefings at 6am central"), "knowledge");
   });
 
@@ -42,17 +42,17 @@ describe("classifyMemoryTier", () => {
 
   it("classifies medium-confidence preference as episodic", () => {
     assert.equal(classifyMemoryTier("preference", 0.8, "Seemed to prefer shorter weather reports"), "episodic");
-    assert.equal(classifyMemoryTier("preference", 0.89, "Likes grain bid updates in the morning"), "episodic");
+    assert.equal(classifyMemoryTier("preference", 0.89, "Likes status updates in the morning"), "episodic");
   });
 
   it("classifies commitment as episodic at any valid confidence", () => {
-    assert.equal(classifyMemoryTier("commitment", 0.95, "Plans to deliver 500 bushels of corn on Thursday"), "episodic");
+    assert.equal(classifyMemoryTier("commitment", 0.95, "Plans to submit the quarterly report on Thursday"), "episodic");
     assert.equal(classifyMemoryTier("commitment", 0.5, "Might spray the north field next week"), "episodic");
   });
 
   it("handles boundary values", () => {
     // confidence exactly 0.5 — not < 0.5, so not forced to working
-    assert.equal(classifyMemoryTier("commitment", 0.5, "Will check grain bids tomorrow morning"), "episodic");
+    assert.equal(classifyMemoryTier("commitment", 0.5, "Will check market data tomorrow morning"), "episodic");
     // content exactly 20 chars after trim
     assert.equal(classifyMemoryTier("fact", 0.9, "12345678901234567890"), "knowledge");
     // content 19 chars — too short

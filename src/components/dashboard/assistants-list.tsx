@@ -6,16 +6,13 @@ import type { SkillConfig } from "@/types/database";
 import type { CustomSkill } from "@/types/custom-skill";
 import type { ComposioConfig } from "@/types/composio";
 import type { CreateAgentData } from "@/lib/validators/agent";
-import type { PersonalityPreset } from "@/types/agent";
 import { AgentCard } from "./agent-card";
 import { AgentForm } from "./agent-form";
-import { AgentPresetsPicker } from "./agent-presets-picker";
 import { AgentPreviewChat } from "./agent-preview-chat";
 import { Dialog } from "@/components/ui/dialog";
-import { Plus, Users } from "lucide-react";
+import { Plus, Bot } from "lucide-react";
 
 const EMPTY_CUSTOM_SKILLS: CustomSkill[] = [];
-const EMPTY_DEFAULT_PROMPTS: Partial<Record<PersonalityPreset, string>> = {};
 
 interface AssistantsListProps {
   initialAgents: Agent[];
@@ -23,7 +20,6 @@ interface AssistantsListProps {
   globalSkillConfigs: SkillConfig[];
   customSkills?: CustomSkill[];
   composioConfig?: ComposioConfig | null;
-  defaultPrompts?: Partial<Record<PersonalityPreset, string>>;
 }
 
 export function AssistantsList({
@@ -32,7 +28,6 @@ export function AssistantsList({
   globalSkillConfigs,
   customSkills = EMPTY_CUSTOM_SKILLS,
   composioConfig = null,
-  defaultPrompts = EMPTY_DEFAULT_PROMPTS,
 }: AssistantsListProps) {
   const [agents, setAgents] = useState<Agent[]>(initialAgents);
   const [formOpen, setFormOpen] = useState(false);
@@ -53,7 +48,6 @@ export function AssistantsList({
       const nextAgents = raw.map((a: Record<string, unknown>) => ({
         ...a,
         skills: Array.isArray(a.skills) ? a.skills : [],
-        cron_jobs: a.cron_jobs && typeof a.cron_jobs === "object" && !Array.isArray(a.cron_jobs) ? a.cron_jobs : {},
         composio_toolkits: Array.isArray(a.composio_toolkits) ? a.composio_toolkits : [],
         tool_approval_overrides: a.tool_approval_overrides && typeof a.tool_approval_overrides === "object" && !Array.isArray(a.tool_approval_overrides) ? a.tool_approval_overrides : {},
       }));
@@ -126,6 +120,24 @@ export function AssistantsList({
     }
   };
 
+  const handleDuplicate = async (agent: Agent) => {
+    await handleCreate({
+      display_name: `${agent.display_name} (copy)`,
+      role: agent.role || "",
+      goal: agent.goal || "",
+      backstory: agent.backstory || "",
+      autonomy_level: agent.autonomy_level || "copilot",
+      discord_channel_id: "",
+      discord_channel_name: "",
+      is_default: false,
+      skills: (agent.skills || []) as CreateAgentData["skills"],
+      composio_toolkits: agent.composio_toolkits || [],
+      can_delegate: agent.can_delegate ?? false,
+      can_receive_delegation: agent.can_receive_delegation ?? false,
+      tool_approval_overrides: agent.tool_approval_overrides || {},
+    });
+  };
+
   const openEdit = (agent: Agent) => {
     setEditAgent(agent);
     setFormOpen(true);
@@ -150,7 +162,7 @@ export function AssistantsList({
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-headline text-lg font-semibold text-text-primary">
-          Assistants
+          Agents
         </h3>
         <button
           type="button"
@@ -158,7 +170,7 @@ export function AssistantsList({
           className="inline-flex items-center gap-2 bg-accent hover:bg-accent-light text-bg-deep font-semibold rounded-lg px-4 py-2.5 text-sm transition-colors cursor-pointer"
         >
           <Plus className="w-4 h-4" />
-          Add Assistant
+          New Agent
         </button>
       </div>
 
@@ -171,6 +183,7 @@ export function AssistantsList({
               agent={agent}
               onEdit={openEdit}
               onDelete={setDeleteAgent}
+              onDuplicate={handleDuplicate}
               onPreview={setPreviewAgent}
             />
           ))}
@@ -178,35 +191,21 @@ export function AssistantsList({
       ) : (
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <div className="w-16 h-16 rounded-full bg-accent-dim flex items-center justify-center mb-4">
-            <Users className="w-8 h-8 text-accent" />
+            <Bot className="w-8 h-8 text-accent" />
           </div>
           <h4 className="font-headline text-base font-semibold text-text-primary mb-1">
-            No assistants yet
+            No agents yet
           </h4>
           <p className="text-sm text-text-dim max-w-xs mb-6">
-            Choose a suggested setup to get started quickly, or add a custom assistant.
+            Create your first agent to get started. Define its role, goal, and personality.
           </p>
-
-          <div className="w-full max-w-lg mb-6">
-            <AgentPresetsPicker
-              tenantId={tenantId}
-              onDeployed={refreshAgents}
-            />
-          </div>
-
-          <div className="flex items-center gap-3 text-text-dim text-xs mb-4">
-            <span className="h-px w-12 bg-border" />
-            or
-            <span className="h-px w-12 bg-border" />
-          </div>
-
           <button
             type="button"
             onClick={openCreate}
-            className="inline-flex items-center gap-2 border border-border hover:bg-white/5 text-text-secondary hover:text-text-primary font-medium rounded-lg px-5 py-2.5 text-sm transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 bg-accent hover:bg-accent-light text-bg-deep font-semibold rounded-lg px-5 py-2.5 text-sm transition-colors cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            Add Custom Assistant
+            Create Agent
           </button>
         </div>
       )}
@@ -220,7 +219,6 @@ export function AssistantsList({
         globalSkillConfigs={globalSkillConfigs}
         customSkills={customSkills}
         composioConfig={composioConfig}
-        defaultPrompts={defaultPrompts}
         tenantId={tenantId}
       />
 
@@ -238,7 +236,7 @@ export function AssistantsList({
       <Dialog
         open={!!deleteAgent}
         onClose={closeDeleteDialog}
-        title="Delete Assistant"
+        title="Delete Agent"
       >
         <p className="text-sm text-text-secondary mb-6">
           Are you sure you want to delete{" "}
@@ -259,7 +257,7 @@ export function AssistantsList({
             type="button"
             onClick={handleDelete}
             disabled={deleting}
-            className="bg-red-500/20 hover:bg-red-500/30 text-red-400 font-semibold rounded-lg px-5 py-2.5 text-sm transition-colors disabled:opacity-50 cursor-pointer"
+            className="bg-destructive/20 hover:bg-destructive/30 text-destructive font-semibold rounded-lg px-5 py-2.5 text-sm transition-colors disabled:opacity-50 cursor-pointer"
           >
             {deleting ? "Deleting..." : "Delete"}
           </button>

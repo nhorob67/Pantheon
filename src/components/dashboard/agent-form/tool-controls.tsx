@@ -4,12 +4,7 @@ import type { ToolApprovalLevel } from "@/types/agent";
 import { ChevronDown } from "lucide-react";
 
 const TOOL_DISPLAY_INFO: Record<string, { label: string; description: string }> = {
-  tenant_scale_ticket_create: { label: "Create Scale Ticket", description: "Log a new grain delivery" },
-  tenant_scale_ticket_query: { label: "Query Scale Tickets", description: "Search and aggregate ticket data" },
-  tenant_scale_ticket_update: { label: "Update Scale Ticket", description: "Modify an existing ticket" },
-  tenant_scale_ticket_delete: { label: "Delete Scale Ticket", description: "Remove a ticket record" },
-  tenant_grain_bid_query: { label: "Query Grain Bids", description: "Look up cached grain bids" },
-  tenant_memory_search: { label: "Search Memory", description: "Search farm memory records" },
+  tenant_memory_search: { label: "Search Memory", description: "Search memory records" },
   tenant_memory_write: { label: "Write Memory", description: "Save facts and preferences to memory" },
   schedule_create: { label: "Create Schedule", description: "Create a recurring scheduled task" },
   schedule_list: { label: "List Schedules", description: "List all scheduled tasks" },
@@ -17,16 +12,7 @@ const TOOL_DISPLAY_INFO: Record<string, { label: string; description: string }> 
   schedule_delete: { label: "Delete Schedule", description: "Delete a custom schedule" },
 };
 
-const SKILL_TOOLS: Record<string, string[]> = {
-  "farm-grain-bids": ["tenant_grain_bid_query"],
-  "farm-weather": [],
-  "farm-scale-tickets": [
-    "tenant_scale_ticket_create",
-    "tenant_scale_ticket_query",
-    "tenant_scale_ticket_update",
-    "tenant_scale_ticket_delete",
-  ],
-};
+const SKILL_TOOLS: Record<string, string[]> = {};
 
 const ALWAYS_AVAILABLE_TOOLS = [
   "tenant_memory_search",

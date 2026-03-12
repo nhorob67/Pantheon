@@ -103,10 +103,10 @@ export async function POST(
       // Build system prompt and resolve tools
       const systemPrompt = await buildSystemPrompt(state.admin, agent);
 
-      // Resolve farm location for tools
-      const { data: farmProfile } = await state.admin
-        .from("farm_profiles")
-        .select("weather_lat, weather_lng, timezone")
+      // Resolve timezone from team profile
+      const { data: teamProfile } = await state.admin
+        .from("team_profiles")
+        .select("timezone")
         .eq("customer_id", agent.customer_id)
         .maybeSingle();
 
@@ -115,9 +115,7 @@ export async function POST(
         tenantId: state.tenantContext.tenantId,
         customerId: state.tenantContext.customerId,
         agent,
-        farmLat: farmProfile?.weather_lat ?? null,
-        farmLng: farmProfile?.weather_lng ?? null,
-        timezone: farmProfile?.timezone ?? "America/Chicago",
+        timezone: teamProfile?.timezone ?? "America/Chicago",
         channelId: "preview",
       });
 
@@ -125,7 +123,7 @@ export async function POST(
 
       const result = await generateText({
         model: pantheonModel,
-        system: systemPrompt + "\n\n## Preview Mode\nThis is a preview/test conversation. Responses will NOT appear in Discord. Treat this as a normal farmer interaction.",
+        system: systemPrompt + "\n\n## Preview Mode\nThis is a preview/test conversation. Responses will NOT appear in Discord. Treat this as a normal interaction.",
         messages: [{ role: "user" as const, content: parsed.data.message }],
         ...(hasTools ? { tools, maxSteps: 3 } : {}),
         maxOutputTokens: AI_CONFIG.maxOutputTokens,

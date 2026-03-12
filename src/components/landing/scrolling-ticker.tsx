@@ -18,6 +18,7 @@ const tickerItems = [
   "What are my open action items from yesterday?",
   "Draft a response to the partnership inquiry",
   "What did we decide in last week's team meeting?",
+  "Add a research specialist to my pantheon",
 ];
 
 export function ScrollingTicker() {

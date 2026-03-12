@@ -6,7 +6,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { formatCents } from "@/lib/utils/format";
-import type { ApiUsage, Customer, FarmProfile, Instance } from "@/types/database";
+import type { ApiUsage, Customer, TeamProfile, Instance } from "@/types/database";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export async function generateMetadata({
@@ -83,7 +83,7 @@ async function CustomerDetailContent({ id }: { id: string }) {
   const [{ data: customer }, { data: usage }] = await Promise.all([
     admin
       .from("customers")
-      .select("*, farm_profiles(*), instances(*), skill_configs(*)")
+      .select("*, team_profiles(*), instances(*), skill_configs(*)")
       .eq("id", id)
       .single(),
     admin
@@ -98,7 +98,7 @@ async function CustomerDetailContent({ id }: { id: string }) {
     notFound();
   }
 
-  const profile = getFirstRelation<FarmProfile>(customer.farm_profiles);
+  const profile = getFirstRelation<TeamProfile>(customer.team_profiles);
   const instance = getFirstRelation<Instance>(customer.instances);
   const usageRows = Array.isArray(usage) ? (usage as ApiUsage[]) : [];
   const totalCost = usageRows.reduce(
@@ -130,35 +130,29 @@ async function CustomerDetailContent({ id }: { id: string }) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Farm Profile */}
+        {/* Team Profile */}
         <div className="bg-card rounded-xl border border-border shadow-sm p-6">
           <h3 className="font-headline text-sm font-semibold text-foreground/60 uppercase tracking-wider mb-4">
-            Farm Profile
+            Team Profile
           </h3>
           {profile ? (
             <dl className="space-y-3 text-sm">
               <div className="flex justify-between">
-                <dt className="text-foreground/50">Farm Name</dt>
+                <dt className="text-foreground/50">Team Name</dt>
                 <dd className="text-foreground font-medium">
-                  {profile.farm_name || "\u2014"}
+                  {profile.team_name || "\u2014"}
                 </dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-foreground/50">Location</dt>
+                <dt className="text-foreground/50">Industry</dt>
                 <dd className="text-foreground font-medium">
-                  {profile.county ? `${profile.county}, ${profile.state}` : profile.state}
+                  {profile.industry || "\u2014"}
                 </dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-foreground/50">Acres</dt>
+                <dt className="text-foreground/50">Timezone</dt>
                 <dd className="text-foreground font-medium">
-                  {profile.acres?.toLocaleString() || "\u2014"}
-                </dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-foreground/50">Crops</dt>
-                <dd className="text-foreground font-medium text-right max-w-[60%]">
-                  {profile.primary_crops.join(", ") || "\u2014"}
+                  {profile.timezone}
                 </dd>
               </div>
             </dl>

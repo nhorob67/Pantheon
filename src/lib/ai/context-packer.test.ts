@@ -14,7 +14,7 @@ const YESTERDAY = new Date(new Date(NOW).getTime() - 86400000).toISOString();
 function makeMemory(overrides: Partial<ScoredMemory> = {}): ScoredMemory {
   return {
     id: `mem-${Math.random().toString(36).slice(2, 8)}`,
-    content: "Farm has 2400 acres of corn near Minot, ND",
+    content: "Team manages 12 active projects across 3 departments",
     memory_type: "fact",
     memory_tier: "knowledge",
     confidence: 0.9,
@@ -28,10 +28,10 @@ function makeMemory(overrides: Partial<ScoredMemory> = {}): ScoredMemory {
 
 describe("extractBigrams", () => {
   it("extracts word bigrams", () => {
-    const bigrams = extractBigrams("farm has 2400 acres");
-    assert.ok(bigrams.has("farm has"));
-    assert.ok(bigrams.has("has 2400"));
-    assert.ok(bigrams.has("2400 acres"));
+    const bigrams = extractBigrams("team has 12 active");
+    assert.ok(bigrams.has("team has"));
+    assert.ok(bigrams.has("has 12"));
+    assert.ok(bigrams.has("12 active"));
     assert.equal(bigrams.size, 3);
   });
 
@@ -40,8 +40,8 @@ describe("extractBigrams", () => {
   });
 
   it("is case-insensitive", () => {
-    const a = extractBigrams("Farm Has");
-    const b = extractBigrams("farm has");
+    const a = extractBigrams("Team Has");
+    const b = extractBigrams("team has");
     assert.deepEqual(a, b);
   });
 });
@@ -74,13 +74,13 @@ describe("filterContradictions", () => {
   it("keeps newer memory when same-type memories are similar", () => {
     const older = makeMemory({
       id: "old",
-      content: "Farm has 2200 acres of corn and soybeans",
+      content: "Team manages 10 active projects and 5 proposals",
       memory_type: "fact",
       created_at: YESTERDAY,
     });
     const newer = makeMemory({
       id: "new",
-      content: "Farm has 2400 acres of corn and soybeans",
+      content: "Team manages 12 active projects and 5 proposals",
       memory_type: "fact",
       created_at: NOW,
     });
@@ -96,13 +96,13 @@ describe("filterContradictions", () => {
   it("keeps both when different types", () => {
     const fact = makeMemory({
       id: "fact",
-      content: "Farm has 2400 acres of corn and soybeans",
+      content: "Team manages 12 active projects and 5 proposals",
       memory_type: "fact",
       created_at: NOW,
     });
     const pref = makeMemory({
       id: "pref",
-      content: "Farm has 2400 acres of corn and soybeans",
+      content: "Team manages 12 active projects and 5 proposals",
       memory_type: "preference",
       created_at: NOW,
     });
@@ -117,13 +117,13 @@ describe("filterContradictions", () => {
   it("keeps both when content is dissimilar", () => {
     const a = makeMemory({
       id: "a",
-      content: "Farm has 2400 acres of corn near Minot ND",
+      content: "Team manages 12 active projects across 3 departments",
       memory_type: "fact",
       created_at: NOW,
     });
     const b = makeMemory({
       id: "b",
-      content: "Sprayed fungicide on soybeans in Walsh County yesterday",
+      content: "Completed the compliance audit for Eastern division yesterday",
       memory_type: "fact",
       created_at: YESTERDAY,
     });
@@ -159,7 +159,7 @@ describe("packMemoryContext", () => {
       makeMemory({
         id: `mem-${i}`,
         final_score: 0.9 - i * 0.01,
-        content: `Memory item number ${i} with some additional context about farming`,
+        content: `Memory item number ${i} with some additional context about operations`,
       })
     );
     const result = packMemoryContext(memories, { tokenBudget: 150 });
@@ -204,14 +204,14 @@ describe("packMemoryContext", () => {
   it("deduplicates near-identical same-type memories (only one packed)", () => {
     const m1 = makeMemory({
       id: "dup1",
-      content: "Farm has 2400 acres of corn and soybeans near Minot ND",
+      content: "Team manages 12 active projects and 5 proposals in North America",
       final_score: 0.9,
       memory_type: "fact",
       created_at: NOW,
     });
     const m2 = makeMemory({
       id: "dup2",
-      content: "Farm has 2400 acres of corn and soybeans near Minot ND in Walsh County",
+      content: "Team manages 12 active projects and 5 proposals in North America Eastern division",
       final_score: 0.85,
       memory_type: "fact",
       created_at: YESTERDAY,
@@ -223,9 +223,9 @@ describe("packMemoryContext", () => {
   });
 
   it("includes diverse topics even if second has lower score", () => {
-    const corn = makeMemory({
-      id: "corn",
-      content: "Farm plants 1200 acres of corn in Walsh County ND every spring",
+    const projects = makeMemory({
+      id: "projects",
+      content: "Team processes 1200 support tickets in North America every quarter",
       final_score: 0.9,
       memory_type: "fact",
     });
@@ -235,9 +235,9 @@ describe("packMemoryContext", () => {
       final_score: 0.6,
       memory_type: "preference",
     });
-    const result = packMemoryContext([corn, weather]);
+    const result = packMemoryContext([projects, weather]);
     assert.equal(result.includedCount, 2);
-    assert.ok(result.includedMemoryIds.includes("corn"));
+    assert.ok(result.includedMemoryIds.includes("projects"));
     assert.ok(result.includedMemoryIds.includes("weather"));
   });
 });

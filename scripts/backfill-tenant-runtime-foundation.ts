@@ -206,10 +206,10 @@ function toTenantSlug(customerId: string): string {
   return `tenant-${customerId.replace(/-/g, "").slice(0, 12)}`;
 }
 
-function toTenantName(farmName: string | null, email: string | null): string {
-  const normalizedFarmName = typeof farmName === "string" ? farmName.trim() : "";
-  if (normalizedFarmName.length > 0) {
-    return normalizedFarmName.slice(0, 120);
+function toTenantName(teamName: string | null, email: string | null): string {
+  const normalized = typeof teamName === "string" ? teamName.trim() : "";
+  if (normalized.length > 0) {
+    return normalized.slice(0, 120);
   }
 
   const emailLocalPart =
@@ -267,27 +267,26 @@ async function fetchCustomers(
   return (data || []) as CustomerRow[];
 }
 
-async function fetchFarmNameForCustomer(
+async function fetchTeamNameForCustomer(
   admin: SupabaseClient,
   customerId: string
 ): Promise<string | null> {
   const { data, error } = await admin
-    .from("farm_profiles")
-    .select("farm_name, created_at")
+    .from("team_profiles")
+    .select("team_name")
     .eq("customer_id", customerId)
-    .order("created_at", { ascending: true })
     .limit(1);
 
   if (error) {
-    throw new Error(`Failed to load farm profile for customer ${customerId}: ${error.message}`);
+    throw new Error(`Failed to load team profile for customer ${customerId}: ${error.message}`);
   }
 
   if (!data || data.length === 0) {
     return null;
   }
 
-  const farmName = data[0]?.farm_name;
-  return typeof farmName === "string" ? farmName : null;
+  const teamName = data[0]?.team_name;
+  return typeof teamName === "string" ? teamName : null;
 }
 
 async function listInstancesForCustomer(
@@ -347,7 +346,7 @@ async function fetchTenantForCustomer(
 async function createTenantForCustomer(
   admin: SupabaseClient,
   customer: CustomerRow,
-  farmName: string | null,
+  teamName: string | null,
   legacyInstanceCount: number,
   dryRun: boolean
 ): Promise<{ tenant: TenantRow | null; created: boolean }> {
@@ -356,7 +355,7 @@ async function createTenantForCustomer(
       id: `dry-run-${customer.id}`,
       customer_id: customer.id,
       slug: toTenantSlug(customer.id),
-      name: toTenantName(farmName, customer.email),
+      name: toTenantName(teamName, customer.email),
       metadata: {
         seed_migration: BACKFILL_SEED_MIGRATION,
         legacy_instance_count: legacyInstanceCount,
@@ -370,7 +369,7 @@ async function createTenantForCustomer(
     .insert({
       customer_id: customer.id,
       slug: toTenantSlug(customer.id),
-      name: toTenantName(farmName, customer.email),
+      name: toTenantName(teamName, customer.email),
       metadata: {
         seed_migration: BACKFILL_SEED_MIGRATION,
         legacy_instance_count: legacyInstanceCount,
@@ -588,11 +587,11 @@ async function processCustomer(
 
   let tenant = await fetchTenantForCustomer(admin, customer.id);
   if (!tenant) {
-    const farmName = await fetchFarmNameForCustomer(admin, customer.id);
+    const teamName = await fetchTeamNameForCustomer(admin, customer.id);
     const created = await createTenantForCustomer(
       admin,
       customer,
-      farmName,
+      teamName,
       legacyInstanceCount,
       options.dryRun
     );

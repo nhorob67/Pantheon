@@ -68,7 +68,7 @@ export default function LoginPage() {
           Pantheon
         </h1>
         <p className="mt-2 text-text-secondary">
-          Sign in to your farm assistant
+          Sign in to your AI team workspace
         </p>
       </div>
 
@@ -104,7 +104,7 @@ export default function LoginPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@farm.com"
+              placeholder="you@company.com"
               required
               autoComplete="email"
               className="w-full border border-border focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-lg bg-bg-dark px-4 py-3 text-text-primary placeholder:text-text-dim outline-none transition-colors"
@@ -154,7 +154,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {error && <p className="text-red-500 text-sm">{error}</p>}
+          {error && <p className="text-destructive text-sm">{error}</p>}
 
           <button
             type="submit"

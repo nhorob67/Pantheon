@@ -11,11 +11,11 @@ export default async function SecretsVaultPage() {
 
   if (!tenant) {
     return (
-      <div>
-        <div className="mb-6">
-          <h3 className="font-headline text-lg font-semibold mb-1">Secrets Vault</h3>
-          <p className="text-foreground/60 text-sm">
-            Complete your farm setup before configuring secrets.
+      <div className="space-y-6 max-w-4xl">
+        <div>
+          <h1 className="font-headline text-2xl font-semibold">Secrets Vault</h1>
+          <p className="text-sm text-foreground/60 mt-1">
+            Complete your team setup before configuring secrets.
           </p>
         </div>
       </div>
@@ -38,10 +38,10 @@ export default async function SecretsVaultPage() {
   }));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-4xl">
       <div>
-        <h3 className="font-headline text-lg font-semibold mb-1">Secrets Vault</h3>
-        <p className="text-foreground/60 text-sm">
+        <h1 className="font-headline text-2xl font-semibold">Secrets Vault</h1>
+        <p className="text-sm text-foreground/60 mt-1">
           Store API keys and passwords for your agents to use. Secrets are encrypted at rest
           and injected server-side into HTTP requests — your agents never see the raw values.
         </p>

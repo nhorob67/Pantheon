@@ -3,33 +3,25 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  CloudSun,
-  TrendingUp,
   ClipboardList,
   Sun,
-  AlertTriangle,
   Clock,
   type LucideIcon,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { CRON_JOB_INFO, type AvailableCronJob } from "@/types/agent";
 import type { ScheduleActivityData, RecentRun } from "@/lib/queries/schedule-activity";
 import { HeartbeatStrip } from "./heartbeat-strip";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Switch } from "@/components/ui/switch";
 
 const SCHEDULE_ICONS: Record<string, LucideIcon> = {
-  "morning-weather": CloudSun,
-  "daily-grain-bids": TrendingUp,
   "morning_briefing": Sun,
-  "ticket-anomaly-check": ClipboardList,
-  "weather-alert-check": AlertTriangle,
-  "price-alert-check": TrendingUp,
+  "daily-summary": Sun,
+  "weekly-report": ClipboardList,
+  "morning-standup": Clock,
 };
 
 function getScheduleLabel(key: string): string {
-  const cronInfo = CRON_JOB_INFO[key as AvailableCronJob];
-  if (cronInfo) return cronInfo.label;
   if (key === "morning_briefing") return "Morning Briefing";
   return key
     .replace(/[-_]/g, " ")
@@ -37,8 +29,6 @@ function getScheduleLabel(key: string): string {
 }
 
 function getScheduleDescription(key: string, cron: string): string {
-  const cronInfo = CRON_JOB_INFO[key as AvailableCronJob];
-  if (cronInfo) return cronInfo.description;
   if (key === "morning_briefing") return "Daily briefing delivered to Discord";
   return `Cron: ${cron}`;
 }
@@ -157,7 +147,7 @@ export function ScheduleCard({ schedule, tenantId }: ScheduleCardProps) {
                 </span>
                 <span className="text-foreground/40">{formatDuration(run)}</span>
                 {run.error_message && (
-                  <span className="text-red-400 truncate ml-auto max-w-[200px]" title={run.error_message}>
+                  <span className="text-destructive truncate ml-auto max-w-[200px]" title={run.error_message}>
                     {run.error_message}
                   </span>
                 )}

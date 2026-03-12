@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
 
 type ExportScope = "full" | "knowledge_only" | "metadata_only";
@@ -379,14 +381,13 @@ export function TenantExportsPanel({
             </select>
           </label>
 
-          <label className="flex items-center gap-2 text-sm text-foreground/70 md:pb-2">
-            <input
-              type="checkbox"
+          <div className="md:pb-2">
+            <Checkbox
+              label="Include blobs"
               checked={includeBlobs}
-              onChange={(event) => setIncludeBlobs(event.target.checked)}
+              onChange={(event) => setIncludeBlobs(event.currentTarget.checked)}
             />
-            Include blobs
-          </label>
+          </div>
 
           <div className="flex gap-2">
             <Button
@@ -458,30 +459,24 @@ export function TenantExportsPanel({
         </div>
 
         <div className="flex flex-wrap gap-4">
-          <label className="flex items-center gap-2 text-sm text-foreground/70">
-            <input
-              type="checkbox"
-              checked={strictTenantMatch}
-              onChange={(event) => setStrictTenantMatch(event.target.checked)}
-            />
-            Strict tenant match
-          </label>
-          <label className="flex items-center gap-2 text-sm text-foreground/70">
-            <input
-              type="checkbox"
-              checked={failOnUnknownTables}
-              onChange={(event) => setFailOnUnknownTables(event.target.checked)}
-            />
-            Fail on unknown tables
-          </label>
+          <Checkbox
+            label="Strict tenant match"
+            checked={strictTenantMatch}
+            onChange={(event) => setStrictTenantMatch(event.currentTarget.checked)}
+          />
+          <Checkbox
+            label="Fail on unknown tables"
+            checked={failOnUnknownTables}
+            onChange={(event) => setFailOnUnknownTables(event.currentTarget.checked)}
+          />
         </div>
 
         <label className="block text-sm text-foreground/70">
           Records JSON
-          <textarea
+          <Textarea
             value={recordsInput}
             onChange={(event) => setRecordsInput(event.target.value)}
-            className="mt-1 h-56 w-full rounded-lg border border-border bg-background px-3 py-2 text-xs font-mono"
+            className="mt-1 h-56 w-full bg-background text-xs font-mono"
             spellCheck={false}
           />
         </label>
@@ -593,7 +588,7 @@ export function TenantExportsPanel({
                 </div>
 
                 {row.last_error && (
-                  <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+                  <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-red-200">
                     Last error: {row.last_error}
                   </p>
                 )}

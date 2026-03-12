@@ -8,14 +8,11 @@ export default async function EmailSettingsPage() {
   const { customerId } = await requireDashboardCustomer();
 
   return (
-    <div className="max-w-2xl space-y-4">
+    <div className="space-y-6 max-w-4xl">
       <div>
-        <h2 className="font-headline text-xl font-semibold text-foreground">
-          Email (Optional)
-        </h2>
+        <h1 className="font-headline text-2xl font-semibold">Email</h1>
         <p className="text-sm text-foreground/60 mt-1">
-          This is optional and separate from onboarding. Enable it only when you
-          want to ingest files by email.
+          Set up email identity and inbound processing for your agents
         </p>
       </div>
       <Suspense fallback={<EmailSkeleton />}>

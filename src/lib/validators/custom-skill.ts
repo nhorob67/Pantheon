@@ -32,7 +32,7 @@ export const updateCustomSkillSchema = z.object({
 export const generateSkillSchema = z.object({
   prompt: z.string().min(10, "Prompt must be at least 10 characters").max(5000),
   template_id: z.string().max(100).optional(),
-  farm_context: z.boolean().optional(),
+  team_context: z.boolean().optional(),
 });
 
 export const testSkillSchema = z.object({

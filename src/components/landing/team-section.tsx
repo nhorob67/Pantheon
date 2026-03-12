@@ -3,13 +3,6 @@
 import { useState } from "react";
 import { m, LazyMotion, domAnimation, AnimatePresence } from "motion/react";
 
-const PERSONALITY_COLORS: Record<string, string> = {
-  general: "var(--accent)",
-  ops: "var(--green-bright)",
-  research: "#5865F2",
-  comms: "#60a5fa",
-};
-
 const SKILL_LABELS: Record<string, string> = {
   tasks: "Tasks",
   email: "Email",
@@ -20,18 +13,11 @@ const SKILL_LABELS: Record<string, string> = {
   followups: "Follow-ups",
 };
 
-const CHANNEL_MAP: Record<string, string[]> = {
-  general: ["#general"],
-  ops: ["#operations"],
-  research: ["#research"],
-  comms: ["#comms"],
-};
-
 interface AgentConfig {
   display_name: string;
-  personality_preset: string;
+  role: string;
+  channel: string;
   skills: string[];
-  cron_jobs: Record<string, boolean>;
   is_default: boolean;
 }
 
@@ -44,51 +30,41 @@ interface Setup {
 const SETUPS: Setup[] = [
   {
     id: "two-agent",
-    label: "2 Agents",
+    label: "Duo",
     agents: [
-      { display_name: "Executive Assistant", personality_preset: "general", skills: ["tasks", "email", "scheduling"], cron_jobs: { "morning-briefing": true }, is_default: true },
-      { display_name: "Operations Lead", personality_preset: "ops", skills: ["tasks", "sops", "documents"], cron_jobs: {}, is_default: false },
+      { display_name: "Executive Assistant", role: "General operations assistant", channel: "#general", skills: ["tasks", "email", "scheduling"], is_default: true },
+      { display_name: "Operations Lead", role: "Operations lead", channel: "#operations", skills: ["tasks", "sops", "documents"], is_default: false },
     ],
   },
   {
     id: "three-agent",
-    label: "3 Agents",
+    label: "Triad",
     agents: [
-      { display_name: "Executive Assistant", personality_preset: "general", skills: ["tasks", "email", "scheduling"], cron_jobs: { "morning-briefing": true }, is_default: true },
-      { display_name: "Operations Lead", personality_preset: "ops", skills: ["tasks", "sops", "documents"], cron_jobs: {}, is_default: false },
-      { display_name: "Research Analyst", personality_preset: "research", skills: ["research", "documents", "followups"], cron_jobs: {}, is_default: false },
+      { display_name: "Executive Assistant", role: "General operations assistant", channel: "#general", skills: ["tasks", "email", "scheduling"], is_default: true },
+      { display_name: "Operations Lead", role: "Operations lead", channel: "#operations", skills: ["tasks", "sops", "documents"], is_default: false },
+      { display_name: "Research Analyst", role: "Research analyst", channel: "#research", skills: ["research", "documents", "followups"], is_default: false },
     ],
   },
   {
     id: "four-agent",
-    label: "Full Team",
+    label: "Full Pantheon",
     agents: [
-      { display_name: "Executive Assistant", personality_preset: "general", skills: ["tasks", "scheduling"], cron_jobs: { "morning-briefing": true }, is_default: true },
-      { display_name: "Operations Lead", personality_preset: "ops", skills: ["tasks", "sops", "documents"], cron_jobs: {}, is_default: false },
-      { display_name: "Research Analyst", personality_preset: "research", skills: ["research", "documents"], cron_jobs: {}, is_default: false },
-      { display_name: "Comms Manager", personality_preset: "comms", skills: ["email", "followups", "scheduling"], cron_jobs: {}, is_default: false },
+      { display_name: "Executive Assistant", role: "General operations assistant", channel: "#general", skills: ["tasks", "scheduling"], is_default: true },
+      { display_name: "Operations Lead", role: "Operations lead", channel: "#operations", skills: ["tasks", "sops", "documents"], is_default: false },
+      { display_name: "Research Analyst", role: "Research analyst", channel: "#research", skills: ["research", "documents"], is_default: false },
+      { display_name: "Comms Manager", role: "Communications manager", channel: "#comms", skills: ["email", "followups", "scheduling"], is_default: false },
     ],
   },
 ];
 
 const ALL_CHANNELS = ["#general", "#operations", "#research", "#comms"];
-
-function getAgentChannels(agent: AgentConfig): string[] {
-  if (agent.is_default) return ["#general"];
-  return CHANNEL_MAP[agent.personality_preset] ?? [];
-}
+const AGENT_COLORS = ["var(--accent)", "var(--green-bright)", "#5865F2", "var(--accent-light)"];
 
 function getChannelAgent(channel: string, agents: AgentConfig[]): AgentConfig | undefined {
-  for (const agent of agents) {
-    if (!agent.is_default) {
-      const channels = CHANNEL_MAP[agent.personality_preset] ?? [];
-      if (channels.includes(channel)) return agent;
-    }
-  }
+  const bound = agents.find((a) => !a.is_default && a.channel === channel);
+  if (bound) return bound;
   return agents.find((a) => a.is_default);
 }
-
-const AGENT_COLORS = ["var(--accent)", "var(--green-bright)", "#5865F2", "#60a5fa"];
 
 export function TeamSection() {
   const [activeTab, setActiveTab] = useState(0);
@@ -105,9 +81,9 @@ export function TeamSection() {
         transition={{ duration: 0.7 }}
       >
         <div>
-          <div className="section-label">Your Team, Your Way</div>
+          <div className="section-label">Every Pantheon Starts Somewhere</div>
           <h2 className="section-title">Start simple. Add specialists when you&apos;re ready.</h2>
-          <p className="section-sub">Every business is different. Start with a single assistant or build a team of specialists, each with its own focus, skills, and Discord channel.</p>
+          <p className="section-sub">One agent or four. A solo assistant or a full pantheon of specialists. Start with what you need and add new roles as your operation grows.</p>
         </div>
 
         <div className="team-tabs">
@@ -139,7 +115,7 @@ export function TeamSection() {
                   <div className="agent-header">
                     <span
                       className="agent-dot"
-                      style={{ background: PERSONALITY_COLORS[agent.personality_preset] ?? "var(--text-dim)" }}
+                      style={{ background: AGENT_COLORS[i] ?? "var(--text-dim)" }}
                     />
                     <span className="agent-name">{agent.display_name}</span>
                     {agent.is_default && <span className="agent-default-badge">DEFAULT</span>}
@@ -150,9 +126,7 @@ export function TeamSection() {
                     ))}
                   </div>
                   <div className="agent-channels">
-                    {getAgentChannels(agent).map((ch) => (
-                      <span key={ch} className="agent-channel">{ch}</span>
-                    ))}
+                    <span className="agent-channel">{agent.channel}</span>
                     {agent.is_default && <span className="agent-channel dim">+ DMs</span>}
                   </div>
                 </m.div>

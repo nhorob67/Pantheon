@@ -98,7 +98,7 @@ export function ModelCostTips({ tenantId }: Props) {
                     isGreen
                       ? "bg-green-500/10 text-green-400"
                       : isRed
-                        ? "bg-red-500/10 text-red-400"
+                        ? "bg-destructive/10 text-destructive"
                         : "bg-foreground/5 text-foreground/50"
                   }`}
                 >

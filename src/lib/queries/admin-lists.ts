@@ -9,7 +9,7 @@ export interface CustomerRow {
   subscription_status: string;
   plan: string;
   created_at: string;
-  farm_profiles: { farm_name: string | null; state: string }[] | null;
+  team_profiles: { team_name: string | null }[] | null;
   instances: { id: string; status: string }[] | null;
 }
 
@@ -23,14 +23,14 @@ export interface AdminCustomersResult {
 export async function getAdminCustomers(
   filters: CustomerFilters
 ): Promise<AdminCustomersResult> {
-  const { search, status, state, page, per_page } = filters;
+  const { search, status, page, per_page } = filters;
   const offset = (page - 1) * per_page;
   const admin = createAdminClient();
 
   let query = admin
     .from("customers")
     .select(
-      "*, farm_profiles(farm_name, state, county, primary_crops, acres), instances(id, status)",
+      "*, team_profiles(team_name), instances(id, status)",
       { count: "exact" }
     )
     .order("created_at", { ascending: false })
@@ -40,7 +40,7 @@ export async function getAdminCustomers(
     const sanitized = sanitizeSearchForOr(search);
     if (sanitized.length > 0 && sanitized.length <= 200) {
       query = query.or(
-        `email.ilike.%${sanitized}%,farm_profiles.farm_name.ilike.%${sanitized}%`
+        `email.ilike.%${sanitized}%,team_profiles.team_name.ilike.%${sanitized}%`
       );
     }
   }
@@ -54,12 +54,7 @@ export async function getAdminCustomers(
     throw new Error(safeErrorMessage(error, "Failed to load customers"));
   }
 
-  let filtered = (customers || []) as CustomerRow[];
-  if (state) {
-    filtered = filtered.filter((customer) =>
-      customer.farm_profiles?.some((profile) => profile.state === state)
-    );
-  }
+  const filtered = (customers || []) as CustomerRow[];
 
   return {
     customers: filtered,

@@ -17,8 +17,7 @@ export function DocsNav() {
           className="text-xl font-bold tracking-tight no-underline"
           style={{ fontFamily: "var(--headline)" }}
         >
-          <span className="text-text-primary">Farm</span>
-          <span className="text-accent">Claw</span>
+          <span className="text-text-primary">Pantheon</span>
         </Link>
         <span className="bg-accent-dim text-accent font-mono text-xs px-2.5 py-1 rounded-full border border-accent/20">
           Docs

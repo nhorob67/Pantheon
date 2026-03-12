@@ -164,7 +164,7 @@ export function Combobox({
           className={className}
         />
         {loading && (
-          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-[var(--text-dim)]" />
+          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-text-dim" />
         )}
       </div>
 
@@ -173,7 +173,7 @@ export function Combobox({
           ref={listRef}
           id="combobox-listbox"
           role="listbox"
-          className="absolute z-50 top-full mt-1 w-full max-h-64 overflow-y-auto rounded-xl bg-[var(--bg-card)] border border-[var(--border)] shadow-lg shadow-black/30"
+          className="absolute z-50 top-full mt-1 w-full max-h-64 overflow-y-auto rounded-xl bg-bg-card border border-border shadow-lg shadow-black/30"
         >
           {options.map((option, i) => (
             <li
@@ -188,15 +188,15 @@ export function Combobox({
               onMouseEnter={() => setActiveIndex(i)}
               className={`px-4 py-2.5 cursor-pointer text-sm transition-colors ${
                 i === activeIndex
-                  ? "bg-[var(--green-dim)] text-[var(--text-primary)]"
-                  : "text-[var(--text-secondary)] hover:bg-[var(--green-dim)]/50"
+                  ? "bg-green-dim text-text-primary"
+                  : "text-text-secondary hover:bg-green-dim/50"
               }`}
             >
-              <span className="font-medium text-[var(--text-primary)]">
+              <span className="font-medium text-text-primary">
                 {option.label}
               </span>
               {option.description && (
-                <span className="ml-1.5 text-xs text-[var(--text-dim)]">
+                <span className="ml-1.5 text-xs text-text-dim">
                   {option.description}
                 </span>
               )}

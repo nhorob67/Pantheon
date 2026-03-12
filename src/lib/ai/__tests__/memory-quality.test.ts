@@ -2,7 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { scoreMemories, type ScoredMemory } from "../memory-scorer.ts";
 import { packMemoryContext } from "../context-packer.ts";
-import { getActiveMemories, getMemoriesByTag } from "./fixtures/farm-memories.ts";
+import { getActiveMemories, getMemoriesByTag } from "./fixtures/test-memories.ts";
 
 const NOW = new Date("2026-02-24T12:00:00Z");
 
@@ -45,10 +45,10 @@ function simulateSearch(
 }
 
 describe("Memory Quality: Direct Fact Lookup", () => {
-  it("'Where deliver corn?' returns corn delivery memory in top 3", () => {
-    const results = simulateSearch("deliver corn", ["corn", "delivery"]);
+  it("'deliverables Acme' returns delivery memory in top 3", () => {
+    const results = simulateSearch("deliverables Acme", ["delivery", "vendor"]);
     const top3Ids = results.slice(0, 3).map((r) => r.id);
-    // mem-002: "Always delivers corn to CHS Minot elevator"
+    // mem-002: "Always routes deliverables to Acme Corp client portal"
     assert.ok(
       top3Ids.includes("mem-002"),
       `Expected mem-002 in top 3, got: ${top3Ids.join(", ")}`
@@ -57,13 +57,13 @@ describe("Memory Quality: Direct Fact Lookup", () => {
 });
 
 describe("Memory Quality: Indirect Reference", () => {
-  it("'What crops?' returns acreage memories in top results", () => {
-    const results = simulateSearch("crops", ["acreage", "corn", "soybeans", "wheat"]);
+  it("'projects' returns project-related memories in top results", () => {
+    const results = simulateSearch("projects", ["projects", "capacity", "organization"]);
     const top5Ids = results.slice(0, 5).map((r) => r.id);
-    // Should include at least one acreage memory
-    const acreageMemories = getMemoriesByTag("acreage");
-    const found = acreageMemories.some((m) => top5Ids.includes(m.id));
-    assert.ok(found, `Expected acreage memory in top 5, got: ${top5Ids.join(", ")}`);
+    // Should include at least one project memory
+    const projectMemories = getMemoriesByTag("projects");
+    const found = projectMemories.some((m) => top5Ids.includes(m.id));
+    assert.ok(found, `Expected project memory in top 5, got: ${top5Ids.join(", ")}`);
   });
 });
 
@@ -74,8 +74,8 @@ describe("Memory Quality: Superseded Memory Excluded", () => {
     assert.equal(tombstoned, undefined, "Tombstoned mem-013 should not be in active memories");
   });
 
-  it("current basis is returned, not superseded", () => {
-    const results = simulateSearch("corn basis", ["corn", "basis"]);
+  it("current margin is returned, not superseded", () => {
+    const results = simulateSearch("contract margin", ["projects", "margin"]);
     const ids = results.map((r) => r.id);
     assert.ok(!ids.includes("mem-013"), "Superseded mem-013 should not appear");
     assert.ok(ids.includes("mem-014"), "Current mem-014 should appear");
@@ -83,12 +83,12 @@ describe("Memory Quality: Superseded Memory Excluded", () => {
 });
 
 describe("Memory Quality: Recency Weighting", () => {
-  it("newer basis memory scores above older one", () => {
+  it("newer margin memory scores above older one", () => {
     // mem-014: 5 days old, mem-021: 200 days old
     const candidates = [
       {
         id: "mem-014",
-        content: "Corn basis at CHS Minot is -18 cents as of Feb 2026",
+        content: "Acme Corp contract margin is 22% as of Feb 2026",
         memory_type: "fact",
         memory_tier: "episodic",
         confidence: 0.85,
@@ -98,7 +98,7 @@ describe("Memory Quality: Recency Weighting", () => {
       },
       {
         id: "mem-021",
-        content: "Corn basis at CHS Minot was -30 cents in August 2025",
+        content: "Acme Corp contract margin was 10% in August 2025",
         memory_type: "fact",
         memory_tier: "episodic",
         confidence: 0.9,
@@ -119,7 +119,7 @@ describe("Memory Quality: Tier Separation", () => {
     const candidates = [
       {
         id: "knowledge",
-        content: "Farm has 2400 acres of corn near Minot, ND",
+        content: "Team manages 12 active projects across 3 departments",
         memory_type: "fact",
         memory_tier: "knowledge",
         confidence: 0.9,

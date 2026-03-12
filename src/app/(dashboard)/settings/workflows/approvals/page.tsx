@@ -117,10 +117,10 @@ export default async function WorkflowApprovalsPage({
 
   if (!instance || !tenant) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-6 max-w-4xl">
         <div>
-          <h3 className="font-headline text-lg font-semibold">Workflow Approvals</h3>
-          <p className="text-sm text-foreground/60">
+          <h1 className="font-headline text-2xl font-semibold">Workflow Approvals</h1>
+          <p className="text-sm text-foreground/60 mt-1">
             Provision your instance first to review and action workflow approvals.
           </p>
         </div>
@@ -186,7 +186,7 @@ export default async function WorkflowApprovalsPage({
     .sort((a, b) => a.localeCompare(b));
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 max-w-4xl">
       <div className="rounded-2xl border border-border bg-bg-card/70 p-4">
         <Link
           href="/settings/workflows"
@@ -197,10 +197,10 @@ export default async function WorkflowApprovalsPage({
 
         <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h3 className="font-headline text-lg font-semibold text-text-primary">
+            <h1 className="font-headline text-2xl font-semibold">
               Workflow Approvals
-            </h3>
-            <p className="text-sm text-text-dim">
+            </h1>
+            <p className="text-sm text-foreground/60 mt-1">
               Review pending approvals, enforce SLA expectations, and approve or reject
               blocked runs.
             </p>
@@ -280,7 +280,7 @@ export default async function WorkflowApprovalsPage({
           </div>
 
           {approvalsError && (
-            <p className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+            <p className="mt-3 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-red-200">
               {approvalsError}
             </p>
           )}

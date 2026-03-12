@@ -1,6 +1,6 @@
 ---
 title: Knowledge Files
-description: Upload documents your assistant can reference -- PDFs, Word docs, text files, and Markdown.
+description: Upload documents your agents can reference -- PDFs, Word docs, text files, and Markdown.
 section: Tools
 order: 5
 icon: FileText
@@ -9,7 +9,7 @@ tags: [knowledge, documents, upload, pdf]
 
 # Knowledge Files
 
-Knowledge files let you upload documents that your assistant can reference when answering questions. Upload farm manuals, crop plans, insurance documents, or any other material you want your assistant to know about.
+Knowledge files let you upload documents that your agents can reference when answering questions. Upload manuals, guides, policies, reference material, or any other documents you want your agents to know about.
 
 ## Supported formats
 
@@ -36,13 +36,13 @@ Knowledge files let you upload documents that your assistant can reference when 
 3. Choose the scope: **Shared** (all agents) or a specific agent
 4. Upload
 
-Pantheon processes the document, extracts the text, sanitizes the content, and indexes it for retrieval. Your assistant can reference the content immediately.
+Pantheon processes the document, extracts the text, sanitizes the content, and indexes it for retrieval. Your agents can reference the content immediately.
 
 ## Shared vs. per-agent knowledge
 
 | Scope | Who can access | Best for |
 |---|---|---|
-| **Shared** | All agents in your workspace | General farm documents, SOPs, reference material |
+| **Shared** | All agents in your workspace | General documents, SOPs, reference material |
 | **Per-agent** | Only the assigned agent | Specialized documents relevant to one agent's role |
 
 You can reassign files between shared and per-agent at any time using the dropdown on each file's card.
@@ -53,12 +53,12 @@ If you delete an agent that has per-agent knowledge files, those files are autom
 
 ## How retrieval works
 
-When your assistant receives a question, it searches your knowledge files using a hybrid approach:
+When your agent receives a question, it searches your knowledge files using a hybrid approach:
 
 - **Semantic search** -- Finds content that is conceptually similar to the question using vector embeddings, even if different words are used
 - **Keyword search** -- Matches specific terms and phrases from the question
 
-The most relevant passages are included in the assistant's context when generating a response. Your assistant will cite the source document when using knowledge file content.
+The most relevant passages are included in the agent's context when generating a response. Your agent will cite the source document when using knowledge file content.
 
 Large documents are automatically split into chunks for efficient retrieval. No configuration needed.
 
@@ -73,11 +73,11 @@ From **Settings > Knowledge**, you can:
 - **Review failed uploads** -- See error messages and retry or remove
 
 <Callout variant="tip" title="Quality over quantity">
-A few well-chosen, relevant documents will give better results than uploading everything you have. Focus on documents your assistant is likely to need when answering questions.
+A few well-chosen, relevant documents will give better results than uploading everything you have. Focus on documents your agents are likely to need when answering questions.
 </Callout>
 
 ## What's next
 
 - [Memory Vault](/docs/tools/memory) -- Persistent facts and context across conversations
-- [Custom Skills](/docs/skills/custom-skills) -- Create new capabilities for your assistant
+- [Custom Skills](/docs/skills/custom-skills) -- Create new capabilities for your agents
 - [AI Agents](/docs/agents) -- Assign knowledge to specific agents

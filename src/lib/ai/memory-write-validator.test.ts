@@ -30,7 +30,7 @@ describe("validateContent", () => {
 
     it("accepts content at exactly 6000 chars", () => {
       // "x" repeated hits junk filter, use varied content
-      const result = validateContent({ ...base, content: "Farm corn data. ".repeat(375) });
+      const result = validateContent({ ...base, content: "Project status data. ".repeat(300) });
       assert.equal(result.valid, true);
     });
 
@@ -54,7 +54,7 @@ describe("validateContent", () => {
     });
 
     it("rejects email addresses", () => {
-      const result = validateContent({ ...base, content: "Contact me at farmer@example.com for details" });
+      const result = validateContent({ ...base, content: "Contact me at user@example.com for details" });
       assert.equal(result.valid, false);
       if (!result.valid) assert.match(result.reason, /email/);
     });
@@ -77,8 +77,8 @@ describe("validateContent", () => {
       if (!result.valid) assert.match(result.reason, /API key/);
     });
 
-    it("allows farm facts without PII", () => {
-      const result = validateContent({ ...base, content: "Farm has 2400 acres of corn near Minot, ND" });
+    it("allows team facts without PII", () => {
+      const result = validateContent({ ...base, content: "Team manages 12 active projects across 3 departments" });
       assert.equal(result.valid, true);
     });
   });
@@ -110,7 +110,7 @@ describe("validateContent", () => {
     });
 
     it("allows URLs within text", () => {
-      const result = validateContent({ ...base, content: "Check out https://example.com for grain bids info" });
+      const result = validateContent({ ...base, content: "Check out https://example.com for market data info" });
       assert.equal(result.valid, true);
     });
   });
@@ -122,7 +122,7 @@ describe("validateContent", () => {
         captureLevel: "conservative",
         memoryType: "preference",
         confidence: 0.9,
-        content: "Prefers morning grain bid updates at 6am",
+        content: "Prefers morning status updates at 6am",
       });
       assert.equal(result.valid, false);
       if (!result.valid) assert.match(result.reason, /conservative.*fact\/commitment/);
@@ -146,7 +146,7 @@ describe("validateContent", () => {
         captureLevel: "conservative",
         memoryType: "fact",
         confidence: 0.9,
-        content: "Farm has 2400 acres of corn near Minot, ND",
+        content: "Team manages 12 projects across 3 departments",
       });
       assert.equal(result.valid, true);
     });
@@ -156,7 +156,7 @@ describe("validateContent", () => {
         ...base,
         captureLevel: "standard",
         confidence: 0.3,
-        content: "The farmer vaguely mentioned something about beans",
+        content: "The user vaguely mentioned something about the project",
       });
       assert.equal(result.valid, false);
     });
@@ -177,7 +177,7 @@ describe("validateContent", () => {
         captureLevel: "aggressive",
         memoryType: "outcome",
         confidence: 0.1,
-        content: "Something was mentioned about some crop maybe",
+        content: "Something was mentioned about some project maybe",
       });
       assert.equal(result.valid, true);
     });
@@ -188,7 +188,7 @@ describe("validateContent", () => {
       const result = validateContent({
         ...base,
         excludeCategories: ["financial", "personal"],
-        content: "The farmer's personal net worth is significant",
+        content: "The user's personal net worth is significant",
       });
       assert.equal(result.valid, false);
       if (!result.valid) assert.match(result.reason, /excluded category.*personal/);
@@ -207,7 +207,7 @@ describe("validateContent", () => {
       const result = validateContent({
         ...base,
         excludeCategories: ["financial"],
-        content: "Farm has 2400 acres of corn near Minot, ND",
+        content: "Team manages 12 projects across multiple departments",
       });
       assert.equal(result.valid, true);
     });

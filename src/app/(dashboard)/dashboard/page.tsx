@@ -15,59 +15,29 @@ import {
   getCustomerTenant,
 } from "@/lib/auth/dashboard-session";
 import { DashboardApprovals } from "./_components/dashboard-approvals";
+import { DashboardActivity } from "./_components/dashboard-activity";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
-export default async function DashboardPage() {
-  const [{ customerId }, supabase] = await Promise.all([
-    requireDashboardCustomer(),
-    createClient(),
-  ]);
-
+/* ── Streamed: usage stats + spending alert ────────────── */
+async function DashboardStats({ customerId }: { customerId: string }) {
+  const supabase = await createClient();
   const startOfMonth = new Date();
   startOfMonth.setDate(1);
   startOfMonth.setHours(0, 0, 0, 0);
 
-  const today = new Date().toISOString().split("T")[0];
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
-  const sevenDaysAgoStr = sevenDaysAgo.toISOString().split("T")[0];
-
-  const [
-    tenant,
-    { data: emailIdentity },
-    { data: usage },
-    { data: conversationEvents },
-    { data: customer },
-  ] = await Promise.all([
-    getCustomerTenant(customerId),
-    supabase
-      .from("email_identities")
-      .select("address")
-      .eq("customer_id", customerId)
-      .eq("is_active", true)
-      .maybeSingle(),
+  const [{ data: usage }, { data: customer }] = await Promise.all([
     supabase
       .from("api_usage")
       .select("input_tokens, output_tokens, estimated_cost_cents")
       .eq("customer_id", customerId)
       .gte("date", startOfMonth.toISOString().split("T")[0]),
     supabase
-      .from("conversation_events")
-      .select("date, message_count")
-      .eq("customer_id", customerId)
-      .gte("date", sevenDaysAgoStr)
-      .order("date", { ascending: true }),
-    supabase
       .from("customers")
       .select("spending_cap_cents, spending_cap_auto_pause")
       .eq("id", customerId)
       .single(),
   ]);
-
-  if (!tenant) {
-    redirect("/onboarding");
-  }
 
   const totalTokens = (usage || []).reduce(
     (sum, u) => sum + (u.input_tokens || 0) + (u.output_tokens || 0),
@@ -77,6 +47,50 @@ export default async function DashboardPage() {
     (sum, u) => sum + (u.estimated_cost_cents || 0),
     0
   );
+
+  const now = new Date();
+  const uptimeHours = Math.floor(
+    (now.getTime() - startOfMonth.getTime()) / (1000 * 60 * 60)
+  );
+
+  const capCents = customer?.spending_cap_cents ?? null;
+  const capPercentage =
+    capCents && capCents > 0
+      ? Math.round((totalCostCents / capCents) * 100)
+      : null;
+
+  return (
+    <>
+      {capPercentage !== null && capPercentage >= 80 && (
+        <SpendingAlertBanner
+          percentage={capPercentage}
+          currentCents={totalCostCents}
+          capCents={capCents!}
+        />
+      )}
+      <QuickStats
+        messagesToday={0}
+        uptimeHours={uptimeHours}
+        tokensUsed={formatTokens(totalTokens)}
+        monthlyCost={formatCents(totalCostCents + SUBSCRIPTION_PRICE_CENTS)}
+      />
+    </>
+  );
+}
+
+/* ── Streamed: message activity chart ──────────────────── */
+async function DashboardChart({ customerId }: { customerId: string }) {
+  const supabase = await createClient();
+  const today = new Date().toISOString().split("T")[0];
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+
+  const { data: conversationEvents } = await supabase
+    .from("conversation_events")
+    .select("date, message_count")
+    .eq("customer_id", customerId)
+    .gte("date", sevenDaysAgo.toISOString().split("T")[0])
+    .order("date", { ascending: true });
 
   const eventsByDate = new Map<string, number>();
   for (const event of conversationEvents || []) {
@@ -94,18 +108,28 @@ export default async function DashboardPage() {
     };
   });
 
-  const messagesToday = eventsByDate.get(today) || 0;
+  return <MessageActivityChart data={chartData} />;
+}
 
-  const now = new Date();
-  const uptimeHours = Math.floor(
-    (now.getTime() - startOfMonth.getTime()) / (1000 * 60 * 60)
-  );
+export default async function DashboardPage() {
+  const [{ customerId }, supabase] = await Promise.all([
+    requireDashboardCustomer(),
+    createClient(),
+  ]);
 
-  const capCents = customer?.spending_cap_cents ?? null;
-  const capPercentage =
-    capCents && capCents > 0
-      ? Math.round((totalCostCents / capCents) * 100)
-      : null;
+  const [tenant, { data: emailIdentity }] = await Promise.all([
+    getCustomerTenant(customerId),
+    supabase
+      .from("email_identities")
+      .select("address")
+      .eq("customer_id", customerId)
+      .eq("is_active", true)
+      .maybeSingle(),
+  ]);
+
+  if (!tenant) {
+    redirect("/onboarding");
+  }
 
   return (
     <div className="space-y-6 max-w-6xl">
@@ -114,24 +138,13 @@ export default async function DashboardPage() {
           Dashboard
         </h2>
         <p className="text-foreground/60 text-sm mt-1">
-          Your farm assistant at a glance.
+          Your AI team at a glance.
         </p>
       </div>
 
-      {capPercentage !== null && capPercentage >= 80 && (
-        <SpendingAlertBanner
-          percentage={capPercentage}
-          currentCents={totalCostCents}
-          capCents={capCents!}
-        />
-      )}
-
-      <QuickStats
-        messagesToday={messagesToday}
-        uptimeHours={uptimeHours}
-        tokensUsed={formatTokens(totalTokens)}
-        monthlyCost={formatCents(totalCostCents + SUBSCRIPTION_PRICE_CENTS)}
-      />
+      <Suspense fallback={<Skeleton className="h-36 rounded-xl" />}>
+        <DashboardStats customerId={customerId} />
+      </Suspense>
 
       <Suspense fallback={<Skeleton className="h-28 rounded-xl" />}>
         <DashboardApprovals tenantId={tenant.id} />
@@ -166,12 +179,18 @@ export default async function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <MessageActivityChart data={chartData} />
+          <Suspense fallback={<Skeleton className="h-[300px] rounded-xl" />}>
+            <DashboardChart customerId={customerId} />
+          </Suspense>
         </div>
         <div>
           <InstanceStatusCard tenantId={tenant.id} />
         </div>
       </div>
+
+      <Suspense fallback={<Skeleton className="h-48 rounded-xl" />}>
+        <DashboardActivity tenantId={tenant.id} />
+      </Suspense>
     </div>
   );
 }

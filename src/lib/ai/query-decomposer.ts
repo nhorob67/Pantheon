@@ -1,9 +1,3 @@
-const CROPS = [
-  "corn", "soybeans", "spring wheat", "winter wheat", "durum",
-  "barley", "sunflowers", "canola", "dry beans", "flax",
-  "wheat", "beans",
-];
-
 const CONJUNCTION_RE = /\b(?:and|also|plus|as well as)\b/i;
 const QUESTION_WORD_RE = /\b(?:what|when|where|which|how)\b/gi;
 const MAX_SUB_QUERIES = 3;
@@ -28,12 +22,6 @@ export function decomposeQuery(query: string): string[] {
   const questionParts = splitOnQuestionWords(trimmed);
   if (questionParts.length > 1) {
     return takeTopQueries(trimmed, questionParts);
-  }
-
-  // 3. Try crop mention split
-  const cropParts = splitOnCrops(trimmed);
-  if (cropParts.length > 1) {
-    return takeTopQueries(trimmed, cropParts);
   }
 
   // No split applies
@@ -68,23 +56,6 @@ function splitOnQuestionWords(query: string): string[] {
   }
 
   return parts;
-}
-
-function splitOnCrops(query: string): string[] {
-  const lower = query.toLowerCase();
-  const found = CROPS.filter((crop) => lower.includes(crop));
-
-  // Deduplicate: "wheat" is in both "spring wheat" and "winter wheat"
-  const unique = found.filter((crop, i) =>
-    !found.some((other, j) => j !== i && other.includes(crop) && other.length > crop.length)
-  );
-
-  if (unique.length < 2) return [];
-
-  return unique.map((crop) => {
-    // Reconstruct a per-crop sub-query: replace other crops with this one
-    return `${query} (focus: ${crop})`;
-  });
 }
 
 function takeTopQueries(original: string, parts: string[]): string[] {

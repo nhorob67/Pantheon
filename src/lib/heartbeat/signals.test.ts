@@ -8,13 +8,13 @@ import {
 } from "./signals.ts";
 
 test("buildHeartbeatSignalFingerprint is stable for reordered payloads", () => {
-  const left = buildHeartbeatSignalFingerprint("weather_severe", {
-    alerts: [{ event: "Wind", expires: "2026-03-09T20:00:00Z" }],
-    zone: "IAC001",
+  const left = buildHeartbeatSignalFingerprint("unanswered_emails", {
+    count: 5,
+    threshold_hours: 2,
   });
-  const right = buildHeartbeatSignalFingerprint("weather_severe", {
-    zone: "IAC001",
-    alerts: [{ expires: "2026-03-09T20:00:00Z", event: "Wind" }],
+  const right = buildHeartbeatSignalFingerprint("unanswered_emails", {
+    threshold_hours: 2,
+    count: 5,
   });
 
   assert.equal(left, right);
@@ -22,7 +22,7 @@ test("buildHeartbeatSignalFingerprint is stable for reordered payloads", () => {
 
 test("collectHeartbeatAlertSignals returns only alerting checks", () => {
   const signals = collectHeartbeatAlertSignals({
-    weather_severe: { status: "ok", summary: "No alerts" },
+    custom_checks: { status: "ok", summary: "No custom checks" },
     unanswered_emails: {
       status: "alert",
       summary: "3 unanswered email(s) older than 2h",
@@ -35,12 +35,28 @@ test("collectHeartbeatAlertSignals returns only alerting checks", () => {
   assert.equal(signals[0]?.severity, 3);
 });
 
-test("deriveHeartbeatSignalSeverity escalates larger grain moves", () => {
+test("deriveHeartbeatSignalSeverity escalates with higher email counts", () => {
   assert.equal(
-    deriveHeartbeatSignalSeverity("grain_price_movement", [
-      { change_cents: 12 },
-      { change_cents: -31 },
-    ]),
+    deriveHeartbeatSignalSeverity("unanswered_emails", { count: 1 }),
+    2
+  );
+  assert.equal(
+    deriveHeartbeatSignalSeverity("unanswered_emails", { count: 5 }),
+    4
+  );
+  assert.equal(
+    deriveHeartbeatSignalSeverity("unanswered_emails", { count: 12 }),
+    5
+  );
+});
+
+test("deriveHeartbeatSignalSeverity scales custom checks by item count", () => {
+  assert.equal(
+    deriveHeartbeatSignalSeverity("custom_checks", { items: ["a", "b"] }),
+    3
+  );
+  assert.equal(
+    deriveHeartbeatSignalSeverity("custom_checks", { items: ["a", "b", "c", "d", "e"] }),
     4
   );
 });

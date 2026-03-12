@@ -170,7 +170,7 @@ export function Hero() {
           >
             <div className="hero-badge">
               <span className="dot" style={{ background: "var(--green-bright)" }} />
-              Your AI team, ready to work
+              Assemble your Pantheon
             </div>
           </m.div>
 
@@ -188,7 +188,7 @@ export function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            Vendor emails. Employee questions. Client deadlines. It all lands on you. Pantheon gives you a team of AI agents in Discord that track it all: tasks, email, SOPs, research, and communication with everyone who needs a piece of your time.
+            Vendor emails. Employee questions. Client deadlines. It all lands on you. Pantheon gives you a team of AI specialists — each with its own domain, its own skills, its own channel — working together in Discord so your whole team stops routing everything through one person.
           </m.p>
 
           <m.div

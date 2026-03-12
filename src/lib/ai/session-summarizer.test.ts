@@ -60,9 +60,9 @@ describe("session-summarizer", () => {
   describe("structured output parsing", () => {
     it("SummarySchema validates correct output", () => {
       const output = {
-        summary: "The farmer discussed corn delivery and weather conditions.",
+        summary: "The user discussed project timelines and resource allocation.",
         facts: [
-          { content: "Delivers corn to CHS Minot", type: "fact", confidence: 0.9 },
+          { content: "Uses weekly sprint cycles", type: "fact", confidence: 0.9 },
           { content: "Prefers morning updates", type: "preference", confidence: 0.8 },
         ],
       };

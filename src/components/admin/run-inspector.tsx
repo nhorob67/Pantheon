@@ -60,9 +60,9 @@ export function RunInspector({ run }: RunInspectorProps) {
           />
         </div>
         {run.error_message && (
-          <div className="mt-3 rounded-lg bg-red-500/5 border border-red-500/20 p-3">
-            <p className="text-xs font-medium text-red-500 mb-1">Error</p>
-            <p className="text-sm text-red-400">{run.error_message}</p>
+          <div className="mt-3 rounded-lg bg-destructive/5 border border-destructive/20 p-3">
+            <p className="text-xs font-medium text-destructive mb-1">Error</p>
+            <p className="text-sm text-destructive">{run.error_message}</p>
           </div>
         )}
       </CollapsibleSection>

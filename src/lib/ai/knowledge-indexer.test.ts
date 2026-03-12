@@ -115,13 +115,13 @@ describe("chunkText — structure-aware chunking", () => {
 
   it("preserves heading text in chunk content", () => {
     const text = [
-      "## Grain Marketing Strategy",
-      "This section covers the grain marketing strategy including basis levels, elevator contracts, and hedging approaches for corn and soybeans in the upper midwest region.",
+      "## Project Delivery Strategy",
+      "This section covers the project delivery strategy including milestone tracking, client contracts, and scheduling approaches for enterprise and mid-market accounts across the region.",
     ].join("\n");
 
     const chunks = chunkText(text);
     assert.ok(chunks.length >= 1);
-    assert.ok(chunks[0].includes("## Grain Marketing Strategy"));
+    assert.ok(chunks[0].includes("## Project Delivery Strategy"));
   });
 
   it("falls back to word-window for long unstructured text", () => {
@@ -180,7 +180,7 @@ describe("chunkText — structure-aware chunking", () => {
   });
 
   it("returns single chunk for small document", () => {
-    const text = "# Overview\n\nThis is a small document about farming practices in the upper midwest with corn and soybeans as primary crops.";
+    const text = "# Overview\n\nThis is a small document about project management practices for enterprise and mid-market accounts across the region with scheduling and resource allocation.";
     const chunks = chunkText(text);
     assert.equal(chunks.length, 1);
   });

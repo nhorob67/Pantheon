@@ -17,11 +17,11 @@ export default async function MemorySettingsPage() {
 
   if (!tenant) {
     return (
-      <div>
-        <div className="mb-6">
-          <h3 className="font-headline text-lg font-semibold mb-1">Memory</h3>
-          <p className="text-foreground/60 text-sm">
-            Complete your farm setup before configuring memory settings.
+      <div className="space-y-6 max-w-4xl">
+        <div>
+          <h1 className="font-headline text-2xl font-semibold">Memory</h1>
+          <p className="text-sm text-foreground/60 mt-1">
+            Complete your team setup before configuring memory settings.
           </p>
         </div>
       </div>
@@ -40,10 +40,10 @@ export default async function MemorySettingsPage() {
     settings || buildDefaultMemorySettings(tenant.id, customerId);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-4xl">
       <div>
-        <h3 className="font-headline text-lg font-semibold mb-1">Memory</h3>
-        <p className="text-foreground/60 text-sm">
+        <h1 className="font-headline text-2xl font-semibold">Memory</h1>
+        <p className="text-sm text-foreground/60 mt-1">
           Control what your assistant remembers between conversations.
         </p>
       </div>

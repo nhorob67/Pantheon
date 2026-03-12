@@ -197,7 +197,7 @@ export function AgentPreviewChat({
         </div>
 
         {error && (
-          <p className="text-red-400 text-xs mb-2">{error}</p>
+          <p className="text-destructive text-xs mb-2">{error}</p>
         )}
 
         {/* Input */}

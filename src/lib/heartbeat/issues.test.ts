@@ -19,11 +19,6 @@ function buildConfig(
     active_hours_start: input.active_hours_start || "05:00",
     active_hours_end: input.active_hours_end || "21:00",
     checks: input.checks || {
-      weather_severe: true,
-      grain_price_movement: true,
-      grain_price_threshold_cents: 10,
-      unreviewed_tickets: true,
-      unreviewed_tickets_threshold_hours: 4,
       unanswered_emails: true,
       unanswered_emails_threshold_hours: 2,
     },
@@ -209,23 +204,23 @@ test("decideHeartbeatIssueDelivery defers non-urgent alerts while digest window 
   assert.equal(decision.suppressedReason, "digest_window_open");
 });
 
-test("decideHeartbeatIssueDelivery lets urgent weather alerts bypass busy runtime deferment", () => {
-  const urgentWeatherPlan = buildHeartbeatIssuePlan({
+test("decideHeartbeatIssueDelivery lets high-severity alerts bypass busy runtime deferment", () => {
+  const urgentPlan = buildHeartbeatIssuePlan({
     config: buildConfig(),
     existingIssues: [],
     alertSignals: [
       buildSignal({
-        key: "weather_severe",
-        summary: "Severe thunderstorm warning in effect",
-        fingerprint: "weather-fp",
-        data: [{ severity: "Severe" }],
-        severity: 4,
+        key: "unanswered_emails",
+        summary: "12 unanswered email(s) older than 2h",
+        fingerprint: "email-urgent-fp",
+        data: { count: 12, threshold_hours: 2 },
+        severity: 5,
       }),
       buildSignal({
-        key: "unanswered_emails",
-        summary: "3 unanswered email(s) older than 2h",
-        fingerprint: "email-fp",
-        data: { count: 3, threshold_hours: 2 },
+        key: "custom_checks",
+        summary: "2 custom check(s) need LLM evaluation",
+        fingerprint: "custom-fp",
+        data: { items: ["Review contract", "Follow up"] },
         severity: 3,
       }),
     ],
@@ -237,7 +232,7 @@ test("decideHeartbeatIssueDelivery lets urgent weather alerts bypass busy runtim
     deliveryChannelId: "channel-1",
     maxAlertsPerDay: 6,
     recentDeliveryCount: 0,
-    plan: urgentWeatherPlan,
+    plan: urgentPlan,
     digestEnabled: true,
     digestWindowMinutes: 180,
     now: new Date("2026-03-09T12:00:00.000Z"),
@@ -247,5 +242,5 @@ test("decideHeartbeatIssueDelivery lets urgent weather alerts bypass busy runtim
   assert.equal(decision.deliveryAttempted, true);
   assert.equal(decision.suppressedReason, null);
   assert.equal(decision.notificationCandidates.length, 1);
-  assert.equal(decision.notificationCandidates[0]?.issue.signal_type, "weather_severe");
+  assert.equal(decision.notificationCandidates[0]?.issue.signal_type, "unanswered_emails");
 });

@@ -6,9 +6,9 @@ export const briefingConfigSchema = z.object({
   timezone: z.string().default("America/Chicago"),
   channel_id: z.string().min(1),
   sections: z.object({
-    weather: z.boolean().default(true),
-    grain_bids: z.boolean().default(true),
-    ticket_summary: z.boolean().default(false),
+    conditions: z.boolean().default(true),
+    external_updates: z.boolean().default(true),
+    activity_recap: z.boolean().default(false),
   }),
 });
 

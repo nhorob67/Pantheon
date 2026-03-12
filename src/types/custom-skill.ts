@@ -35,11 +35,11 @@ export interface GenerationMetadata {
 }
 
 export type SkillTemplateCategory =
-  | "crop-management"
+  | "customer-support"
   | "financial"
-  | "equipment"
-  | "livestock"
-  | "compliance";
+  | "project-management"
+  | "productivity"
+  | "operations";
 
 export interface SkillTemplate {
   id: string;

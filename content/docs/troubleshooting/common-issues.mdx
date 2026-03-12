@@ -1,6 +1,6 @@
 ---
 title: Common Issues
-description: Solutions for the most frequently encountered problems with Pantheon — login, Discord, skills, provisioning, and billing.
+description: Solutions for the most frequently encountered problems with Pantheon -- login, Discord, skills, provisioning, and billing.
 section: Troubleshooting
 order: 1
 icon: AlertCircle
@@ -13,13 +13,13 @@ tags: [troubleshooting, faq, common issues, errors]
 
 - Check your **spam**, **junk**, or **promotions** folder
 - Verify you entered the correct email address
-- Wait 60 seconds before requesting another link — there's a cooldown
+- Wait 60 seconds before requesting another link -- there's a cooldown
 - If using a corporate email, your IT department may be blocking the sender
 - Try a different email provider (Gmail, Outlook) if issues persist
 
 ### The magic link says it's expired
 
-Magic links expire after a short time for security. Request a new one from the login page. Don't bookmark or save magic link URLs — they're single-use.
+Magic links expire after a short time for security. Request a new one from the login page. Don't bookmark or save magic link URLs -- they're single-use.
 
 ### I'm getting redirected to the login page repeatedly
 
@@ -31,7 +31,7 @@ Your session may have expired. Clear your browser cookies for Pantheon and reque
 
 ### The bot appears offline in Discord
 
-1. Check your **dashboard** — verify your workspace shows "Active" status
+1. Check your **dashboard** -- verify your workspace shows "Active" status
 2. Check that the Pantheon bot hasn't been **kicked** from the server. Re-add it from Settings > Discord
 3. Try sending a DM to the bot to rule out channel permission issues
 
@@ -45,80 +45,31 @@ Your session may have expired. Clear your browser cookies for Pantheon and reque
 ### The bot responds slowly
 
 - First response in a new conversation may take a few extra seconds
-- Grain bid fetches involve scraping elevator websites, which can take 5–15 seconds per elevator
-- Photo OCR for scale tickets requires image processing, which takes a few extra seconds
+- Data-heavy tasks (comparisons, report generation) may take longer as your agent processes multiple sources
+- Image processing tasks require additional time for analysis
 - If consistently slow, check your usage dashboard for any unusual patterns
 
 <Callout variant="info" title="Response time">
-The first response in a conversation may be slightly slower as your assistant loads context. Subsequent responses will be faster.
+The first response in a conversation may be slightly slower as your agent loads context. Subsequent responses will be faster.
 </Callout>
 
 ---
 
-## Grain bids
+## Custom skills
 
-### "Elevator website unreachable" error
+### Skill not triggering
 
-- The elevator's website may be temporarily down — try again in a few minutes
-- The elevator may have changed their website URL. Check their current bid page URL and update it in Settings > Farm > Elevators
-- Some elevator websites have anti-scraping protections that may block automated access
+- Verify the skill is in **Active** status (not Draft or Archived)
+- Check that the skill is assigned to the agent handling the channel you're messaging in
+- Review the skill's trigger description -- make sure your message matches the intended use case
+- Test the skill from the Skill Forge test panel to isolate the issue
 
-### Bids seem outdated
+### AI-generated skill needs improvement
 
-- Cash grain bids are typically updated **once daily in the morning** by elevators
-- If you check in the evening, the bids shown are from that morning's posting
-- Pantheon always fetches fresh data — it never uses cached or remembered prices from previous conversations
-
-### Missing crops in bid results
-
-- Verify the missing crop is listed in the elevator's configuration. Go to Settings > Farm > Elevators and check the crops list for that elevator
-- Not all elevators post bids for all commodities — the elevator may not buy that crop at that location
-- Seasonal crops may not have posted bids during off-seasons
-
----
-
-## Weather
-
-### "Unable to fetch forecast" error
-
-- The National Weather Service API occasionally has outages. Try again in a few minutes.
-- Verify your weather coordinates are correct in Settings > Farm. Latitude should be 40–49°N and longitude should be -104 to -89°W for the supported Midwest region.
-
-### Morning briefing not appearing
-
-- Check that the morning weather cron job is enabled for one of your agents in Settings > Agents
-- The briefing is scheduled for 6:00 AM in your configured timezone. Verify your timezone is correct.
-- Check the channel that the agent with the cron job is bound to — the briefing posts there
-
-### Spray window data seems wrong
-
-Spray window assessment uses these thresholds:
-- Wind: 3–10 mph (too calm = inversion risk, too high = drift risk)
-- Temperature: 50–85°F
-- No precipitation in current hour or next 2 hours
-- Humidity: below 80%
-
-If the assessment doesn't match your conditions, note that it's based on the NWS hourly forecast, not real-time sensor data. Local conditions may vary from the forecast.
-
----
-
-## Scale tickets
-
-### Photo OCR didn't read my ticket correctly
-
-- Take the photo in good lighting with the ticket flat and fully visible
-- Avoid glare, shadows, and wrinkled tickets
-- Handwritten tickets are harder to read than printed ones — consider using voice or structured entry instead
-- After OCR extraction, you're always shown the results for confirmation. Reply with corrections before saving.
-
-### Can't find a ticket I logged
-
-- Use "show today's tickets" or "show tickets from [date]" to search by date
-- Check that you're asking the right agent if you have multiple agents — scale tickets are stored per workspace, but only agents with the scale-tickets skill can query them
-
-### Export not working
-
-The export function generates files from your scale ticket data. If exports fail, try again or contact support if the issue persists.
+- Edit the skill in the Forge editor and refine the instructions
+- Add more specific examples in the Examples section
+- Attach reference files for additional context
+- Regenerate with a more detailed description
 
 ---
 
@@ -145,7 +96,7 @@ Common causes:
 
 ## Billing
 
-### I was charged but my assistant isn't working
+### I was charged but my agent isn't working
 
 - Check your workspace status on the dashboard first
 - If the workspace shows an error, try the setup troubleshooting steps above
@@ -160,8 +111,8 @@ Contact support through your dashboard. Refund requests are handled on a case-by
 Check your usage dashboard at Settings > Usage:
 
 - Look for spikes in daily token usage
-- Automated cron jobs (morning weather, daily grain bids) consume tokens every day even if you don't read them
+- Automated cron jobs (scheduled briefings and reports) consume tokens on schedule even if you don't read them
 - Multiple agents each consume tokens independently
-- Photo OCR uses significantly more tokens than text-based interactions
+- Image processing uses significantly more tokens than text-based interactions
 
-To reduce usage, consider disabling unused cron jobs and using text entry instead of photo OCR when possible. See the [Metered Usage](/docs/billing/metered-usage) guide for more tips.
+To reduce usage, consider disabling unused cron jobs and using text input instead of images when possible. See the [Metered Usage](/docs/billing/metered-usage) guide for more tips.

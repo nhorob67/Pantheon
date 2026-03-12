@@ -132,30 +132,12 @@ function formatRunDetails(run: HeartbeatRun): string | null {
     details.push(`Signals: ${signalTypes.map(formatSignalLabel).join(", ")}`);
   }
 
-  const weather = asRecord(freshness.weather_severe);
-  if (typeof weather.latest_expires_at === "string" && weather.latest_expires_at.length > 0) {
-    details.push(`Weather expires ${formatTime(weather.latest_expires_at)}`);
-  }
-
-  const grain = asRecord(freshness.grain_price_movement);
-  if (typeof grain.latest_scraped_at === "string" && grain.latest_scraped_at.length > 0) {
-    details.push(`Bids ${formatRelativeAge(grain.latest_scraped_at)}`);
-  }
-
   const emails = asRecord(freshness.unanswered_emails);
   if (
     typeof emails.oldest_matching_created_at === "string"
     && emails.oldest_matching_created_at.length > 0
   ) {
     details.push(`Oldest email ${formatRelativeAge(emails.oldest_matching_created_at)}`);
-  }
-
-  const tickets = asRecord(freshness.unreviewed_tickets);
-  if (
-    typeof tickets.oldest_matching_created_at === "string"
-    && tickets.oldest_matching_created_at.length > 0
-  ) {
-    details.push(`Oldest ticket ${formatRelativeAge(tickets.oldest_matching_created_at)}`);
   }
 
   if (typeof dispatch.model_id === "string" && dispatch.model_id.length > 0) {
@@ -360,7 +342,7 @@ export function HeartbeatActivityPanel({
                   <span
                     className={`w-2 h-2 rounded-full shrink-0 ${
                       run.error_message
-                        ? "bg-red-500"
+                        ? "bg-destructive"
                         : run.delivery_status === "suppressed"
                           ? "bg-amber-400"
                           : run.delivery_status === "deferred"

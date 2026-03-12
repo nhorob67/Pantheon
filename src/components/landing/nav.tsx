@@ -32,7 +32,7 @@ export function Nav() {
           {links.map((l) => (
             <Link key={l.href} href={l.href}>{l.label}</Link>
           ))}
-          <Link href="/signup" className="nav-cta">Get Started</Link>
+          <Link href="/signup" className="nav-cta">Start Free Trial</Link>
         </div>
         <button
           className="nav-hamburger"
@@ -52,11 +52,11 @@ export function Nav() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-[101] bg-[var(--bg-deep)]/95 backdrop-blur-sm flex flex-col items-center justify-center gap-2"
+            className="fixed inset-0 z-[101] bg-bg-deep/95 backdrop-blur-sm flex flex-col items-center justify-center gap-2"
           >
             <button
               onClick={closeMenu}
-              className="absolute top-5 right-5 text-[var(--cream)] hover:text-[var(--accent)] transition-colors"
+              className="absolute top-5 right-5 text-text-primary hover:text-accent transition-colors"
               aria-label="Close menu"
             >
               <X className="w-7 h-7" />
@@ -66,7 +66,7 @@ export function Nav() {
                 key={l.href}
                 href={l.href}
                 onClick={closeMenu}
-                className="text-lg py-4 text-[var(--cream)] hover:text-[var(--accent)] transition-colors font-medium"
+                className="text-lg py-4 text-text-primary hover:text-accent transition-colors font-medium"
               >
                 {l.label}
               </Link>
@@ -76,7 +76,7 @@ export function Nav() {
               onClick={closeMenu}
               className="mt-4 btn-primary"
             >
-              Get Started
+              Start Free Trial
             </Link>
           </m.div>
         )}

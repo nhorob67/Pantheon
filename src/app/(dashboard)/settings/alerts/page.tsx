@@ -5,13 +5,13 @@ export const metadata: Metadata = { title: "Alert Preferences | Pantheon" };
 
 export default function AlertSettingsPage() {
   return (
-    <div className="max-w-2xl">
-      <div className="mb-6">
-        <h2 className="font-headline text-2xl font-semibold text-foreground">
+    <div className="space-y-6 max-w-4xl">
+      <div>
+        <h1 className="font-headline text-2xl font-semibold">
           Alert Preferences
-        </h2>
-        <p className="text-foreground/60 text-sm mt-1">
-          Configure spending alerts and proactive farm notifications.
+        </h1>
+        <p className="text-sm text-foreground/60 mt-1">
+          Configure spending alerts and proactive notifications.
         </p>
       </div>
 

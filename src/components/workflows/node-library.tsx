@@ -53,7 +53,7 @@ export const NODE_LIBRARY_TEMPLATES: WorkflowNodeTemplate[] = [
     description: "Pauses execution until an assigned reviewer approves or rejects.",
     icon: UserCheck,
     defaultConfig: {
-      reviewer_group: "farm-ops",
+      reviewer_group: "ops-team",
       reviewer_role: "manager",
       sla_minutes: 120,
       instructions:

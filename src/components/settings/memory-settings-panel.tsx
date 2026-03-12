@@ -32,7 +32,7 @@ const MODE_OPTIONS: { value: MemoryMode; label: string; description: string }[] 
     value: "hybrid_local_vault",
     label: "Conversation + saved memories",
     description:
-      "Your assistant remembers conversations and saves important details \u2014 like crop plans, elevator preferences, and commitments \u2014 for future reference.",
+      "Your assistant remembers conversations and saves important details \u2014 like project plans, preferences, and commitments \u2014 for future reference.",
   },
   {
     value: "native_only",
@@ -56,7 +56,7 @@ const CAPTURE_LEVEL_OPTIONS: {
     value: "standard",
     label: "Balanced",
     description:
-      "Saves things that come up naturally \u2014 field plans, preferences, and recurring topics. Good for most farms.",
+      "Saves things that come up naturally \u2014 plans, preferences, and recurring topics. Good for most teams.",
   },
   {
     value: "aggressive",
@@ -234,7 +234,7 @@ export function MemorySettingsPanel({
         <h4 className="font-headline text-base font-semibold text-foreground flex items-center gap-2">
           <Brain className="w-4 h-4 text-primary" aria-hidden="true" />
           How your assistant remembers
-          <Tooltip text="This controls whether your assistant keeps notes between conversations. Most farms benefit from saved memories." />
+          <Tooltip text="This controls whether your assistant keeps notes between conversations. Most teams benefit from saved memories." />
         </h4>
         <p className="text-sm text-foreground/60">
           Choose whether your assistant only remembers the current conversation or builds up notes over time.
@@ -500,7 +500,7 @@ export function MemorySettingsPanel({
       )}
 
       {error && (
-        <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+        <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
         </div>
       )}

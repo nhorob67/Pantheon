@@ -16,6 +16,7 @@ interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
 
 function Select({ label, error, options, className = "", id, ref, ...rest }: SelectProps) {
   const selectId = id || (label ? label.toLowerCase().replace(/\s+/g, "-") : undefined);
+  const errorId = selectId ? `${selectId}-error` : undefined;
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -32,13 +33,15 @@ function Select({ label, error, options, className = "", id, ref, ...rest }: Sel
         <select
           ref={ref}
           id={selectId}
+          aria-invalid={!!error}
+          aria-describedby={error ? errorId : undefined}
           className={[
             "w-full appearance-none",
-            "border border-border-light focus:border-primary focus:ring-2 focus:ring-primary/20",
+            "border border-border-light focus:border-primary focus:ring-2 focus:ring-primary/40",
             "rounded-lg bg-input px-4 py-3 pr-10 font-body text-foreground",
             "outline-none transition-colors duration-150",
             "disabled:opacity-50 disabled:cursor-not-allowed",
-            error ? "border-destructive focus:border-destructive focus:ring-destructive/20" : "",
+            error ? "border-destructive focus:border-destructive focus:ring-destructive/40" : "",
             className,
           ]
             .filter(Boolean)
@@ -71,7 +74,7 @@ function Select({ label, error, options, className = "", id, ref, ...rest }: Sel
       </div>
 
       {error && (
-        <p className="font-body text-sm text-destructive">{error}</p>
+        <p id={errorId} className="font-body text-sm text-destructive">{error}</p>
       )}
     </div>
   );

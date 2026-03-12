@@ -66,7 +66,7 @@ export function ScheduleManagerPanel({
     if (_activeCount > 0) {
       if (_failing > 0) {
         _summary = (
-          <span className="inline-flex items-center rounded-full bg-red-500/20 text-red-400 px-3 py-1 text-xs font-medium">
+          <span className="inline-flex items-center rounded-full bg-destructive/20 text-destructive px-3 py-1 text-xs font-medium">
             {_failing} failing
           </span>
         );

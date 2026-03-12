@@ -15,33 +15,21 @@ export interface Customer {
   updated_at: string;
 }
 
-export interface FarmProfile {
+export interface TeamProfile {
   id: string;
   customer_id: string;
-  farm_name: string | null;
-  state: string;
-  county: string | null;
-  primary_crops: string[];
-  acres: number | null;
-  elevators: string[];
-  elevator_urls: ElevatorEntry[];
-  weather_location: string | null;
-  weather_lat: number | null;
-  weather_lng: number | null;
+  team_name: string;
+  description: string | null;
+  industry: string | null;
+  team_goal: string | null;
   timezone: string;
-  soil_ph: number | null;
-  soil_cec: number | null;
-  organic_matter_pct: number | null;
-  avg_annual_rainfall_in: number | null;
+  location_label: string | null;
+  location_lat: number | null;
+  location_lng: number | null;
   created_at: string;
   updated_at: string;
 }
 
-export interface ElevatorEntry {
-  name: string;
-  url: string;
-  crops: string[];
-}
 
 export interface Instance {
   id: string;
@@ -414,7 +402,8 @@ export type {
   SpendingStatus,
   ConversationEvent,
 } from "./alerts";
-export type { Agent, PersonalityPreset } from "./agent";
+export type { Agent, AutonomyLevel } from "./agent";
+export type { TeamProfile as TeamProfileType } from "./team";
 export type { McpServerConfig } from "./mcp";
 export type {
   TenantMemorySettings,

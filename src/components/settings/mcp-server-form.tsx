@@ -128,7 +128,7 @@ export function McpServerForm({
           </p>
         </div>
 
-        {error && <p className="text-red-400 text-sm">{error}</p>}
+        {error && <p className="text-destructive text-sm">{error}</p>}
 
         <div className="flex justify-end gap-3 pt-2">
           <button

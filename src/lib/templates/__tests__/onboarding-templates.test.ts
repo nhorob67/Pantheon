@@ -1,135 +1,134 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-// Since the source module uses @/ path aliases which Node.js can't resolve
-// directly, we test the template data shape and business rules by importing
-// the raw constants from relative paths where possible.
+// Agent templates replaced the old domain-specific onboarding templates.
+// We inline the template data for Node-native test runner compatibility
+// (path aliases like @/ are not resolved by default).
 
-const SUPPORTED_STATES = ["ND", "SD", "MN", "MT", "IA", "NE"] as const;
-type SupportedState = (typeof SUPPORTED_STATES)[number];
+const VALID_AUTONOMY_LEVELS = new Set(["assisted", "copilot", "autopilot"]);
 
-const VALID_CROPS = new Set([
-  "Corn", "Soybeans", "Spring Wheat", "Winter Wheat", "Durum",
-  "Sunflowers", "Canola", "Barley", "Dry Beans",
-]);
-const VALID_STATES = new Set(SUPPORTED_STATES);
+interface AgentTemplateDraft {
+  id: string;
+  label: string;
+  description: string;
+  suggested_name: string;
+  role: string;
+  goal: string;
+  backstory: string;
+  autonomy_level: string;
+  can_delegate: boolean;
+  can_receive_delegation: boolean;
+  skills: string[];
+}
 
-// Inline template definitions matching what the module exports
-const TEMPLATES = [
+const AGENT_TEMPLATES: AgentTemplateDraft[] = [
   {
-    id: "corn-soybean",
-    crops: ["Corn", "Soybeans"],
-    states: ["IA", "NE", "MN", "SD"] as SupportedState[],
-    stateCoords: {
-      IA: { lat: 41.5868, lng: -93.625 },
-      NE: { lat: 40.8136, lng: -96.7026 },
-      MN: { lat: 44.1636, lng: -93.9994 },
-      SD: { lat: 43.5446, lng: -96.7311 },
-    },
+    id: "general-assistant",
+    label: "General Assistant",
+    description: "Flexible first agent for triage, coordination, and everyday requests.",
+    suggested_name: "Executive Assistant",
+    role: "General operations assistant",
+    goal: "Keep the team organized, answer routine questions, and route work to the right place.",
+    backstory:
+      "You are calm, structured, and concise. Summarize decisions clearly, surface blockers early, and avoid unnecessary complexity.",
+    autonomy_level: "copilot",
+    can_delegate: true,
+    can_receive_delegation: true,
+    skills: [],
   },
   {
-    id: "spring-wheat-durum",
-    crops: ["Spring Wheat", "Durum"],
-    states: ["ND", "MT"] as SupportedState[],
-    stateCoords: {
-      ND: { lat: 46.8772, lng: -96.7898 },
-      MT: { lat: 47.5002, lng: -111.3008 },
-    },
+    id: "operations-lead",
+    label: "Operations Lead",
+    description: "Best for execution tracking, SOP follow-through, and issue escalation.",
+    suggested_name: "Operations Lead",
+    role: "Operations lead",
+    goal: "Track open work, keep execution moving, and make sure nothing important stalls.",
+    backstory:
+      "You think in priorities, dependencies, and deadlines. You are direct, operational, and focused on turning ambiguity into next actions.",
+    autonomy_level: "autopilot",
+    can_delegate: true,
+    can_receive_delegation: true,
+    skills: [],
   },
   {
-    id: "diversified",
-    crops: ["Corn", "Soybeans", "Spring Wheat"],
-    states: ["ND", "SD", "MN", "MT", "IA", "NE"] as SupportedState[],
-    stateCoords: {
-      ND: { lat: 46.8772, lng: -96.7898 },
-      SD: { lat: 43.5446, lng: -96.7311 },
-      MN: { lat: 44.1636, lng: -93.9994 },
-      MT: { lat: 47.5002, lng: -111.3008 },
-      IA: { lat: 41.5868, lng: -93.625 },
-      NE: { lat: 40.8136, lng: -96.7026 },
-    },
+    id: "research-analyst",
+    label: "Research Analyst",
+    description: "Good for structured research, synthesis, and knowledge-heavy questions.",
+    suggested_name: "Research Analyst",
+    role: "Research analyst",
+    goal: "Investigate questions quickly, synthesize findings, and provide clear recommendations with caveats.",
+    backstory:
+      "You are methodical and evidence-oriented. When information is uncertain, say so explicitly and separate facts from inference.",
+    autonomy_level: "assisted",
+    can_delegate: false,
+    can_receive_delegation: true,
+    skills: [],
   },
   {
-    id: "small-grain",
-    crops: ["Barley", "Spring Wheat", "Canola"],
-    states: ["ND", "MT", "SD"] as SupportedState[],
-    stateCoords: {
-      ND: { lat: 48.2325, lng: -101.2963 },
-      MT: { lat: 48.5500, lng: -109.6841 },
-      SD: { lat: 45.4647, lng: -98.4865 },
-    },
+    id: "customer-support",
+    label: "Customer Support",
+    description: "Designed for inbound questions, resolution handoff, and service quality.",
+    suggested_name: "Support Lead",
+    role: "Customer support specialist",
+    goal: "Resolve customer questions quickly, maintain a helpful tone, and escalate edge cases with enough context to unblock the team.",
+    backstory:
+      "You are warm, concise, and reliable. Confirm the user's need, answer with clear steps, and avoid overpromising.",
+    autonomy_level: "copilot",
+    can_delegate: false,
+    can_receive_delegation: true,
+    skills: [],
   },
 ];
 
-test("all templates have valid crops", () => {
-  for (const template of TEMPLATES) {
-    for (const crop of template.crops) {
-      assert.ok(
-        VALID_CROPS.has(crop),
-        `Template "${template.id}" has invalid crop "${crop}"`
-      );
-    }
-  }
-});
+const ONBOARDING_AGENT_TEMPLATE_IDS = [
+  "general-assistant",
+  "operations-lead",
+  "customer-support",
+];
 
-test("all templates have valid applicable states", () => {
-  for (const template of TEMPLATES) {
+test("all agent templates have valid autonomy levels", () => {
+  for (const template of AGENT_TEMPLATES) {
     assert.ok(
-      template.states.length > 0,
-      `Template "${template.id}" has no applicable states`
+      VALID_AUTONOMY_LEVELS.has(template.autonomy_level),
+      `Template "${template.id}" has invalid autonomy level "${template.autonomy_level}"`
     );
-    for (const state of template.states) {
-      assert.ok(
-        VALID_STATES.has(state),
-        `Template "${template.id}" has invalid state "${state}"`
-      );
-    }
   }
 });
 
-test("all state coordinates are within US bounds", () => {
-  for (const template of TEMPLATES) {
-    for (const state of template.states) {
-      const coords = template.stateCoords[state as keyof typeof template.stateCoords];
-      assert.ok(
-        coords,
-        `Template "${template.id}" missing coords for "${state}"`
-      );
-      assert.ok(
-        coords.lat >= 25 && coords.lat <= 55,
-        `Template "${template.id}" state "${state}" lat ${coords.lat} out of US range`
-      );
-      assert.ok(
-        coords.lng >= -125 && coords.lng <= -65,
-        `Template "${template.id}" state "${state}" lng ${coords.lng} out of US range`
-      );
-    }
+test("all agent templates have required identity fields", () => {
+  for (const template of AGENT_TEMPLATES) {
+    assert.ok(template.role.length >= 5, `Template "${template.id}" role too short`);
+    assert.ok(template.goal.length >= 10, `Template "${template.id}" goal too short`);
+    assert.ok(template.backstory.length > 0, `Template "${template.id}" missing backstory`);
+    assert.ok(template.suggested_name.length >= 2, `Template "${template.id}" missing suggested_name`);
   }
 });
 
 test("all template IDs are unique", () => {
-  const ids = TEMPLATES.map((t) => t.id);
+  const ids = AGENT_TEMPLATES.map((t) => t.id);
   assert.equal(new Set(ids).size, ids.length);
 });
 
-test("corn-soybean template has expected crops and states", () => {
-  const template = TEMPLATES.find((t) => t.id === "corn-soybean");
-  assert.ok(template);
-  assert.ok(template.crops.includes("Corn"));
-  assert.ok(template.crops.includes("Soybeans"));
-  assert.ok(template.states.includes("IA"));
-  assert.ok(!template.states.includes("MT")); // not applicable
+test("onboarding template IDs reference valid agent templates", () => {
+  const validIds = new Set(AGENT_TEMPLATES.map((t) => t.id));
+  for (const id of ONBOARDING_AGENT_TEMPLATE_IDS) {
+    assert.ok(validIds.has(id), `Onboarding template ID "${id}" not found in AGENT_TEMPLATES`);
+  }
 });
 
-test("diversified template covers all states", () => {
-  const template = TEMPLATES.find((t) => t.id === "diversified");
+test("general-assistant template has expected defaults", () => {
+  const template = AGENT_TEMPLATES.find((t) => t.id === "general-assistant");
   assert.ok(template);
-  assert.equal(template.states.length, 6);
+  assert.equal(template.autonomy_level, "copilot");
+  assert.equal(template.can_delegate, true);
+  assert.equal(template.can_receive_delegation, true);
+  assert.deepEqual(template.skills, []);
 });
 
-test("small-grain template has Northern Plains crops", () => {
-  const template = TEMPLATES.find((t) => t.id === "small-grain");
+test("research-analyst template is assisted and receive-only delegation", () => {
+  const template = AGENT_TEMPLATES.find((t) => t.id === "research-analyst");
   assert.ok(template);
-  assert.ok(template.crops.includes("Barley"));
-  assert.ok(template.crops.includes("Canola"));
+  assert.equal(template.autonomy_level, "assisted");
+  assert.equal(template.can_delegate, false);
+  assert.equal(template.can_receive_delegation, true);
 });

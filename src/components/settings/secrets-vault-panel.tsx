@@ -18,6 +18,7 @@ import {
   Save,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/toast";
 import type { TenantSecret } from "@/lib/secrets/vault";
@@ -270,7 +271,7 @@ function SecretRow({
       });
 
       if (!res.ok) throw new Error("Failed to update");
-      const data = await res.json();
+      await res.json();
       onUpdated();
       setExpanded(false);
       toast("Secret scoping updated");
@@ -367,19 +368,12 @@ function SecretRow({
               </label>
               <div className="space-y-1.5">
                 {agents.map((agent) => (
-                  <label
+                  <Checkbox
                     key={agent.id}
-                    className="flex items-center gap-2 text-sm cursor-pointer"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={editAgentIds.includes(agent.id)}
-                      onChange={() => toggleAgentId(agent.id)}
-                      className="rounded border-border text-primary focus:ring-primary/20"
-                    />
-                    <span className="text-foreground/80">{agent.display_name}</span>
-                    <span className="text-foreground/40 text-xs">({agent.agent_key})</span>
-                  </label>
+                    label={`${agent.display_name} (${agent.agent_key})`}
+                    checked={editAgentIds.includes(agent.id)}
+                    onChange={() => toggleAgentId(agent.id)}
+                  />
                 ))}
               </div>
               <p className="text-xs text-foreground/40 mt-1">
@@ -603,19 +597,12 @@ function AddSecretForm({
             </label>
             <div className="space-y-1.5">
               {agents.map((agent) => (
-                <label
+                <Checkbox
                   key={agent.id}
-                  className="flex items-center gap-2 text-sm cursor-pointer"
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedAgentIds.includes(agent.id)}
-                    onChange={() => toggleAgentId(agent.id)}
-                    className="rounded border-border text-primary focus:ring-primary/20"
-                  />
-                  <span className="text-foreground/80">{agent.display_name}</span>
-                  <span className="text-foreground/40 text-xs">({agent.agent_key})</span>
-                </label>
+                  label={`${agent.display_name} (${agent.agent_key})`}
+                  checked={selectedAgentIds.includes(agent.id)}
+                  onChange={() => toggleAgentId(agent.id)}
+                />
               ))}
             </div>
             <p className="text-xs text-foreground/40 mt-1">

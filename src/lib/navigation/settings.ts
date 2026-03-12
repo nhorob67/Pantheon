@@ -9,37 +9,34 @@ const WORKFLOW_SETTINGS_ITEM: SettingsNavItem = {
 };
 
 const SETTINGS_TABS_BASE: SettingsNavItem[] = [
-  { href: "/settings/farm", label: "Farm Profile" },
-  { href: "/settings/channels", label: "Channels" },
+  { href: "/settings/channels", label: "Discord" },
   { href: "/settings/skills", label: "Skills" },
-  { href: "/settings/briefings", label: "Briefings" },
+  { href: "/settings/knowledge", label: "Knowledge" },
   { href: "/settings/schedules", label: "Schedules" },
-  { href: "/settings/heartbeat", label: "Heartbeat" },
   { href: "/settings/memory", label: "Memory" },
   { href: "/settings/approvals", label: "Approvals" },
-  { href: "/settings/knowledge", label: "Knowledge" },
-  { href: "/settings/extensions", label: "Extensions" },
-  { href: "/settings/exports", label: "Exports" },
+  { href: "/settings/email", label: "Email" },
+  { href: "/settings/extensions", label: "Integrations" },
   { href: "/settings/mcp-servers", label: "Tools" },
   { href: "/settings/secrets", label: "Secrets Vault" },
   { href: "/settings/ai-model", label: "AI Model" },
   { href: "/settings/billing", label: "Billing" },
 ];
 
-const SIDEBAR_SETTINGS_BASE: SettingsNavItem[] = [
-  { href: "/settings/farm", label: "Farm Profile" },
-  { href: "/settings/channels", label: "Channels" },
+const SIDEBAR_NAV_ITEMS: SettingsNavItem[] = [
+  // TEAM
   { href: "/settings/skills", label: "Skills" },
-  { href: "/settings/briefings", label: "Briefings" },
+  { href: "/settings/knowledge", label: "Knowledge" },
   { href: "/settings/schedules", label: "Schedules" },
-  { href: "/settings/heartbeat", label: "Heartbeat" },
+  // CONNECT
+  { href: "/settings/channels", label: "Discord" },
+  { href: "/settings/email", label: "Email" },
+  { href: "/settings/extensions", label: "Integrations" },
+  // CONFIGURE
   { href: "/settings/memory", label: "Memory" },
-  { href: "/settings/approvals", label: "Approvals" },
-  { href: "/settings/exports", label: "Exports" },
   { href: "/settings/mcp-servers", label: "Tools" },
-  { href: "/settings/secrets", label: "Secrets Vault" },
+  { href: "/settings/secrets", label: "Secrets" },
   { href: "/settings/ai-model", label: "AI Model" },
-  { href: "/settings/alerts", label: "Alerts" },
   { href: "/settings/billing", label: "Billing" },
 ];
 
@@ -60,5 +57,5 @@ export function buildSettingsTabs(workflowBuilderEnabled: boolean): SettingsNavI
 }
 
 export function buildSidebarSettingsItems(workflowBuilderEnabled: boolean): SettingsNavItem[] {
-  return withOptionalWorkflowItem(SIDEBAR_SETTINGS_BASE, workflowBuilderEnabled);
+  return withOptionalWorkflowItem(SIDEBAR_NAV_ITEMS, workflowBuilderEnabled);
 }

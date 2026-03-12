@@ -23,7 +23,7 @@ export const ValidationPanel = memo(
             Validation
           </h4>
           {hasErrors ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-red-500/20 px-2 py-0.5 text-xs font-semibold text-red-200">
+            <span className="inline-flex items-center gap-1 rounded-full bg-destructive/20 px-2 py-0.5 text-xs font-semibold text-red-200">
               <AlertTriangle className="h-3.5 w-3.5" />
               {errors.length} issue{errors.length === 1 ? "" : "s"}
             </span>
@@ -44,7 +44,7 @@ export const ValidationPanel = memo(
             {errors.map((error, index) => (
               <div
                 key={`${error.code}-${error.node_id || "none"}-${error.edge_id || "none"}-${index}`}
-                className="rounded-lg border border-red-400/40 bg-red-500/15 p-2.5"
+                className="rounded-lg border border-destructive/40 bg-destructive/15 p-2.5"
               >
                 <p className="text-xs font-semibold text-red-100">{error.code}</p>
                 <p className="mt-1 text-xs text-red-100">{error.message}</p>
@@ -52,7 +52,7 @@ export const ValidationPanel = memo(
                   <button
                     type="button"
                     onClick={() => onFocusNode(error.node_id as string)}
-                    className={`mt-2 min-h-11 rounded border border-red-400/40 px-3 py-2 text-[11px] text-red-100 transition-colors hover:bg-red-500/15 ${FOCUS_RING_CLASS}`}
+                    className={`mt-2 min-h-11 rounded border border-destructive/40 px-3 py-2 text-[11px] text-red-100 transition-colors hover:bg-destructive/15 ${FOCUS_RING_CLASS}`}
                   >
                     Focus node {error.node_id}
                   </button>

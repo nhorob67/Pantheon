@@ -64,17 +64,17 @@ test("shouldRequireHeartbeatApproval skips approval for preview and test flows",
   );
 });
 
-test("shouldRequireHeartbeatApproval lets urgent weather bypass custom check approval", () => {
+test("shouldRequireHeartbeatApproval lets high-severity signals bypass custom check approval", () => {
   const result = shouldRequireHeartbeatApproval({
     triggerMode: "scheduled",
     issueContexts: [
       {
-        fingerprint: "weather-fp",
+        fingerprint: "email-urgent-fp",
         attention_type: "new_issue",
-        signal_type: "weather_severe",
-        severity: 4,
+        signal_type: "unanswered_emails",
+        severity: 5,
         state: "new",
-        summary: "Severe thunderstorm warning",
+        summary: "12 unanswered email(s) older than 2h",
         first_seen_at: "2026-03-09T12:00:00.000Z",
         last_notified_at: null,
         snoozed_until: null,

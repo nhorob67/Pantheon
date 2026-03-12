@@ -2,38 +2,36 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import type { Country, BusinessType } from "@/types/farm";
 
 interface OnboardingState {
   currentStep: number;
-  operation: Partial<{
-    operation_name: string;
-    business_type: BusinessType;
-    country: Country;
-    state: string;
-    county: string;
-  }>;
-  location: Partial<{
-    weather_location: string;
-    weather_lat: number;
-    weather_lng: number;
+  team: Partial<{
+    team_name: string;
+    team_goal: string;
     timezone: string;
+  }>;
+  agent: Partial<{
+    display_name: string;
+    role: string;
+    goal: string;
+    backstory: string;
+    autonomy_level: "assisted" | "copilot" | "autopilot";
   }>;
   discord: Partial<{
     discord_guild_id: string;
     skipped: boolean;
   }>;
   setCurrentStep: (step: number) => void;
-  setOperation: (data: Partial<OnboardingState["operation"]>) => void;
-  setLocation: (data: Partial<OnboardingState["location"]>) => void;
+  setTeam: (data: Partial<OnboardingState["team"]>) => void;
+  setAgent: (data: Partial<OnboardingState["agent"]>) => void;
   setDiscord: (data: Partial<OnboardingState["discord"]>) => void;
   reset: () => void;
 }
 
 const initialState = {
   currentStep: 0,
-  operation: { country: "US" as Country },
-  location: {},
+  team: {},
+  agent: { autonomy_level: "copilot" as const },
   discord: {},
 };
 
@@ -42,22 +40,22 @@ export const useOnboarding = create<OnboardingState>()(
     (set) => ({
       ...initialState,
       setCurrentStep: (step) => set({ currentStep: step }),
-      setOperation: (data) =>
-        set((s) => ({ operation: { ...s.operation, ...data } })),
-      setLocation: (data) =>
-        set((s) => ({ location: { ...s.location, ...data } })),
+      setTeam: (data) =>
+        set((s) => ({ team: { ...s.team, ...data } })),
+      setAgent: (data) =>
+        set((s) => ({ agent: { ...s.agent, ...data } })),
       setDiscord: (data) =>
         set((s) => ({ discord: { ...s.discord, ...data } })),
       reset: () => set(initialState),
     }),
     {
-      name: "pantheon-onboarding-v3",
+      name: "pantheon-onboarding-v4",
       storage: createJSONStorage(() => sessionStorage),
-      version: 3,
+      version: 4,
       partialize: (state) => ({
         currentStep: state.currentStep,
-        operation: state.operation,
-        location: state.location,
+        team: state.team,
+        agent: state.agent,
         // discord excluded from persistence (sensitive)
       }),
     }
@@ -66,21 +64,21 @@ export const useOnboarding = create<OnboardingState>()(
 
 // Granular selectors — subscribe to minimal state
 export const useOnboardingStep = () => useOnboarding((s) => s.currentStep);
-export const useOnboardingOperation = () => useOnboarding((s) => s.operation);
-export const useOnboardingLocation = () => useOnboarding((s) => s.location);
+export const useOnboardingTeam = () => useOnboarding((s) => s.team);
+export const useOnboardingAgent = () => useOnboarding((s) => s.agent);
 export const useOnboardingDiscord = () => useOnboarding((s) => s.discord);
 export const useOnboardingSetCurrentStep = () =>
   useOnboarding((s) => s.setCurrentStep);
-export const useOnboardingSetOperation = () => useOnboarding((s) => s.setOperation);
-export const useOnboardingSetLocation = () => useOnboarding((s) => s.setLocation);
+export const useOnboardingSetTeam = () => useOnboarding((s) => s.setTeam);
+export const useOnboardingSetAgent = () => useOnboarding((s) => s.setAgent);
 export const useOnboardingSetDiscord = () => useOnboarding((s) => s.setDiscord);
 export const useOnboardingReset = () => useOnboarding((s) => s.reset);
 
 export function useOnboardingActions() {
   return {
     setCurrentStep: useOnboardingSetCurrentStep(),
-    setOperation: useOnboardingSetOperation(),
-    setLocation: useOnboardingSetLocation(),
+    setTeam: useOnboardingSetTeam(),
+    setAgent: useOnboardingSetAgent(),
     setDiscord: useOnboardingSetDiscord(),
     reset: useOnboardingReset(),
   };

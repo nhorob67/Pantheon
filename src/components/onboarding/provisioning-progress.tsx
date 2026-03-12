@@ -7,8 +7,8 @@ import { useRouter } from "next/navigation";
 
 const PROVISION_STEPS = [
   { label: "Creating your workspace" },
-  { label: "Setting up farm profile" },
-  { label: "Configuring weather intelligence" },
+  { label: "Setting up your team profile" },
+  { label: "Configuring your first agent" },
   { label: "Going live" },
 ];
 
@@ -59,9 +59,9 @@ export function ProvisioningProgress() {
 
   return (
     <LazyMotion features={domAnimation}>
-    <div className="fixed inset-0 z-50 bg-[var(--bg-deep)] flex items-center justify-center">
+    <div className="fixed inset-0 z-50 bg-bg-deep flex items-center justify-center">
       <div className="text-center max-w-md mx-auto px-6">
-        {/* Seedling animation */}
+        {/* Team launch animation */}
         <m.div
           className="mx-auto w-24 h-24 mb-8 relative"
           {...SPRING_IN}
@@ -72,7 +72,7 @@ export function ProvisioningProgress() {
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
           >
-            {/* Stem */}
+            {/* Core line */}
             <m.line
               x1="48"
               y1="80"
@@ -85,7 +85,7 @@ export function ProvisioningProgress() {
               animate={{ pathLength: 1 }}
               transition={{ duration: 1, delay: 0.3 }}
             />
-            {/* Left leaf */}
+            {/* Left node */}
             <m.path
               d="M48 55C48 55 30 50 28 38C28 38 42 36 48 55Z"
               fill="var(--green-bright)"
@@ -94,7 +94,7 @@ export function ProvisioningProgress() {
               transition={{ delay: 0.8, type: "spring" }}
               style={{ transformOrigin: "48px 55px" }}
             />
-            {/* Right leaf */}
+            {/* Right node */}
             <m.path
               d="M48 45C48 45 66 40 68 28C68 28 54 26 48 45Z"
               fill="var(--green-bright)"
@@ -103,7 +103,7 @@ export function ProvisioningProgress() {
               transition={{ delay: 1.0, type: "spring" }}
               style={{ transformOrigin: "48px 45px" }}
             />
-            {/* Wheat head */}
+            {/* Top node */}
             <m.ellipse
               cx="48"
               cy="28"
@@ -132,19 +132,19 @@ export function ProvisioningProgress() {
         </m.div>
 
         <m.h2
-          className="font-headline text-2xl font-bold text-[var(--text-primary)] mb-2"
+          className="font-headline text-2xl font-bold text-text-primary mb-2"
           {...FADE_UP}
           transition={{ delay: 0.2 }}
         >
           {allDone ? "You're live!" : "Growing your Pantheon..."}
         </m.h2>
         <m.p
-          className="text-sm text-[var(--text-secondary)] mb-10"
+          className="text-sm text-text-secondary mb-10"
           {...FADE_IN}
           transition={{ delay: 0.3 }}
         >
           {allDone
-            ? "Your AI farm assistant is ready to go."
+            ? "Your AI team is ready to go."
             : "Just a moment..."}
         </m.p>
 
@@ -168,10 +168,10 @@ export function ProvisioningProgress() {
                 <div
                   className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
                     status === "complete"
-                      ? "bg-[var(--green-bright)] text-white"
+                      ? "bg-green-bright text-white"
                       : status === "active"
-                        ? "bg-[var(--accent)] text-white"
-                        : "bg-[var(--bg-card)] text-[var(--text-dim)] border border-[var(--border)]"
+                        ? "bg-accent text-white"
+                        : "bg-bg-card text-text-dim border border-border"
                   }`}
                 >
                   {status === "complete" ? (
@@ -191,8 +191,8 @@ export function ProvisioningProgress() {
                 <span
                   className={`text-sm transition-colors ${
                     status === "pending"
-                      ? "text-[var(--text-dim)]"
-                      : "text-[var(--text-primary)]"
+                      ? "text-text-dim"
+                      : "text-text-primary"
                   }`}
                 >
                   {step.label}
@@ -208,7 +208,7 @@ export function ProvisioningProgress() {
             {...FADE_UP}
             transition={{ delay: 0.5 }}
             onClick={() => router.push("/dashboard")}
-            className="mt-10 bg-gradient-to-r from-[var(--accent)] to-[var(--accent-light)] text-[var(--bg-deep)] font-semibold py-3 px-8 rounded-full transition-all hover:shadow-[0_4px_20px_rgba(217,140,46,0.3)] hover:-translate-y-0.5"
+            className="mt-10 bg-gradient-to-r from-accent to-accent-light text-bg-deep font-semibold py-3 px-8 rounded-full transition-all hover:shadow-[0_4px_20px_rgba(217,140,46,0.3)] hover:-translate-y-0.5"
           >
             Go to Dashboard
           </m.button>

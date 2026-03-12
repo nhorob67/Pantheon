@@ -3,13 +3,13 @@
 import { Hash, Volume2 } from "lucide-react";
 
 interface DiscordServerMockupProps {
-  operationName: string;
+  teamName: string;
 }
 
 export function DiscordServerMockup({
-  operationName,
+  teamName,
 }: DiscordServerMockupProps) {
-  const serverName = operationName || "Your Operation";
+  const serverName = teamName || "Your Team";
 
   return (
     <div className="rounded-xl overflow-hidden border border-[rgba(88,101,242,0.3)] bg-[#2b2d31] shadow-lg max-w-xs mx-auto">
@@ -31,11 +31,11 @@ export function DiscordServerMockup({
         </div>
         <div className="flex items-center gap-1.5 px-2 py-1.5 rounded text-[#949ba4] hover:bg-[#404249]/30 transition-colors">
           <Hash className="w-4 h-4 text-[#80848e]" />
-          <span className="text-sm">weather</span>
+          <span className="text-sm">tasks</span>
         </div>
         <div className="flex items-center gap-1.5 px-2 py-1.5 rounded text-[#949ba4] hover:bg-[#404249]/30 transition-colors">
           <Hash className="w-4 h-4 text-[#80848e]" />
-          <span className="text-sm">grain-bids</span>
+          <span className="text-sm">reports</span>
         </div>
 
         <p className="text-[10px] font-bold uppercase tracking-wide text-[#949ba4] px-2 pt-3 pb-1">
@@ -51,8 +51,8 @@ export function DiscordServerMockup({
       <div className="px-4 py-3 border-t border-[#1a1b1e] bg-[#232428]">
         <div className="flex items-center gap-2.5">
           <div className="relative">
-            <div className="w-8 h-8 rounded-full bg-[var(--accent-dim)] flex items-center justify-center text-sm">
-              🌾
+            <div className="w-8 h-8 rounded-full bg-accent-dim flex items-center justify-center text-sm font-bold text-accent">
+              P
             </div>
             <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#23a55a] border-2 border-[#232428]" />
           </div>

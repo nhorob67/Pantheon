@@ -24,7 +24,7 @@ export function Channels() {
         <div style={{ textAlign: "center" as const }}>
           <div className="section-label">Your Command Center</div>
           <h2 className="section-title" style={{ margin: "0 auto" }}>Stop routing everything through your phone.</h2>
-          <p className="section-sub" style={{ margin: "16px auto 0" }}>Give your team, your partners, and your AI agents their own channels. The right people see the right information, and you stop being the middleman for every question. No per-user fees. No message limits.</p>
+          <p className="section-sub" style={{ margin: "16px auto 0" }}>Give your team, your partners, and your pantheon their own channels. The right people see the right information, and you stop being the middleman for every question. No per-user fees. No message limits.</p>
         </div>
 
         <div className="discord-grid">

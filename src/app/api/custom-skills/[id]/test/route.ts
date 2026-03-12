@@ -68,7 +68,7 @@ export async function POST(
   const { message } = parsed.data;
 
   // Simulated preview: send the skill instructions + test message to OpenRouter
-  const systemPrompt = `You are a farm assistant with the following skill enabled. Follow the skill's instructions to respond to the user's message.
+  const systemPrompt = `You are an AI assistant with the following skill enabled. Follow the skill's instructions to respond to the user's message.
 
 SKILL INSTRUCTIONS:
 ${skill.skill_md}`;

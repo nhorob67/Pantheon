@@ -181,7 +181,7 @@ export function HeartbeatOperatorBar({
       );
   const effectiveModeLabel =
     activeOverrideCount > 0
-      ? `${activeOverrideCount} agent override${activeOverrideCount === 1 ? "" : "s"} plus tenant farm checks`
+      ? `${activeOverrideCount} agent override${activeOverrideCount === 1 ? "" : "s"} plus tenant-wide checks`
       : defaultDraft.enabled
         ? "Tenant default active"
         : "No active heartbeat schedule";
@@ -449,9 +449,9 @@ export function HeartbeatOperatorBar({
             synthetic heartbeat through the same delivery path.
           </p>
           <p className="mt-2">
-            Tenant default remains responsible for farm-wide checks. Agent
+            Tenant default remains responsible for tenant-wide checks. Agent
             overrides add agent-scoped email monitoring instead of replacing
-            farm coverage.
+            tenant coverage.
           </p>
         </div>
       </div>

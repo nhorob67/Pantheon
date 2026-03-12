@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Textarea } from "@/components/ui/textarea";
 import { CheckCircle2, Loader2, XCircle } from "lucide-react";
 import {
   formatWorkflowApprovalStatus,
@@ -267,14 +268,14 @@ export function ApprovalInbox({
         >
           Decision Comment
         </label>
-        <textarea
+        <Textarea
           id="approval-decision-comment"
           rows={4}
           value={decisionComment}
           onChange={(event) => setDecisionComment(event.target.value)}
           placeholder="Add context for this approval decision."
           disabled={terminal || activeAction !== null}
-          className="w-full rounded-lg border border-border bg-bg-dark px-3 py-2 text-sm text-text-primary outline-none disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full bg-bg-dark text-sm"
         />
       </div>
 
@@ -315,7 +316,7 @@ export function ApprovalInbox({
             void submitDecision("reject");
           }}
           disabled={terminal || activeAction !== null}
-          className="inline-flex min-h-11 items-center gap-1 rounded-lg border border-red-500/35 bg-red-500/10 px-3 py-2 text-xs font-medium text-red-200 transition-colors hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-45"
+          className="inline-flex min-h-11 items-center gap-1 rounded-lg border border-destructive/35 bg-destructive/10 px-3 py-2 text-xs font-medium text-red-200 transition-colors hover:bg-destructive/20 disabled:cursor-not-allowed disabled:opacity-45"
         >
           {activeAction === "reject" ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -332,7 +333,7 @@ export function ApprovalInbox({
           aria-live="polite"
           className={`mt-3 rounded-lg border px-3 py-2 text-xs ${
             feedback.kind === "error"
-              ? "border-red-500/30 bg-red-500/10 text-red-200"
+              ? "border-destructive/30 bg-destructive/10 text-red-200"
               : "border-green-500/30 bg-green-500/10 text-green-200"
           }`}
         >

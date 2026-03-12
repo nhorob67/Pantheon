@@ -3,7 +3,6 @@ import { getCustomerInstance } from "@/lib/auth/dashboard-session";
 import { KnowledgePanel } from "@/components/settings/knowledge-panel";
 import { KNOWLEDGE_META_COLUMNS } from "@/types/knowledge";
 import type { KnowledgeFileMeta } from "@/types/knowledge";
-import type { PersonalityPreset } from "@/types/agent";
 
 export async function KnowledgeData({
   customerId,
@@ -87,15 +86,6 @@ export async function KnowledgeData({
 
   const mappedTenantAgents = Array.isArray(tenantAgents)
     ? tenantAgents.map((row) => {
-      const config =
-        row.config && typeof row.config === "object" && !Array.isArray(row.config)
-          ? (row.config as Record<string, unknown>)
-          : {};
-      const personalityPreset =
-        typeof config.personality_preset === "string"
-          ? (config.personality_preset as PersonalityPreset)
-          : "general";
-
       return {
         id:
           typeof row.legacy_agent_id === "string"
@@ -103,7 +93,6 @@ export async function KnowledgeData({
             : row.id,
         agent_key: row.agent_key,
         display_name: row.display_name,
-        personality_preset: personalityPreset,
       };
     })
     : [];
@@ -112,7 +101,7 @@ export async function KnowledgeData({
   if (agents.length === 0 && instance) {
     const { data: legacyAgents } = await supabase
       .from("agents")
-      .select("id, agent_key, display_name, personality_preset")
+      .select("id, agent_key, display_name")
       .eq("instance_id", instance.id)
       .order("sort_order", { ascending: true });
     agents = legacyAgents || [];

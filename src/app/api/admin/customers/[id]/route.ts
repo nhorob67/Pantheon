@@ -23,7 +23,7 @@ export async function GET(
   const { data: customer, error } = await admin
     .from("customers")
     .select(
-      "*, farm_profiles(*), instances(*), skill_configs(*)"
+      "*, team_profiles(*), instances(*), skill_configs(*)"
     )
     .eq("id", id)
     .single();

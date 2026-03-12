@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server.js";
 import { z } from "zod/v4";
-import { farmProfileSchema } from "@/lib/validators/farm-profile";
+import { teamProfileSchema } from "@/lib/validators/team-profile";
 
 import { consumeConfigUpdateRateLimit } from "@/lib/security/user-rate-limit";
 import { safeErrorMessage } from "@/lib/security/safe-error";
@@ -8,7 +8,6 @@ import {
   parseTenantRouteParams,
   runTenantRoute,
 } from "@/lib/runtime/tenant-route";
-import { resolveCanonicalLegacyInstanceForTenant } from "@/lib/runtime/tenant-agents";
 
 const tenantConfigRouteParamsSchema = z.object({
   tenantId: z.uuid(),
@@ -35,8 +34,8 @@ export async function PUT(
       requestTraceId: parsedParams.requestTraceId,
       requiredGate: "writes",
       requireManageRuntimeData: true,
-      roleErrorMessage: "Insufficient role for tenant farm profile management",
-      fallbackErrorMessage: "Failed to update tenant farm profile",
+      roleErrorMessage: "Insufficient role for team profile management",
+      fallbackErrorMessage: "Failed to update team profile",
     },
     async (state) => {
       const rateLimit = await consumeConfigUpdateRateLimit(state.user.id);
@@ -61,7 +60,7 @@ export async function PUT(
         return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
       }
 
-      const parsedBody = farmProfileSchema.safeParse(body);
+      const parsedBody = teamProfileSchema.safeParse(body);
       if (!parsedBody.success) {
         return NextResponse.json(
           { error: "Invalid data", details: parsedBody.error.flatten() },
@@ -70,13 +69,10 @@ export async function PUT(
       }
 
       const { data: updatedProfile, error: updateError } = await state.admin
-        .from("farm_profiles")
+        .from("team_profiles")
         .update({
-          farm_name: parsedBody.data.farm_name,
-          state: parsedBody.data.state,
-          county: parsedBody.data.county,
-          primary_crops: parsedBody.data.primary_crops,
-          acres: parsedBody.data.acres,
+          team_name: parsedBody.data.team_name,
+          timezone: parsedBody.data.timezone,
         })
         .eq("customer_id", state.tenantContext.customerId)
         .select("id")
@@ -84,37 +80,16 @@ export async function PUT(
 
       if (updateError) {
         return NextResponse.json(
-          { error: safeErrorMessage(updateError, "Failed to update farm profile") },
+          { error: safeErrorMessage(updateError, "Failed to update team profile") },
           { status: 500 }
         );
       }
 
       if (!updatedProfile) {
-        return NextResponse.json({ error: "Farm profile not found" }, { status: 404 });
+        return NextResponse.json({ error: "Team profile not found" }, { status: 404 });
       }
 
-      const mapping = await resolveCanonicalLegacyInstanceForTenant(
-        state.admin,
-        state.tenantContext.tenantId
-      );
-      const responseBody: Record<string, unknown> = {
-        success: true,
-        legacy_instance_id: mapping.instanceId,
-      };
-      const warnings: string[] = [];
-
-      if (mapping.ambiguous) {
-        warnings.push(
-          "Farm profile saved. Multiple active legacy instance mappings detected; using most recent mapping for deploy sync."
-        );
-      }
-
-      if (warnings.length > 0) {
-        responseBody.warnings = warnings;
-        responseBody.warning = warnings[0];
-      }
-
-      return NextResponse.json(responseBody);
+      return NextResponse.json({ success: true });
     }
   );
 }

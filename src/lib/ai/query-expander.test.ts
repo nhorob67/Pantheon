@@ -9,15 +9,15 @@ import {
 describe("parseExpansionResponse", () => {
   it("parses valid JSON response", () => {
     const json = JSON.stringify({
-      lex: ["corn delivery", "grain hauling"],
-      vec: ["Where did we deliver corn last fall?"],
-      hyde: "Delivered 5000 bushels of corn to CHS elevator in Fargo on Oct 15.",
+      lex: ["project update", "status report"],
+      vec: ["What was the latest project update?"],
+      hyde: "Sent a project status report to the client on Oct 15 covering Q3 milestones.",
     });
-    const result = parseExpansionResponse("corn delivery", json);
+    const result = parseExpansionResponse("project update", json);
     assert.equal(result.source, "llm");
-    assert.equal(result.original, "corn delivery");
-    assert.deepEqual(result.lex, ["corn delivery", "grain hauling"]);
-    assert.deepEqual(result.vec, ["Where did we deliver corn last fall?"]);
+    assert.equal(result.original, "project update");
+    assert.deepEqual(result.lex, ["project update", "status report"]);
+    assert.deepEqual(result.vec, ["What was the latest project update?"]);
     assert.ok(result.hyde !== null);
   });
 
@@ -28,10 +28,10 @@ describe("parseExpansionResponse", () => {
   });
 
   it("strips markdown fences", () => {
-    const json = '```json\n{"lex":["corn bid"],"vec":["What is the corn bid?"],"hyde":null}\n```';
-    const result = parseExpansionResponse("corn bid", json);
+    const json = '```json\n{"lex":["quarterly report"],"vec":["What is the quarterly report?"],"hyde":null}\n```';
+    const result = parseExpansionResponse("quarterly report", json);
     assert.equal(result.source, "llm");
-    assert.deepEqual(result.lex, ["corn bid"]);
+    assert.deepEqual(result.lex, ["quarterly report"]);
   });
 
   it("falls back when all fields are empty", () => {
@@ -43,7 +43,7 @@ describe("parseExpansionResponse", () => {
   it("rejects lex items that are too long", () => {
     const json = JSON.stringify({
       lex: ["ok", "a".repeat(60)],
-      vec: ["What is the corn price today?"],
+      vec: ["What is the current project status?"],
       hyde: null,
     });
     const result = parseExpansionResponse("test", json);
@@ -53,7 +53,7 @@ describe("parseExpansionResponse", () => {
 
   it("rejects hyde that is too short", () => {
     const json = JSON.stringify({
-      lex: ["corn"],
+      lex: ["report"],
       vec: [],
       hyde: "short",
     });
@@ -63,8 +63,8 @@ describe("parseExpansionResponse", () => {
 
   it("caps lex at 2 items", () => {
     const json = JSON.stringify({
-      lex: ["corn bid", "soybean basis", "wheat price"],
-      vec: ["What are current grain bids?"],
+      lex: ["budget review", "expense report", "cost analysis"],
+      vec: ["What are the current budget items?"],
       hyde: null,
     });
     const result = parseExpansionResponse("test", json);
@@ -73,8 +73,8 @@ describe("parseExpansionResponse", () => {
 
   it("caps vec at 1 item", () => {
     const json = JSON.stringify({
-      lex: ["corn"],
-      vec: ["What is the corn price?", "How much is corn today?"],
+      lex: ["report"],
+      vec: ["What is the report status?", "Is the report finished?"],
       hyde: null,
     });
     const result = parseExpansionResponse("test", json);
@@ -109,10 +109,10 @@ describe("flattenExpansion", () => {
 
   it("includes all expansion types in order", () => {
     const expanded: ExpandedQuery = {
-      original: "corn delivery",
-      lex: ["corn hauling"],
-      vec: ["Where was corn delivered?"],
-      hyde: "Delivered corn to CHS elevator in Fargo on October 15 2025",
+      original: "project update",
+      lex: ["status report"],
+      vec: ["What was the project update?"],
+      hyde: "Sent project status report to the client on October 15 2025",
       source: "llm",
     };
     const result = flattenExpansion(expanded);
@@ -128,7 +128,7 @@ describe("flattenExpansion", () => {
       original: "query",
       lex: ["lex1", "lex2"],
       vec: ["vec question here"],
-      hyde: "A hypothetical memory about corn delivery to the elevator",
+      hyde: "A hypothetical memory about the project delivery to the client",
       source: "llm",
     };
     const result = flattenExpansion(expanded);
@@ -140,7 +140,7 @@ describe("flattenExpansion", () => {
       original: "query",
       lex: ["lex1", "lex2"],
       vec: ["vec question here"],
-      hyde: "A hypothetical memory about corn delivery to the elevator",
+      hyde: "A hypothetical memory about the project delivery to the client",
       source: "llm",
     };
     const result = flattenExpansion(expanded);
