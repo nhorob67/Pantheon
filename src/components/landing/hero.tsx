@@ -2,8 +2,16 @@
 
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
-import { m, LazyMotion, domAnimation } from "motion/react";
-import { ArrowRight } from "lucide-react";
+import { m, LazyMotion, domAnimation, AnimatePresence } from "motion/react";
+import { REVEAL_SLOW, FADE_UP } from "./motion-config";
+import { Athena, Hermes, Ares, Apollo, StatusIndicator } from "./deity-marks";
+
+const AGENTS = [
+  { name: "Athena", mark: Athena, status: true, actions: ["Triaged 3 vendor emails", "Updated Q1 budget summary", "Flagged overdue contract"] },
+  { name: "Hermes", mark: Hermes, status: true, actions: ["Drafted client proposal", "Sent follow-up to Lisa", "Scheduled team standup"] },
+  { name: "Ares", mark: Ares, status: false, actions: ["Completed SOP audit", "Updated onboarding checklist", "Reviewed compliance docs"] },
+  { name: "Apollo", mark: Apollo, status: true, actions: ["Analyzed vendor pricing", "Compiled market report", "Summarized Q4 results"] },
+];
 
 const CONVERSATION: { type: "user" | "typing" | "response"; text?: string; rich?: boolean; delay: number }[] = [
   { type: "user", text: "What do I need to get done today?", delay: 0 },
@@ -20,14 +28,10 @@ function HeroTerminal() {
 
   useEffect(() => {
     const timers = timerRef.current;
-
-    // Start the animation after mount
     timers.push(setTimeout(() => setPhase(0), 600));
-
     return () => timers.forEach(clearTimeout);
   }, []);
 
-  // Character-by-character user typing
   useEffect(() => {
     if (phase !== 0) return;
     const fullText = CONVERSATION[0].text!;
@@ -43,13 +47,11 @@ function HeroTerminal() {
     return () => clearInterval(interval);
   }, [phase]);
 
-  // Typing indicator then response
   useEffect(() => {
     if (phase !== 1) return;
     timerRef.current.push(setTimeout(() => setPhase(2), 1000));
   }, [phase]);
 
-  // Stream response word by word
   const responseLine = "Today's Priorities, Monday, Mar 3";
   const responseWordsArr = responseLine.split(" ");
   const summaryText = "The vendor contract is the most time-sensitive. I'd handle that before the budget review. Client proposal can go out after lunch. Want me to draft it?";
@@ -72,9 +74,7 @@ function HeroTerminal() {
   return (
     <div className="terminal-window">
       <div className="terminal-header">
-        <div className="terminal-dots">
-          <span /><span /><span />
-        </div>
+        <span className="terminal-status-bar">OPERATIONAL &mdash; 4 agents active</span>
         <span className="terminal-title">pantheon</span>
       </div>
       <div className="terminal-body">
@@ -116,7 +116,7 @@ function HeroTerminal() {
                       <td>Today 10 AM</td>
                     </tr>
                     <tr>
-                      <td>Client proposal — Meridian Group</td>
+                      <td>Client proposal &mdash; Meridian Group</td>
                       <td><span className="status-tag confirmed">Draft ready</span></td>
                       <td>Today 2 PM</td>
                     </tr>
@@ -158,56 +158,84 @@ function StreamText({ words }: { words: string[] }) {
   );
 }
 
+function AgentRosterStrip() {
+  const [actionIndices, setActionIndices] = useState(AGENTS.map(() => 0));
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActionIndices((prev) =>
+        prev.map((idx, i) => (idx + 1) % AGENTS[i].actions.length)
+      );
+    }, 6000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="hero-roster-strip">
+      {AGENTS.map((agent, i) => {
+        const Mark = agent.mark;
+        return (
+          <div key={agent.name} className="hero-roster-agent">
+            <Mark size={18} className="hero-roster-mark" />
+            <span className="hero-roster-name">{agent.name}</span>
+            <StatusIndicator active={agent.status} />
+            <AnimatePresence mode="wait">
+              <m.span
+                key={actionIndices[i]}
+                className="hero-roster-action"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.4 }}
+              >
+                {agent.actions[actionIndices[i]]}
+              </m.span>
+            </AnimatePresence>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function Hero() {
   return (
     <LazyMotion features={domAnimation}>
       <section className="hero">
         <div className="hero-left">
-          <m.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ type: "spring", stiffness: 100, damping: 20 }}
-          >
-            <div className="hero-badge">
-              <span className="dot" style={{ background: "var(--green-bright)" }} />
-              Assemble your Pantheon
-            </div>
-          </m.div>
-
           <m.h1
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ type: "spring", stiffness: 80, damping: 20, delay: 0.05 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={REVEAL_SLOW}
           >
-            You run on a thousand decisions a day.<br /><em>Your tools should keep up.</em>
+            You run on a thousand decisions a day.
+            <br />
+            <span style={{ color: "var(--gold-divine)" }}>Your tools should keep up.</span>
           </m.h1>
 
           <m.p
             className="hero-sub"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
+            {...FADE_UP}
+            transition={{ ...REVEAL_SLOW, delay: 0.2 }}
           >
             Vendor emails. Employee questions. Client deadlines. It all lands on you. Pantheon gives you a team of AI specialists — each with its own domain, its own skills, its own channel — working together in Discord so your whole team stops routing everything through one person.
           </m.p>
 
           <m.div
             className="hero-actions"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
+            {...FADE_UP}
+            transition={{ ...REVEAL_SLOW, delay: 0.4 }}
           >
-            <Link href="/signup" className="btn-primary">Start Free Trial</Link>
-            <Link href="#how" className="btn-ghost">
-              See how it works <ArrowRight size={16} />
-            </Link>
+            <Link href="/signup" className="cta-inscription">Start Free Trial</Link>
+            <Link href="#how" className="cta-inscription cta-inscription-ghost">See How It Works</Link>
           </m.div>
 
           <m.p
-            className="text-text-dim text-sm mt-3"
+            className="text-sm mt-3"
+            style={{ color: "var(--text-warm-gray)", fontFamily: "var(--mono)" }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.6 }}
+            transition={{ ...REVEAL_SLOW, delay: 0.6 }}
           >
             14 days free. No credit card required.
           </m.p>
@@ -215,11 +243,20 @@ export function Hero() {
 
         <m.div
           className="hero-right"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.7, delay: 0.6 }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ ...REVEAL_SLOW, delay: 0.6 }}
         >
           <HeroTerminal />
+        </m.div>
+
+        <m.div
+          className="hero-roster-wrapper"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ ...REVEAL_SLOW, delay: 0.8 }}
+        >
+          <AgentRosterStrip />
         </m.div>
       </section>
     </LazyMotion>

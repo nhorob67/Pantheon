@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Menu, X } from "lucide-react";
 import { AnimatePresence, m, LazyMotion, domAnimation } from "motion/react";
 
 export function Nav() {
@@ -40,7 +39,15 @@ export function Nav() {
           aria-label={menuOpen ? "Close menu" : "Open menu"}
           style={{ display: "none" }}
         >
-          {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          {menuOpen ? (
+            <svg width="24" height="24" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" fill="none">
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          ) : (
+            <svg width="24" height="24" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" fill="none">
+              <path d="M4 7h16M4 12h16M4 17h16" />
+            </svg>
+          )}
         </button>
       </nav>
 
@@ -52,21 +59,23 @@ export function Nav() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-[101] bg-bg-deep/95 backdrop-blur-sm flex flex-col items-center justify-center gap-2"
+            className="mobile-menu-overlay"
           >
             <button
               onClick={closeMenu}
-              className="absolute top-5 right-5 text-text-primary hover:text-accent transition-colors"
+              className="mobile-menu-close"
               aria-label="Close menu"
             >
-              <X className="w-7 h-7" />
+              <svg width="24" height="24" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" fill="none">
+                <path d="M6 6l12 12M18 6L6 18" />
+              </svg>
             </button>
             {links.map((l) => (
               <Link
                 key={l.href}
                 href={l.href}
                 onClick={closeMenu}
-                className="text-lg py-4 text-text-primary hover:text-accent transition-colors font-medium"
+                className="mobile-menu-link"
               >
                 {l.label}
               </Link>
@@ -74,7 +83,7 @@ export function Nav() {
             <Link
               href="/signup"
               onClick={closeMenu}
-              className="mt-4 btn-primary"
+              className="cta-inscription mt-4"
             >
               Start Free Trial
             </Link>

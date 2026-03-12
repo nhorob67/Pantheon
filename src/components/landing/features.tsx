@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { m, LazyMotion, domAnimation, AnimatePresence } from "motion/react";
+import { REVEAL_SLOW } from "./motion-config";
 
 interface ConversationFrame {
   type: "user" | "assistant";
@@ -257,11 +258,7 @@ function ScenarioPlayer({ frames, scenarioKey }: { frames: ConversationFrame[]; 
 
     timerRef.current.push(setTimeout(() => {
       setVisibleFrames((prev) => [...prev, idx]);
-      if (frame.type === "user") {
-        setCurrentStreaming(idx);
-      } else {
-        setCurrentStreaming(idx);
-      }
+      setCurrentStreaming(idx);
     }, delay));
   }, [frames]);
 
@@ -324,10 +321,10 @@ export function ConversationShowcase() {
       <m.section
         className="showcase"
         id="skills"
-        initial={{ opacity: 0, y: 40 }}
+        initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-80px" }}
-        transition={{ duration: 0.7 }}
+        transition={REVEAL_SLOW}
       >
         <div className="showcase-header">
           <div className="section-label">See It In Action</div>
@@ -350,16 +347,14 @@ export function ConversationShowcase() {
         <AnimatePresence mode="wait">
           <m.div
             key={activeTab}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.4 }}
           >
             <div className="showcase-terminal">
               <div className="terminal-header">
-                <div className="terminal-dots">
-                  <span /><span /><span />
-                </div>
+                <span className="terminal-status-bar">OPERATIONAL &mdash; 4 agents active</span>
                 <span className="terminal-title">pantheon: {scenarios[activeTab].label.toLowerCase()}</span>
               </div>
               <ScenarioPlayer

@@ -1,4 +1,6 @@
-const tiles: { title: string; desc: string; special?: boolean }[] = [
+import { StatusIndicator } from "./deity-marks";
+
+const tiles: { title: string; desc: string }[] = [
   { title: "Task Management", desc: "Daily to-do lists, reminders, and follow-ups. Tell your assistant what needs doing. It tracks everything and nudges you when things are due." },
   { title: "SOPs & Procedures", desc: "Step-by-step checklists for any process. Employee onboarding, client intake, safety protocols. Always consistent, always available." },
   { title: "Email Intelligence", desc: "Summarize threads, surface overdue replies, draft responses. Your pantheon reads your inbox so you don't have to." },
@@ -6,7 +8,7 @@ const tiles: { title: string; desc: string; special?: boolean }[] = [
   { title: "Scheduling & Deadlines", desc: "Contract renewals, compliance filings, project milestones. Never miss a deadline again." },
   { title: "Communication Tracking", desc: "Who you need to get back to, what was promised, and what's overdue. Every thread, every contact." },
   { title: "Document Processing", desc: "Upload contracts, proposals, and reports. Your pantheon reads, summarizes, and extracts what matters." },
-  { title: "Whatever's Next", desc: "Custom skills, new integrations, your own procedures. If your business needs it, your pantheon can learn it.", special: true },
+  { title: "Whatever's Next", desc: "Custom skills, new integrations, your own procedures. If your business needs it, your pantheon can learn it." },
 ];
 
 export function PlatformGrid() {
@@ -18,9 +20,9 @@ export function PlatformGrid() {
 
       <div className="platform-grid">
         {tiles.map((tile) => (
-          <div key={tile.title} className={`platform-tile ${tile.special ? "bg-accent-dim" : ""}`}>
-            <h3 className={tile.special ? "text-accent" : ""}>{tile.title}</h3>
-            <p className={tile.special ? "text-text-secondary" : ""}>{tile.desc}</p>
+          <div key={tile.title} className="platform-tile">
+            <h3><StatusIndicator className="platform-tile-indicator" /> {tile.title}</h3>
+            <p>{tile.desc}</p>
           </div>
         ))}
       </div>

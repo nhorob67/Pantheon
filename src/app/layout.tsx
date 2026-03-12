@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Outfit, Space_Grotesk } from "next/font/google";
+import { Plus_Jakarta_Sans, Outfit, Space_Grotesk, Cormorant_Garamond, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
 const headline = Plus_Jakarta_Sans({
@@ -20,6 +20,21 @@ const display = Space_Grotesk({
   display: "swap",
 });
 
+const serif = Cormorant_Garamond({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  style: ["normal", "italic"],
+  variable: "--font-serif",
+  display: "swap",
+});
+
+const mono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-mono",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://pantheon.app"),
   title: {
@@ -37,7 +52,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${headline.variable} ${body.variable} ${display.variable} antialiased`}>
+      <body className={`${headline.variable} ${body.variable} ${display.variable} ${serif.variable} ${mono.variable} antialiased`}>
         {children}
       </body>
     </html>
