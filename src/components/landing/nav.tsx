@@ -31,6 +31,7 @@ export function Nav() {
           {links.map((l) => (
             <Link key={l.href} href={l.href}>{l.label}</Link>
           ))}
+          <Link href="/login" className="nav-login">Log In</Link>
           <Link href="/signup" className="nav-cta">Start Free Trial</Link>
         </div>
         <button
@@ -80,6 +81,13 @@ export function Nav() {
                 {l.label}
               </Link>
             ))}
+            <Link
+              href="/login"
+              onClick={closeMenu}
+              className="mobile-menu-link"
+            >
+              Log In
+            </Link>
             <Link
               href="/signup"
               onClick={closeMenu}

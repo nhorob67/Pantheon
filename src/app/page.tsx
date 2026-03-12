@@ -35,7 +35,7 @@ export default function LandingPage() {
       <MiniConstellationDivider />
       <SocialProof />
       <MiniConstellationDivider />
-      <InscriptionDivider numeral="V" label="FORMATIONS" />
+      <InscriptionDivider numeral="V" label="INVESTMENT" />
       <Pricing />
       <FinalCTA />
       <Footer />
