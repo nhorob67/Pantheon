@@ -177,7 +177,7 @@ export function KnowledgePanel({
   return (
     <div className="space-y-6">
       <div className="space-y-1">
-        <h3 className="font-headline text-lg font-semibold">
+        <h3 className="font-headline text-lg">
           Knowledge Files
         </h3>
         <p className="text-foreground/60 text-sm">

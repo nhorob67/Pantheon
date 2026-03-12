@@ -161,7 +161,7 @@ export function AssistantsList({
     <div>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-headline text-lg font-semibold text-text-primary">
+        <h3 className="font-headline text-lg text-text-primary">
           Agents
         </h3>
         <button
@@ -193,7 +193,7 @@ export function AssistantsList({
           <div className="w-16 h-16 rounded-full bg-accent-dim flex items-center justify-center mb-4">
             <Bot className="w-8 h-8 text-accent" />
           </div>
-          <h4 className="font-headline text-base font-semibold text-text-primary mb-1">
+          <h4 className="font-headline text-base text-text-primary mb-1">
             No agents yet
           </h4>
           <p className="text-sm text-text-dim max-w-xs mb-6">

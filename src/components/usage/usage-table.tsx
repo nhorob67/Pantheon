@@ -9,7 +9,7 @@ export function UsageTable({ data }: UsageTableProps) {
   return (
     <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
       <div className="px-6 py-4 border-b border-border">
-        <h3 className="font-headline text-sm font-semibold text-foreground/60 uppercase tracking-wider">
+        <h3 className="font-mono text-[11px] text-foreground/60 uppercase tracking-[0.12em]">
           Usage Breakdown
         </h3>
       </div>
@@ -17,19 +17,19 @@ export function UsageTable({ data }: UsageTableProps) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border">
-              <th className="px-6 py-3 text-left text-xs font-semibold text-foreground/50 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-mono text-foreground/50 tracking-[0.08em] uppercase">
                 Date
               </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-foreground/50 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-mono text-foreground/50 tracking-[0.08em] uppercase">
                 Model
               </th>
-              <th className="px-6 py-3 text-right text-xs font-semibold text-foreground/50 uppercase tracking-wider">
+              <th className="px-6 py-3 text-right text-xs font-mono text-foreground/50 tracking-[0.08em] uppercase">
                 Input
               </th>
-              <th className="px-6 py-3 text-right text-xs font-semibold text-foreground/50 uppercase tracking-wider">
+              <th className="px-6 py-3 text-right text-xs font-mono text-foreground/50 tracking-[0.08em] uppercase">
                 Output
               </th>
-              <th className="px-6 py-3 text-right text-xs font-semibold text-foreground/50 uppercase tracking-wider">
+              <th className="px-6 py-3 text-right text-xs font-mono text-foreground/50 tracking-[0.08em] uppercase">
                 Cost
               </th>
             </tr>

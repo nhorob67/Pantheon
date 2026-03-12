@@ -27,7 +27,7 @@ export function TrialExpiredOverlay() {
           <Sparkles className="w-6 h-6 text-primary" />
         </div>
 
-        <h2 className="font-headline text-2xl font-bold text-foreground mb-2">
+        <h2 className="font-headline text-2xl text-foreground mb-2">
           Your trial has ended
         </h2>
         <p className="text-foreground/60 text-sm mb-6">

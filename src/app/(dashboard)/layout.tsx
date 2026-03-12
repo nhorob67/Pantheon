@@ -74,7 +74,7 @@ export default async function DashboardLayout({
   return (
     <ToastProvider>
       <HelpProvider>
-        <div className="flex min-h-screen bg-background">
+        <div className="flex min-h-screen bg-background text-[13px] tracking-[0.01em]">
           <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-[200] focus:top-4 focus:left-4 focus:rounded-lg focus:bg-card focus:px-4 focus:py-2 focus:text-foreground focus:ring-2 focus:ring-accent focus:outline-none">Skip to main content</a>
           <Sidebar
             settingsItems={settingsItems}

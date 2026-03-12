@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { m, LazyMotion, domAnimation } from "motion/react";
 import Link from "next/link";
-import { BOOT_SEQUENCE, REVEAL_SLOW } from "./motion-config";
+import { BOOT_SEQUENCE, REVEAL_FAST, REVEAL_SLOW } from "./motion-config";
 import { GridOverlay } from "./viz/grid-overlay";
 import { DivineNetwork } from "./concepts/divine-network";
 
@@ -13,10 +13,10 @@ export function HeroCommand() {
   useEffect(() => {
     // Boot sequence: 0=dark, 1=network appears, 2=status, 3=headline, 4=full
     const timers = [
-      setTimeout(() => setPhase(1), 400),
-      setTimeout(() => setPhase(2), 1800),
-      setTimeout(() => setPhase(3), 2600),
-      setTimeout(() => setPhase(4), 3400),
+      setTimeout(() => setPhase(1), 300),
+      setTimeout(() => setPhase(2), 1200),
+      setTimeout(() => setPhase(3), 1600),
+      setTimeout(() => setPhase(4), 2200),
     ];
     return () => timers.forEach(clearTimeout);
   }, []);
@@ -44,7 +44,7 @@ export function HeroCommand() {
             <m.h1
               initial={{ opacity: 0, y: 20 }}
               animate={phase >= 3 ? { opacity: 1, y: 0 } : {}}
-              transition={REVEAL_SLOW}
+              transition={REVEAL_FAST}
             >
               One mind cannot govern every domain.{" "}
               <span className="v2-headline-gold">Build the council that can.</span>

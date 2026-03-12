@@ -82,7 +82,7 @@ export default function SignupPage() {
         <div className="mx-auto w-12 h-12 rounded-full bg-accent-dim flex items-center justify-center mb-4">
           <Bot className="w-6 h-6 text-accent" />
         </div>
-        <h1 className="font-headline text-3xl font-bold text-text-primary">
+        <h1 className="font-headline text-3xl text-text-primary">
           Try Pantheon Free for 14 Days
         </h1>
         <p className="mt-2 text-text-secondary">

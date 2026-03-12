@@ -208,7 +208,7 @@ export function HeartbeatActivityPanel({
 }: HeartbeatActivityPanelProps) {
   return (
     <div className="bg-card rounded-xl border border-border shadow-sm p-6">
-      <h3 className="font-headline text-base font-semibold mb-4">Activity</h3>
+      <h3 className="font-headline text-base mb-4">Activity</h3>
 
       <HeartbeatStrip buckets={dayBuckets} disabled={disabled} />
 

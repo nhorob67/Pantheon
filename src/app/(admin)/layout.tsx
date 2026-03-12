@@ -10,7 +10,7 @@ export default async function AdminLayout({
   const user = await requireAdmin();
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-background text-[13px] tracking-[0.01em]">
       <AdminSidebar />
       <div className="flex-1 flex flex-col">
         <AdminTopbar email={user.email} />

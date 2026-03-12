@@ -339,7 +339,7 @@ export function AgentForm({
           </div>
 
           <fieldset className="space-y-4 rounded-xl border border-border p-4">
-            <legend className="text-xs font-semibold uppercase tracking-wider text-text-dim px-2">
+            <legend className="text-xs font-mono tracking-[0.12em] uppercase text-text-dim px-2">
               Templates
             </legend>
 
@@ -424,7 +424,7 @@ export function AgentForm({
         {activeTab === 'identity' && (
           <>
             <fieldset className="space-y-4 rounded-xl border border-border p-4">
-              <legend className="text-xs font-semibold uppercase tracking-wider text-text-dim px-2">
+              <legend className="text-xs font-mono tracking-[0.12em] uppercase text-text-dim px-2">
                 Identity
               </legend>
 
@@ -504,7 +504,7 @@ export function AgentForm({
 
             {/* ── BEHAVIOR ─────────────────────────────── */}
             <fieldset className="space-y-4 rounded-xl border border-border p-4">
-              <legend className="text-xs font-semibold uppercase tracking-wider text-text-dim px-2">
+              <legend className="text-xs font-mono tracking-[0.12em] uppercase text-text-dim px-2">
                 Behavior
               </legend>
 
@@ -597,7 +597,7 @@ export function AgentForm({
 
             {/* ── DISCORD CHANNEL ─────────────────────── */}
             <fieldset className="space-y-3 rounded-xl border border-border p-4">
-              <legend className="text-xs font-semibold uppercase tracking-wider text-text-dim px-2">
+              <legend className="text-xs font-mono tracking-[0.12em] uppercase text-text-dim px-2">
                 Discord Channel
               </legend>
 

@@ -70,7 +70,7 @@ export function Step1Team() {
       >
         <div className="flex items-center gap-3 mb-2">
           <Users className="w-5 h-5 text-accent" />
-          <h2 className="font-headline text-2xl font-bold text-text-primary">
+          <h2 className="font-headline text-2xl text-text-primary">
             Name Your Team
           </h2>
         </div>

@@ -231,7 +231,7 @@ export function MemorySettingsPanel({
     <div className="bg-card rounded-xl border border-border shadow-sm p-5 space-y-6">
       {/* Mode selection */}
       <div className="space-y-1">
-        <h4 className="font-headline text-base font-semibold text-foreground flex items-center gap-2">
+        <h4 className="font-headline text-base text-foreground flex items-center gap-2">
           <Brain className="w-4 h-4 text-primary" aria-hidden="true" />
           How your assistant remembers
           <Tooltip text="This controls whether your assistant keeps notes between conversations. Most teams benefit from saved memories." />

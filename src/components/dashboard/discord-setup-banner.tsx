@@ -48,7 +48,7 @@ export function DiscordSetupBanner({
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-2.5">
           <MessageSquare className="h-5 w-5 text-discord shrink-0" />
-          <h3 className="font-headline text-base font-semibold text-text-primary">
+          <h3 className="font-headline text-base text-text-primary">
             Connect Your Discord Server
           </h3>
         </div>

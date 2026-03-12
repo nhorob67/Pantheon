@@ -245,7 +245,7 @@ export function UnifiedScheduleCard({
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <h4 className="font-headline text-sm font-semibold text-foreground truncate">
+                <h4 className="font-headline text-sm text-foreground truncate">
                   {label}
                 </h4>
                 {schedule.created_by === "discord_chat" && (

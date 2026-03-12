@@ -154,7 +154,7 @@ export function HeartbeatAgentOverrides({
 
   return (
     <div className="bg-card rounded-xl border border-border shadow-sm p-6">
-      <h3 className="font-headline text-base font-semibold mb-1">
+      <h3 className="font-headline text-base mb-1">
         Per-Agent Overrides
       </h3>
       <p className="text-xs text-foreground/50 mb-4">

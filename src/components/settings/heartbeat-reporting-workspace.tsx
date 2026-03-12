@@ -583,7 +583,7 @@ export function HeartbeatReportingWorkspace({
     <div className="bg-card rounded-xl border border-border shadow-sm p-6 space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h3 className="font-headline text-base font-semibold">Reporting</h3>
+          <h3 className="font-headline text-base">Reporting</h3>
           <p className="mt-1 text-xs text-foreground/50">
             Debug individual heartbeat runs, track tenant-level trends, and audit operator actions from one workspace.
           </p>

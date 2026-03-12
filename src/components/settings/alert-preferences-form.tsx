@@ -82,7 +82,7 @@ export function AlertPreferencesForm() {
     <div className="space-y-6">
       {/* Spending alerts */}
       <div className="bg-card rounded-xl border border-border shadow-sm p-6">
-        <h3 className="font-headline text-base font-semibold mb-2">
+        <h3 className="font-headline text-base mb-2">
           Spending Alerts
         </h3>
         <div className="divide-y divide-border">

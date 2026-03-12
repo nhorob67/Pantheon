@@ -25,7 +25,7 @@ export function AdminTopbar({ email }: AdminTopbarProps) {
         <button className="md:hidden text-foreground/60">
           <Menu className="w-5 h-5" />
         </button>
-        <h1 className="font-headline text-lg font-semibold text-foreground">
+        <h1 className="font-headline text-lg text-foreground">
           Admin Panel
         </h1>
       </div>

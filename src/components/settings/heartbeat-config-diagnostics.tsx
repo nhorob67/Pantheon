@@ -55,7 +55,7 @@ export function HeartbeatConfigDiagnostics() {
 
   return (
     <div className="bg-card rounded-xl border border-border shadow-sm p-6">
-      <h3 className="font-headline text-base font-semibold mb-3">
+      <h3 className="font-headline text-base mb-3">
         Execution And Pacing
       </h3>
       <p className="text-xs text-foreground/50 mb-4">

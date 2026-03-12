@@ -28,7 +28,7 @@ export function ConsultantComparison({
 
   return (
     <div className="bg-primary/5 border border-primary/10 rounded-xl p-6">
-      <h3 className="font-headline text-sm font-semibold text-primary uppercase tracking-wider mb-3">
+      <h3 className="font-mono text-[11px] text-primary uppercase tracking-[0.12em] mb-3">
         Value Comparison
       </h3>
       <p className="text-sm text-foreground/70">

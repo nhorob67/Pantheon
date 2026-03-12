@@ -298,7 +298,7 @@ export function HeartbeatOperatorBar({
         <div className="flex items-center gap-3">
           <HeartPulse className="w-5 h-5 text-[#D98C2E]" />
           <div>
-            <h3 className="font-headline text-base font-semibold">
+            <h3 className="font-headline text-base">
               Proactive Check-ins
             </h3>
             <p className="text-xs text-foreground/50">

@@ -64,7 +64,7 @@ export default function LoginPage() {
   return (
     <div className="bg-bg-card rounded-xl border border-border shadow-sm p-8 w-full max-w-md">
       <div className="text-center mb-8">
-        <h1 className="font-headline text-3xl font-bold text-text-primary">
+        <h1 className="font-headline text-3xl text-text-primary">
           Pantheon
         </h1>
         <p className="mt-2 text-text-secondary">
@@ -77,7 +77,7 @@ export default function LoginPage() {
           <div className="mx-auto w-12 h-12 rounded-full bg-accent-dim flex items-center justify-center mb-4">
             <Mail className="w-6 h-6 text-accent" />
           </div>
-          <h2 className="font-headline text-lg font-semibold mb-2">
+          <h2 className="font-headline text-lg mb-2">
             Check your email
           </h2>
           <p className="text-text-secondary text-sm">

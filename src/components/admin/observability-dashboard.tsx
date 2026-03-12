@@ -49,7 +49,7 @@ export function ObservabilityDashboard({
 
       {/* Runs Summary */}
       <div className="bg-card rounded-xl border border-border shadow-sm p-6">
-        <h3 className="font-headline text-sm font-semibold text-foreground uppercase tracking-wider mb-4">
+        <h3 className="font-mono text-[11px] text-foreground uppercase tracking-[0.12em] mb-4">
           Last Hour
         </h3>
         <div className="grid gap-3 md:grid-cols-3">
@@ -78,7 +78,7 @@ export function ObservabilityDashboard({
       <div className="grid gap-6 md:grid-cols-2">
         {/* Top Error Tenants */}
         <div className="bg-card rounded-xl border border-border shadow-sm p-6">
-          <h3 className="font-headline text-sm font-semibold text-foreground uppercase tracking-wider mb-4">
+          <h3 className="font-mono text-[11px] text-foreground uppercase tracking-[0.12em] mb-4">
             Top Error Tenants (24h)
           </h3>
           {snapshot.top_error_tenants.length === 0 ? (
@@ -104,7 +104,7 @@ export function ObservabilityDashboard({
 
         {/* Tool Usage */}
         <div className="bg-card rounded-xl border border-border shadow-sm p-6">
-          <h3 className="font-headline text-sm font-semibold text-foreground uppercase tracking-wider mb-4">
+          <h3 className="font-mono text-[11px] text-foreground uppercase tracking-[0.12em] mb-4">
             Tool Usage (24h)
           </h3>
           {snapshot.tool_usage_24h.length === 0 ? (
@@ -149,7 +149,7 @@ function StatCard({
           : "border-border bg-card"
       }`}
     >
-      <p className="text-xs text-foreground/60 uppercase tracking-wider">
+      <p className="text-[11px] font-mono text-foreground/60 uppercase tracking-[0.12em]">
         {label}
       </p>
       <p

@@ -245,7 +245,7 @@ export function SkillEditorClient({ initialSkill, initialVersions }: SkillEditor
             value={displayName}
             onChange={(e) => handleFieldChange(setDisplayName, e.target.value)}
             placeholder="Skill name"
-            className="w-full bg-transparent text-text-primary font-headline font-semibold outline-none text-base placeholder:text-text-dim"
+            className="w-full bg-transparent text-text-primary font-headline outline-none text-base placeholder:text-text-dim"
           />
         </div>
 

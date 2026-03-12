@@ -16,7 +16,7 @@ export function CostPerConversation({
 
   return (
     <div className="bg-card rounded-xl border border-border shadow-sm p-6">
-      <h3 className="font-headline text-sm font-semibold text-foreground/60 uppercase tracking-wider mb-3">
+      <h3 className="font-mono text-[11px] text-foreground/60 uppercase tracking-[0.12em] mb-3">
         Cost per Conversation
       </h3>
       <div className="flex items-end gap-2">

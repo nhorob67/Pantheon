@@ -180,7 +180,7 @@ export function ScheduleFormDialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="bg-card border border-border rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-4 border-b border-border">
-          <h3 className="font-headline text-base font-semibold">
+          <h3 className="font-headline text-base">
             {isEditing ? "Edit Schedule" : "Create Schedule"}
           </h3>
           <button

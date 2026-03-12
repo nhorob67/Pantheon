@@ -76,7 +76,7 @@ export function NewSkillClient({ templates }: NewSkillClientProps) {
         Back to Skill Forge
       </Link>
 
-      <h3 className="font-headline text-lg font-semibold mb-1">Create a Skill</h3>
+      <h3 className="font-headline text-lg mb-1">Create a Skill</h3>
       <p className="text-foreground/60 text-sm mb-8">
         Choose how you want to build your custom skill
       </p>
@@ -93,7 +93,7 @@ export function NewSkillClient({ templates }: NewSkillClientProps) {
               <Sparkles className="w-6 h-6 text-accent" />
             </div>
             <div>
-              <p className="font-headline text-base font-semibold text-text-primary">Describe It</p>
+              <p className="font-headline text-base text-text-primary">Describe It</p>
               <p className="text-sm text-text-dim mt-1">
                 Tell us what you need and AI will generate a complete skill definition
               </p>
@@ -109,7 +109,7 @@ export function NewSkillClient({ templates }: NewSkillClientProps) {
               <Wrench className="w-6 h-6 text-green-bright" />
             </div>
             <div>
-              <p className="font-headline text-base font-semibold text-text-primary">Build It</p>
+              <p className="font-headline text-base text-text-primary">Build It</p>
               <p className="text-sm text-text-dim mt-1">
                 Start from a template or blank slate and write the skill yourself
               </p>

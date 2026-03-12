@@ -9,7 +9,7 @@ export function SpendingAlertsPanel({ alerts }: SpendingAlertsPanelProps) {
   if (alerts.length === 0) {
     return (
       <div className="bg-card rounded-xl border border-border shadow-sm p-6">
-        <h3 className="font-headline text-sm font-semibold text-foreground/60 uppercase tracking-wider mb-3">
+        <h3 className="font-mono text-[11px] text-foreground/60 uppercase tracking-[0.12em] mb-3">
           Spending Alerts
         </h3>
         <p className="text-sm text-foreground/50">
@@ -21,7 +21,7 @@ export function SpendingAlertsPanel({ alerts }: SpendingAlertsPanelProps) {
 
   return (
     <div className="bg-card rounded-xl border border-border shadow-sm p-6">
-      <h3 className="font-headline text-sm font-semibold text-foreground/60 uppercase tracking-wider mb-4">
+      <h3 className="font-mono text-[11px] text-foreground/60 uppercase tracking-[0.12em] mb-4">
         Spending Alerts ({alerts.length})
       </h3>
 

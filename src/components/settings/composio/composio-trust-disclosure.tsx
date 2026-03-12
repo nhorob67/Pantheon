@@ -20,7 +20,7 @@ export function ComposioTrustDisclosure() {
           </svg>
         </div>
         <div>
-          <h4 className="font-headline text-sm font-semibold text-foreground mb-2">
+          <h4 className="font-headline text-sm text-foreground mb-2">
             Privacy &amp; Security
           </h4>
           <ul className="space-y-1.5 text-foreground/50 text-xs leading-relaxed">

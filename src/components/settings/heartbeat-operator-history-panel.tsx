@@ -56,7 +56,7 @@ export function HeartbeatOperatorHistoryPanel({
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <div className="bg-card rounded-xl border border-border shadow-sm p-6">
-        <h3 className="font-headline text-base font-semibold mb-1">Operator History</h3>
+        <h3 className="font-headline text-base mb-1">Operator History</h3>
         <p className="text-xs text-foreground/50 mb-4">
           Pause/resume, manual actions, and issue triage are recorded here.
         </p>
@@ -86,7 +86,7 @@ export function HeartbeatOperatorHistoryPanel({
       </div>
 
       <div className="bg-card rounded-xl border border-border shadow-sm p-6">
-        <h3 className="font-headline text-base font-semibold mb-1">Recent Tests</h3>
+        <h3 className="font-headline text-base mb-1">Recent Tests</h3>
         <p className="text-xs text-foreground/50 mb-4">
           Manual test sends are listed separately so delivery outcomes are easier to inspect.
         </p>

@@ -81,7 +81,7 @@ export function SpendingCapForm() {
     <div className="bg-card rounded-xl border border-border shadow-sm p-6">
       <div className="flex items-center gap-2 mb-4">
         <Shield className="w-5 h-5 text-primary" />
-        <h3 className="font-headline text-lg font-semibold">Spending Cap</h3>
+        <h3 className="font-headline text-lg">Spending Cap</h3>
       </div>
 
       {paused && (

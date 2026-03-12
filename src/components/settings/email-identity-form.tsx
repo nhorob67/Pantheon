@@ -124,7 +124,7 @@ export function EmailIdentityForm({ initialIdentity }: EmailIdentityFormProps) {
     return (
       <div className="bg-card rounded-xl border border-border shadow-sm p-6 space-y-6">
         <div>
-          <h3 className="font-headline text-lg font-semibold mb-1">
+          <h3 className="font-headline text-lg mb-1">
             Optional Email Ingestion
           </h3>
           <p className="text-foreground/60 text-sm">
@@ -152,7 +152,7 @@ export function EmailIdentityForm({ initialIdentity }: EmailIdentityFormProps) {
   return (
     <div className="bg-card rounded-xl border border-border shadow-sm p-6 space-y-6">
       <div>
-        <h3 className="font-headline text-lg font-semibold mb-1">
+        <h3 className="font-headline text-lg mb-1">
           Optional Email Inbox
         </h3>
         <p className="text-foreground/60 text-sm">

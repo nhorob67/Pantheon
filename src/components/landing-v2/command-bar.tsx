@@ -23,6 +23,9 @@ export function CommandBar() {
       </div>
 
       <div className="command-bar-right">
+        <Link href="/login" className="command-bar-link">
+          Log In
+        </Link>
         <Link href="#pricing" className="command-bar-cta" style={{ display: "var(--desktop-display, inline-flex)" }}>
           Deploy Your Council
         </Link>
@@ -63,6 +66,7 @@ export function CommandBar() {
             <Link href="#team" onClick={() => setMobileOpen(false)}>Registry</Link>
             <Link href="#how" onClick={() => setMobileOpen(false)}>Deployment</Link>
             <Link href="#pricing" onClick={() => setMobileOpen(false)}>Formations</Link>
+            <Link href="/login" onClick={() => setMobileOpen(false)}>Log In</Link>
             <Link href="/signup" onClick={() => setMobileOpen(false)}>Deploy Your Council</Link>
           </m.div>
         )}

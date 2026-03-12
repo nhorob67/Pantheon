@@ -135,7 +135,7 @@ function ModelTierSection({
 }) {
   return (
     <div>
-      <h4 className="font-headline text-base font-semibold mb-1">{title}</h4>
+      <h4 className="font-headline text-base mb-1">{title}</h4>
       <p className="text-foreground/50 text-xs mb-3">{description}</p>
       <div className="space-y-2">
         {models.map((model) => (

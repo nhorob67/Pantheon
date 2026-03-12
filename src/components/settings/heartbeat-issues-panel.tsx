@@ -120,7 +120,7 @@ export function HeartbeatIssuesPanel({
       <div className="flex items-center gap-3 mb-4">
         <BellRing className="w-5 h-5 text-[#D98C2E]" />
         <div>
-          <h3 className="font-headline text-base font-semibold">Active Issues</h3>
+          <h3 className="font-headline text-base">Active Issues</h3>
           <p className="text-xs text-foreground/50">
             Heartbeat tracks unresolved issues across runs so reminders and snoozes stay stateful.
           </p>

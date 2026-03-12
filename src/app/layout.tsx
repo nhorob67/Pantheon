@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Spectral, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
+import { Spectral, Geist, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
 const spectral = Spectral({
@@ -10,9 +10,9 @@ const spectral = Spectral({
   display: "swap",
 });
 
-const body = IBM_Plex_Sans({
+const body = Geist({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "700"],
+  weight: ["400", "500", "600"],
   variable: "--font-sans",
   display: "swap",
 });

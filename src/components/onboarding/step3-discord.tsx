@@ -111,7 +111,7 @@ export function Step3Discord() {
       >
         <div className="flex items-center gap-3 mb-2">
           <MessageSquare className="w-5 h-5 text-discord" />
-          <h2 className="font-headline text-2xl font-bold text-text-primary">
+          <h2 className="font-headline text-2xl text-text-primary">
             Connect Discord
           </h2>
         </div>

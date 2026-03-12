@@ -63,7 +63,7 @@ export function ComposioConnectedAccounts({
       <div className="rounded-xl border border-border bg-card shadow-sm">
         <div className="px-6 py-4 border-b border-border flex items-center justify-between">
           <div>
-            <h4 className="font-headline text-base font-semibold text-foreground">
+            <h4 className="font-headline text-base text-foreground">
               Connected Accounts
             </h4>
             <p className="text-foreground/50 text-sm mt-0.5">

@@ -132,7 +132,7 @@ export function ProvisioningProgress() {
         </m.div>
 
         <m.h2
-          className="font-headline text-2xl font-bold text-text-primary mb-2"
+          className="font-headline text-2xl text-text-primary mb-2"
           {...FADE_UP}
           transition={{ delay: 0.2 }}
         >

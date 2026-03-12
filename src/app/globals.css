@@ -20,9 +20,9 @@
   --discord: #5865F2;
   --discord-dim: rgba(88, 101, 242, 0.12);
   --discord-secondary: #7289DA;
-  --headline: var(--font-serif), Georgia, serif;
+  --headline: var(--font-sans), -apple-system, sans-serif;
   --sans: var(--font-sans), -apple-system, sans-serif;
-  --display: var(--font-serif), Georgia, serif;
+  --display: var(--font-sans), -apple-system, sans-serif;
   --shadow-sm: 0 2px 8px rgba(10, 8, 5, 0.3);
   --shadow-md: 0 8px 30px rgba(10, 8, 5, 0.4);
   --shadow-lg: 0 20px 60px rgba(10, 8, 5, 0.5), 0 8px 20px rgba(10, 8, 5, 0.3);
@@ -62,8 +62,8 @@
   --color-discord: var(--discord);
   --color-discord-dim: var(--discord-dim);
   --color-discord-secondary: var(--discord-secondary);
-  --font-headline: var(--font-serif), Georgia, serif;
-  --font-display: var(--font-serif), Georgia, serif;
+  --font-headline: var(--font-sans), -apple-system, sans-serif;
+  --font-display: var(--font-sans), -apple-system, sans-serif;
   --font-sans: var(--font-sans);
 
   /* Semantic tokens for Tailwind utility classes */

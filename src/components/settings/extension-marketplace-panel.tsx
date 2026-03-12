@@ -77,7 +77,7 @@ export function ExtensionMarketplacePanel() {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="font-headline text-lg font-semibold mb-1">Extensions</h3>
+        <h3 className="font-headline text-lg mb-1">Extensions</h3>
         <p className="text-foreground/60 text-sm">
           Install and manage marketplace extensions for your Discord assistant.
         </p>
@@ -97,7 +97,7 @@ export function ExtensionMarketplacePanel() {
       <div className="bg-card rounded-xl border border-border shadow-sm p-5 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h4 className="font-headline text-sm font-semibold uppercase tracking-wider text-foreground/70">
+            <h4 className="font-mono text-[11px] uppercase tracking-[0.12em] text-foreground/70">
               Trust Policy
             </h4>
             <p className="text-xs text-foreground/60 mt-1">
@@ -150,7 +150,7 @@ export function ExtensionMarketplacePanel() {
 
       <div className="bg-card rounded-xl border border-border shadow-sm p-5 space-y-4">
         <div className="flex items-center justify-between gap-3">
-          <h4 className="font-headline text-sm font-semibold uppercase tracking-wider text-foreground/70">
+          <h4 className="font-mono text-[11px] uppercase tracking-[0.12em] text-foreground/70">
             Installed
           </h4>
           <Button
@@ -211,7 +211,7 @@ export function ExtensionMarketplacePanel() {
       </div>
 
       <div className="bg-card rounded-xl border border-border shadow-sm p-5 space-y-4">
-        <h4 className="font-headline text-sm font-semibold uppercase tracking-wider text-foreground/70">
+        <h4 className="font-mono text-[11px] uppercase tracking-[0.12em] text-foreground/70">
           Catalog
         </h4>
 

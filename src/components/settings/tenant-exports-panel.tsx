@@ -352,7 +352,7 @@ export function TenantExportsPanel({
   return (
     <div className="space-y-5">
       <div className="rounded-xl border border-border bg-card p-4 space-y-4">
-        <h4 className="font-headline text-base font-semibold text-foreground">
+        <h4 className="font-headline text-base text-foreground">
           Create Export
         </h4>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
@@ -416,7 +416,7 @@ export function TenantExportsPanel({
       </div>
 
       <div className="rounded-xl border border-border bg-card p-4 space-y-4">
-        <h4 className="font-headline text-base font-semibold text-foreground">
+        <h4 className="font-headline text-base text-foreground">
           Import Dry-Run
         </h4>
         <p className="text-xs text-foreground/60">

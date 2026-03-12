@@ -139,7 +139,7 @@ function CollapsibleSection({
         onClick={() => onToggle(id)}
         className="w-full flex items-center justify-between px-6 py-4 text-left"
       >
-        <h3 className="font-headline text-sm font-semibold text-foreground uppercase tracking-wider">
+        <h3 className="font-mono text-[11px] text-foreground uppercase tracking-[0.12em]">
           {title}
         </h3>
         <span className="text-foreground/40 text-xs">

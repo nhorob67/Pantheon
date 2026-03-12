@@ -38,7 +38,7 @@ export function AgentCard({ agent, onEdit, onDelete, onDuplicate, onPreview }: A
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2.5 min-w-0">
-          <h4 className="font-headline text-base font-semibold text-text-primary truncate">
+          <h4 className="font-headline text-base text-text-primary truncate">
             {agent.display_name}
           </h4>
           {agent.is_default && (

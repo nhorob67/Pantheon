@@ -36,7 +36,7 @@ export function McpServerCard({
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2.5 min-w-0">
           <Server className="w-4 h-4 text-foreground/60 shrink-0" />
-          <h4 className="font-headline text-sm font-semibold text-foreground truncate">
+          <h4 className="font-headline text-sm text-foreground truncate">
             {server.display_name}
           </h4>
           <Badge variant={server.scope === "agent" ? "info" : "neutral"}>

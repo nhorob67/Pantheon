@@ -27,7 +27,7 @@ export function TenantHealthChart({ data }: { data: TenantHealthData }) {
   if (chartData.length === 0) {
     return (
       <div className="bg-card rounded-xl border border-border shadow-sm p-6">
-        <h3 className="font-headline text-sm font-semibold text-foreground/60 uppercase tracking-wider mb-4">
+        <h3 className="font-mono text-[11px] text-foreground/60 uppercase tracking-[0.12em] mb-4">
           Tenant Health
         </h3>
         <p className="text-foreground/60 text-sm">No tenants</p>
@@ -37,7 +37,7 @@ export function TenantHealthChart({ data }: { data: TenantHealthData }) {
 
   return (
     <div className="bg-card rounded-xl border border-border shadow-sm p-6">
-      <h3 className="font-headline text-sm font-semibold text-foreground/60 uppercase tracking-wider mb-4">
+      <h3 className="font-mono text-[11px] text-foreground/60 uppercase tracking-[0.12em] mb-4">
         Tenant Health
       </h3>
       <div className="flex items-center gap-4 mb-4 text-sm text-foreground/60">

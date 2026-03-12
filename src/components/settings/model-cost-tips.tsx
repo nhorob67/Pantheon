@@ -50,7 +50,7 @@ export function ModelCostTips({ tenantId }: Props) {
   if (!data?.has_usage) {
     return (
       <div className="bg-card rounded-xl border border-border shadow-sm p-6">
-        <h3 className="font-headline text-base font-semibold mb-1">Cost Comparison</h3>
+        <h3 className="font-headline text-base mb-1">Cost Comparison</h3>
         <p className="text-foreground/50 text-sm">
           {data?.message || "Not enough usage data yet for cost estimates."}
         </p>
@@ -62,7 +62,7 @@ export function ModelCostTips({ tenantId }: Props) {
 
   return (
     <div className="bg-card rounded-xl border border-border shadow-sm p-6">
-      <h3 className="font-headline text-base font-semibold mb-1">Cost Comparison</h3>
+      <h3 className="font-headline text-base mb-1">Cost Comparison</h3>
       <p className="text-foreground/50 text-xs mb-4">
         Based on your past 30 days of usage — current spend:{" "}
         <span className="font-mono font-medium text-foreground/70">${currentDollars}</span>

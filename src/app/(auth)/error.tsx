@@ -16,7 +16,7 @@ export default function AuthError({
   return (
     <div className="flex items-center justify-center min-h-[60vh]">
       <div className="bg-bg-card rounded-xl border border-border shadow-sm p-8 max-w-md text-center">
-        <h2 className="font-headline text-lg font-semibold text-text-primary mb-2">
+        <h2 className="font-headline text-lg text-text-primary mb-2">
           Something went wrong
         </h2>
         <p className="text-text-secondary text-sm mb-6 leading-relaxed">

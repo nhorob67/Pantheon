@@ -95,7 +95,7 @@ export function ScheduleCard({ schedule, tenantId }: ScheduleCardProps) {
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h4 className="font-headline text-sm font-semibold text-foreground truncate">
+              <h4 className="font-headline text-sm text-foreground truncate">
                 {label}
               </h4>
               {nextRunLabel && (

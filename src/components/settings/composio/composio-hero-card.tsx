@@ -50,7 +50,7 @@ export function ComposioHeroCard({
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 mb-1">
-            <h3 className="font-headline text-lg font-semibold text-foreground">
+            <h3 className="font-headline text-lg text-foreground">
               Composio
             </h3>
             <Badge variant={enabled ? "success" : "neutral"}>

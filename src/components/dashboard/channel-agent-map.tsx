@@ -13,7 +13,7 @@ export function ChannelAgentMap({ agents }: ChannelAgentMapProps) {
 
   return (
     <div className="space-y-2">
-      <h3 className="font-headline text-sm font-semibold uppercase tracking-wider text-text-dim mb-3">
+      <h3 className="font-mono text-[11px] uppercase tracking-[0.12em] text-text-dim mb-3">
         Channel Routing
       </h3>
 

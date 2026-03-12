@@ -27,7 +27,7 @@ export function CustomSkillCard({ skill, onDelete }: CustomSkillCardProps) {
             <Puzzle className="w-5 h-5 text-accent" />
           </div>
           <div className="min-w-0">
-            <h4 className="font-headline text-sm font-semibold text-text-primary truncate">
+            <h4 className="font-headline text-sm text-text-primary truncate">
               {skill.display_name}
             </h4>
             <p className="text-xs text-text-dim font-mono">{skill.slug}</p>

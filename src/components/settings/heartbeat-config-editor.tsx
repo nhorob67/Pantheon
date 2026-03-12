@@ -131,7 +131,7 @@ export function HeartbeatConfigEditor({
   return (
     <div className="space-y-4">
       <div className="bg-card rounded-xl border border-border shadow-sm p-6">
-        <h3 className="font-headline text-base font-semibold mb-4">
+        <h3 className="font-headline text-base mb-4">
           {titlePrefix}Schedule
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -208,7 +208,7 @@ export function HeartbeatConfigEditor({
       </div>
 
       <div className="bg-card rounded-xl border border-border shadow-sm p-6">
-        <h3 className="font-headline text-base font-semibold mb-4">
+        <h3 className="font-headline text-base mb-4">
           {titlePrefix}What to Check
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -247,7 +247,7 @@ export function HeartbeatConfigEditor({
       />
 
       <div className="bg-card rounded-xl border border-border shadow-sm p-6">
-        <h3 className="font-headline text-base font-semibold mb-3">
+        <h3 className="font-headline text-base mb-3">
           {titlePrefix}Delivery Channel
         </h3>
         <p className="text-xs text-foreground/50 mb-3">
@@ -347,7 +347,7 @@ export function HeartbeatConfigEditor({
       </div>
 
       <div className="bg-card rounded-xl border border-border shadow-sm p-6">
-        <h3 className="font-headline text-base font-semibold mb-3">
+        <h3 className="font-headline text-base mb-3">
           {titlePrefix}Heartbeat Instructions
         </h3>
         <p className="text-xs text-foreground/50 mb-3">

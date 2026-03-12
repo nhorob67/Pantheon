@@ -157,7 +157,7 @@ export function McpServerList({
           <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
             <Server className="w-8 h-8 text-foreground/40" />
           </div>
-          <h4 className="font-headline text-base font-semibold text-foreground mb-1">
+          <h4 className="font-headline text-base text-foreground mb-1">
             No MCP servers configured
           </h4>
           <p className="text-sm text-foreground/50 max-w-xs mb-4">

@@ -31,7 +31,7 @@ export function UsageChart({ data }: UsageChartProps) {
 
   return (
     <div className="bg-card rounded-xl border border-border shadow-sm p-6">
-      <h3 className="font-headline text-sm font-semibold text-foreground/60 uppercase tracking-wider mb-4">
+      <h3 className="font-mono text-[11px] text-foreground/60 uppercase tracking-[0.12em] mb-4">
         Daily API Usage
       </h3>
       <div className="h-64">

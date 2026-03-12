@@ -123,7 +123,7 @@ export function SecretsVaultPanel({ tenantId, agents }: Props) {
         <div className="flex items-center justify-between p-4 border-b border-border">
           <div className="flex items-center gap-2">
             <KeyRound className="w-5 h-5 text-primary" />
-            <h3 className="font-headline text-base font-semibold">Stored Secrets</h3>
+            <h3 className="font-headline text-base">Stored Secrets</h3>
             <span className="text-xs text-foreground/50">({secrets.length})</span>
           </div>
           <Button
@@ -188,7 +188,7 @@ export function SecretsVaultPanel({ tenantId, agents }: Props) {
               <div className="flex items-start gap-3">
                 <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
                 <div>
-                  <h3 className="font-headline text-base font-semibold">Break-glass access</h3>
+                  <h3 className="font-headline text-base">Break-glass access</h3>
                   <p className="text-sm text-foreground/60 mt-0.5">
                     When enabled, agents can request the raw value of secrets marked as &ldquo;Break glass&rdquo; mode.
                     Every reveal requires owner approval and is fully audited. Revealed values are redacted

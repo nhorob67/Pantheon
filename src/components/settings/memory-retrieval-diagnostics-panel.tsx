@@ -125,7 +125,7 @@ export function MemoryRetrievalDiagnosticsPanel({
   return (
     <div className="bg-card rounded-xl border border-border shadow-sm p-5 space-y-4">
       <div>
-        <h4 className="font-headline text-base font-semibold text-foreground">
+        <h4 className="font-headline text-base text-foreground">
           Memory Health
         </h4>
         <HealthSummary activeRecords={activeRecords} recent24hRecords={recent24hRecords} />

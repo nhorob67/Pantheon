@@ -21,7 +21,7 @@ export function EmailStatusCard({
     >
       <div className="flex items-center gap-2 mb-3">
         <Mail className="w-4 h-4 text-primary" />
-        <h3 className="font-headline text-sm font-semibold text-foreground">
+        <h3 className="font-mono text-[11px] uppercase tracking-[0.12em] text-foreground">
           Email
         </h3>
       </div>

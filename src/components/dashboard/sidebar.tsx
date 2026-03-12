@@ -75,14 +75,14 @@ export function Sidebar({ settingsItems, subscriptionStatus, trialEndsAt }: Side
           <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
             <Bot className="w-4 h-4 text-primary" />
           </div>
-          <span className="font-display text-xl font-bold text-foreground">
+          <span className="font-display text-xl text-foreground">
             Pantheon
           </span>
         </Link>
 
         {navGroups.map((group) => (
           <div key={group.label} className="mb-6">
-            <h3 className="px-3 mb-2 font-headline text-[10px] font-semibold uppercase tracking-widest text-foreground/40">
+            <h3 className="px-3 mb-2 font-mono text-[11px] uppercase tracking-[0.12em] text-foreground/40">
               {group.label}
             </h3>
             <nav className="space-y-0.5">
@@ -113,7 +113,7 @@ export function Sidebar({ settingsItems, subscriptionStatus, trialEndsAt }: Side
 
         <div className="relative">
           <div className="absolute top-0 left-3 right-3 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-          <h3 className="px-3 mb-2 pt-4 font-headline text-[10px] font-semibold uppercase tracking-widest text-foreground/40">
+          <h3 className="px-3 mb-2 pt-4 font-mono text-[11px] uppercase tracking-[0.12em] text-foreground/40">
             Configure
           </h3>
           <nav className="space-y-0.5">

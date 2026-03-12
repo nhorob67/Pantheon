@@ -267,6 +267,20 @@
   flex-shrink: 0;
 }
 
+.command-bar-link {
+  font-family: var(--font-mono, "IBM Plex Mono", monospace);
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.command-bar-link:hover {
+  color: var(--text-primary);
+}
+
 .command-bar-cta {
   font-family: var(--font-mono, "IBM Plex Mono", monospace);
   font-size: 0.65rem;
@@ -338,9 +352,9 @@
 .v2-hero h1 {
   font-family: var(--font-serif, "Cormorant Garamond", serif);
   font-weight: 400;
-  font-size: clamp(2rem, 4vw, 3.2rem);
-  line-height: 1.15;
-  max-width: 560px;
+  font-size: clamp(3rem, 6vw, 4.8rem);
+  line-height: 1.1;
+  max-width: 700px;
   color: var(--text-primary);
 }
 
@@ -1536,6 +1550,10 @@
     display: block;
   }
 
+  .command-bar-link {
+    display: none;
+  }
+
   .v2-hero-split {
     flex-direction: column;
     gap: 2.5rem;
@@ -1585,7 +1603,7 @@
   }
 
   .v2-hero h1 {
-    font-size: 1.8rem;
+    font-size: 2.4rem;
   }
 
   .v2-scenario-tabs {

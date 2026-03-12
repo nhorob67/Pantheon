@@ -29,7 +29,7 @@ export function TenantApprovalsInboxCard({
     <div className="bg-card rounded-xl border border-border shadow-sm p-5">
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
-          <h3 className="font-headline text-base font-semibold text-foreground">
+          <h3 className="font-mono text-[11px] uppercase tracking-[0.12em] text-foreground">
             Approvals Inbox
           </h3>
           <p className="text-sm text-foreground/60 mt-1">

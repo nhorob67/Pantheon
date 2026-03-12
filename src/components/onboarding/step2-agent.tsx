@@ -107,7 +107,7 @@ export function Step2Agent() {
       >
         <div className="flex items-center gap-3 mb-2">
           <Bot className="w-5 h-5 text-accent" />
-          <h2 className="font-headline text-2xl font-bold text-text-primary">
+          <h2 className="font-headline text-2xl text-text-primary">
             Create Your First Agent
           </h2>
         </div>

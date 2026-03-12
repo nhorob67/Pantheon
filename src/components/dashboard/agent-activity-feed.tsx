@@ -52,7 +52,7 @@ export function AgentActivityFeed({ events, agentNames = [] }: AgentActivityFeed
   return (
     <div className="rounded-xl border border-border bg-card">
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
-        <h3 className="font-headline text-sm font-semibold">Recent Activity</h3>
+        <h3 className="font-mono text-[11px] uppercase tracking-[0.12em]">Recent Activity</h3>
         <div className="flex items-center gap-2">
           <Filter className="h-3.5 w-3.5 text-foreground/40" />
           <select

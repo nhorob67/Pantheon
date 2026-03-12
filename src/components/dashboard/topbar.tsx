@@ -128,7 +128,7 @@ export function Topbar({
             <Menu className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="font-headline text-lg font-semibold text-foreground">
+            <h1 className="font-headline text-lg text-foreground">
               {teamName || "My Team"}
             </h1>
           </div>
@@ -211,7 +211,7 @@ export function Topbar({
               <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
                 <Bot className="w-4 h-4 text-primary" />
               </div>
-              <span className="font-display text-xl font-bold text-foreground">Pantheon</span>
+              <span className="font-display text-xl text-foreground">Pantheon</span>
             </div>
             <button
               onClick={() => setMobileNavOpen(false)}
@@ -245,7 +245,7 @@ export function Topbar({
           </nav>
 
           <div className="mt-6">
-            <h3 className="px-3 mb-2 font-headline text-[10px] font-semibold uppercase tracking-widest text-foreground/40">
+            <h3 className="px-3 mb-2 font-mono text-[11px] uppercase tracking-[0.12em] text-foreground/40">
               Configure
             </h3>
             <nav className="space-y-0.5">
