@@ -305,7 +305,6 @@
   justify-content: center;
   position: relative;
   padding-top: 48px;
-  text-align: center;
   overflow: hidden;
 }
 
@@ -316,29 +315,32 @@
   z-index: 0;
 }
 
-.v2-hero-content {
+.v2-hero-split {
   position: relative;
   z-index: 2;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 2rem;
-  padding: 0 24px;
+  justify-content: center;
+  gap: 4rem;
+  max-width: 1200px;
+  width: 100%;
+  padding: 0 40px;
 }
 
-.v2-hero-ring-container {
-  position: relative;
-  width: 320px;
-  height: 320px;
-  margin-bottom: 1rem;
+.v2-hero-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  flex: 1;
+  min-width: 0;
 }
 
 .v2-hero h1 {
   font-family: var(--font-serif, "Cormorant Garamond", serif);
   font-weight: 400;
-  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-size: clamp(2rem, 4vw, 3.2rem);
   line-height: 1.15;
-  max-width: 720px;
+  max-width: 560px;
   color: var(--text-primary);
 }
 
@@ -366,7 +368,6 @@
   gap: 16px;
   align-items: center;
   flex-wrap: wrap;
-  justify-content: center;
 }
 
 .v2-hero-microcopy {
@@ -375,6 +376,16 @@
   color: var(--text-dim);
   letter-spacing: 0.04em;
   max-width: 400px;
+}
+
+/* Divine Network in hero — scales via CSS transform */
+.v2-hero-network {
+  flex-shrink: 0;
+}
+
+.v2-hero-divine-network {
+  transform: scale(1.2);
+  transform-origin: center;
 }
 
 /* ─── Buttons ─── */
@@ -1390,6 +1401,87 @@
   .v2-stream-cursor { animation: none !important; }
   .v2-deity-ring-animated,
   .v2-deity-ring-mark-counter { animation: none !important; }
+  .network-dot { animation: none !important; display: none; }
+  .network-node-flash { animation: none !important; opacity: 0.1 !important; }
+  .network-nexus-outer,
+  .network-nexus-inner { animation: none !important; opacity: 0.15 !important; }
+}
+
+/* ─── Divine Network (hero visualization) ─── */
+.concept-inner {
+  flex-shrink: 0;
+}
+
+.concept-deity-mark {
+  color: var(--gold-divine);
+  z-index: 2;
+}
+
+.network-line {
+  stroke: var(--gold-divine);
+  stroke-width: 0.8;
+  opacity: 0.12;
+}
+
+.network-dot {
+  animation: constellation-travel var(--duration, 3s) linear infinite;
+  animation-delay: var(--delay, 0s);
+}
+
+.network-dot-glow {
+  filter: drop-shadow(0 0 3px var(--gold-active));
+}
+
+.network-node-flash {
+  opacity: 0.05;
+  animation: forge-breathe-cycle 4s ease-in-out infinite;
+}
+
+.network-nexus-outer {
+  opacity: 0.08;
+  animation: forge-nexus-pulse 3s ease-in-out infinite;
+}
+
+.network-nexus-inner {
+  opacity: 0.15;
+  animation: forge-nexus-pulse 3s ease-in-out infinite 0.3s;
+}
+
+@keyframes constellation-travel {
+  0% {
+    cx: var(--x1);
+    cy: var(--y1);
+    opacity: 0;
+  }
+  5% {
+    opacity: 0.7;
+  }
+  95% {
+    opacity: 0.7;
+  }
+  100% {
+    cx: var(--x2);
+    cy: var(--y2);
+    opacity: 0;
+  }
+}
+
+@keyframes forge-breathe-cycle {
+  0%, 100% {
+    opacity: 0.05;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@keyframes forge-nexus-pulse {
+  0%, 100% {
+    opacity: 0.08;
+  }
+  50% {
+    opacity: 0.25;
+  }
 }
 
 /* ─── Responsive: Tablet ─── */
@@ -1444,9 +1536,27 @@
     display: block;
   }
 
-  .v2-hero-ring-container {
-    width: 240px;
-    height: 240px;
+  .v2-hero-split {
+    flex-direction: column;
+    gap: 2.5rem;
+    padding: 0 24px;
+    text-align: center;
+  }
+
+  .v2-hero-text {
+    align-items: center;
+  }
+
+  .v2-hero-actions {
+    justify-content: center;
+  }
+
+  .v2-hero-network {
+    order: -1;
+  }
+
+  .v2-hero-divine-network {
+    transform: scale(0.85);
   }
 }
 
@@ -1470,9 +1580,8 @@
     text-align: center;
   }
 
-  .v2-hero-ring-container {
-    width: 200px;
-    height: 200px;
+  .v2-hero-divine-network {
+    transform: scale(0.7);
   }
 
   .v2-hero h1 {

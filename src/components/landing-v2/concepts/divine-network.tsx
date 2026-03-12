@@ -74,9 +74,9 @@ spokes.forEach((spoke, i) => messageDots.push(makeDot(spoke, i + 100)));
 // One dot per peer route (9) — guarantees every edge & diagonal has traffic
 peerRoutes.forEach((route, i) => messageDots.push(makeDot(route, i + 200)));
 
-export function DivineNetwork() {
+export function DivineNetwork({ className }: { className?: string } = {}) {
   return (
-    <div className="concept-inner" style={{ width: SIZE, height: SIZE, position: "relative" }}>
+    <div className={className ? `concept-inner ${className}` : "concept-inner"} style={{ width: SIZE, height: SIZE, position: "relative" }}>
       <svg
         width={SIZE}
         height={SIZE}
