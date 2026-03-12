@@ -224,7 +224,7 @@ export function Hero() {
           >
             One person shouldn&apos;t need five tabs, three apps, and a prayer.
             <br />
-            <span style={{ color: "var(--gold-divine)" }}>Build the team that runs it for you.</span>
+            <span style={{ color: "var(--gold-divine)", fontStyle: "italic" }}>Build the team that runs it for you.</span>
           </m.h1>
 
           <m.p

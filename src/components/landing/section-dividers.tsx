@@ -16,6 +16,20 @@ export function ConstellationDivider() {
   );
 }
 
+export function MiniConstellationDivider() {
+  return (
+    <div className="mini-constellation-divider" aria-hidden="true">
+      <svg width="100" height="12" viewBox="0 0 100 12" fill="none">
+        <circle cx="20" cy="6" r="1.5" fill="currentColor" />
+        <circle cx="50" cy="6" r="2" fill="currentColor" />
+        <circle cx="80" cy="6" r="1.5" fill="currentColor" />
+        <line x1="22" y1="6" x2="48" y2="6" stroke="currentColor" strokeWidth="0.5" />
+        <line x1="52" y1="6" x2="78" y2="6" stroke="currentColor" strokeWidth="0.5" />
+      </svg>
+    </div>
+  );
+}
+
 export function InscriptionDivider({ numeral, label }: { numeral: string; label: string }) {
   return (
     <div className="inscription-divider" aria-hidden="true">

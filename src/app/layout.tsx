@@ -1,30 +1,19 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Outfit, Space_Grotesk, Cormorant_Garamond, IBM_Plex_Mono } from "next/font/google";
+import { Spectral, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
-const headline = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  variable: "--font-headline",
-  display: "swap",
-});
-
-const body = Outfit({
-  subsets: ["latin"],
-  variable: "--font-sans",
-  display: "swap",
-});
-
-const display = Space_Grotesk({
-  subsets: ["latin"],
-  variable: "--font-display",
-  display: "swap",
-});
-
-const serif = Cormorant_Garamond({
+const spectral = Spectral({
   subsets: ["latin"],
   weight: ["400", "700"],
   style: ["normal", "italic"],
   variable: "--font-serif",
+  display: "swap",
+});
+
+const body = IBM_Plex_Sans({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "700"],
+  variable: "--font-sans",
   display: "swap",
 });
 
@@ -52,7 +41,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${headline.variable} ${body.variable} ${display.variable} ${serif.variable} ${mono.variable} antialiased`}>
+      <body className={`${spectral.variable} ${body.variable} ${mono.variable} antialiased`}>
         {children}
       </body>
     </html>

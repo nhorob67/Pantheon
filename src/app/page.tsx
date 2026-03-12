@@ -10,7 +10,8 @@ import { SocialProof } from "@/components/landing/testimonials";
 import { Pricing } from "@/components/landing/pricing";
 import { FinalCTA } from "@/components/landing/cta";
 import { Footer } from "@/components/landing/footer";
-import { InscriptionDivider, ConstellationDivider } from "@/components/landing/section-dividers";
+import { InscriptionDivider, ConstellationDivider, MiniConstellationDivider } from "@/components/landing/section-dividers";
+import { TypographicInterlude } from "@/components/landing/typographic-interlude";
 
 export default function LandingPage() {
   return (
@@ -23,13 +24,17 @@ export default function LandingPage() {
       <PlatformGrid />
       <InscriptionDivider numeral="II" label="AGENT ROSTER" />
       <AgentRoster />
+      <MiniConstellationDivider />
       <InscriptionDivider numeral="III" label="MISSION BRIEFING" />
       <HowItWorks />
+      <MiniConstellationDivider />
       <InscriptionDivider numeral="IV" label="YOUR COMMAND CENTER" />
       <Channels />
-      <ConstellationDivider />
+      <TypographicInterlude />
       <TrustSection />
+      <MiniConstellationDivider />
       <SocialProof />
+      <MiniConstellationDivider />
       <InscriptionDivider numeral="V" label="FORMATIONS" />
       <Pricing />
       <FinalCTA />
