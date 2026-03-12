@@ -50,43 +50,29 @@ type MessageDot = {
   glow: boolean;
 };
 
-const HUB_COUNT = 10;
-const PEER_COUNT = 12;
 const peerRoutes = [...perimeterEdges, ...diagonals];
+
+function makeDot(seg: Segment, seed: number): MessageDot {
+  const reverse = seededRandom(seed * 37) > 0.5;
+  return {
+    x1: reverse ? seg.x2 : seg.x1,
+    y1: reverse ? seg.y2 : seg.y1,
+    x2: reverse ? seg.x1 : seg.x2,
+    y2: reverse ? seg.y1 : seg.y2,
+    duration: 1.5 + seededRandom(seed * 41) * 2.5,
+    delay: seededRandom(seed * 43) * 8,
+    r: 2 + seededRandom(seed * 47) * 1.5,
+    glow: seededRandom(seed * 53) > 0.6,
+  };
+}
 
 const messageDots: MessageDot[] = [];
 
-// Hub messages (node ↔ center)
-for (let i = 0; i < HUB_COUNT; i++) {
-  const spoke = spokes[Math.floor(seededRandom(i * 31) * spokes.length)];
-  const reverse = seededRandom(i * 37) > 0.5;
-  messageDots.push({
-    x1: reverse ? spoke.x2 : spoke.x1,
-    y1: reverse ? spoke.y2 : spoke.y1,
-    x2: reverse ? spoke.x1 : spoke.x2,
-    y2: reverse ? spoke.y1 : spoke.y2,
-    duration: 1.5 + seededRandom(i * 41) * 2.5,
-    delay: seededRandom(i * 43) * 8,
-    r: 2 + seededRandom(i * 47) * 1.5,
-    glow: seededRandom(i * 53) > 0.6,
-  });
-}
+// One dot per spoke (6) — guarantees every hub route has traffic
+spokes.forEach((spoke, i) => messageDots.push(makeDot(spoke, i + 100)));
 
-// Peer messages (node ↔ node)
-for (let i = 0; i < PEER_COUNT; i++) {
-  const route = peerRoutes[Math.floor(seededRandom(i * 59) * peerRoutes.length)];
-  const reverse = seededRandom(i * 61) > 0.5;
-  messageDots.push({
-    x1: reverse ? route.x2 : route.x1,
-    y1: reverse ? route.y2 : route.y1,
-    x2: reverse ? route.x1 : route.x2,
-    y2: reverse ? route.y1 : route.y2,
-    duration: 1.5 + seededRandom(i * 67) * 2.5,
-    delay: seededRandom(i * 71) * 8,
-    r: 2 + seededRandom(i * 73) * 1.5,
-    glow: seededRandom(i * 79) > 0.5,
-  });
-}
+// One dot per peer route (9) — guarantees every edge & diagonal has traffic
+peerRoutes.forEach((route, i) => messageDots.push(makeDot(route, i + 200)));
 
 export function DivineNetwork() {
   return (
