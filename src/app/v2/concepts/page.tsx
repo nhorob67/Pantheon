@@ -6,11 +6,12 @@ import {
   OrbitalThreads,
   CommandTerminal,
   AscendingSmoke,
+  DivineNetwork,
 } from "@/components/landing-v2/concepts";
 
 export const metadata = {
   title: "Pantheon — Hero Graphic Concepts",
-  description: "Five alternative hero graphic concepts for the Pantheon landing page.",
+  description: "Six alternative hero graphic concepts for the Pantheon landing page.",
 };
 
 const CONCEPTS = [
@@ -38,6 +39,11 @@ const CONCEPTS = [
     name: "Ascending Smoke",
     description: "Rising golden particle wisps with floating deity icons",
     Component: AscendingSmoke,
+  },
+  {
+    name: "Divine Network",
+    description: "Fast-moving message dots across a web of hub spokes, perimeter edges, and cross diagonals",
+    Component: DivineNetwork,
   },
 ];
 

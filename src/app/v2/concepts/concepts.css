@@ -441,6 +441,40 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   Concept 6 — Divine Network
+   ═══════════════════════════════════════════════════════════════ */
+
+.network-line {
+  stroke: var(--gold-divine);
+  stroke-width: 0.8;
+  opacity: 0.12;
+}
+
+.network-dot {
+  animation: constellation-travel var(--duration, 3s) linear infinite;
+  animation-delay: var(--delay, 0s);
+}
+
+.network-dot-glow {
+  filter: drop-shadow(0 0 3px var(--gold-active));
+}
+
+.network-node-flash {
+  opacity: 0.05;
+  animation: forge-breathe-cycle 4s ease-in-out infinite;
+}
+
+.network-nexus-outer {
+  opacity: 0.08;
+  animation: forge-nexus-pulse 3s ease-in-out infinite;
+}
+
+.network-nexus-inner {
+  opacity: 0.15;
+  animation: forge-nexus-pulse 3s ease-in-out infinite 0.3s;
+}
+
+/* ═══════════════════════════════════════════════════════════════
    Accessibility — Reduced Motion
    ═══════════════════════════════════════════════════════════════ */
 
@@ -498,6 +532,21 @@
   }
   .terminal-scanline {
     animation: none !important;
+  }
+
+  /* Divine Network */
+  .network-dot {
+    animation: none !important;
+    display: none;
+  }
+  .network-node-flash {
+    animation: none !important;
+    opacity: 0.1 !important;
+  }
+  .network-nexus-outer,
+  .network-nexus-inner {
+    animation: none !important;
+    opacity: 0.15 !important;
   }
 
   /* Smoke */
