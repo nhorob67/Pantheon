@@ -11,32 +11,26 @@ function seededRandom(seed: number) {
 }
 
 const positions = computeHexPositions(SIZE);
-const center = SIZE / 2;
+const N = positions.length;
 
-// Build all route segments
-type Segment = { x1: number; y1: number; x2: number; y2: number };
+// Build fully connected mesh — every node to every other node
+type Segment = { x1: number; y1: number; x2: number; y2: number; hopDistance: number };
 
-// Perimeter edges (6)
-const perimeterEdges: Segment[] = positions.map((pos, i) => {
-  const next = positions[(i + 1) % positions.length];
-  return { x1: pos.x, y1: pos.y, x2: next.x, y2: next.y };
-});
-
-// Cross diagonals (3)
-const diagonals: Segment[] = positions.slice(0, 3).map((pos, i) => {
-  const opp = positions[i + 3];
-  return { x1: pos.x, y1: pos.y, x2: opp.x, y2: opp.y };
-});
-
-// Hub spokes (6)
-const spokes: Segment[] = positions.map((pos) => ({
-  x1: pos.x,
-  y1: pos.y,
-  x2: center,
-  y2: center,
-}));
-
-const allLines = [...perimeterEdges, ...diagonals, ...spokes];
+const allLines: Segment[] = [];
+for (let i = 0; i < N; i++) {
+  for (let j = i + 1; j < N; j++) {
+    // Hop distance on the hexagon ring (1 = adjacent, 2 = one apart, 3 = opposite)
+    const rawDist = Math.abs(i - j);
+    const hopDistance = Math.min(rawDist, N - rawDist);
+    allLines.push({
+      x1: positions[i].x,
+      y1: positions[i].y,
+      x2: positions[j].x,
+      y2: positions[j].y,
+      hopDistance,
+    });
+  }
+}
 
 // Build message dots
 type MessageDot = {
@@ -50,17 +44,16 @@ type MessageDot = {
   glow: boolean;
 };
 
-const peerRoutes = [...perimeterEdges, ...diagonals];
-
-function makeDot(seg: Segment, seed: number): MessageDot {
+function makeDot(seg: Segment, seed: number, frequencyMultiplier: number): MessageDot {
   const reverse = seededRandom(seed * 37) > 0.5;
   return {
     x1: reverse ? seg.x2 : seg.x1,
     y1: reverse ? seg.y2 : seg.y1,
     x2: reverse ? seg.x1 : seg.x2,
     y2: reverse ? seg.y1 : seg.y2,
-    duration: 1.5 + seededRandom(seed * 41) * 2.5,
-    delay: seededRandom(seed * 43) * 8,
+    // Longer duration + longer delay for distant connections = less frequent
+    duration: (1.5 + seededRandom(seed * 41) * 2.5) * frequencyMultiplier,
+    delay: seededRandom(seed * 43) * 8 * frequencyMultiplier,
     r: 2 + seededRandom(seed * 47) * 1.5,
     glow: seededRandom(seed * 53) > 0.6,
   };
@@ -68,11 +61,16 @@ function makeDot(seg: Segment, seed: number): MessageDot {
 
 const messageDots: MessageDot[] = [];
 
-// One dot per spoke (6) — guarantees every hub route has traffic
-spokes.forEach((spoke, i) => messageDots.push(makeDot(spoke, i + 100)));
-
-// One dot per peer route (9) — guarantees every edge & diagonal has traffic
-peerRoutes.forEach((route, i) => messageDots.push(makeDot(route, i + 200)));
+// Every edge gets a message dot; distant connections fire less often
+allLines.forEach((seg, i) => {
+  // Adjacent (hop 1) = normal speed, hop 2 = 2x slower, hop 3 (opposite) = 3x slower
+  const frequencyMultiplier = seg.hopDistance;
+  messageDots.push(makeDot(seg, i + 100, frequencyMultiplier));
+  // Adjacent connections get a second dot for extra traffic
+  if (seg.hopDistance === 1) {
+    messageDots.push(makeDot(seg, i + 300, 1));
+  }
+});
 
 export function DivineNetwork({ className }: { className?: string } = {}) {
   return (
@@ -84,7 +82,7 @@ export function DivineNetwork({ className }: { className?: string } = {}) {
         style={{ position: "absolute", inset: 0 }}
         aria-hidden="true"
       >
-        {/* Static lines — all routes at low opacity */}
+        {/* Static lines — all node-to-node connections */}
         {allLines.map((seg, i) => (
           <line
             key={`line-${i}`}
@@ -93,27 +91,9 @@ export function DivineNetwork({ className }: { className?: string } = {}) {
             x2={seg.x2}
             y2={seg.y2}
             className="network-line"
+            style={{ opacity: seg.hopDistance === 1 ? 0.14 : seg.hopDistance === 2 ? 0.08 : 0.05 }}
           />
         ))}
-
-        {/* Central nexus */}
-        <circle
-          cx={center}
-          cy={center}
-          r={16}
-          fill="var(--gold-divine)"
-          className="network-nexus-outer"
-          style={{ filter: "blur(5px)" }}
-        />
-        <circle
-          cx={center}
-          cy={center}
-          r={6}
-          fill="var(--gold-active)"
-          className="network-nexus-inner"
-          style={{ filter: "blur(2px)" }}
-        />
-        <circle cx={center} cy={center} r={2.5} fill="var(--gold-active)" opacity={0.85} />
 
         {/* Node receive flashes */}
         {positions.map((pos, i) => (
