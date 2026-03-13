@@ -1,44 +1,43 @@
-import { Nav } from "@/components/landing/nav";
-import { Hero } from "@/components/landing/hero";
-import { ConversationShowcase } from "@/components/landing/features";
-import { PlatformGrid } from "@/components/landing/platform-grid";
-import { HowItWorks } from "@/components/landing/how-it-works";
-import { AgentRoster } from "@/components/landing/team-section";
-import { Channels } from "@/components/landing/channels";
-import { TrustSection } from "@/components/landing/trust-section";
-import { SocialProof } from "@/components/landing/testimonials";
-import { Pricing } from "@/components/landing/pricing";
-import { FinalCTA } from "@/components/landing/cta";
-import { Footer } from "@/components/landing/footer";
-import { InscriptionDivider, ConstellationDivider, MiniConstellationDivider } from "@/components/landing/section-dividers";
-import { TypographicInterlude } from "@/components/landing/typographic-interlude";
+import "./landing-v2.css";
+import { CommandBar } from "@/components/landing-v2/command-bar";
+import { HeroCommand } from "@/components/landing-v2/hero-command";
+import { OperationsConsole } from "@/components/landing-v2/operations-console";
+import { OperationalDomains } from "@/components/landing-v2/operational-domains";
+import { DivineRegistry } from "@/components/landing-v2/divine-registry";
+import { WarRoom } from "@/components/landing-v2/war-room";
+import { SwornProtocols } from "@/components/landing-v2/sworn-protocols";
+import { CommandersLog } from "@/components/landing-v2/commanders-log";
+import { FormationsBoard } from "@/components/landing-v2/formations-board";
+import { MissionLaunch } from "@/components/landing-v2/mission-launch";
+import { FooterV2 } from "@/components/landing-v2/footer";
+import { InscriptionDivider, ScanlineDivider } from "@/components/landing-v2/section-dividers";
+
+export const metadata = {
+  title: "Pantheon — The Digital Pantheon",
+  description: "Assemble your council. Deploy a team of AI agents, each sovereign over its own domain.",
+};
 
 export default function LandingPage() {
   return (
-    <div className="landing-page">
-      <Nav />
-      <Hero />
-      <InscriptionDivider numeral="I" label="COMMAND CENTER" />
-      <ConversationShowcase />
-      <ConstellationDivider />
-      <PlatformGrid />
-      <InscriptionDivider numeral="II" label="AGENT ROSTER" />
-      <AgentRoster />
-      <MiniConstellationDivider />
-      <InscriptionDivider numeral="III" label="MISSION BRIEFING" />
-      <HowItWorks />
-      <MiniConstellationDivider />
-      <InscriptionDivider numeral="IV" label="YOUR COMMAND CENTER" />
-      <Channels />
-      <TypographicInterlude />
-      <TrustSection />
-      <MiniConstellationDivider />
-      <SocialProof />
-      <MiniConstellationDivider />
-      <InscriptionDivider numeral="V" label="INVESTMENT" />
-      <Pricing />
-      <FinalCTA />
-      <Footer />
+    <div className="landing-v2">
+      <CommandBar />
+      <HeroCommand />
+      <InscriptionDivider numeral="I" label="Field Operations" />
+      <OperationsConsole />
+      <ScanlineDivider />
+      <OperationalDomains />
+      <InscriptionDivider numeral="II" label="The Roster" />
+      <DivineRegistry />
+      <InscriptionDivider numeral="III" label="Deployment" />
+      <WarRoom />
+      <InscriptionDivider numeral="IV" label="Theater of Operations" />
+      <SwornProtocols />
+      <ScanlineDivider />
+      <CommandersLog />
+      <InscriptionDivider numeral="V" label="Formations" />
+      <FormationsBoard />
+      <MissionLaunch />
+      <FooterV2 />
     </div>
   );
 }

@@ -68,7 +68,7 @@ export function HeroCommand() {
               animate={phase >= 4 ? { opacity: 1 } : {}}
               transition={{ ...REVEAL_SLOW, delay: 0.3 }}
             >
-              14-day deployment. No tribute required. Dissolve in two clicks.
+              Deploys into your Discord server in three minutes. No new app to learn.
             </m.p>
           </div>
 

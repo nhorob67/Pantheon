@@ -3,38 +3,25 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { m, AnimatePresence } from "motion/react";
 import { AnimatedSection, SectionHeader } from "./animated-section";
-import { DashboardPanel } from "./panels/dashboard-panel";
 import { AGENTS } from "./data/agents";
 
 interface ConversationFrame {
-  type: "user" | "assistant";
+  type: "user" | "agent";
+  agent?: string;
   text: string;
   richContent?: React.ReactNode;
   delay: number;
 }
 
-const eventFeed = [
-  "Athena triaged 3 emails",
-  "Hermes drafted proposal for Meridian Group",
-  "Apollo compiled vendor comparison",
-  "Artemis flagged contract renewal — due Friday",
-  "Athena prepared daily briefing",
-  "Hephaestus deployed new SOP skill",
-  "Hermes scheduled team standup",
-  "Apollo analyzed Q4 results",
-  "Ares updated safety protocols",
-  "Artemis sent deadline reminder to Dave",
-  "Athena tracked vendor deadlines",
-  "Hermes followed up with Lisa on tax docs",
-];
-
-const scenarios: { label: string; frames: ConversationFrame[] }[] = [
+const scenarios: { label: string; channel: string; frames: ConversationFrame[] }[] = [
   {
     label: "Daily Briefing",
+    channel: "operations",
     frames: [
       { type: "user", text: "What's on my plate today?", delay: 0 },
       {
-        type: "assistant",
+        type: "agent",
+        agent: "Athena",
         text: "Today's Task Board, Mar 3",
         delay: 600,
         richContent: (
@@ -56,15 +43,17 @@ const scenarios: { label: string; frames: ConversationFrame[] }[] = [
           </div>
         ),
       },
-      { type: "assistant", text: "I'd focus on the vendor contract first — it expires Friday and needs sign-off. Budget review is prepped and ready for 10 AM.", delay: 400 },
+      { type: "agent", agent: "Athena", text: "I'd focus on the vendor contract first — it expires Friday and needs sign-off. Budget review is prepped and ready for 10 AM.", delay: 400 },
     ],
   },
   {
     label: "Standing Orders",
+    channel: "operations",
     frames: [
       { type: "user", text: "Walk me through new employee onboarding", delay: 0 },
       {
-        type: "assistant",
+        type: "agent",
+        agent: "Ares",
         text: "New Employee Onboarding Protocol",
         delay: 600,
         richContent: (
@@ -92,15 +81,17 @@ const scenarios: { label: string; frames: ConversationFrame[] }[] = [
           </div>
         ),
       },
-      { type: "assistant", text: "Sarah's start date is Monday. IT setup is in progress and HR paperwork was sent yesterday.", delay: 400 },
+      { type: "agent", agent: "Ares", text: "Sarah's start date is Monday. IT setup is in progress and HR paperwork was sent yesterday.", delay: 400 },
     ],
   },
   {
     label: "Field Intelligence",
+    channel: "intel",
     frames: [
       { type: "user", text: "Compare the proposals from our three vendors", delay: 0 },
       {
-        type: "assistant",
+        type: "agent",
+        agent: "Apollo",
         text: "Vendor Comparison: Cloud Infrastructure",
         delay: 600,
         richContent: (
@@ -123,15 +114,17 @@ const scenarios: { label: string; frames: ConversationFrame[] }[] = [
           </div>
         ),
       },
-      { type: "assistant", text: "Vendor A gives the best balance of cost and reliability. Vendor B saves $400/mo but cuts support hours in half.", delay: 400 },
+      { type: "agent", agent: "Apollo", text: "Vendor A gives the best balance of cost and reliability. Vendor B saves $400/mo but cuts support hours in half.", delay: 400 },
     ],
   },
   {
     label: "Signal Intercept",
+    channel: "comms",
     frames: [
       { type: "user", text: "Who do I still need to get back to?", delay: 0 },
       {
-        type: "assistant",
+        type: "agent",
+        agent: "Hermes",
         text: "Open Signals: This Week",
         delay: 600,
         richContent: (
@@ -153,15 +146,17 @@ const scenarios: { label: string; frames: ConversationFrame[] }[] = [
           </div>
         ),
       },
-      { type: "assistant", text: "The tax documents for Lisa are the most time-sensitive — she needs them by Wednesday. The Meridian proposal has been waiting since last week.", delay: 400 },
+      { type: "agent", agent: "Hermes", text: "The tax documents for Lisa are the most time-sensitive — she needs them by Wednesday. The Meridian proposal has been waiting since last week.", delay: 400 },
     ],
   },
   {
-    label: "Council Records",
+    label: "Deadline Watch",
+    channel: "deadlines",
     frames: [
       { type: "user", text: "What did we decide in last week's team meeting?", delay: 0 },
       {
-        type: "assistant",
+        type: "agent",
+        agent: "Artemis",
         text: "Council Summary: Feb 28",
         delay: 600,
         richContent: (
@@ -183,9 +178,18 @@ const scenarios: { label: string; frames: ConversationFrame[] }[] = [
           </div>
         ),
       },
-      { type: "assistant", text: "Three directives. The vendor switch is on you — deadline is Friday. Dave started the contractor search. Sarah's SLA update is overdue.", delay: 400 },
+      { type: "agent", agent: "Artemis", text: "Three directives. The vendor switch is on you — deadline is Friday. Dave started the contractor search. Sarah's SLA update is overdue.", delay: 400 },
     ],
   },
+];
+
+const channels = [
+  { name: "general", hasActivity: false },
+  { name: "operations", hasActivity: true },
+  { name: "intel", hasActivity: false },
+  { name: "comms", hasActivity: true },
+  { name: "deadlines", hasActivity: false },
+  { name: "sops", hasActivity: false },
 ];
 
 function ProgressiveText({ text, mode, speed, onDone }: {
@@ -229,7 +233,11 @@ function ProgressiveText({ text, mode, speed, onDone }: {
   );
 }
 
-function ScenarioPlayer({ frames, scenarioKey }: { frames: ConversationFrame[]; scenarioKey: string }) {
+function getAgentData(name: string) {
+  return AGENTS.find((a) => a.name === name);
+}
+
+function DiscordScenarioPlayer({ frames, scenarioKey }: { frames: ConversationFrame[]; scenarioKey: string }) {
   const [visibleFrames, setVisibleFrames] = useState<number[]>([]);
   const [currentStreaming, setCurrentStreaming] = useState(-1);
   const [showRich, setShowRich] = useState<Set<number>>(new Set());
@@ -263,101 +271,108 @@ function ScenarioPlayer({ frames, scenarioKey }: { frames: ConversationFrame[]; 
   }, [frames, advanceFrame]);
 
   return (
-    <div className="v2-terminal-body">
+    <div className="v2-discord-messages">
       {visibleFrames.map((idx) => {
         const frame = frames[idx];
         if (frame.type === "user") {
           return (
-            <div key={`${scenarioKey}-${idx}`} className="v2-terminal-user">
-              <span className="prompt">&gt;</span>
-              <span className="text">
-                <ProgressiveText text={frame.text} mode="char" speed={45} onDone={() => handleFrameDone(idx)} />
-              </span>
+            <div key={`${scenarioKey}-${idx}`} className="v2-discord-msg">
+              <div className="v2-discord-avatar v2-discord-avatar-user">Y</div>
+              <div className="v2-discord-msg-body">
+                <div className="v2-discord-msg-header">
+                  <span className="v2-discord-msg-name v2-discord-msg-name-user">You</span>
+                  <span className="v2-discord-msg-time">Today at 9:04 AM</span>
+                </div>
+                <div className="v2-discord-msg-text">
+                  <ProgressiveText text={frame.text} mode="char" speed={45} onDone={() => handleFrameDone(idx)} />
+                </div>
+              </div>
             </div>
           );
         }
+        const agent = frame.agent ? getAgentData(frame.agent) : null;
+        const Mark = agent?.mark;
         return (
-          <div key={`${scenarioKey}-${idx}`} className="v2-terminal-response">
-            {currentStreaming === idx ? (
-              <strong><ProgressiveText text={frame.text} mode="word" speed={40} onDone={() => handleFrameDone(idx)} /></strong>
-            ) : (
-              <strong>{frame.text}</strong>
-            )}
-            {showRich.has(idx) && frame.richContent}
+          <div key={`${scenarioKey}-${idx}`} className="v2-discord-msg">
+            <div className="v2-discord-avatar v2-discord-avatar-agent">
+              {Mark ? <Mark size={18} /> : "P"}
+            </div>
+            <div className="v2-discord-msg-body">
+              <div className="v2-discord-msg-header">
+                <span className="v2-discord-msg-name v2-discord-msg-name-agent">{frame.agent ?? "Pantheon"}</span>
+                <span className="v2-discord-msg-badge">BOT</span>
+                <span className="v2-discord-msg-time">Today at 9:04 AM</span>
+              </div>
+              <div className="v2-discord-msg-text">
+                {currentStreaming === idx ? (
+                  <strong><ProgressiveText text={frame.text} mode="word" speed={40} onDone={() => handleFrameDone(idx)} /></strong>
+                ) : (
+                  <strong>{frame.text}</strong>
+                )}
+                {showRich.has(idx) && frame.richContent}
+              </div>
+            </div>
           </div>
         );
       })}
       {visibleFrames.length > 0 && currentStreaming === -1 && visibleFrames.length < frames.length && (
-        <div className="v2-typing-indicator"><span /><span /><span /></div>
+        <div className="v2-discord-typing">
+          <div className="v2-typing-indicator"><span /><span /><span /></div>
+          <span className="v2-discord-typing-text">{frames[visibleFrames.length]?.agent ?? "Agent"} is typing...</span>
+        </div>
       )}
     </div>
   );
 }
 
-function AgentStatusPanel() {
-  const [activityIdx, setActivityIdx] = useState<number[]>(AGENTS.map(() => 0));
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setActivityIdx((prev) => prev.map((idx, i) => (idx + 1) % AGENTS[i].missions.length));
-    }, 4000);
-    return () => clearInterval(interval);
-  }, []);
-
-  return (
-    <DashboardPanel title="Agent Status" meta="6 AGENTS">
-      <div className="v2-ops-agents-list">
-        {AGENTS.map((agent, i) => {
-          const Mark = agent.mark;
-          return (
-            <div key={agent.name} className="v2-ops-agent-row">
-              <span className="v2-ops-agent-mark"><Mark size={18} /></span>
-              <div className="v2-ops-agent-info">
-                <div className="v2-ops-agent-name">{agent.name}</div>
-                <div className="v2-ops-agent-activity">{agent.missions[activityIdx[i]]}</div>
-              </div>
-              <span className={`v2-ops-agent-dot ${agent.active ? "active" : "idle"}`} />
-            </div>
-          );
-        })}
-      </div>
-    </DashboardPanel>
-  );
-}
-
-function TelemetryPanel() {
-  return (
-    <DashboardPanel title="Telemetry" meta="LIVE">
-      <div className="v2-event-feed">
-        {eventFeed.map((event, i) => (
-          <div key={i} className="v2-event-item">
-            <span className="v2-event-time">
-              {String(8 + Math.floor(i / 3)).padStart(2, "0")}:{String((i * 17) % 60).padStart(2, "0")}
-            </span>
-            <span className="v2-event-text">{event}</span>
-          </div>
-        ))}
-      </div>
-    </DashboardPanel>
-  );
-}
-
 export function OperationsConsole() {
   const [activeTab, setActiveTab] = useState(0);
+  const activeChannel = scenarios[activeTab].channel;
 
   return (
     <AnimatedSection id="skills">
-      <SectionHeader label="Field Operations" title="Your council reports. You command." />
+      <SectionHeader
+        label="Field Operations"
+        title="Your council reports inside Discord."
+        subtitle="No new app to learn. Your agents respond in channels your team already knows how to use."
+      />
 
-      <div className="v2-ops-console">
-        <AgentStatusPanel />
-
-        <DashboardPanel title="Command Interface" meta="OPERATIONAL">
-          <div className="v2-terminal-telemetry">
-            <span>TOKENS: 847</span>
-            <span>LATENCY: 0.3s</span>
-            <span>AGENTS: 5/6 ACTIVE</span>
+      <div className="v2-discord-mockup">
+        {/* Channel sidebar */}
+        <div className="v2-discord-sidebar">
+          <div className="v2-discord-server-header">
+            <DiscordMark />
+            <span>Your Team Server</span>
           </div>
+          <div className="v2-discord-channel-list">
+            <div className="v2-discord-channel-category">Pantheon Agents</div>
+            {channels.map((ch) => (
+              <button
+                key={ch.name}
+                className={`v2-discord-channel ${activeChannel === ch.name ? "active" : ""}`}
+                onClick={() => {
+                  const idx = scenarios.findIndex((s) => s.channel === ch.name);
+                  if (idx !== -1) setActiveTab(idx);
+                }}
+              >
+                <span className="v2-discord-channel-hash">#</span>
+                <span className="v2-discord-channel-name">{ch.name}</span>
+                {ch.hasActivity && activeChannel !== ch.name && (
+                  <span className="v2-discord-channel-badge" />
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Main message area */}
+        <div className="v2-discord-main">
+          <div className="v2-discord-toolbar">
+            <span className="v2-discord-channel-hash">#</span>
+            <span className="v2-discord-toolbar-name">{activeChannel}</span>
+          </div>
+
+          {/* Scenario tabs */}
           <div className="v2-scenario-tabs">
             {scenarios.map((s, i) => (
               <button
@@ -369,6 +384,7 @@ export function OperationsConsole() {
               </button>
             ))}
           </div>
+
           <AnimatePresence mode="wait">
             <m.div
               key={activeTab}
@@ -377,13 +393,24 @@ export function OperationsConsole() {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.4 }}
             >
-              <ScenarioPlayer frames={scenarios[activeTab].frames} scenarioKey={`${activeTab}`} />
+              <DiscordScenarioPlayer frames={scenarios[activeTab].frames} scenarioKey={`${activeTab}`} />
             </m.div>
           </AnimatePresence>
-        </DashboardPanel>
 
-        <TelemetryPanel />
+          {/* Input bar */}
+          <div className="v2-discord-input-bar">
+            <span className="v2-discord-input-placeholder">Message #{activeChannel}</span>
+          </div>
+        </div>
       </div>
     </AnimatedSection>
+  );
+}
+
+function DiscordMark() {
+  return (
+    <svg width="18" height="14" viewBox="0 0 71 55" fill="currentColor" aria-hidden="true">
+      <path d="M60.1 4.9A58.5 58.5 0 0 0 45.4.2a.2.2 0 0 0-.2.1 40.7 40.7 0 0 0-1.8 3.7 54 54 0 0 0-16.2 0A37 37 0 0 0 25.4.3a.2.2 0 0 0-.2-.1A58.4 58.4 0 0 0 10.5 5a.2.2 0 0 0-.1 0A59.7 59.7 0 0 0 .2 45.3a.2.2 0 0 0 .1.2A58.8 58.8 0 0 0 18 54.8a.2.2 0 0 0 .3-.1 42 42 0 0 0 3.6-5.9.2.2 0 0 0-.1-.3 38.8 38.8 0 0 1-5.5-2.6.2.2 0 0 1 0-.4l1.1-.9a.2.2 0 0 1 .2 0 42 42 0 0 0 35.8 0 .2.2 0 0 1 .2 0l1.1.9a.2.2 0 0 1 0 .3 36.4 36.4 0 0 1-5.5 2.7.2.2 0 0 0-.1.3 47.2 47.2 0 0 0 3.6 5.9.2.2 0 0 0 .3.1A58.6 58.6 0 0 0 70.3 45.4a.2.2 0 0 0 0-.2A59.2 59.2 0 0 0 60.2 5a.2.2 0 0 0-.1 0ZM23.7 37.3c-3.5 0-6.4-3.2-6.4-7.2s2.8-7.1 6.4-7.1 6.5 3.2 6.4 7.1c0 4-2.8 7.2-6.4 7.2Zm23.6 0c-3.5 0-6.4-3.2-6.4-7.2s2.8-7.1 6.4-7.1 6.5 3.2 6.4 7.1c0 4-2.8 7.2-6.4 7.2Z" />
+    </svg>
   );
 }

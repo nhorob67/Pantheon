@@ -35,7 +35,9 @@ export function CommandersLog() {
             <div className="v2-log-section-label">Recommendation</div>
             <p className="v2-log-section-text">
               Not one AI that pretends to do everything. A council of them. Each with a mandate, a domain,
-              and a directive. Working together inside the tools your team already uses. That is Pantheon.
+              and a directive. Working together inside Discord — where your team already lives, with channels,
+              threads, mobile notifications, and search already built. No new interface to learn, no tab to
+              forget. That is Pantheon.
             </p>
           </div>
 

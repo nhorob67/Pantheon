@@ -47,7 +47,7 @@ export function MissionLaunch() {
         >
           <Link href="/signup" className="v2-btn-primary">Deploy Your Council</Link>
           <p className="v2-hero-microcopy">
-            14-day deployment. No tribute required. Dissolve in two clicks.
+            Deploys into your Discord server in three minutes. No new app to learn.
           </p>
         </m.div>
       </m.section>

@@ -14,12 +14,12 @@ const steps = [
   {
     num: "II",
     title: "Open the Gates",
-    description: "One invitation link. Pantheon enters your Discord server. No developer portals, no configuration rituals.",
+    description: "One invitation link. Pantheon deploys into your Discord server. Each agent gets its own channel. Your team talks to them like colleagues — no commands to memorize, no interface to learn.",
   },
   {
     num: "III",
     title: "The Council Convenes",
-    description: "Each agent assumes its domain. Signals are intercepted, briefings are assembled, standing orders are executed.",
+    description: "Each agent assumes its domain inside Discord. Signals are intercepted, briefings are assembled, standing orders are executed — all in the channels your team already checks every day.",
   },
 ];
 
