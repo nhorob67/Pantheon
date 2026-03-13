@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { Mail, Paperclip, Clock, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface EmailConversation {
   sessionId: string;
@@ -63,11 +64,13 @@ function StatusPill({ status }: { status: string }) {
 export function EmailInbox({ conversations }: EmailInboxProps) {
   if (conversations.length === 0) {
     return (
-      <div className="bg-card border border-border rounded-xl p-12 text-center">
-        <Mail className="w-8 h-8 text-foreground/20 mx-auto mb-3" />
-        <p className="text-foreground/40 text-sm">
-          No email conversations yet.
-        </p>
+      <div className="bg-card border border-border rounded-xl">
+        <EmptyState
+          icon={Mail}
+          title="Inbox is clear"
+          description="Email conversations will appear here when your agents receive messages. Set up an email identity in settings to get started."
+          actions={[{ label: "Configure Email Identity", variant: "secondary", href: "/settings/email" }]}
+        />
       </div>
     );
   }

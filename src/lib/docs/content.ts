@@ -29,7 +29,11 @@ function fileToSlug(filePath: string): string {
     .join("/");
 }
 
+const SAFE_SLUG_RE = /^[a-z0-9-]+(?:\/[a-z0-9-]+)*$/;
+
 export function getDocBySlug(slug: string): DocPage | null {
+  if (!SAFE_SLUG_RE.test(slug)) return null;
+
   const candidates = [
     path.join(CONTENT_DIR, `${slug}.mdx`),
     path.join(CONTENT_DIR, slug, "index.mdx"),

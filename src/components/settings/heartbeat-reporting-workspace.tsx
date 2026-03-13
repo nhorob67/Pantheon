@@ -2,6 +2,7 @@
 
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { ExternalLink, Loader2 } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Tabs } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -1159,9 +1160,12 @@ export function HeartbeatReportingWorkspace({
                   Loading audit history
                 </div>
               ) : auditData && auditData.items.length === 0 ? (
-                <div className="rounded-xl border border-border/70 bg-muted/20 p-4 text-sm text-foreground/55">
-                  No audit entries matched these filters.
-                </div>
+                <EmptyState
+                  kind="filtered"
+                  size="compact"
+                  title="No audit entries matched these filters"
+                  description="Try adjusting the date range or filters."
+                />
               ) : (
                 <>
                   {(auditData?.items || []).map((item) => (

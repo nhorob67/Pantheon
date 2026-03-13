@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/toast";
+import { EmptyState } from "@/components/ui/empty-state";
 
 type ApprovalStatus = "pending" | "approved" | "rejected" | "expired" | "canceled";
 
@@ -181,7 +182,11 @@ export function TenantApprovalsPanel({
       </div>
 
       {visible.length === 0 ? (
-        <p className="text-sm text-foreground/60">No approvals for this status.</p>
+        <EmptyState
+          kind="filtered"
+          size="compact"
+          title="No approvals for this status"
+        />
       ) : (
         <div className="space-y-3">
           {visible.map((approval) => {

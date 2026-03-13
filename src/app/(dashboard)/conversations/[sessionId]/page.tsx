@@ -4,6 +4,8 @@ import { requireDashboardCustomer, getCustomerTenant } from "@/lib/auth/dashboar
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ConversationReplay } from "@/components/dashboard/conversation-replay";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Building2 } from "lucide-react";
 import Link from "next/link";
 
 export const metadata: Metadata = { title: "Conversation" };
@@ -60,7 +62,12 @@ async function ConversationReplayContent({
 
   if (!tenant) {
     return (
-      <p className="text-foreground/60">No tenant workspace configured.</p>
+      <EmptyState
+        icon={Building2}
+        title="No workspace configured"
+        description="Complete onboarding to set up your agent workspace."
+        actions={[{ label: "Start Onboarding", variant: "primary", href: "/onboarding" }]}
+      />
     );
   }
 

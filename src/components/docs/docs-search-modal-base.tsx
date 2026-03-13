@@ -2,6 +2,7 @@
 
 import { useRef, type KeyboardEvent, type ReactNode } from "react";
 import { Search, FileText, Hash, ArrowRight, Sparkles } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 import { AiAnswerPanel } from "./ai-answer-panel";
 import { useDocsSearchAi, type DocsAiStatus, type SearchResult } from "./use-docs-search-ai";
 import { useModalA11y } from "./use-modal-a11y";
@@ -211,9 +212,12 @@ export function DocsSearchModalBase({
             )}
 
             {loaded && query && results.length === 0 && aiStatus === "idle" && (
-              <div className="px-5 py-8 text-center text-sm text-text-dim">
-                No results for &ldquo;{query}&rdquo;
-              </div>
+              <EmptyState
+                kind="filtered"
+                size="compact"
+                title={`No results for "${query}"`}
+                description="Try different keywords or browse the docs."
+              />
             )}
 
             {results.map((result, index) => (

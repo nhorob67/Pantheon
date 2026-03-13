@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireDashboardCustomer, getCustomerTenant } from "@/lib/auth/dashboard-session";
 import Link from "next/link";
 import { Anvil, Plus } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const metadata: Metadata = { title: "Skills" };
@@ -113,30 +114,16 @@ async function SkillsContent({ customerId }: { customerId: string }) {
           ))}
         </div>
       ) : (
-        <div className="text-center py-12 rounded-xl border border-dashed border-border">
-          <Anvil className="w-8 h-8 text-foreground/30 mx-auto mb-3" />
-          <p className="text-sm text-foreground/50 mb-1">
-            No skills yet
-          </p>
-          <p className="text-xs text-foreground/40 mb-4">
-            Skills teach your agents how to handle specific tasks. Create one from scratch or use AI to generate one from a description.
-          </p>
-          <div className="flex items-center justify-center gap-3">
-            <Link
-              href="/settings/skills/forge/new"
-              className="inline-flex items-center gap-1.5 text-sm text-accent hover:text-accent-light transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Create Skill
-            </Link>
-            <Link
-              href="/settings/skills/forge/new?generate=true"
-              className="inline-flex items-center gap-1.5 text-sm text-foreground/50 hover:text-foreground/70 transition-colors"
-            >
-              Generate with AI
-            </Link>
-          </div>
-        </div>
+        <EmptyState
+          icon={Anvil}
+          bordered
+          title="Forge your first skill"
+          description="Skills teach your agents how to handle specific tasks. Write one from scratch or let AI generate one from a description."
+          actions={[
+            { label: "Create Skill", variant: "primary", icon: Plus, href: "/settings/skills/forge/new" },
+            { label: "Generate with AI", variant: "ghost", href: "/settings/skills/forge/new?generate=true" },
+          ]}
+        />
       )}
     </div>
   );

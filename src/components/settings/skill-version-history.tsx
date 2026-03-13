@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import type { CustomSkillVersion } from "@/types/custom-skill";
-import { RotateCcw, Loader2 } from "lucide-react";
+import { History, RotateCcw, Loader2 } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface SkillVersionHistoryProps {
   skillId: string;
@@ -34,9 +35,12 @@ export function SkillVersionHistory({
 
   if (versions.length === 0) {
     return (
-      <div className="flex items-center justify-center h-64 text-text-dim text-sm">
-        No version history yet
-      </div>
+      <EmptyState
+        icon={History}
+        size="compact"
+        title="No version history"
+        description="Versions are created each time you save."
+      />
     );
   }
 

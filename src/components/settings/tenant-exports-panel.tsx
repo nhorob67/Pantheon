@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
+import { EmptyState } from "@/components/ui/empty-state";
 
 type ExportScope = "full" | "knowledge_only" | "metadata_only";
 type ExportFormat = "jsonl" | "csv";
@@ -524,7 +525,7 @@ export function TenantExportsPanel({
       </div>
 
       {ordered.length === 0 ? (
-        <p className="text-sm text-foreground/60">No tenant exports yet.</p>
+        <EmptyState size="compact" title="No exports yet" />
       ) : (
         <div className="space-y-3">
           {ordered.map((row) => {
@@ -597,7 +598,7 @@ export function TenantExportsPanel({
                   <div className="space-y-2 text-xs text-foreground/70">
                     <p className="font-semibold text-foreground">Recent Jobs</p>
                     {detail.jobs.length === 0 ? (
-                      <p>No jobs recorded.</p>
+                      <p className="text-foreground/50">No jobs recorded.</p>
                     ) : (
                       detail.jobs.slice(0, 5).map((job) => (
                         <p key={job.id}>
@@ -608,7 +609,7 @@ export function TenantExportsPanel({
                     )}
                     <p className="font-semibold text-foreground pt-1">Artifacts</p>
                     {detail.files.length === 0 ? (
-                      <p>No files recorded.</p>
+                      <p className="text-foreground/50">No files recorded.</p>
                     ) : (
                       detail.files.map((file, index) => (
                         <p key={`${file.file_name || "file"}-${index}`}>

@@ -11,6 +11,7 @@ import { AgentForm } from "./agent-form";
 import { AgentPreviewChat } from "./agent-preview-chat";
 import { Dialog } from "@/components/ui/dialog";
 import { Plus, Bot } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 
 const EMPTY_CUSTOM_SKILLS: CustomSkill[] = [];
 
@@ -189,25 +190,13 @@ export function AssistantsList({
           ))}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="w-16 h-16 rounded-full bg-accent-dim flex items-center justify-center mb-4">
-            <Bot className="w-8 h-8 text-accent" />
-          </div>
-          <h4 className="font-headline text-base text-text-primary mb-1">
-            No agents yet
-          </h4>
-          <p className="text-sm text-text-dim max-w-xs mb-6">
-            Create your first agent to get started. Define its role, goal, and personality.
-          </p>
-          <button
-            type="button"
-            onClick={openCreate}
-            className="inline-flex items-center gap-2 bg-accent hover:bg-accent-light text-bg-deep font-semibold rounded-lg px-5 py-2.5 text-sm transition-colors cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            Create Agent
-          </button>
-        </div>
+        <EmptyState
+          icon={Bot}
+          size="large"
+          title="Summon your first agent"
+          description="Every great pantheon begins with a single agent. Define its role, goal, and personality — then bind it to a Discord channel."
+          actions={[{ label: "Create Agent", variant: "primary", icon: Plus, onClick: openCreate }]}
+        />
       )}
 
       {/* Create/Edit Dialog */}

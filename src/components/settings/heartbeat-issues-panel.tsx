@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, BellRing, CheckCheck, Clock3 } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
+import { EmptyState } from "@/components/ui/empty-state";
 import { useHeartbeatSettings } from "./heartbeat-settings-context";
 import type { HeartbeatIssue } from "@/types/heartbeat";
 
@@ -128,9 +129,12 @@ export function HeartbeatIssuesPanel({
       </div>
 
       {issues.length === 0 && (
-        <p className="text-xs text-foreground/45">
-          No active heartbeat issues right now.
-        </p>
+        <EmptyState
+          kind="inline"
+          size="compact"
+          title="All clear"
+          description="No active heartbeat issues right now."
+        />
       )}
 
       {issues.length > 0 && (

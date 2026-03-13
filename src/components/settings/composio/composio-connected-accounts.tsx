@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
 import { ToolkitIcon } from "./toolkit-icon";
+import { Link } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface Props {
   selectedToolkits: string[];
@@ -95,24 +97,13 @@ export function ComposioConnectedAccounts({
 
         <div className="p-6">
           {authToolkits.length === 0 ? (
-            <div className="rounded-lg border-2 border-dashed border-border p-8 text-center">
-              <svg
-                className="w-8 h-8 text-foreground/30 mx-auto mb-3"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={1.5}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244"
-                />
-              </svg>
-              <p className="text-foreground/50 text-sm">
-                Select toolkits above to connect accounts.
-              </p>
-            </div>
+            <EmptyState
+              icon={Link}
+              bordered
+              size="compact"
+              title="No accounts connected"
+              description="Select toolkits above, then connect the accounts your agents need to access."
+            />
           ) : (
             <div className="space-y-2">
               {authToolkits.map((toolkit) => {

@@ -182,7 +182,7 @@ export function ConversationReplay({
         <EmptyState
           icon={MessageCircle}
           title="No messages yet"
-          description="No messages in this conversation."
+          description="Messages will appear here once the conversation begins."
         />
       </div>
     );

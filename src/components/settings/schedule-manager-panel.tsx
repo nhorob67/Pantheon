@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CalendarPlus } from "lucide-react";
+import { CalendarPlus, CalendarClock } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 import type { ScheduleActivityData } from "@/lib/queries/schedule-activity";
 import { UnifiedScheduleCard } from "./unified-schedule-card";
 import { ScheduleFormDialog } from "./schedule-form-dialog";
@@ -131,11 +132,22 @@ export function ScheduleManagerPanel({
 
       {/* Schedule list */}
       {filtered.length === 0 ? (
-        <div className="text-center py-12 text-foreground/50 text-sm">
-          {activeTab === "custom"
-            ? "No custom schedules yet. Create one or ask your agent in Discord."
-            : "No schedules found. Enable predefined schedules on your agents or create custom ones."}
-        </div>
+        schedules.length === 0 ? (
+          <EmptyState
+            icon={CalendarClock}
+            title="No schedules configured"
+            description="Set up recurring tasks and check-ins for your agents. Schedules run automatically on your chosen cadence."
+            actions={[{ label: "Create Schedule", variant: "primary", icon: CalendarPlus, onClick: () => setShowCreateDialog(true) }]}
+          />
+        ) : (
+          <EmptyState
+            icon={CalendarClock}
+            kind="filtered"
+            size="compact"
+            title="No schedules match this filter"
+            description="Try switching tabs or create a new schedule."
+          />
+        )
       ) : (
         <div className="grid gap-3">
           {filtered.map((schedule) => (

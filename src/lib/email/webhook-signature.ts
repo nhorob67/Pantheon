@@ -42,7 +42,7 @@ export function verifySvixSignature({
   payload,
   headers,
   secret,
-  toleranceSeconds = 300,
+  toleranceSeconds = 60,
 }: VerifySvixSignatureInput): void {
   const id = headers.id;
   const timestamp = headers.timestamp;

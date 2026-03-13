@@ -1,6 +1,7 @@
 "use client";
 
 import { escapeHtml } from "@/lib/security/escape-html";
+import "./skill-preview.css";
 
 interface SkillPreviewProps {
   skillMd: string;
@@ -77,65 +78,6 @@ export function SkillPreview({ skillMd }: SkillPreviewProps) {
         dangerouslySetInnerHTML={{ __html: renderMarkdown(body) }}
       />
 
-      <style jsx>{`
-        .skill-preview-body :global(.skill-h2) {
-          font-family: var(--headline);
-          font-size: 1.25rem;
-          font-weight: 700;
-          color: var(--text-primary);
-          margin: 1.5rem 0 0.75rem;
-          padding-bottom: 0.5rem;
-          border-bottom: 1px solid var(--border);
-        }
-        .skill-preview-body :global(.skill-h3) {
-          font-family: var(--headline);
-          font-size: 1.05rem;
-          font-weight: 600;
-          color: var(--text-primary);
-          margin: 1.25rem 0 0.5rem;
-        }
-        .skill-preview-body :global(.skill-h4) {
-          font-size: 0.9rem;
-          font-weight: 600;
-          color: var(--text-secondary);
-          margin: 1rem 0 0.5rem;
-        }
-        .skill-preview-body :global(.skill-p) {
-          color: var(--text-secondary);
-          font-size: 0.875rem;
-          line-height: 1.7;
-          margin: 0.5rem 0;
-        }
-        .skill-preview-body :global(.skill-li) {
-          color: var(--text-secondary);
-          font-size: 0.875rem;
-          line-height: 1.7;
-          list-style: disc;
-          margin-left: 1.5rem;
-        }
-        .skill-preview-body :global(.skill-code-block) {
-          display: block;
-          background: var(--bg-deep);
-          border: 1px solid var(--border);
-          border-radius: 0.5rem;
-          padding: 1rem;
-          margin: 0.75rem 0;
-          overflow-x: auto;
-          font-family: monospace;
-          font-size: 0.8rem;
-          color: var(--text-secondary);
-          white-space: pre;
-        }
-        .skill-preview-body :global(.skill-inline-code) {
-          background: var(--bg-deep);
-          border: 1px solid var(--border);
-          border-radius: 0.25rem;
-          padding: 0.125rem 0.375rem;
-          font-family: monospace;
-          font-size: 0.825rem;
-          color: var(--accent);
-        }
-      `}</style>
     </div>
   );
 }

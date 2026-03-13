@@ -13,6 +13,8 @@ import { isWorkflowBuilderEnabledForCustomer } from "@/lib/workflows/feature-gat
 import { WorkflowPerformanceBeacon } from "@/components/workflows/workflow-performance-beacon";
 import { WorkflowStatusToggle } from "@/components/workflows/workflow-status-toggle";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { GitBranch, Plus } from "lucide-react";
 
 type SearchParams = Promise<{
   status?: string;
@@ -471,14 +473,13 @@ async function WorkflowsContent({
       </section>
 
       {workflowRows.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border p-8 text-center">
-          <p className="text-sm text-foreground/70 mb-2">
-            No workflows found for this instance.
-          </p>
-          <p className="text-xs text-foreground/50">
-            Create your first workflow using the New workflow button.
-          </p>
-        </div>
+        <EmptyState
+          icon={GitBranch}
+          bordered
+          title="No workflows yet"
+          description="Workflows let you chain agent actions into multi-step automations. Define triggers, conditions, and actions."
+          actions={[{ label: "New Workflow", variant: "primary", icon: Plus, href: "/settings/workflows/new" }]}
+        />
       ) : (
         <div className="space-y-3">
           {workflowRows.map((workflow) => {

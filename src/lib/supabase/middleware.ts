@@ -12,7 +12,7 @@ function buildCspHeader(nonce: string): string {
   return [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' https://js.stripe.com`,
-    "style-src 'self' 'unsafe-inline' https://js.stripe.com",
+    `style-src 'self' 'nonce-${nonce}' https://js.stripe.com`,
     "img-src 'self' data: blob:",
     "font-src 'self'",
     "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://js.stripe.com https://r.stripe.com https://m.stripe.network",

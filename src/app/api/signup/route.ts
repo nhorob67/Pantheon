@@ -42,12 +42,9 @@ function getClientNetworkKey(request: Request): string {
   const forwardedFor = request.headers.get("x-forwarded-for");
   if (forwardedFor) {
     const parts = forwardedFor.split(",");
-    const candidate = parts[parts.length - 1]?.trim();
+    const candidate = parts[0]?.trim();
     if (candidate) return `ip:${candidate}`;
   }
-
-  const userAgent = request.headers.get("user-agent")?.trim();
-  if (userAgent) return `ua:${userAgent.toLowerCase()}`;
 
   return "unknown";
 }

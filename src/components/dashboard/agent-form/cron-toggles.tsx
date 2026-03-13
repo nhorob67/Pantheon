@@ -1,5 +1,6 @@
 import { Switch } from "@/components/ui/switch";
 import { CalendarPlus, Clock, Trash2 } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface CustomScheduleSummary {
   id: string;
@@ -62,9 +63,12 @@ export function CronToggles({
           ))}
         </div>
       ) : (
-        <p className="text-xs text-text-dim">
-          No schedules configured. {onAddCustomSchedule ? "Add one below." : "Save the agent first, then add schedules."}
-        </p>
+        <EmptyState
+          kind="inline"
+          size="compact"
+          title="No schedules configured"
+          description={onAddCustomSchedule ? "Add one below." : "Save the agent first, then add schedules."}
+        />
       )}
 
       {onAddCustomSchedule && (

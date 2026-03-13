@@ -29,7 +29,8 @@ export function ConversationList({ sessions }: ConversationListProps) {
         <EmptyState
           icon={MessageCircle}
           title="No conversations yet"
-          description="Start chatting with your AI assistant in Discord!"
+          description="Conversations appear here once users start chatting with your agents in Discord."
+          actions={[{ label: "Set Up Discord", variant: "secondary", href: "/settings/discord" }]}
         />
       </div>
     );

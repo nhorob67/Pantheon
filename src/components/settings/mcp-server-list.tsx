@@ -6,6 +6,7 @@ import { McpServerCard } from "./mcp-server-card";
 import { McpServerForm } from "./mcp-server-form";
 import { Dialog } from "@/components/ui/dialog";
 import { Plus, Server } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface McpServerListProps {
   initialServers: McpServerConfig[];
@@ -153,29 +154,17 @@ export function McpServerList({
           ))}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-            <Server className="w-8 h-8 text-foreground/40" />
-          </div>
-          <h4 className="font-headline text-base text-foreground mb-1">
-            No MCP servers configured
-          </h4>
-          <p className="text-sm text-foreground/50 max-w-xs mb-4">
-            Add an MCP server to give your assistant access to additional
-            tools beyond the built-in platform tools.
-          </p>
-          <button
-            type="button"
-            onClick={() => {
-              setEditServer(null);
-              setFormOpen(true);
-            }}
-            className="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-lg px-5 py-2.5 text-sm transition-colors cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            Add MCP Server
-          </button>
-        </div>
+        <EmptyState
+          icon={Server}
+          title="No MCP servers connected"
+          description="Connect an MCP server to extend your agents with custom tools, databases, or external services."
+          actions={[{
+            label: "Add MCP Server",
+            variant: "primary",
+            icon: Plus,
+            onClick: () => { setEditServer(null); setFormOpen(true); },
+          }]}
+        />
       )}
 
       <McpServerForm

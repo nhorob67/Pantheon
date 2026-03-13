@@ -10,6 +10,7 @@ import {
   FileCode,
   FileType,
   BookOpen,
+  Upload,
   MoreVertical,
   Trash2,
   ArrowRightLeft,
@@ -21,6 +22,7 @@ import {
 } from "@/types/knowledge";
 import { useKnowledgeManager } from "@/hooks/use-knowledge-manager";
 import type { AgentOption } from "@/hooks/use-knowledge-manager";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface KnowledgePanelProps {
   files: KnowledgeFileMeta[];
@@ -262,16 +264,13 @@ export function KnowledgePanel({
           ))}
         </div>
       ) : (
-        <div className="text-center py-12 rounded-xl border border-dashed border-border">
-          <BookOpen className="w-12 h-12 mx-auto mb-3 text-accent/40" />
-          <p className="text-sm text-foreground/50 mb-1">
-            No knowledge files yet
-          </p>
-          <p className="text-xs text-foreground/40">
-            Upload documents to give your agents reference material they
-            can search.
-          </p>
-        </div>
+        <EmptyState
+          icon={BookOpen}
+          bordered
+          title="No knowledge files yet"
+          description="Upload PDFs, documents, or text files to give your agents reference material they can search during conversations."
+          actions={[{ label: "Upload a Document", variant: "primary", icon: Upload, onClick: () => fileInputRef.current?.click() }]}
+        />
       )}
 
       {/* Failed files */}

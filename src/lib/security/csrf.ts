@@ -24,7 +24,7 @@ export function validateCsrfOrigin(request: Request): string | null {
 
   const allowedOrigin = new URL(appUrl).origin;
   if (origin !== allowedOrigin) {
-    return `Origin mismatch: ${origin}`;
+    return "Origin mismatch";
   }
 
   return null;

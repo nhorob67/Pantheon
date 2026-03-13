@@ -83,7 +83,7 @@ export function AlertBell() {
           <div className="max-h-64 overflow-y-auto">
             {alerts.length === 0 ? (
               <p className="p-4 text-sm text-foreground/50 text-center">
-                No alerts
+                No new alerts
               </p>
             ) : (
               alerts.map((alert) => (

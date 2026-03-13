@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { requireDashboardCustomer, getCustomerTenant } from "@/lib/auth/dashboard-session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { EmailInbox } from "@/components/email/email-inbox";
+import { Building2 } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export const metadata: Metadata = { title: "Email" };
 
@@ -12,14 +14,12 @@ export default async function EmailPage() {
 
   if (!tenant) {
     return (
-      <div className="space-y-4">
-        <h2 className="font-headline text-2xl font-bold text-foreground">
-          Email
-        </h2>
-        <p className="text-foreground/60">
-          No tenant workspace configured yet.
-        </p>
-      </div>
+      <EmptyState
+        icon={Building2}
+        title="No workspace configured"
+        description="Complete onboarding to set up your agent workspace."
+        actions={[{ label: "Start Onboarding", variant: "primary", href: "/onboarding" }]}
+      />
     );
   }
 

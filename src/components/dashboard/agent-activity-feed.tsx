@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { MessageSquare, Zap, Clock, Mail, Brain, Filter } from "lucide-react";
+import { MessageSquare, Zap, Clock, Mail, Brain, Filter, Activity } from "lucide-react";
 import Link from "next/link";
 
 import type { ActivityFeedEvent } from "@/lib/queries/activity-feed";
+import { EmptyState } from "@/components/ui/empty-state";
 
 type ActivityEvent = ActivityFeedEvent;
 
@@ -80,9 +81,12 @@ export function AgentActivityFeed({ events, agentNames = [] }: AgentActivityFeed
 
       <div className="divide-y divide-border">
         {filtered.length === 0 ? (
-          <div className="px-4 py-8 text-center text-sm text-foreground/40">
-            No activity yet
-          </div>
+          <EmptyState
+            icon={Activity}
+            size="compact"
+            title="No activity yet"
+            description="Agent actions and events will appear here as your team starts working."
+          />
         ) : (
           filtered.slice(0, 20).map((event) => {
             const Icon = ACTION_ICONS[event.actionType];

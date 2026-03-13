@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { useExtensionMarketplace } from "@/hooks/use-extension-marketplace";
+import { Puzzle } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 
 type ExtensionSourceType = "local" | "npm" | "git" | "clawhub" | "internal";
 
@@ -164,7 +166,12 @@ export function ExtensionMarketplacePanel() {
         </div>
 
         {!loading && installations.length === 0 && (
-          <p className="text-sm text-foreground/60">No installed extensions yet.</p>
+          <EmptyState
+            icon={Puzzle}
+            title="No extensions installed"
+            description="Browse the marketplace to add skills, plugins, and integrations to your agents."
+            actions={[{ label: "Browse Marketplace", variant: "secondary" }]}
+          />
         )}
 
         <div className="space-y-3">

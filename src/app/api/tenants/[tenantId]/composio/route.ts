@@ -21,7 +21,7 @@ const enableTenantComposioSchema = z
   .object({
     instance_id: z.uuid().optional(),
   })
-  .passthrough();
+  .strict();
 
 const tenantComposioRouteParamsSchema = z.object({
   tenantId: z.uuid(),
