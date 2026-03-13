@@ -306,6 +306,39 @@ export async function claimTenantRuntimeRuns(
   return claims;
 }
 
+export async function claimTenantRuntimeRunById(
+  admin: SupabaseClient,
+  runId: string,
+  workerId: string,
+  leaseSeconds = 120
+): Promise<TenantRuntimeRun | null> {
+  const lockExpiresAt = new Date(Date.now() + leaseSeconds * 1000).toISOString();
+  const next = assertTenantRuntimeRunTransition("queued", "start"); // "running"
+
+  const { data, error } = await admin
+    .from("tenant_runtime_runs")
+    .update({
+      status: next,
+      started_at: new Date().toISOString(),
+      worker_id: workerId,
+      lock_expires_at: lockExpiresAt,
+      attempt_count: 1,
+    })
+    .eq("id", runId)
+    .eq("status", "queued")
+    .select(TENANT_RUNTIME_RUN_SELECT)
+    .maybeSingle();
+
+  if (error) {
+    throw new TenantRuntimeQueueError(
+      500,
+      safeErrorMessage(error, "Failed to claim tenant runtime run by ID")
+    );
+  }
+
+  return data ? mapRuntimeRunRow(data as unknown as Record<string, unknown>) : null;
+}
+
 export async function getTenantRuntimeRunById(
   admin: SupabaseClient,
   runId: string

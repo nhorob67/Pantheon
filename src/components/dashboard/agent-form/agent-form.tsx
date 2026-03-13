@@ -11,7 +11,7 @@ import { AGENT_TEMPLATES, type AgentTemplateDraft } from "@/lib/templates/agent-
 import { Dialog } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { useState, useEffect, useMemo } from "react";
-import { Loader2, ChevronDown, ShieldCheck, Sparkles, Zap, Wand2 } from "lucide-react";
+import { Loader2, ChevronDown, ShieldCheck, Sparkles, Zap, Wand2, Check } from "lucide-react";
 
 const AUTONOMY_ICONS: Record<string, React.ElementType> = {
   assisted: ShieldCheck,
@@ -135,7 +135,7 @@ export function AgentForm({
 
   const {
     nlDescription, setNlDescription,
-    nlGenerating, nlError,
+    nlGenerating, nlError, nlSuccess,
     resetNl, handleNlGenerate,
   } = useNlGeneration({
     defaultValues,
@@ -316,15 +316,21 @@ export function AgentForm({
               <button
                 type="button"
                 onClick={handleNlGenerate}
-                disabled={nlGenerating}
-                className="inline-flex items-center gap-2 rounded-lg bg-accent hover:bg-accent-light px-4 py-2 text-sm font-semibold text-bg-deep transition-colors disabled:opacity-50 cursor-pointer"
+                disabled={nlGenerating || nlSuccess}
+                className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors disabled:opacity-50 cursor-pointer ${
+                  nlSuccess
+                    ? "bg-[var(--green-bright)] text-bg-deep"
+                    : "bg-accent hover:bg-accent-light text-bg-deep"
+                }`}
               >
                 {nlGenerating ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
+                ) : nlSuccess ? (
+                  <Check className="w-4 h-4" />
                 ) : (
                   <Wand2 className="w-4 h-4" />
                 )}
-                {nlGenerating ? "Generating..." : "Generate Agent"}
+                {nlGenerating ? "Generating..." : nlSuccess ? "Fields populated!" : "Generate Agent"}
               </button>
               {nlError && (
                 <p className="text-xs text-destructive">{nlError}</p>
@@ -436,7 +442,7 @@ export function AgentForm({
                 <input
                   {...register("display_name")}
                   placeholder="e.g. Support Bot"
-                  className="w-full border border-border focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-lg bg-bg-dark px-4 py-3 outline-none transition-colors text-text-primary placeholder:text-text-dim"
+                  className={`w-full border border-border focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-lg bg-bg-dark px-4 py-3 outline-none transition-colors text-text-primary placeholder:text-text-dim${nlSuccess ? " nl-highlight" : ""}`}
                 />
                 {errors.display_name && (
                   <p className="text-destructive text-sm mt-1">
@@ -456,7 +462,7 @@ export function AgentForm({
                 <input
                   {...register("role")}
                   placeholder="e.g. Customer support specialist"
-                  className="w-full border border-border focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-lg bg-bg-dark px-4 py-3 outline-none transition-colors text-text-primary placeholder:text-text-dim"
+                  className={`w-full border border-border focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-lg bg-bg-dark px-4 py-3 outline-none transition-colors text-text-primary placeholder:text-text-dim${nlSuccess ? " nl-highlight" : ""}`}
                 />
                 {errors.role && (
                   <p className="text-destructive text-sm mt-1">{errors.role.message}</p>
@@ -475,7 +481,7 @@ export function AgentForm({
                   {...register("goal")}
                   rows={2}
                   placeholder="e.g. Resolve customer questions quickly and accurately"
-                  className="w-full border border-border focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-lg bg-bg-dark px-4 py-3 outline-none transition-colors text-text-primary placeholder:text-text-dim text-sm resize-y"
+                  className={`w-full border border-border focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-lg bg-bg-dark px-4 py-3 outline-none transition-colors text-text-primary placeholder:text-text-dim text-sm resize-y${nlSuccess ? " nl-highlight" : ""}`}
                 />
                 {errors.goal && (
                   <p className="text-destructive text-sm mt-1">{errors.goal.message}</p>
@@ -494,7 +500,7 @@ export function AgentForm({
                   {...register("backstory")}
                   rows={3}
                   placeholder="e.g. You are friendly but concise. Always cite sources. Never make up information."
-                  className="w-full border border-border focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-lg bg-bg-dark px-4 py-3 outline-none transition-colors text-text-primary placeholder:text-text-dim text-sm resize-y"
+                  className={`w-full border border-border focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-lg bg-bg-dark px-4 py-3 outline-none transition-colors text-text-primary placeholder:text-text-dim text-sm resize-y${nlSuccess ? " nl-highlight" : ""}`}
                 />
                 {errors.backstory && (
                   <p className="text-destructive text-sm mt-1">{errors.backstory.message}</p>

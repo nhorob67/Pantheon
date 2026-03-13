@@ -5,7 +5,11 @@ import { isAdmin } from "@/lib/auth/admin";
 import { constantTimeTokenInSet } from "@/lib/security/constant-time";
 import { safeErrorMessage } from "@/lib/security/safe-error";
 import { discordCanaryIngressSchema } from "@/lib/validators/tenant-runtime";
-import { enqueueDiscordRuntimeRun } from "@/lib/runtime/tenant-runtime-queue";
+import {
+  enqueueDiscordRuntimeRun,
+  claimTenantRuntimeRunById,
+  transitionTenantRuntimeRun,
+} from "@/lib/runtime/tenant-runtime-queue";
 import {
   DiscordIngressRoutingError,
   resolveTenantForDiscordIngress,
@@ -13,8 +17,9 @@ import {
 import { evaluateTenantRuntimeIngressGovernance } from "@/lib/runtime/tenant-runtime-governance";
 import { getDiscordGatewayConnectionManager } from "@/lib/runtime/tenant-runtime-discord-gateway";
 import { tasks } from "@trigger.dev/sdk";
-import type { processRuntimeRun } from "@/trigger/process-runtime-run";
 import type { transcribeVoiceMessage } from "@/trigger/transcribe-voice-message";
+import { createTenantAiWorker } from "@/lib/ai/tenant-ai-worker";
+import { resolveModels } from "@/lib/ai/model-resolver";
 import {
   parseAttachmentsFromPayload,
   isAudioAttachment,
@@ -172,26 +177,61 @@ export async function POST(request: Request) {
       },
     });
 
-    // Fire-and-forget: dispatch to Trigger.dev for async processing
-    tasks
-      .trigger<typeof processRuntimeRun>("process-runtime-run", {
-        runId: run.id,
-      })
-      .catch(() => {
-        // Trigger.dev unavailable — run stays queued for polling fallback
+    // Inline processing — execute AI worker directly instead of via Trigger.dev
+    const claimedRun = await claimTenantRuntimeRunById(admin, run.id, "ingress-inline");
+
+    if (!claimedRun) {
+      // Race condition — another worker already claimed it, that's fine
+      return NextResponse.json(
+        { accepted: true, tenant_id: match.tenantId, run_id: run.id },
+        { status: 202 }
+      );
+    }
+
+    try {
+      const resolvedModels = await resolveModels(admin, match.tenantId);
+      const worker = createTenantAiWorker(admin);
+      const result = await worker.execute({
+        run: claimedRun,
+        requestTraceId,
+        resolvedModels,
       });
 
-    return NextResponse.json(
-      {
-        accepted: true,
-        tenant_id: match.tenantId,
-        customer_id: match.customerId,
-        routing_source: match.source,
-        worker_endpoint: "/api/admin/tenants/runtime/process",
-        run,
-      },
-      { status: 202 }
-    );
+      const event = result.outcome === "completed" ? "complete" : "fail";
+      await transitionTenantRuntimeRun(admin, claimedRun, event, {
+        result: result.result,
+        errorMessage: result.outcome === "failed"
+          ? (result.errorMessage ?? "AI worker execution failed")
+          : undefined,
+      });
+
+      return NextResponse.json(
+        {
+          accepted: true,
+          tenant_id: match.tenantId,
+          customer_id: match.customerId,
+          routing_source: match.source,
+          outcome: result.outcome,
+          run_id: run.id,
+        },
+        { status: 200 }
+      );
+    } catch (workerError) {
+      await transitionTenantRuntimeRun(admin, claimedRun, "fail", {
+        errorMessage: safeErrorMessage(workerError, "Inline worker execution failed"),
+      }).catch(() => {}); // Best-effort status update
+
+      return NextResponse.json(
+        {
+          accepted: true,
+          tenant_id: match.tenantId,
+          run_id: run.id,
+          outcome: "failed",
+          error: safeErrorMessage(workerError, "Worker execution failed"),
+        },
+        { status: 500 }
+      );
+    }
   } catch (error) {
     if (error instanceof DiscordIngressRoutingError) {
       return NextResponse.json(

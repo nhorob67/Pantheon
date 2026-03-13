@@ -18,16 +18,20 @@ export function useNlGeneration({
   const [nlDescription, setNlDescription] = useState("");
   const [nlGenerating, setNlGenerating] = useState(false);
   const [nlError, setNlError] = useState<string | null>(null);
+  const [nlSuccess, setNlSuccess] = useState(false);
 
   const descriptionRef = useRef(nlDescription);
   descriptionRef.current = nlDescription;
   const defaultValuesRef = useRef(defaultValues);
   defaultValuesRef.current = defaultValues;
+  const successTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const resetNl = useCallback(() => {
     setNlDescription("");
     setNlGenerating(false);
     setNlError(null);
+    setNlSuccess(false);
+    if (successTimerRef.current) clearTimeout(successTimerRef.current);
   }, []);
 
   const handleNlGenerate = useCallback(async () => {
@@ -60,6 +64,9 @@ export function useNlGeneration({
         });
         setSelectedTemplateId("scratch");
         setActiveTab("identity");
+        setNlSuccess(true);
+        if (successTimerRef.current) clearTimeout(successTimerRef.current);
+        successTimerRef.current = setTimeout(() => setNlSuccess(false), 3000);
       }
     } catch (e) {
       setNlError(
@@ -76,6 +83,7 @@ export function useNlGeneration({
     setNlDescription,
     nlGenerating,
     nlError,
+    nlSuccess,
     resetNl,
     handleNlGenerate,
   };

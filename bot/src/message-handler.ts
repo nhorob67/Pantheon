@@ -54,7 +54,7 @@ export async function handleMessage(message: Message): Promise<void> {
       method: "POST",
       headers,
       body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(30_000),
+      signal: AbortSignal.timeout(60_000),
     });
 
     if (!response.ok) {
