@@ -47,7 +47,7 @@ export function HeroCommand() {
               transition={REVEAL_FAST}
             >
               One mind cannot govern every domain.{" "}
-              <span className="v2-headline-gold">Build the council that can.</span>
+              <span className="v2-headline-gold">Build the agents that can.</span>
             </m.h1>
 
             {/* CTAs */}

@@ -1064,68 +1064,31 @@
 }
 
 /* ─── Formations Board ─── */
-.v2-formations {
+.v2-capabilities-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: var(--panel-gap);
   margin-bottom: 48px;
 }
 
-.v2-formation-card {
+.v2-capability-item {
   background: var(--panel-bg);
   border: 1px solid var(--panel-border);
   border-radius: var(--panel-radius);
-  padding: 32px var(--panel-padding);
-  text-align: center;
+  padding: 24px var(--panel-padding);
 }
 
-.v2-formation-marks {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  color: var(--gold-divine);
-  margin-bottom: 16px;
-  min-height: 32px;
-}
-
-.v2-formation-name {
+.v2-capability-heading {
   font-family: var(--font-serif, "Cormorant Garamond", serif);
-  font-size: 1.3rem;
+  font-size: 1.15rem;
   color: var(--text-primary);
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
-.v2-formation-desc {
-  font-family: var(--font-mono, "IBM Plex Mono", monospace);
-  font-size: 0.65rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-dim);
-  margin-bottom: 16px;
-}
-
-.v2-formation-features {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  text-align: left;
-}
-
-.v2-formation-features li {
+.v2-capability-detail {
   font-size: 0.8rem;
   color: var(--text-secondary);
-  padding: 4px 0;
-  padding-left: 14px;
-  position: relative;
-}
-
-.v2-formation-features li::before {
-  content: "◆";
-  position: absolute;
-  left: 0;
-  color: var(--gold-trace-solid);
-  font-size: 0.5rem;
-  top: 7px;
+  line-height: 1.5;
 }
 
 .v2-pricing-auth {
@@ -1602,7 +1565,7 @@
   .v2-stream-cursor { animation: none !important; }
   .v2-deity-ring-animated,
   .v2-deity-ring-mark-counter { animation: none !important; }
-  .network-dot { animation: none !important; display: none; }
+  .network-dot, .network-dot-inbound { animation: none !important; display: none; }
   .network-node-flash { animation: none !important; opacity: 0.1 !important; }
   .network-nexus-outer,
   .network-nexus-inner { animation: none !important; opacity: 0.15 !important; }
@@ -1676,6 +1639,34 @@
   }
 }
 
+/* Dots that travel inward to the center Pantheon node and absorb */
+@keyframes constellation-inbound {
+  0% {
+    cx: var(--x1);
+    cy: var(--y1);
+    opacity: 0;
+    r: var(--r, 2.5);
+  }
+  8% {
+    opacity: 0.85;
+  }
+  75% {
+    opacity: 0.7;
+    r: var(--r, 2.5);
+  }
+  100% {
+    cx: var(--x2);
+    cy: var(--y2);
+    opacity: 0;
+    r: 0;
+  }
+}
+
+.network-dot-inbound {
+  animation: constellation-inbound var(--duration, 3s) ease-in infinite;
+  animation-delay: var(--delay, 0s);
+}
+
 @keyframes forge-breathe-cycle {
   0%, 100% {
     opacity: 0.05;
@@ -1720,7 +1711,7 @@
     position: static;
   }
 
-  .v2-formations {
+  .v2-capabilities-grid {
     grid-template-columns: 1fr;
   }
 

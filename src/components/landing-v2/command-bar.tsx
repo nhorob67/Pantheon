@@ -27,7 +27,7 @@ export function CommandBar() {
           Log In
         </Link>
         <Link href="#pricing" className="command-bar-cta" style={{ display: "var(--desktop-display, inline-flex)" }}>
-          Deploy Your Council
+          Deploy Free for 14 Days
         </Link>
         <button
           className="command-bar-hamburger"
@@ -65,9 +65,9 @@ export function CommandBar() {
             <Link href="#skills" onClick={() => setMobileOpen(false)}>Operations</Link>
             <Link href="#team" onClick={() => setMobileOpen(false)}>Registry</Link>
             <Link href="#how" onClick={() => setMobileOpen(false)}>Deployment</Link>
-            <Link href="#pricing" onClick={() => setMobileOpen(false)}>Formations</Link>
+            <Link href="#pricing" onClick={() => setMobileOpen(false)}>Pricing</Link>
             <Link href="/login" onClick={() => setMobileOpen(false)}>Log In</Link>
-            <Link href="/signup" onClick={() => setMobileOpen(false)}>Deploy Your Council</Link>
+            <Link href="/signup" onClick={() => setMobileOpen(false)}>Deploy Free for 14 Days</Link>
           </m.div>
         )}
       </AnimatePresence>

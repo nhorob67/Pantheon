@@ -72,6 +72,33 @@ allLines.forEach((seg, i) => {
   }
 });
 
+// Inbound dots — travel from outer nodes toward the center Pantheon node and absorb
+const CENTER = SIZE / 2;
+type InboundDot = {
+  x1: number;
+  y1: number;
+  duration: number;
+  delay: number;
+  r: number;
+  glow: boolean;
+};
+
+const inboundDots: InboundDot[] = [];
+positions.forEach((pos, i) => {
+  // Each outer node sends 2 inbound messages at staggered intervals
+  for (let j = 0; j < 2; j++) {
+    const seed = i * 71 + j * 137 + 500;
+    inboundDots.push({
+      x1: pos.x,
+      y1: pos.y,
+      duration: 2.0 + seededRandom(seed * 41) * 1.5,
+      delay: seededRandom(seed * 43) * 10 + j * 5,
+      r: 2.5 + seededRandom(seed * 47) * 1.5,
+      glow: seededRandom(seed * 53) > 0.4,
+    });
+  }
+});
+
 export function DivineNetwork({ className }: { className?: string } = {}) {
   return (
     <div className={className ? `concept-inner ${className}` : "concept-inner"} style={{ width: SIZE, height: SIZE, position: "relative" }}>
@@ -120,6 +147,25 @@ export function DivineNetwork({ className }: { className?: string } = {}) {
               "--y1": `${dot.y1}px`,
               "--x2": `${dot.x2}px`,
               "--y2": `${dot.y2}px`,
+              animationDuration: `${dot.duration}s`,
+              animationDelay: `${dot.delay}s`,
+            } as React.CSSProperties}
+          />
+        ))}
+
+        {/* Inbound dots — travel toward center and absorb */}
+        {inboundDots.map((dot, i) => (
+          <circle
+            key={`inbound-${i}`}
+            r={dot.r}
+            fill="var(--gold-active)"
+            className={dot.glow ? "network-dot-inbound network-dot-glow" : "network-dot-inbound"}
+            style={{
+              "--x1": `${dot.x1}px`,
+              "--y1": `${dot.y1}px`,
+              "--x2": `${CENTER}px`,
+              "--y2": `${CENTER}px`,
+              "--r": `${dot.r}px`,
               animationDuration: `${dot.duration}s`,
               animationDelay: `${dot.delay}s`,
             } as React.CSSProperties}

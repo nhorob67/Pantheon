@@ -4,80 +4,64 @@ import Link from "next/link";
 import { m } from "motion/react";
 import { REVEAL_SLOW, STAGGER_DELAY } from "./motion-config";
 import { AnimatedSection, SectionHeader } from "./animated-section";
-import { Athena, Hermes, Ares, Apollo, Hephaestus, Artemis } from "./deity-marks";
-import type { DeityMarkProps } from "./deity-marks";
 
-interface Formation {
-  name: string;
-  desc: string;
-  marks: React.ComponentType<DeityMarkProps>[];
-  features: string[];
-}
-
-const formations: Formation[] = [
+const capabilities = [
   {
-    name: "Vanguard",
-    desc: "1–2 agents",
-    marks: [Athena, Ares],
-    features: [
-      "Your pantheon, assembled for your operation",
-      "$25/mo AI usage included — most councils stay under",
-      "Discord for your team, unlimited users",
-      "Operations command and daily briefings",
-      "Signal processing and follow-up tracking",
-      "Protocol library and procedure checklists",
-    ],
+    heading: "Custom AI agents",
+    detail: "Define each agent's role, goal, and backstory. Add as many as you need.",
   },
   {
-    name: "Council",
-    desc: "3 agents",
-    marks: [Athena, Hermes, Apollo],
-    features: [
-      "Everything in Vanguard",
-      "Field intelligence and research on demand",
-      "Archive analysis (PDF, DOCX, contracts)",
-      "Contact registry across all channels",
-      "Domain-specific memory that improves over time",
-    ],
+    heading: "Discord workspace",
+    detail: "A private server for your team with unlimited users. Bind agents to channels.",
   },
   {
-    name: "Full Pantheon",
-    desc: "4+ agents",
-    marks: [Athena, Hermes, Ares, Apollo, Hephaestus, Artemis],
-    features: [
-      "Everything in Council",
-      "Temporal watch — deadline and renewal tracking",
-      "Custom protocols and integrations",
-      "Agent delegation and collaboration",
-      "Priority support",
-      "New capabilities deployed automatically",
-    ],
+    heading: "Daily briefings",
+    detail: "Operations command with scheduled reports and proactive check-ins.",
+  },
+  {
+    heading: "Knowledge base",
+    detail: "Upload PDFs, DOCX, and contracts. Your agents learn your domain.",
+  },
+  {
+    heading: "Persistent memory",
+    detail: "Domain-specific memory that improves over time across every conversation.",
+  },
+  {
+    heading: "Signal processing",
+    detail: "Follow-up tracking, deadline monitoring, and renewal alerts.",
+  },
+  {
+    heading: "Custom skills",
+    detail: "Teach agents new capabilities with reusable, versioned skill protocols.",
+  },
+  {
+    heading: "Agent delegation",
+    detail: "Agents hand off tasks to each other automatically when the situation calls for it.",
   },
 ];
 
 export function FormationsBoard() {
   return (
     <AnimatedSection id="pricing">
-      <SectionHeader centered label="Formations" title="The cheapest hire on your team." />
+      <SectionHeader
+        centered
+        label="Capabilities"
+        title="The cheapest hire on your team."
+        subtitle="One plan. Every capability. Add agents as you grow."
+      />
 
-      <div className="v2-formations">
-        {formations.map((f, i) => (
+      <div className="v2-capabilities-grid">
+        {capabilities.map((cap, i) => (
           <m.div
-            key={f.name}
-            className="v2-formation-card"
-            initial={{ opacity: 0, y: 16 }}
+            key={cap.heading}
+            className="v2-capability-item"
+            initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ ...REVEAL_SLOW, delay: i * STAGGER_DELAY }}
           >
-            <div className="v2-formation-marks">
-              {f.marks.map((Mark, j) => <Mark key={j} size={24} />)}
-            </div>
-            <div className="v2-formation-name">{f.name}</div>
-            <div className="v2-formation-desc">{f.desc}</div>
-            <ul className="v2-formation-features">
-              {f.features.map((feat) => <li key={feat}>{feat}</li>)}
-            </ul>
+            <div className="v2-capability-heading">{cap.heading}</div>
+            <div className="v2-capability-detail">{cap.detail}</div>
           </m.div>
         ))}
       </div>
@@ -88,7 +72,7 @@ export function FormationsBoard() {
           <div className="v2-pricing-amount">$50</div>
           <div className="v2-pricing-period">/month after trial</div>
           <p className="v2-pricing-note">
-            $25 of operational capacity included. Most councils never exceed it.
+            $25 of operational capacity included. Most teams never exceed it.
             Overage billed in $20 blocks at month-end.
           </p>
           <Link href="/signup" className="v2-btn-primary" style={{ width: "100%", justifyContent: "center" }}>
@@ -101,7 +85,7 @@ export function FormationsBoard() {
       </div>
 
       <p className="v2-pricing-value">
-        One missed signal. One expired contract. Any single failure costs more than a year of your council&apos;s service.
+        One missed signal. One expired contract. Any single failure costs more than a year of your team&apos;s service.
       </p>
     </AnimatedSection>
   );
