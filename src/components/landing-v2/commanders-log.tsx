@@ -24,18 +24,18 @@ export function CommandersLog() {
           <div className="v2-log-section">
             <div className="v2-log-section-label">Assessment</div>
             <p className="v2-log-section-text">
-              The ancient civilizations understood something we forgot: no single deity governed everything.
-              They built pantheons — councils of specialized powers, each sovereign over its own domain,
-              each accountable to the whole. One mind for strategy, another for communications,
-              another for the forge.
+              The best-run operations I have studied share a common structure: no single person handles everything.
+              They build teams of specialists — each owns a domain, each carries a clear mandate,
+              each is accountable to the whole. One mind for strategy, another for communications,
+              another for process enforcement.
             </p>
           </div>
 
           <div className="v2-log-section">
             <div className="v2-log-section-label">Recommendation</div>
             <p className="v2-log-section-text">
-              Not one AI that pretends to do everything. A council of them. Each with a mandate, a domain,
-              and a directive. Working together inside Discord — where your team already lives, with channels,
+              Not one AI that pretends to do everything. A team of specialists you define — each with a role,
+              a goal, and a backstory you write. Working together inside Discord — where your team already lives, with channels,
               threads, mobile notifications, and search already built. No new interface to learn, no tab to
               forget. That is Pantheon.
             </p>

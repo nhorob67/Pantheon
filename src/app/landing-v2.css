@@ -827,6 +827,70 @@
 .v2-dossier-clearance.l2 { border-color: var(--accent); color: var(--accent); }
 .v2-dossier-clearance.l3 { border-color: var(--green-bright); color: var(--green-bright); }
 
+/* ─── Agent Callout + Builder Preview ─── */
+.v2-agent-callout {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 40px auto 32px;
+  max-width: 640px;
+  padding: 16px 20px;
+  border: 1px solid var(--gold-trace-solid);
+  border-radius: 4px;
+  background: rgba(196, 136, 63, 0.06);
+}
+
+.v2-agent-callout-icon {
+  color: var(--gold-divine);
+  flex-shrink: 0;
+}
+
+.v2-agent-callout-text {
+  font-family: var(--font-mono, "IBM Plex Mono", monospace);
+  font-size: 0.78rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.v2-agent-callout-text strong {
+  color: var(--gold-divine);
+}
+
+.v2-builder-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.v2-builder-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.v2-builder-label {
+  font-family: var(--font-mono, "IBM Plex Mono", monospace);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.v2-builder-input {
+  background: var(--bg-deep, #0a0908);
+  border: 1px solid var(--panel-border);
+  border-radius: 3px;
+  padding: 10px 12px;
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+.v2-builder-input-tall {
+  min-height: 72px;
+}
+
 /* ─── War Room ─── */
 .v2-war-room {
   display: grid;
@@ -1734,5 +1798,11 @@
 
   .v2-showcase-table-grid {
     font-size: 0.7rem;
+  }
+
+  .v2-agent-callout {
+    flex-direction: column;
+    text-align: center;
+    gap: 8px;
   }
 }
