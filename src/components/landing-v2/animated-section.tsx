@@ -38,7 +38,7 @@ export function SectionHeader({ label, title, subtitle, centered }: SectionHeade
     <div className="v2-section-header" style={centered ? { textAlign: "center" } : undefined}>
       <div className="v2-section-label">{label}</div>
       <h2 className="v2-section-title" style={centered ? { margin: "0 auto" } : undefined}>{title}</h2>
-      {subtitle && <p className="v2-section-sub">{subtitle}</p>}
+      {subtitle && <p className="v2-section-sub" style={centered ? { margin: "0 auto" } : undefined}>{subtitle}</p>}
     </div>
   );
 }

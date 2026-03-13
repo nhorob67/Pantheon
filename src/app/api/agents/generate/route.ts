@@ -61,9 +61,17 @@ export async function POST(request: Request) {
       maxOutputTokens: 512,
     });
 
-    const generated = JSON.parse(result.text);
+    // Strip markdown code fences if present
+    let jsonText = result.text.trim();
+    const fenceMatch = jsonText.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (fenceMatch) {
+      jsonText = fenceMatch[1].trim();
+    }
+
+    const generated = JSON.parse(jsonText);
     return NextResponse.json({ agent: generated });
-  } catch {
+  } catch (err) {
+    console.error("[agent-generate]", err);
     return NextResponse.json(
       { error: "Failed to generate agent configuration" },
       { status: 502 }
