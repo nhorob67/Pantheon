@@ -45,7 +45,7 @@ export function MissionLaunch() {
           transition={{ ...REVEAL_SLOW, delay: 0.5 }}
           style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}
         >
-          <Link href="/signup" className="v2-btn-primary">Deploy Your Council</Link>
+          <Link href="/signup" className="v2-btn-primary">Deploy Free for 14 Days</Link>
           <p className="v2-hero-microcopy">
             Deploys into your Discord server in three minutes. No new app to learn.
           </p>

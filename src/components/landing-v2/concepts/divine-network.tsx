@@ -127,6 +127,32 @@ export function DivineNetwork({ className }: { className?: string } = {}) {
         ))}
       </svg>
 
+      {/* Center Pantheon icon */}
+      <div
+        className="concept-deity-mark concept-center-icon"
+        style={{
+          position: "absolute",
+          left: SIZE / 2 - 24,
+          top: SIZE / 2 - 24,
+        }}
+        title="Pantheon — Command Center"
+      >
+        <svg width={48} height={48} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+          {/* Pediment (triangle) */}
+          <path d="M3 10L12 3l9 7" />
+          {/* Entablature */}
+          <line x1="3" y1="10" x2="21" y2="10" />
+          {/* Columns */}
+          <line x1="6" y1="10" x2="6" y2="19" />
+          <line x1="10" y1="10" x2="10" y2="19" />
+          <line x1="14" y1="10" x2="14" y2="19" />
+          <line x1="18" y1="10" x2="18" y2="19" />
+          {/* Base / stylobate */}
+          <line x1="2" y1="19" x2="22" y2="19" />
+          <line x1="1.5" y1="21" x2="22.5" y2="21" />
+        </svg>
+      </div>
+
       {/* Deity icons */}
       {DEITIES.map((deity, i) => {
         const pos = positions[i];

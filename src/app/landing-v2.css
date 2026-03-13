@@ -1617,6 +1617,15 @@
   color: var(--gold-divine);
   z-index: 2;
 }
+.concept-center-icon {
+  z-index: 3;
+  filter: drop-shadow(0 0 12px rgba(196, 136, 63, 0.35));
+  animation: center-pulse 4s ease-in-out infinite;
+}
+@keyframes center-pulse {
+  0%, 100% { filter: drop-shadow(0 0 12px rgba(196, 136, 63, 0.35)); }
+  50% { filter: drop-shadow(0 0 20px rgba(196, 136, 63, 0.55)); }
+}
 
 .network-line {
   stroke: var(--gold-divine);

@@ -57,7 +57,7 @@ export function HeroCommand() {
               animate={phase >= 4 ? { opacity: 1, y: 0 } : {}}
               transition={REVEAL_SLOW}
             >
-              <Link href="/signup" className="v2-btn-primary">Deploy Your Council</Link>
+              <Link href="/signup" className="v2-btn-primary">Deploy Free for 14 Days</Link>
               <Link href="#skills" className="v2-btn-ghost">Review the Briefing</Link>
             </m.div>
 
