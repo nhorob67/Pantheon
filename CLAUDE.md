@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Pantheon is an industry-agnostic multi-agent AI platform. Users create a **team** of custom AI agents, each with a defined **role**, **goal**, and **backstory**, bind them to Discord channels, and orchestrate intelligent workflows. The platform handles onboarding, billing ($50/month + metered API usage), custom skill provisioning, container orchestration, and an extension marketplace.
+Pantheon is an industry-agnostic multi-agent AI platform. Users create a **team** of custom AI agents, each with a defined **role**, **goal**, and **backstory**, bind them to Discord channels, and orchestrate intelligent workflows. The platform handles onboarding, billing ($50/month + metered API usage), custom skill provisioning, and an extension marketplace.
 
 ## Current Status
 
@@ -29,7 +29,8 @@ npm run test       # Node native test runner (345 tests across 60+ test files)
 - **Styling:** Tailwind CSS 4 with CSS variables (dark theme with bronze accent — see `globals.css`)
 - **Auth/DB:** Supabase (PostgreSQL + Auth via magic links + RLS)
 - **Payments:** Stripe 20.3.1 (subscriptions + metered usage billing)
-- **Infrastructure:** Hetzner Cloud + Coolify (container orchestration)
+- **Hosting:** Vercel (Next.js app), Fly.io (Discord bot)
+- **Background Jobs:** Trigger.dev (voice transcription, email, heartbeats)
 - **Forms:** React Hook Form 7.71.1 + Zod 4.3.6 validation
 - **State:** Zustand 5.0.11 (onboarding wizard, persisted to sessionStorage)
 - **Charts:** Recharts 3.7.0
@@ -65,8 +66,6 @@ npm run test       # Node native test runner (345 tests across 60+ test files)
 
 - `supabase/` — Three client variants: `client.ts` (browser), `server.ts` (server with cookies), `admin.ts` (service role, bypasses RLS). `middleware.ts` handles auth session refresh, CSRF protection, CSP headers, and route guards.
 - `stripe/` — `client.ts` (checkout/portal sessions), `config.ts` (price IDs), `webhooks.ts` (event handlers)
-- `coolify/` — REST client for container orchestration. Set `COOLIFY_API_URL=mock` for development.
-- `hetzner/` — Hetzner Cloud API client with mock for development. `cloud-init.ts` provisions servers.
 - `templates/` — Config builders and system prompt renderers:
   - `agent-soul.ts` — Generic system prompt renderer using role/goal/backstory + autonomy levels + delegation rules
   - `agent-templates.ts` — Starter agent templates (Support Bot, Research Agent, etc.)
@@ -80,7 +79,6 @@ npm run test       # Node native test runner (345 tests across 60+ test files)
 - `email/` — Email identity management, AgentMail/Resend providers, inbound processing pipeline, webhook observability and signature verification, idempotency and replay support
 - `extensions/` — Trust policy enforcement for extension marketplace
 - `queries/` — Admin analytics (fleet health, revenue, usage), customer/tenant list queries, extension catalog/rollout queries, workflow definitions
-- `infra/` — Instance deprovisioning (Hetzner + Coolify cleanup)
 - `connectors/` — Secret management for integrations
 - `composio/` — Composio integration client, mock, and toolkit discovery
 - `custom-skills/` — Skill sanitization and templates
@@ -163,7 +161,6 @@ Custom MCP server configs stored in `mcp_server_configs` table. Users can add cu
 - **API routes:** authenticate via `supabase.auth.getUser()` → validate with Zod `safeParse` → check authorization → execute → return `NextResponse.json()`
 - **Admin client** for privileged DB operations; user client for user-initiated queries (respects RLS)
 - **Lazy loading:** Chart components (`recharts`) loaded via `*-lazy.tsx` wrappers
-- **Mock clients:** Coolify and Hetzner both support `mock` mode for local development without real infrastructure
 
 ### Extension Marketplace
 
@@ -216,6 +213,7 @@ src/
 ├── lib/                 # Core business logic (see Core Libraries above)
 └── types/               # TypeScript interface files
 
+bot/                     # Discord bot (deployed on Fly.io)
 content/docs/            # 39 MDX documentation pages
 supabase/migrations/     # 25+ PostgreSQL migrations with RLS (45+ tables)
 scripts/                 # Build, email processing, memory processor, migration utilities
@@ -223,3 +221,11 @@ docs/                    # Operational runbooks (email, extensibility, SLO monit
 plans/                   # Implementation plans (industry-agnostic refactoring, etc.)
 public/search-index.json # Generated docs search index (prebuild hook)
 ```
+
+## Deployment
+
+- **Next.js app** → Vercel (auto-deploys from `main` branch)
+- **Discord bot** (`bot/`) → Fly.io (see `bot/fly.toml`; shared-cpu-1x, 256MB, auto-start/stop)
+- **Database** → Supabase (hosted PostgreSQL + Auth + RLS)
+- **Background jobs** → Trigger.dev (voice transcription, email processing, heartbeats)
+- **Discord chat messages** are processed inline in the ingress API route (no queue hop)
