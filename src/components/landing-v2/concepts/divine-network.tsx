@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { DEITIES, computeHexPositions } from "./deity-positions";
 
 const SIZE = 360;
@@ -99,10 +100,70 @@ positions.forEach((pos, i) => {
   }
 });
 
+/** Use the Web Animations API to animate SVG circles — works on all mobile browsers
+ *  unlike CSS keyframes with var() custom properties. */
+function useCircleAnimations(svgRef: React.RefObject<SVGSVGElement | null>) {
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReduced) return;
+
+    const animations: Animation[] = [];
+
+    // Animate message dots (travel between two nodes)
+    svg.querySelectorAll<SVGCircleElement>("[data-dot]").forEach((el) => {
+      const dx = Number(el.dataset.dx);
+      const dy = Number(el.dataset.dy);
+      const dur = Number(el.dataset.dur) * 1000;
+      const del = Number(el.dataset.del) * 1000;
+
+      const anim = el.animate(
+        [
+          { transform: "translate(0px, 0px)", opacity: 0 },
+          { opacity: 0.7, offset: 0.05 },
+          { opacity: 0.7, offset: 0.95 },
+          { transform: `translate(${dx}px, ${dy}px)`, opacity: 0 },
+        ],
+        { duration: dur, delay: del, iterations: Infinity, easing: "linear" }
+      );
+      animations.push(anim);
+    });
+
+    // Animate inbound dots (travel toward center and shrink)
+    svg.querySelectorAll<SVGCircleElement>("[data-inbound]").forEach((el) => {
+      const dx = Number(el.dataset.dx);
+      const dy = Number(el.dataset.dy);
+      const dur = Number(el.dataset.dur) * 1000;
+      const del = Number(el.dataset.del) * 1000;
+
+      const anim = el.animate(
+        [
+          { transform: "translate(0px, 0px) scale(1)", opacity: 0 },
+          { opacity: 0.85, offset: 0.08 },
+          { opacity: 0.7, transform: `translate(${dx * 0.75}px, ${dy * 0.75}px) scale(1)`, offset: 0.75 },
+          { transform: `translate(${dx}px, ${dy}px) scale(0)`, opacity: 0 },
+        ],
+        { duration: dur, delay: del, iterations: Infinity, easing: "ease-in" }
+      );
+      animations.push(anim);
+    });
+
+    return () => {
+      animations.forEach((a) => a.cancel());
+    };
+  }, [svgRef]);
+}
+
 export function DivineNetwork({ className }: { className?: string } = {}) {
+  const svgRef = useRef<SVGSVGElement>(null);
+  useCircleAnimations(svgRef);
+
   return (
     <div className={className ? `concept-inner ${className}` : "concept-inner"} style={{ width: SIZE, height: SIZE, position: "relative" }}>
       <svg
+        ref={svgRef}
         width={SIZE}
         height={SIZE}
         viewBox={`0 0 ${SIZE} ${SIZE}`}
@@ -135,7 +196,7 @@ export function DivineNetwork({ className }: { className?: string } = {}) {
           />
         ))}
 
-        {/* Message dots */}
+        {/* Message dots — animated via Web Animations API */}
         {messageDots.map((dot, i) => (
           <circle
             key={`dot-${i}`}
@@ -143,17 +204,17 @@ export function DivineNetwork({ className }: { className?: string } = {}) {
             cy={dot.y1}
             r={dot.r}
             fill="var(--gold-active)"
-            className={dot.glow ? "network-dot network-dot-glow" : "network-dot"}
-            style={{
-              "--dx": `${dot.x2 - dot.x1}px`,
-              "--dy": `${dot.y2 - dot.y1}px`,
-              animationDuration: `${dot.duration}s`,
-              animationDelay: `${dot.delay}s`,
-            } as React.CSSProperties}
+            className={dot.glow ? "network-dot-glow" : undefined}
+            opacity={0}
+            data-dot=""
+            data-dx={dot.x2 - dot.x1}
+            data-dy={dot.y2 - dot.y1}
+            data-dur={dot.duration}
+            data-del={dot.delay}
           />
         ))}
 
-        {/* Inbound dots — travel toward center and absorb */}
+        {/* Inbound dots — animated via Web Animations API */}
         {inboundDots.map((dot, i) => (
           <circle
             key={`inbound-${i}`}
@@ -161,13 +222,13 @@ export function DivineNetwork({ className }: { className?: string } = {}) {
             cy={dot.y1}
             r={dot.r}
             fill="var(--gold-active)"
-            className={dot.glow ? "network-dot-inbound network-dot-glow" : "network-dot-inbound"}
-            style={{
-              "--dx": `${CENTER - dot.x1}px`,
-              "--dy": `${CENTER - dot.y1}px`,
-              animationDuration: `${dot.duration}s`,
-              animationDelay: `${dot.delay}s`,
-            } as React.CSSProperties}
+            className={dot.glow ? "network-dot-glow" : undefined}
+            opacity={0}
+            data-inbound=""
+            data-dx={CENTER - dot.x1}
+            data-dy={CENTER - dot.y1}
+            data-dur={dot.duration}
+            data-del={dot.delay}
           />
         ))}
       </svg>

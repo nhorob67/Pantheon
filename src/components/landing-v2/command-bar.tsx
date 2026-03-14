@@ -26,7 +26,7 @@ export function CommandBar() {
         <Link href="/login" className="command-bar-link">
           Log In
         </Link>
-        <Link href="#pricing" className="command-bar-cta" style={{ display: "var(--desktop-display, inline-flex)" }}>
+        <Link href="/signup" className="command-bar-cta" style={{ display: "var(--desktop-display, inline-flex)" }}>
           Deploy Free for 14 Days
         </Link>
         <button

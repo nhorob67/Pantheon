@@ -1565,7 +1565,7 @@
   .v2-stream-cursor { animation: none !important; }
   .v2-deity-ring-animated,
   .v2-deity-ring-mark-counter { animation: none !important; }
-  .network-dot, .network-dot-inbound { animation: none !important; display: none; }
+  /* network-dot animations are handled by Web Animations API which checks prefers-reduced-motion */
   .network-node-flash { animation: none !important; opacity: 0.1 !important; }
   .network-nexus-outer,
   .network-nexus-inner { animation: none !important; opacity: 0.15 !important; }
@@ -1596,10 +1596,7 @@
   opacity: 0.12;
 }
 
-.network-dot {
-  animation: constellation-travel var(--duration, 3s) linear infinite;
-  animation-delay: var(--delay, 0s);
-}
+/* network-dot animations handled by Web Animations API in divine-network.tsx */
 
 .network-dot-glow {
   filter: drop-shadow(0 0 3px var(--gold-active));
@@ -1620,46 +1617,8 @@
   animation: forge-nexus-pulse 3s ease-in-out infinite 0.3s;
 }
 
-@keyframes constellation-travel {
-  0% {
-    transform: translate(0, 0);
-    opacity: 0;
-  }
-  5% {
-    opacity: 0.7;
-  }
-  95% {
-    opacity: 0.7;
-  }
-  100% {
-    transform: translate(var(--dx), var(--dy));
-    opacity: 0;
-  }
-}
-
-/* Dots that travel inward to the center Pantheon node and absorb */
-@keyframes constellation-inbound {
-  0% {
-    transform: translate(0, 0) scale(1);
-    opacity: 0;
-  }
-  8% {
-    opacity: 0.85;
-  }
-  75% {
-    opacity: 0.7;
-    transform: translate(calc(var(--dx) * 0.75), calc(var(--dy) * 0.75)) scale(1);
-  }
-  100% {
-    transform: translate(var(--dx), var(--dy)) scale(0);
-    opacity: 0;
-  }
-}
-
-.network-dot-inbound {
-  animation: constellation-inbound var(--duration, 3s) ease-in infinite;
-  animation-delay: var(--delay, 0s);
-}
+/* constellation-travel and constellation-inbound animations
+   are now handled by Web Animations API for cross-browser mobile support */
 
 @keyframes forge-breathe-cycle {
   0%, 100% {
