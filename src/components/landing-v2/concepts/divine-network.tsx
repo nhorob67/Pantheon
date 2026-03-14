@@ -139,14 +139,14 @@ export function DivineNetwork({ className }: { className?: string } = {}) {
         {messageDots.map((dot, i) => (
           <circle
             key={`dot-${i}`}
+            cx={dot.x1}
+            cy={dot.y1}
             r={dot.r}
             fill="var(--gold-active)"
             className={dot.glow ? "network-dot network-dot-glow" : "network-dot"}
             style={{
-              "--x1": `${dot.x1}px`,
-              "--y1": `${dot.y1}px`,
-              "--x2": `${dot.x2}px`,
-              "--y2": `${dot.y2}px`,
+              "--dx": `${dot.x2 - dot.x1}px`,
+              "--dy": `${dot.y2 - dot.y1}px`,
               animationDuration: `${dot.duration}s`,
               animationDelay: `${dot.delay}s`,
             } as React.CSSProperties}
@@ -157,15 +157,14 @@ export function DivineNetwork({ className }: { className?: string } = {}) {
         {inboundDots.map((dot, i) => (
           <circle
             key={`inbound-${i}`}
+            cx={dot.x1}
+            cy={dot.y1}
             r={dot.r}
             fill="var(--gold-active)"
             className={dot.glow ? "network-dot-inbound network-dot-glow" : "network-dot-inbound"}
             style={{
-              "--x1": `${dot.x1}px`,
-              "--y1": `${dot.y1}px`,
-              "--x2": `${CENTER}px`,
-              "--y2": `${CENTER}px`,
-              "--r": `${dot.r}px`,
+              "--dx": `${CENTER - dot.x1}px`,
+              "--dy": `${CENTER - dot.y1}px`,
               animationDuration: `${dot.duration}s`,
               animationDelay: `${dot.delay}s`,
             } as React.CSSProperties}

@@ -1622,8 +1622,7 @@
 
 @keyframes constellation-travel {
   0% {
-    cx: var(--x1);
-    cy: var(--y1);
+    transform: translate(0, 0);
     opacity: 0;
   }
   5% {
@@ -1633,8 +1632,7 @@
     opacity: 0.7;
   }
   100% {
-    cx: var(--x2);
-    cy: var(--y2);
+    transform: translate(var(--dx), var(--dy));
     opacity: 0;
   }
 }
@@ -1642,23 +1640,19 @@
 /* Dots that travel inward to the center Pantheon node and absorb */
 @keyframes constellation-inbound {
   0% {
-    cx: var(--x1);
-    cy: var(--y1);
+    transform: translate(0, 0) scale(1);
     opacity: 0;
-    r: var(--r, 2.5);
   }
   8% {
     opacity: 0.85;
   }
   75% {
     opacity: 0.7;
-    r: var(--r, 2.5);
+    transform: translate(calc(var(--dx) * 0.75), calc(var(--dy) * 0.75)) scale(1);
   }
   100% {
-    cx: var(--x2);
-    cy: var(--y2);
+    transform: translate(var(--dx), var(--dy)) scale(0);
     opacity: 0;
-    r: 0;
   }
 }
 
