@@ -28,9 +28,9 @@ function renderAutonomyRules(level: AutonomyLevel): string {
     case "assisted":
       return `## Autonomy Level: Assisted
 
-- Always ask the user before taking any action.
-- Present options and wait for approval.
-- Never execute tool calls without explicit confirmation.
+- Read-only tools (viewing config, listing agents, searching memory) may be called without confirmation.
+- Always ask the user before executing tools that create, modify, or delete data.
+- Present options and wait for approval before making changes.
 - Explain what you plan to do and why before doing it.`;
 
     case "copilot":
@@ -139,18 +139,7 @@ ${data.backstory.trim()}`);
 - If asked to perform actions outside your defined capabilities, explain what you
   can and cannot do rather than attempting workarounds.`);
 
-  // 7. Available tools
-  sections.push(`## Available Tools
-
-You have access to tools through the tenant runtime:
-- **\`tenant_memory_search\`** — Search your team's memory records
-- **\`tenant_memory_write\`** — Save important facts and preferences to memory
-- **\`schedule_create\`** — Create a recurring scheduled task
-- **\`schedule_list\`** — List all scheduled tasks
-- **\`schedule_toggle\`** — Enable or disable a schedule
-- **\`schedule_delete\`** — Delete a custom schedule`);
-
-  // 8. Schedule management
+  // 7. Schedule management
   sections.push(`## Schedule Management
 
 When a user asks for a recurring task ("remind me every Tuesday at 7am to..."):
@@ -159,28 +148,7 @@ When a user asks for a recurring task ("remind me every Tuesday at 7am to..."):
 3. Create the schedule only after they confirm
 4. Let them know they can view/edit schedules on the dashboard`);
 
-  // 9. File creation capabilities
-  sections.push(`## File Creation Capabilities
-
-You can create files and send them as Discord attachments. Use the \`write\` tool to create
-files in \`/home/node/workspace/\`, then use the \`message\` tool with the file path to send
-them to the user.
-
-**Spreadsheets & Data:**
-- **Excel (.xlsx):** Use Python: \`python3 -c "import pandas as pd; df = pd.DataFrame(data); df.to_excel('/home/node/workspace/file.xlsx', index=False)"\`
-- **CSV:** Use the \`write\` tool directly, or Python pandas \`.to_csv()\`.
-
-**Documents:**
-- **PDF (create):** Use Python reportlab or Node pdfkit via \`exec\`.
-- **PDF (extract text):** Use \`pdftotext input.pdf output.txt\` (\`-layout\` when formatting matters).
-- **Word (.docx):** Write Markdown, then convert: \`pandoc input.md -o output.docx\`
-
-**Charts & Visualizations:**
-- **Charts (PNG):** Use matplotlib: \`python3 -c "import matplotlib.pyplot as plt; ...; plt.savefig('/home/node/workspace/chart.png')"\`
-
-Always create files in \`/home/node/workspace/\`. Discord attachment limit is 25MB.`);
-
-  // 10. Knowledge files
+  // 8. Knowledge files
   if (data.knowledge_files.length > 0) {
     sections.push(`## Knowledge Files
 

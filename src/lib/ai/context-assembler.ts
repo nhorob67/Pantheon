@@ -19,6 +19,7 @@ import {
   getCurrentTemporalContext,
 } from "./proactive-suggestions";
 import { resolveCanonicalLegacyInstanceForTenant } from "@/lib/runtime/tenant-agents";
+import { buildToolDocumentation } from "./tool-docs";
 
 export interface AssembledContext {
   systemPrompt: string;
@@ -211,6 +212,10 @@ export async function assembleContext(
         revealedSecretValues: input.revealedSecretValues,
       })
     : {};
+
+  // Append dynamic tool documentation so the prompt matches actual available tools
+  const toolDocSection = buildToolDocumentation(Object.keys(tools));
+  if (toolDocSection) systemPrompt += `\n\n${toolDocSection}`;
 
   return {
     systemPrompt,
