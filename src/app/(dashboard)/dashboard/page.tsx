@@ -26,18 +26,27 @@ async function DashboardStats({ customerId }: { customerId: string }) {
   startOfMonth.setDate(1);
   startOfMonth.setHours(0, 0, 0, 0);
 
-  const [{ data: usage }, { data: customer }] = await Promise.all([
-    supabase
-      .from("api_usage")
-      .select("input_tokens, output_tokens, estimated_cost_cents")
-      .eq("customer_id", customerId)
-      .gte("date", startOfMonth.toISOString().split("T")[0]),
-    supabase
-      .from("customers")
-      .select("spending_cap_cents, spending_cap_auto_pause")
-      .eq("id", customerId)
-      .single(),
-  ]);
+  const today = new Date().toISOString().split("T")[0];
+
+  const [{ data: usage }, { data: customer }, { count: messagesToday }] =
+    await Promise.all([
+      supabase
+        .from("api_usage")
+        .select("input_tokens, output_tokens, estimated_cost_cents")
+        .eq("customer_id", customerId)
+        .gte("date", startOfMonth.toISOString().split("T")[0]),
+      supabase
+        .from("customers")
+        .select("spending_cap_cents, spending_cap_auto_pause")
+        .eq("id", customerId)
+        .single(),
+      supabase
+        .from("tenant_messages")
+        .select("*", { count: "exact", head: true })
+        .eq("customer_id", customerId)
+        .gte("created_at", `${today}T00:00:00`)
+        .lt("created_at", `${today}T23:59:59.999`),
+    ]);
 
   const totalTokens = (usage || []).reduce(
     (sum, u) => sum + (u.input_tokens || 0) + (u.output_tokens || 0),
@@ -69,7 +78,7 @@ async function DashboardStats({ customerId }: { customerId: string }) {
         />
       )}
       <QuickStats
-        messagesToday={0}
+        messagesToday={messagesToday ?? 0}
         uptimeHours={uptimeHours}
         tokensUsed={formatTokens(totalTokens)}
         monthlyCost={formatCents(totalCostCents + SUBSCRIPTION_PRICE_CENTS)}
@@ -81,21 +90,21 @@ async function DashboardStats({ customerId }: { customerId: string }) {
 /* ── Streamed: message activity chart ──────────────────── */
 async function DashboardChart({ customerId }: { customerId: string }) {
   const supabase = await createClient();
-  const today = new Date().toISOString().split("T")[0];
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+  sevenDaysAgo.setHours(0, 0, 0, 0);
 
-  const { data: conversationEvents } = await supabase
-    .from("conversation_events")
-    .select("date, message_count")
+  const { data: messages } = await supabase
+    .from("tenant_messages")
+    .select("created_at")
     .eq("customer_id", customerId)
-    .gte("date", sevenDaysAgo.toISOString().split("T")[0])
-    .order("date", { ascending: true });
+    .gte("created_at", sevenDaysAgo.toISOString())
+    .order("created_at", { ascending: true });
 
   const eventsByDate = new Map<string, number>();
-  for (const event of conversationEvents || []) {
-    const existing = eventsByDate.get(event.date) || 0;
-    eventsByDate.set(event.date, existing + event.message_count);
+  for (const msg of messages || []) {
+    const dateKey = msg.created_at.split("T")[0];
+    eventsByDate.set(dateKey, (eventsByDate.get(dateKey) || 0) + 1);
   }
 
   const chartData = Array.from({ length: 7 }, (_, i) => {
