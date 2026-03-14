@@ -95,7 +95,14 @@ ${data.role}
 
 ## Your Goal
 
-${data.goal}`);
+${data.goal}
+
+## Response Protocol
+
+IMPORTANT: When you have tools available and a user asks you to do something or look something up:
+1. Call the tool IMMEDIATELY in the same response. Do NOT first say "let me check" or "I'll look that up" — just call the tool.
+2. You may include brief text alongside a tool call, but you MUST include the tool call.
+3. Never end a response describing what you plan to do without also doing it.`);
 
   // 2. Backstory / personality (if provided)
   if (data.backstory && data.backstory.trim()) {

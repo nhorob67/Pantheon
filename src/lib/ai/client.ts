@@ -11,6 +11,6 @@ export const pantheonModel = anthropic(DEFAULT_PRIMARY_MODEL_ID);
 export const pantheonFastModel = anthropic(DEFAULT_FAST_MODEL_ID);
 
 export const AI_CONFIG = {
-  maxOutputTokens: 1024,
+  maxOutputTokens: 4096,
   temperature: 0.7,
 } as const;

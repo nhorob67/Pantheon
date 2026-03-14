@@ -273,6 +273,9 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           ...(hasTools ? { tools: resolvedTools, maxSteps: 5 } : {}),
         });
 
+        // Capture multi-step messages for history reconstruction
+        const responseMessages = result.response?.messages ?? [];
+
         let responseText = result.text || "[Pantheon] No response generated.";
 
         // Post-turn redaction: strip revealed secret values from stored text
@@ -291,6 +294,9 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           agentId: assembled.agentId,
           content: responseText,
           tokenCount: (result.usage?.inputTokens ?? 0) + (result.usage?.outputTokens ?? 0),
+          toolCalls: responseMessages.length > 0
+            ? responseMessages.map((m) => m as Record<string, unknown>)
+            : undefined,
         }).catch((err) => {
           console.error("[ai-worker] Failed to store outbound message:", safeErrorMessage(err));
         });

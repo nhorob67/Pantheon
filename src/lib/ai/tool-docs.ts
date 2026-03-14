@@ -49,7 +49,7 @@ export function buildToolDocumentation(toolNames: string[]): string {
   const lines: string[] = [
     "## Your Tools",
     "",
-    "When a user asks you to do something or look something up, call the appropriate tool immediately. Do not say you will check — just call the tool.",
+    "**IMPORTANT: Call tools immediately when needed. Never narrate what you plan to do without also doing it. If you catch yourself saying \"let me check\" without a tool call, stop and call the tool instead.**",
     "",
   ];
 
