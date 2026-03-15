@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { resolveDefaultAgent } from "./agent-resolver";
+import { resolveDefaultAgent, resolveAgentById } from "./agent-resolver";
 import { loadConversationHistory } from "./history-loader";
 import { buildSystemPrompt } from "./system-prompt";
 import { resolveToolsForAgent } from "./tools/registry";
@@ -18,6 +18,7 @@ interface EmailAssembleInput {
   subject: string;
   bodyText: string;
   attachments: ExtractedAttachmentContent[];
+  agentId?: string;
 }
 
 function buildFallbackPrompt(): string {
@@ -44,8 +45,13 @@ export async function assembleEmailContext(
   admin: SupabaseClient,
   input: EmailAssembleInput
 ): Promise<AssembledContext> {
-  // 1. Resolve default agent for this tenant (no channel binding for email)
-  const agent = await resolveDefaultAgent(admin, input.tenantId);
+  // 1. Resolve agent — use specific agent if provided, otherwise default
+  let agent = input.agentId
+    ? await resolveAgentById(admin, input.tenantId, input.agentId)
+    : null;
+  if (!agent) {
+    agent = await resolveDefaultAgent(admin, input.tenantId);
+  }
 
   // 2. Build system prompt
   let systemPrompt = agent

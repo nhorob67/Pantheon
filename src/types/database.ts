@@ -23,6 +23,7 @@ export interface TeamProfile {
   industry: string | null;
   team_goal: string | null;
   timezone: string;
+  discord_completion_notifications_enabled: boolean;
   location_label: string | null;
   location_lat: number | null;
   location_lng: number | null;
@@ -66,7 +67,10 @@ export interface SkillConfig {
 export interface EmailIdentity {
   id: string;
   customer_id: string;
+  tenant_id: string | null;
   instance_id: string | null;
+  agent_id: string | null;
+  identity_type: "team" | "agent";
   provider: string | null;
   provider_mailbox_id: string | null;
   provider_metadata: Record<string, unknown>;

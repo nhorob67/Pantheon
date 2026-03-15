@@ -8,6 +8,7 @@ interface EmailIdentity {
   slug: string;
   address: string;
   sender_alias: string;
+  provider_mailbox_id?: string | null;
 }
 
 interface EmailIdentityFormProps {
@@ -33,6 +34,14 @@ export function EmailIdentityForm({ initialIdentity }: EmailIdentityFormProps) {
   };
 
   const enableIdentity = async () => {
+    const cleaned = slug.trim().toLowerCase();
+    const validationError = cleaned ? validateSlug(cleaned) : null;
+    if (validationError) {
+      setError(validationError);
+      setNotice(null);
+      return;
+    }
+
     setEnabling(true);
     setError(null);
     setNotice(null);
@@ -40,6 +49,8 @@ export function EmailIdentityForm({ initialIdentity }: EmailIdentityFormProps) {
     try {
       const res = await fetch("/api/customers/email-identity", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug: cleaned }),
       });
       const payload = (await res.json()) as {
         identity?: EmailIdentity;
@@ -125,17 +136,31 @@ export function EmailIdentityForm({ initialIdentity }: EmailIdentityFormProps) {
       <div className="bg-card rounded-xl border border-border shadow-sm p-6 space-y-6">
         <div>
           <h3 className="font-headline text-lg mb-1">
-            Optional Email Ingestion
+            Team Email Address
           </h3>
           <p className="text-foreground/60 text-sm">
-            Onboarding stays focused on Discord. Enable this only when you want
-            to send files to Pantheon by email.
+            This email address is used by your default agent. Enable this to
+            receive and respond to emails via Pantheon.
           </p>
         </div>
 
+        <Input
+          label="Address slug"
+          value={slug}
+          onChange={(event) => setSlug(event.target.value)}
+          error={error || undefined}
+          placeholder="your-team-name"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+        />
+
         <div className="rounded-lg border border-border bg-muted px-4 py-3">
           <p className="text-xs text-foreground/60 mb-1">Status</p>
-          <p className="text-sm text-foreground">Not enabled yet</p>
+          <p className="text-sm text-foreground">
+            Not enabled yet. Choose a slug before enabling because AgentMail
+            inbox addresses cannot be renamed later.
+          </p>
         </div>
 
         <div className="flex flex-wrap gap-3">
@@ -153,25 +178,32 @@ export function EmailIdentityForm({ initialIdentity }: EmailIdentityFormProps) {
     <div className="bg-card rounded-xl border border-border shadow-sm p-6 space-y-6">
       <div>
         <h3 className="font-headline text-lg mb-1">
-          Optional Email Inbox
+          Team Email Address
         </h3>
         <p className="text-foreground/60 text-sm">
-          Use this address when you want to email files to your assistant. You
-          can edit the slug at any time.
+          This address is used by your default agent. AgentMail inbox slugs are
+          locked after provisioning.
         </p>
       </div>
 
       <div className="space-y-4">
-        <Input
-          label="Address slug"
-          value={slug}
-          onChange={(event) => setSlug(event.target.value)}
-          error={error || undefined}
-          placeholder="your-team-name"
-          autoCapitalize="none"
-          autoCorrect="off"
-          spellCheck={false}
-        />
+        {identity.provider_mailbox_id ? (
+          <div className="rounded-lg border border-border bg-muted px-4 py-3">
+            <p className="text-xs text-foreground/60 mb-1">Address slug</p>
+            <p className="font-mono text-sm text-foreground break-all">{identity.slug}</p>
+          </div>
+        ) : (
+          <Input
+            label="Address slug"
+            value={slug}
+            onChange={(event) => setSlug(event.target.value)}
+            error={error || undefined}
+            placeholder="your-team-name"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+          />
+        )}
 
         <div className="rounded-lg border border-border bg-muted px-4 py-3">
           <p className="text-xs text-foreground/60 mb-1">Current address</p>
@@ -187,9 +219,11 @@ export function EmailIdentityForm({ initialIdentity }: EmailIdentityFormProps) {
       </div>
 
       <div className="flex flex-wrap gap-3">
-        <Button type="button" onClick={saveSlug} loading={saving}>
-          Save Email Slug
-        </Button>
+        {!identity.provider_mailbox_id && (
+          <Button type="button" onClick={saveSlug} loading={saving}>
+            Save Email Slug
+          </Button>
+        )}
         <Button type="button" variant="secondary" onClick={copyAddress}>
           Copy Address
         </Button>

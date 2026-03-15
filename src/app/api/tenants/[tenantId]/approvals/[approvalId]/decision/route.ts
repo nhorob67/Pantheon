@@ -19,6 +19,7 @@ import {
 } from "@/lib/heartbeat/processor";
 import { hasMinimumTenantRole } from "@/lib/runtime/tenant-auth";
 import { transitionTenantRuntimeRun } from "@/lib/runtime/tenant-runtime-queue";
+import { sendDiscordRuntimeCompletionNotification } from "@/lib/runtime/tenant-runtime-status-notifier";
 import { encodeToolContinuationToken } from "@/lib/runtime/tenant-runtime-tools";
 import { auditLog } from "@/lib/security/audit";
 import type { TenantRuntimeRun } from "@/types/tenant-runtime";
@@ -298,7 +299,7 @@ export async function POST(
           }
 
           if (decision === "rejected" && run.status === "awaiting_approval") {
-            await transitionTenantRuntimeRun(state.admin, run, "fail", {
+            const failedRun = await transitionTenantRuntimeRun(state.admin, run, "fail", {
               workerId: null,
               errorMessage: parsedBody.data.comment || "Rejected via tenant approval queue",
               metadataPatch: {
@@ -306,6 +307,7 @@ export async function POST(
                 approval_id: updatedApproval.id,
               },
             });
+            await sendDiscordRuntimeCompletionNotification(state.admin, failedRun);
           }
         }
       }

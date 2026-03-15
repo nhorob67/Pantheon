@@ -1,7 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   type EmailIdentityRecord,
-  getActiveEmailIdentity,
+  getEmailIdentityById,
 } from "@/lib/email/identity";
 import {
   AgentMailRequestError,
@@ -76,8 +76,8 @@ export async function ensureAgentMailInboxForIdentity(
   }
 
   // Concurrent request may have linked the identity first.
-  const fallback = await getActiveEmailIdentity(identity.customer_id);
-  if (fallback?.id === identity.id && fallback.provider_mailbox_id) {
+  const fallback = await getEmailIdentityById(identity.id);
+  if (fallback?.provider_mailbox_id) {
     return fallback;
   }
 

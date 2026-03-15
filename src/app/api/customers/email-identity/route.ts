@@ -5,6 +5,7 @@ import { consumeConfigUpdateRateLimit } from "@/lib/security/user-rate-limit";
 import {
   EmailIdentityConflictError,
   EmailIdentityNotFoundError,
+  EmailIdentitySlugLockedError,
   ensureEmailIdentity,
   getActiveEmailIdentity,
   updateEmailIdentitySlug,
@@ -34,7 +35,11 @@ async function loadCustomerForUser(userId: string) {
 
 async function loadIdentityContext(customerId: string) {
   const admin = createAdminClient();
-  const [{ data: profile, error: profileError }, { data: instance, error: instanceError }] =
+  const [
+    { data: profile, error: profileError },
+    { data: instance, error: instanceError },
+    { data: tenant, error: tenantError },
+  ] =
     await Promise.all([
       admin
         .from("team_profiles")
@@ -48,6 +53,14 @@ async function loadIdentityContext(customerId: string) {
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle(),
+      admin
+        .from("tenants")
+        .select("id")
+        .eq("customer_id", customerId)
+        .eq("status", "active")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
     ]);
 
   if (profileError) {
@@ -58,10 +71,48 @@ async function loadIdentityContext(customerId: string) {
     throw new Error(instanceError.message);
   }
 
+  if (tenantError) {
+    throw new Error(tenantError.message);
+  }
+
   return {
     teamName: profile?.team_name || null,
     instanceId: instance?.id || null,
+    tenantId: tenant?.id || null,
   };
+}
+
+function parseRequestedSlug(body: unknown): string | undefined {
+  if (!body || typeof body !== "object") {
+    return undefined;
+  }
+
+  const candidate = (body as { slug?: unknown }).slug;
+  if (typeof candidate !== "string") {
+    return undefined;
+  }
+
+  const normalized = candidate.trim().toLowerCase();
+  if (!normalized) {
+    return undefined;
+  }
+
+  const parsed = updateEmailIdentitySchema.safeParse({ slug: normalized });
+  if (!parsed.success) {
+    throw new Response(
+      JSON.stringify({
+        error: "Use 3-63 characters: lowercase letters, numbers, and hyphens",
+      }),
+      {
+        status: 400,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+  }
+
+  return parsed.data.slug;
 }
 
 export async function GET() {
@@ -91,7 +142,7 @@ export async function GET() {
   }
 }
 
-export async function POST() {
+export async function POST(request: Request) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -121,12 +172,24 @@ export async function POST() {
       return NextResponse.json({ error: "Customer not found" }, { status: 404 });
     }
 
-    const { teamName, instanceId } = await loadIdentityContext(customer.id);
+    let requestedSlug: string | undefined;
+    try {
+      requestedSlug = parseRequestedSlug(await request.json().catch(() => ({})));
+    } catch (response) {
+      if (response instanceof Response) {
+        return response;
+      }
+      throw response;
+    }
+
+    const { teamName, instanceId, tenantId } = await loadIdentityContext(customer.id);
     const identity = await ensureEmailIdentity({
       customerId: customer.id,
+      tenantId,
       instanceId,
       teamName,
       customerEmail: customer.email || null,
+      requestedSlug,
     });
 
     const linkedIdentity = await ensureAgentMailInboxForIdentity(identity);
@@ -144,6 +207,13 @@ export async function POST() {
       return NextResponse.json(
         { error: "Failed to provision AgentMail inbox" },
         { status: 502 }
+      );
+    }
+
+    if (err instanceof EmailIdentitySlugLockedError) {
+      return NextResponse.json(
+        { error: err.message },
+        { status: 409 }
       );
     }
 
@@ -195,6 +265,10 @@ export async function PUT(request: Request) {
 
     if (err instanceof EmailIdentityNotFoundError) {
       return NextResponse.json({ error: "Enable email first" }, { status: 404 });
+    }
+
+    if (err instanceof EmailIdentitySlugLockedError) {
+      return NextResponse.json({ error: err.message }, { status: 409 });
     }
 
     return NextResponse.json(

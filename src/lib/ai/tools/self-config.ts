@@ -352,12 +352,13 @@ export function createSelfConfigTools(
   // ── config_update_team_profile (owner) ───────────────────────
   tools.config_update_team_profile = tool({
     description:
-      "Update team profile fields: team_name, description, industry, team_goal. Timezone must be changed on the dashboard.",
+      "Update team profile fields: team_name, description, industry, team_goal, and Discord completion notification default. Timezone must be changed on the dashboard.",
     inputSchema: z.object({
       team_name: z.string().min(1).max(100).optional(),
       description: z.string().max(500).optional(),
       industry: z.string().max(100).optional(),
       team_goal: z.string().max(500).optional(),
+      discord_completion_notifications_enabled: z.boolean().optional(),
     }),
     execute: async (params) => {
       if (!requireRole("owner", actorRole)) {
@@ -366,7 +367,7 @@ export function createSelfConfigTools(
 
       const { data: teamProfile } = await admin
         .from("team_profiles")
-        .select("id, team_name, description, industry, team_goal")
+        .select("id, team_name, description, industry, team_goal, discord_completion_notifications_enabled")
         .eq("customer_id", customerId)
         .maybeSingle();
 
@@ -397,6 +398,14 @@ export function createSelfConfigTools(
         oldValues.team_goal = teamProfile.team_goal;
         newValues.team_goal = params.team_goal;
         updateFields.team_goal = params.team_goal;
+      }
+      if (params.discord_completion_notifications_enabled !== undefined) {
+        oldValues.discord_completion_notifications_enabled =
+          teamProfile.discord_completion_notifications_enabled;
+        newValues.discord_completion_notifications_enabled =
+          params.discord_completion_notifications_enabled;
+        updateFields.discord_completion_notifications_enabled =
+          params.discord_completion_notifications_enabled;
       }
 
       if (Object.keys(updateFields).length === 0) {

@@ -83,6 +83,51 @@ function sanitizeObject(value: unknown): Record<string, unknown> {
   return {};
 }
 
+async function resolveDiscordCompletionNotificationsEnabled(
+  admin: SupabaseClient,
+  customerId: string
+): Promise<boolean> {
+  const { data } = await admin
+    .from("team_profiles")
+    .select("discord_completion_notifications_enabled")
+    .eq("customer_id", customerId)
+    .maybeSingle();
+
+  return data?.discord_completion_notifications_enabled ?? true;
+}
+
+async function resolveRuntimeRunMetadata(
+  admin: SupabaseClient,
+  input: EnqueueDiscordRuntimeRunInput
+): Promise<Record<string, unknown>> {
+  const metadata = { ...(input.metadata || {}) };
+
+  if (input.runKind !== "discord_runtime") {
+    return metadata;
+  }
+
+  if (typeof metadata.notify_on_completion === "boolean") {
+    metadata.completion_notification_source = "run_override";
+    return metadata;
+  }
+
+  const payloadRunKind =
+    typeof input.payload.run_kind === "string" ? input.payload.run_kind : null;
+  if (payloadRunKind === "discord_cron") {
+    metadata.notify_on_completion = false;
+    metadata.completion_notification_source = "system_default";
+    return metadata;
+  }
+
+  metadata.notify_on_completion = await resolveDiscordCompletionNotificationsEnabled(
+    admin,
+    input.customerId
+  );
+  metadata.completion_notification_source = "team_default";
+
+  return metadata;
+}
+
 function mapRuntimeRunRow(row: Record<string, unknown>): TenantRuntimeRun {
   return {
     id: String(row.id || ""),
@@ -118,6 +163,7 @@ export async function enqueueDiscordRuntimeRun(
   admin: SupabaseClient,
   input: EnqueueDiscordRuntimeRunInput
 ): Promise<TenantRuntimeRun> {
+  const metadata = await resolveRuntimeRunMetadata(admin, input);
   const { data, error } = await admin
     .from("tenant_runtime_runs")
     .insert({
@@ -130,7 +176,7 @@ export async function enqueueDiscordRuntimeRun(
       request_trace_id: input.requestTraceId,
       correlation_id: input.idempotencyKey,
       payload: input.payload,
-      metadata: input.metadata || {},
+      metadata,
       queued_at: new Date().toISOString(),
     })
     .select(TENANT_RUNTIME_RUN_SELECT)

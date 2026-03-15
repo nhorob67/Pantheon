@@ -57,6 +57,7 @@ export function createEmailAiWorker(admin: SupabaseClient): TenantRuntimeWorker 
         const payload = context.run.payload;
         const inboundId = typeof payload.inbound_id === "string" ? payload.inbound_id : "";
         const identityId = typeof payload.identity_id === "string" ? payload.identity_id : "";
+        const agentId = typeof payload.agent_id === "string" ? payload.agent_id : null;
         const fromEmail = typeof payload.from_email === "string" ? payload.from_email : "";
         const subject = typeof payload.subject === "string" ? payload.subject : "(no subject)";
         const content = typeof payload.content === "string" ? payload.content : "";
@@ -97,6 +98,7 @@ export function createEmailAiWorker(admin: SupabaseClient): TenantRuntimeWorker 
           subject,
           bodyText: content,
           attachments,
+          agentId: agentId ?? undefined,
         });
 
         const hasTools = Object.keys(assembled.tools).length > 0;

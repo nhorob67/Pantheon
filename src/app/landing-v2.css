@@ -1565,7 +1565,7 @@
   .v2-stream-cursor { animation: none !important; }
   .v2-deity-ring-animated,
   .v2-deity-ring-mark-counter { animation: none !important; }
-  /* network-dot animations are handled by Web Animations API which checks prefers-reduced-motion */
+  /* travel dots continue in a lighter SVG-native mode when reduced motion is enabled */
   .network-node-flash { animation: none !important; opacity: 0.1 !important; }
   .network-nexus-outer,
   .network-nexus-inner { animation: none !important; opacity: 0.15 !important; }
@@ -1596,7 +1596,7 @@
   opacity: 0.12;
 }
 
-/* network-dot animations handled by Web Animations API in divine-network.tsx */
+/* travel-dot animation is declared inside divine-network.tsx via SVG animation elements */
 
 .network-dot-glow {
   filter: drop-shadow(0 0 3px var(--gold-active));
@@ -1617,8 +1617,7 @@
   animation: forge-nexus-pulse 3s ease-in-out infinite 0.3s;
 }
 
-/* constellation-travel and constellation-inbound animations
-   are now handled by Web Animations API for cross-browser mobile support */
+/* travel motion is handled by SVG-native animation in divine-network.tsx */
 
 @keyframes forge-breathe-cycle {
   0%, 100% {

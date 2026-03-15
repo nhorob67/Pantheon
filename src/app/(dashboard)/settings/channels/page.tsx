@@ -17,6 +17,7 @@ import {
 } from "@/lib/auth/dashboard-session";
 import { DiscordSetupBanner } from "@/components/dashboard/discord-setup-banner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DiscordCompletionNotificationsCard } from "@/components/settings/discord-completion-notifications-card";
 
 export const metadata: Metadata = { title: "Discord" };
 
@@ -34,7 +35,7 @@ async function ChannelsContent({ customerId }: { customerId: string }) {
   const admin = createAdminClient();
   const supabase = await createClient();
 
-  const [instance, tenant, { data: skillConfigs }, { data: customSkills }, { data: emailIdentity }, { data: composioRow }] = await Promise.all([
+  const [instance, tenant, { data: skillConfigs }, { data: customSkills }, { data: emailIdentity }, { data: composioRow }, { data: teamProfile }] = await Promise.all([
     getCustomerInstance(customerId),
     getCustomerTenant(customerId),
     supabase
@@ -54,6 +55,11 @@ async function ChannelsContent({ customerId }: { customerId: string }) {
     admin
       .from("composio_configs")
       .select("*")
+      .eq("customer_id", customerId)
+      .maybeSingle(),
+    supabase
+      .from("team_profiles")
+      .select("team_name, timezone, discord_completion_notifications_enabled")
       .eq("customer_id", customerId)
       .maybeSingle(),
   ]);
@@ -165,6 +171,14 @@ async function ChannelsContent({ customerId }: { customerId: string }) {
       </div>
 
       <DiscordSetupBanner hasLinkedChannels={hasLinkedChannels} />
+
+      <DiscordCompletionNotificationsCard
+        tenantId={tenant.id}
+        teamName={teamProfile?.team_name ?? tenant.name}
+        timezone={teamProfile?.timezone ?? "America/Chicago"}
+        initialEnabled={teamProfile?.discord_completion_notifications_enabled ?? true}
+        context="channels"
+      />
 
       <div className="bg-bg-card rounded-xl border border-border shadow-sm p-5">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

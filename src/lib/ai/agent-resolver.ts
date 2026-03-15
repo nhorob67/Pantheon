@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { TenantAgent } from "@/types/tenant-runtime";
+import { getEmailIdentityById } from "@/lib/email/identity";
 
 export async function resolveAgentForChannel(
   admin: SupabaseClient,
@@ -62,4 +63,41 @@ export async function resolveDefaultAgent(
   }
 
   return firstAgent as TenantAgent | null;
+}
+
+export async function resolveAgentById(
+  admin: SupabaseClient,
+  tenantId: string,
+  agentId: string
+): Promise<TenantAgent | null> {
+  const { data, error } = await admin
+    .from("tenant_agents")
+    .select("*")
+    .eq("id", agentId)
+    .eq("tenant_id", tenantId)
+    .eq("status", "active")
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to resolve agent by ID: ${error.message}`);
+  }
+
+  return data as TenantAgent | null;
+}
+
+export async function resolveAgentForEmailIdentity(
+  admin: SupabaseClient,
+  tenantId: string,
+  identityId: string
+): Promise<TenantAgent | null> {
+  const identity = await getEmailIdentityById(identityId);
+
+  if (identity?.agent_id) {
+    const agent = await resolveAgentById(admin, tenantId, identity.agent_id);
+    if (agent) {
+      return agent;
+    }
+  }
+
+  return resolveDefaultAgent(admin, tenantId);
 }

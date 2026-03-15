@@ -9,6 +9,7 @@ export interface TeamProfile {
   industry: string | null;
   team_goal: string | null;
   timezone: string;
+  discord_completion_notifications_enabled: boolean;
   location_label: string | null;
   location_lat: number | null;
   location_lng: number | null;

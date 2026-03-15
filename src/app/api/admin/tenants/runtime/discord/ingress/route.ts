@@ -25,6 +25,7 @@ import {
   isAudioAttachment,
 } from "@/lib/ai/attachment-handler";
 import { resolveDiscordUserRole } from "@/lib/runtime/tenant-discord-role-resolver";
+import { sendDiscordRuntimeCompletionNotification } from "@/lib/runtime/tenant-runtime-status-notifier";
 
 async function isAuthorized(request: Request): Promise<boolean> {
   const expectedTokens = [
@@ -198,12 +199,13 @@ export async function POST(request: Request) {
       });
 
       const event = result.outcome === "completed" ? "complete" : "fail";
-      await transitionTenantRuntimeRun(admin, claimedRun, event, {
+      const transitionedRun = await transitionTenantRuntimeRun(admin, claimedRun, event, {
         result: result.result,
         errorMessage: result.outcome === "failed"
           ? (result.errorMessage ?? "AI worker execution failed")
           : undefined,
       });
+      await sendDiscordRuntimeCompletionNotification(admin, transitionedRun);
 
       return NextResponse.json(
         {
@@ -217,9 +219,12 @@ export async function POST(request: Request) {
         { status: 200 }
       );
     } catch (workerError) {
-      await transitionTenantRuntimeRun(admin, claimedRun, "fail", {
+      const failedRun = await transitionTenantRuntimeRun(admin, claimedRun, "fail", {
         errorMessage: safeErrorMessage(workerError, "Inline worker execution failed"),
       }).catch(() => {}); // Best-effort status update
+      if (failedRun) {
+        await sendDiscordRuntimeCompletionNotification(admin, failedRun);
+      }
 
       return NextResponse.json(
         {

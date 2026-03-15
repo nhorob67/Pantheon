@@ -11,6 +11,7 @@ import { extractBehavioralPatterns } from "./procedural-memory";
 import { recordConversationTrace } from "./trace-recorder";
 import { resolveWorkerModels } from "./model-resolver";
 import {
+  sendDiscordChannelMessage,
   sendDiscordChannelMessageSequence,
   sendDiscordTypingIndicator,
   buildDiscordRuntimeResponseParts,
@@ -264,6 +265,8 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
         // Show typing indicator while generating
         await sendDiscordTypingIndicator(botToken, channelId);
 
+        const sentIntermediateTexts: string[] = [];
+
         const result = await generateText({
           model: primaryModel,
           maxOutputTokens: AI_CONFIG.maxOutputTokens,
@@ -271,12 +274,58 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           system: assembled.systemPrompt,
           messages: assembled.messages,
           ...(hasTools ? { tools: resolvedTools, maxSteps: 5 } : {}),
+          onStepFinish: async (step) => {
+            // Send intermediate text when: step has text AND more steps follow AND not a cron run
+            if (
+              isCron ||
+              step.finishReason !== "tool-calls" ||
+              !step.text?.trim()
+            ) {
+              return;
+            }
+
+            let intermediateText = step.text.trim();
+
+            // Redact secrets if any were revealed
+            if (revealedSecretValues.length > 0) {
+              const stepRedactor = buildRedactor(revealedSecretValues);
+              intermediateText = stepRedactor(intermediateText);
+            }
+
+            // Fire-and-forget: send progress to Discord (no reply, reserved for final)
+            sendDiscordChannelMessage(
+              {
+                botToken,
+                channelId,
+                content: intermediateText.slice(0, 1900),
+              },
+              fetch
+            ).catch((err) => {
+              console.error("[ai-worker] Intermediate Discord send failed:", safeErrorMessage(err));
+            });
+
+            // Refresh typing indicator for next step
+            sendDiscordTypingIndicator(botToken, channelId).catch(() => {});
+
+            sentIntermediateTexts.push(intermediateText);
+          },
         });
 
         // Capture multi-step messages for history reconstruction
         const responseMessages = result.response?.messages ?? [];
 
-        let responseText = result.text || "[Pantheon] No response generated.";
+        let responseText = result.text?.trim() || "";
+
+        // Fallback when maxSteps exhausted on a tool-call step with no final text
+        if (!responseText) {
+          const allToolNames = result.steps
+            .flatMap((s) => s.toolCalls.map((tc) => tc.toolName));
+          if (allToolNames.length > 0) {
+            responseText = `Done. I used ${[...new Set(allToolNames)].join(", ")} to complete that.`;
+          } else {
+            responseText = "[Pantheon] No response generated.";
+          }
+        }
 
         // Post-turn redaction: strip revealed secret values from stored text
         const redactor = revealedSecretValues.length > 0
@@ -293,7 +342,7 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           sessionId: assembled.sessionId,
           agentId: assembled.agentId,
           content: responseText,
-          tokenCount: (result.usage?.inputTokens ?? 0) + (result.usage?.outputTokens ?? 0),
+          tokenCount: (result.totalUsage?.inputTokens ?? 0) + (result.totalUsage?.outputTokens ?? 0),
           toolCalls: responseMessages.length > 0
             ? responseMessages.map((m) => m as Record<string, unknown>)
             : undefined,
@@ -364,8 +413,8 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
             chunk_preview: "",
           })) || [],
           modelId: primaryModelId,
-          inputTokens: result.usage?.inputTokens ?? 0,
-          outputTokens: result.usage?.outputTokens ?? 0,
+          inputTokens: result.totalUsage?.inputTokens ?? 0,
+          outputTokens: result.totalUsage?.outputTokens ?? 0,
           totalLatencyMs,
         }).catch((err) => {
           console.error("[ai-worker] Trace recording failed:", safeErrorMessage(err));
@@ -376,8 +425,8 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           tenantId: context.run.tenant_id,
           customerId: context.run.customer_id,
           model: primaryModelId,
-          inputTokens: result.usage?.inputTokens ?? 0,
-          outputTokens: result.usage?.outputTokens ?? 0,
+          inputTokens: result.totalUsage?.inputTokens ?? 0,
+          outputTokens: result.totalUsage?.outputTokens ?? 0,
           inputCostPerMillion: primaryInputCost,
           outputCostPerMillion: primaryOutputCost,
         }).catch((err) => {
@@ -422,8 +471,8 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
             agent_id: assembled.agentId,
             agent_name: assembled.agentDisplayName,
             session_id: assembled.sessionId,
-            input_tokens: result.usage?.inputTokens ?? 0,
-            output_tokens: result.usage?.outputTokens ?? 0,
+            input_tokens: result.totalUsage?.inputTokens ?? 0,
+            output_tokens: result.totalUsage?.outputTokens ?? 0,
             dispatched_channel_id: channelId,
             dispatched_message_ids: sent.messageIds,
             dispatched_message_parts: sent.partsSent,

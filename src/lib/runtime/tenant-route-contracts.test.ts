@@ -7,6 +7,7 @@ const TENANT_ROUTE_FILES = [
   "src/app/api/tenants/[tenantId]/data-governance/route.ts",
   "src/app/api/tenants/[tenantId]/agents/route.ts",
   "src/app/api/tenants/[tenantId]/agents/[agentId]/route.ts",
+  "src/app/api/tenants/[tenantId]/agents/[agentId]/email-identity/route.ts",
   "src/app/api/tenants/[tenantId]/knowledge/route.ts",
   "src/app/api/tenants/[tenantId]/knowledge/[fileId]/route.ts",
   "src/app/api/tenants/[tenantId]/memory/settings/route.ts",
@@ -35,6 +36,7 @@ const TENANT_ROUTE_FILES = [
 const TENANT_MUTATION_ROUTE_FILES = [
   "src/app/api/tenants/[tenantId]/agents/route.ts",
   "src/app/api/tenants/[tenantId]/agents/[agentId]/route.ts",
+  "src/app/api/tenants/[tenantId]/agents/[agentId]/email-identity/route.ts",
   "src/app/api/tenants/[tenantId]/knowledge/route.ts",
   "src/app/api/tenants/[tenantId]/knowledge/[fileId]/route.ts",
   "src/app/api/tenants/[tenantId]/memory/settings/route.ts",

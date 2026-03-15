@@ -73,6 +73,12 @@ export async function PUT(
         .update({
           team_name: parsedBody.data.team_name,
           timezone: parsedBody.data.timezone,
+          ...(parsedBody.data.discord_completion_notifications_enabled === undefined
+            ? {}
+            : {
+                discord_completion_notifications_enabled:
+                  parsedBody.data.discord_completion_notifications_enabled,
+              }),
         })
         .eq("customer_id", state.tenantContext.customerId)
         .select("id")

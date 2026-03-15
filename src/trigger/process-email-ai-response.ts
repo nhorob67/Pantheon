@@ -11,7 +11,7 @@ import { extractAttachmentContents } from "@/lib/email/attachment-content-extrac
 import { sendAcknowledgment } from "@/lib/email/acknowledgment";
 import { storeInboundMessage } from "@/lib/ai/message-store";
 import { enqueueEmailRuntimeRun } from "@/lib/runtime/tenant-runtime-queue";
-import { resolveDefaultAgent } from "@/lib/ai/agent-resolver";
+import { resolveAgentForEmailIdentity } from "@/lib/ai/agent-resolver";
 
 const BATCH_SIZE = 5;
 
@@ -27,13 +27,16 @@ interface EmailInboundRow {
   raw_storage_bucket: string | null;
   raw_storage_path: string | null;
   metadata: Record<string, unknown> | null;
+  identity_id: string | null;
 }
 
 interface EmailIdentityRow {
   id: string;
   customer_id: string;
   tenant_id: string | null;
-  email_address: string;
+  address: string;
+  agent_id: string | null;
+  identity_type: "team" | "agent";
 }
 
 export const processEmailAiResponse = schedules.task({
@@ -67,7 +70,7 @@ export const processEmailAiResponse = schedules.task({
     const { data: inboundRows, error: selectError } = await admin
       .from("email_inbound")
       .select(
-        "id, customer_id, provider, provider_email_id, from_email, to_email, subject, attachment_count, raw_storage_bucket, raw_storage_path, metadata"
+        "id, customer_id, provider, provider_email_id, from_email, to_email, subject, attachment_count, raw_storage_bucket, raw_storage_path, metadata, identity_id"
       )
       .in("id", inboundIds)
       .order("received_at", { ascending: true });
@@ -110,12 +113,23 @@ async function processOneEmail(
   inbound: EmailInboundRow
 ): Promise<void> {
   // 1. Resolve email identity and tenant
-  const { data: identity } = await admin
+  // Prefer identity_id stored on the inbound record; fall back to customer lookup for old records
+  let identityQuery = admin
     .from("email_identities")
-    .select("id, customer_id, tenant_id, email_address")
-    .eq("customer_id", inbound.customer_id)
-    .limit(1)
-    .maybeSingle();
+    .select("id, customer_id, tenant_id, address, agent_id, identity_type");
+
+  if (inbound.identity_id) {
+    identityQuery = identityQuery.eq("id", inbound.identity_id);
+  } else {
+    identityQuery = identityQuery
+      .eq("customer_id", inbound.customer_id)
+      .eq("is_active", true)
+      .eq("identity_type", "team")
+      .order("created_at", { ascending: true })
+      .limit(1);
+  }
+
+  const { data: identity } = await identityQuery.maybeSingle();
 
   if (!identity) {
     throw new Error("No email identity found for customer");
@@ -153,8 +167,8 @@ async function processOneEmail(
     })
     .eq("id", inbound.id);
 
-  // 4. Resolve agent (default agent for email)
-  const agent = await resolveDefaultAgent(admin, tenantId);
+  // 4. Resolve agent — routes to bound agent if identity has agent_id, else default
+  const agent = await resolveAgentForEmailIdentity(admin, tenantId, emailIdentity.id);
 
   // 5. Send acknowledgment email (fast, <500ms via AgentMail)
   const ackAttachments: Array<{ filename: string; mimeType: string }> = [];
@@ -196,7 +210,7 @@ async function processOneEmail(
     inboundId: inbound.id,
     sessionId: session.id,
     fromEmail: inbound.from_email,
-    toEmail: inbound.to_email || emailIdentity.email_address,
+    toEmail: inbound.to_email || emailIdentity.address,
     subject: inbound.subject || "(no subject)",
     inReplyToMessageId: headers.messageId,
     referencesHeader: headers.references
@@ -254,8 +268,9 @@ async function processOneEmail(
     payload: {
       inbound_id: inbound.id,
       identity_id: emailIdentity.id,
+      agent_id: agent?.id ?? null,
       from_email: inbound.from_email,
-      to_email: inbound.to_email || emailIdentity.email_address,
+      to_email: inbound.to_email || emailIdentity.address,
       subject: inbound.subject,
       content: combinedContent,
       thread_id: threadId,

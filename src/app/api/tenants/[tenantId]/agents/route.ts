@@ -52,8 +52,36 @@ export async function GET(
       );
       const agents = await listTenantRuntimeAgents(state.admin, context);
 
+      // Batch-load agent email identities to avoid N+1
+      const { data: agentIdentities } = await state.admin
+        .from("email_identities")
+        .select("id, agent_id, slug, address, sender_alias")
+        .eq("tenant_id", state.tenantContext.tenantId)
+        .eq("identity_type", "agent")
+        .not("agent_id", "is", null)
+        .eq("is_active", true);
+
+      const identityMap = new Map<string, { id: string; slug: string; address: string; sender_alias: string }>();
+      if (agentIdentities) {
+        for (const ident of agentIdentities) {
+          if (ident.agent_id) {
+            identityMap.set(ident.agent_id, {
+              id: ident.id,
+              slug: ident.slug,
+              address: ident.address,
+              sender_alias: ident.sender_alias,
+            });
+          }
+        }
+      }
+
+      const agentsWithEmail = (agents as unknown as Array<Record<string, unknown>>).map((agent) => ({
+        ...agent,
+        email_identity: identityMap.get(agent.id as string) || null,
+      }));
+
       const responseBody: Record<string, unknown> = {
-        agents,
+        agents: agentsWithEmail,
         legacy_instance_id: mapping.instanceId,
       };
 
