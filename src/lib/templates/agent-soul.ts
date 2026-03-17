@@ -65,10 +65,10 @@ function renderDelegationRules(
 
   if (canDelegate) {
     sections.push(
-      `You can delegate tasks to other agents on your team when a request falls outside your expertise or when another agent is better suited. Available agents: ${otherAgents.join(", ")}.`
+      `You have the \`delegate_task\` tool available. Use it when a request falls outside your expertise or when another agent is better suited. Use \`config_list_agents\` to see available agents and their IDs.`
     );
     sections.push(
-      "When delegating, clearly state what you need and pass relevant context."
+      "When delegating, provide a clear task description and all relevant context. The target agent will execute the task and return the result to you."
     );
   }
 

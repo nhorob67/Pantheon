@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/auth/admin-session";
 import Link from "next/link";
-import { getObservabilitySnapshot } from "@/lib/queries/admin-observability";
+import { getObservabilitySnapshot, getDelegationAnalytics } from "@/lib/queries/admin-observability";
 import { ObservabilityDashboard } from "@/components/admin/observability-dashboard";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -18,12 +18,20 @@ export default async function AdminObservabilityPage() {
         <h2 className="font-headline text-2xl font-bold text-foreground">
           Observability
         </h2>
-        <Link
-          href="/admin/observability/runs"
-          className="text-sm text-primary hover:underline"
-        >
-          View all runs &rarr;
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link
+            href="/admin/observability/guardrails"
+            className="text-sm text-primary hover:underline"
+          >
+            Guardrail events &rarr;
+          </Link>
+          <Link
+            href="/admin/observability/runs"
+            className="text-sm text-primary hover:underline"
+          >
+            View all runs &rarr;
+          </Link>
+        </div>
       </div>
 
       <Suspense fallback={<ObservabilitySkeleton />}>
@@ -35,9 +43,17 @@ export default async function AdminObservabilityPage() {
 
 async function ObservabilityContent() {
   const admin = createAdminClient();
-  const snapshot = await getObservabilitySnapshot(admin);
+  const [snapshot, delegationAnalytics] = await Promise.all([
+    getObservabilitySnapshot(admin),
+    getDelegationAnalytics(admin),
+  ]);
 
-  return <ObservabilityDashboard snapshot={snapshot} />;
+  return (
+    <ObservabilityDashboard
+      snapshot={snapshot}
+      delegationAnalytics={delegationAnalytics}
+    />
+  );
 }
 
 function ObservabilitySkeleton() {

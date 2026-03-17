@@ -21,7 +21,12 @@ const FALLBACK_COST_OUTPUT: Record<string, number> = {
   [DEFAULT_FAST_MODEL_ID]: 500,
 };
 
-function estimateCostCents(usage: TokenUsage): number {
+export function estimateTokenUsageCostCents(
+  usage: Pick<
+    TokenUsage,
+    "model" | "inputTokens" | "outputTokens" | "inputCostPerMillion" | "outputCostPerMillion"
+  >
+): number {
   const inputRate = usage.inputCostPerMillion ?? FALLBACK_COST_INPUT[usage.model] ?? 300;
   const outputRate = usage.outputCostPerMillion ?? FALLBACK_COST_OUTPUT[usage.model] ?? 1500;
   const cents = (usage.inputTokens * inputRate + usage.outputTokens * outputRate) / 1_000_000;
@@ -33,7 +38,7 @@ export async function recordTokenUsage(
   usage: TokenUsage
 ): Promise<void> {
   const today = new Date().toISOString().slice(0, 10);
-  const costCents = estimateCostCents(usage);
+  const costCents = estimateTokenUsageCostCents(usage);
 
   const { error } = await admin.rpc("upsert_api_usage", {
     p_customer_id: usage.customerId,
@@ -63,5 +68,29 @@ export async function recordTokenUsage(
     if (upsertError) {
       console.error("[usage-tracker] Failed to record token usage:", upsertError.message);
     }
+  }
+}
+
+/**
+ * Record browser session cost. Uses model name "browser_session" in api_usage.
+ */
+export async function recordBrowserSessionCost(
+  admin: SupabaseClient,
+  customerId: string,
+  costCents: number
+): Promise<void> {
+  const today = new Date().toISOString().slice(0, 10);
+
+  const { error } = await admin.rpc("upsert_api_usage", {
+    p_customer_id: customerId,
+    p_date: today,
+    p_model: "browser_session",
+    p_input_tokens: 0,
+    p_output_tokens: 0,
+    p_estimated_cost_cents: costCents,
+  });
+
+  if (error) {
+    console.error("[usage-tracker] Failed to record browser session cost:", error.message);
   }
 }

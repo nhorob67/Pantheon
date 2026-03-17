@@ -3,7 +3,7 @@
 import { useForm, useWatch, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createAgentSchema, type CreateAgentData } from "@/lib/validators/agent";
-import { AUTONOMY_OPTIONS, type Agent, type AutonomyLevel, type ToolApprovalLevel } from "@/types/agent";
+import { AUTONOMY_OPTIONS, type Agent, type ToolApprovalLevel } from "@/types/agent";
 import type { CustomSkill } from "@/types/custom-skill";
 import type { SkillConfig } from "@/types/database";
 import type { ComposioConfig } from "@/types/composio";
@@ -170,7 +170,7 @@ export function AgentForm({
         setCustomSchedules([]);
       }
     }
-  }, [open, defaultValues, reset, editAgent, tenantId]);
+  }, [open, defaultValues, reset, editAgent, tenantId, resetNl]);
 
   const applyTemplate = (template: AgentTemplateDraft | null) => {
     if (editAgent) {

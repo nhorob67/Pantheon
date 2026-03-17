@@ -289,6 +289,7 @@ export const TENANT_RUNTIME_RUN_KIND_VALUES = [
   "discord_runtime",
   "discord_heartbeat",
   "email_runtime",
+  "delegation_runtime",
 ] as const;
 export type TenantRuntimeRunKind = (typeof TENANT_RUNTIME_RUN_KIND_VALUES)[number];
 
@@ -323,6 +324,10 @@ export interface TenantRuntimeRun {
   canceled_at: string | null;
   lock_expires_at: string | null;
   worker_id: string | null;
+  parent_run_id: string | null;
+  delegation_depth: number;
+  deadline_at: string | null;
+  delegation_kind: string | null;
   metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;

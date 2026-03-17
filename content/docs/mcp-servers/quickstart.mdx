@@ -1,0 +1,79 @@
+---
+title: MCP Quickstart
+description: Get started with your first MCP server in under 5 minutes.
+section: MCP Servers
+order: 2
+icon: Rocket
+tags: [mcp, quickstart, getting-started]
+---
+
+# MCP Quickstart
+
+This guide walks you through adding your first MCP server and verifying that tools are available to your agent.
+
+## Prerequisites
+
+- A Pantheon workspace with at least one agent configured
+- A Discord channel connected to your agent
+- The MCP server you want to add (either a local npm package or a remote SSE endpoint)
+
+## Step 1: Add the server
+
+1. Go to **Settings > Tools** (MCP Servers).
+2. Click **Add MCP Server**.
+3. Fill in the required fields:
+   - **Key**: A unique identifier (e.g., `filesystem`)
+   - **Display Name**: A human-readable name (e.g., `Filesystem`)
+   - **Transport**: Choose **stdio** for local packages or **SSE** for remote servers
+   - For stdio: provide the **Command** and **Arguments**
+   - For SSE: provide the **Server URL** and optional **Headers**
+4. Click **Add Server**.
+
+## Step 2: Trigger tool discovery
+
+MCP tools are discovered at runtime — not immediately after saving. To trigger discovery:
+
+1. Send a message to your agent in Discord.
+2. The runtime will connect to your MCP server and discover its tools.
+3. This happens automatically on the first conversation after the server is added.
+
+<Callout variant="tip" title="Look for the status change">
+On the MCP server card, the status will change from **Pending activation** to **Healthy** once the server connects and tools are discovered.
+</Callout>
+
+## Step 3: Verify in Tool Catalog
+
+1. Go to **Settings > Tool Catalog**.
+2. Look for tools with the **MCP** category.
+3. Your server's tools should appear with the `mcp.{server_key}.{tool_name}` key format.
+
+If tools are not showing up:
+- Check that the server card shows **Healthy** status
+- Check the **last error** message on the server card
+- Ensure the server is **enabled** (toggle is on)
+- For stdio servers: verify the command and arguments are correct
+- For SSE servers: verify the URL is reachable and headers are correct
+
+## Step 4: Use the tools
+
+Once tools are discovered, your agent can use them automatically. Try asking your agent to perform an action that uses the MCP server's capabilities.
+
+For example, with the Filesystem server:
+> "List the files in the workspace directory."
+
+The agent will call the appropriate MCP tool and return the results.
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| Server shows "Pending activation" | No conversation since adding the server | Send a message to trigger discovery |
+| Server shows "Unhealthy" or "Unreachable" | Server process failed or URL is wrong | Check command/URL and server card error message |
+| Tools not in Tool Catalog | Discovery hasn't run yet | Send a message to your agent and check again |
+| Agent doesn't use the tools | Tools may not match the request | Ask the agent directly to use the specific tool |
+
+## What's next
+
+- [MCP Servers Overview](/docs/mcp-servers) — Configuration reference
+- [Filesystem Server](/docs/mcp-servers/filesystem) — Example: file read/write
+- [Tool Catalog](/docs/mcp-servers) — View all registered tools

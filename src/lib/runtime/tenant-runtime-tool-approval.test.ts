@@ -48,3 +48,23 @@ test("high-risk tools remain approval-gated for low-privilege actors", () => {
   assert.equal(adminDecision.decision, "requires_approval");
   assert.equal(adminDecision.reason, "risk_approval_required");
 });
+
+test("browser and delegation tools use custom approval handling instead of blanket risk gating", () => {
+  const browserDecision = resolveTenantToolApprovalRequirement({
+    toolKey: "browser_navigate",
+    actorRole: "operator",
+    riskLevel: "high",
+    approvalMode: "none",
+  });
+  assert.equal(browserDecision.decision, "allowed");
+  assert.equal(browserDecision.reason, "policy_allowed");
+
+  const delegationDecision = resolveTenantToolApprovalRequirement({
+    toolKey: "delegate_task",
+    actorRole: "operator",
+    riskLevel: "high",
+    approvalMode: "none",
+  });
+  assert.equal(delegationDecision.decision, "allowed");
+  assert.equal(delegationDecision.reason, "policy_allowed");
+});

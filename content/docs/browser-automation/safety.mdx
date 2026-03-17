@@ -1,0 +1,98 @@
+---
+title: Browser Automation Safety
+description: Understand the safety controls and policies for browser automation.
+---
+
+# Browser Automation Safety
+
+## Approval Requirements
+
+Browser tools have built-in approval requirements based on agent autonomy level:
+
+| Tool | L1 (Assisted) | L2 (Copilot) | L3 (Autopilot) |
+|------|--------------|--------------|-----------------|
+| `browser_navigate` | Requires approval | Allowed | Allowed |
+| `browser_extract` | Allowed | Allowed | Allowed |
+| `browser_click` | Requires approval | Requires approval | Allowed* |
+| `browser_fill` | Requires approval | Requires approval | Allowed* |
+| `browser_screenshot` | Allowed | Allowed | Allowed |
+
+*L3 agents need explicit tenant opt-in for browser tools.
+
+## Domain Policies
+
+Configure domain policies in **Settings > Browser Automation**:
+
+### Domain Allowlist
+When set, agents can **only** navigate to listed domains. This is the strongest safety control.
+
+Example: `["portal.vendor.com", "app.supplier.com"]`
+
+### Domain Blocklist
+Agents will **never** navigate to listed domains, even if they appear in the allowlist.
+
+Example: `["facebook.com", "twitter.com"]`
+
+## Sensitive Field Protection
+
+Browser tools automatically detect and block sensitive form fields:
+
+- Password and authentication fields
+- Credit card and payment fields
+- Social Security Number fields
+- Bank account and routing number fields
+
+If an agent attempts to fill a sensitive field, the action is denied with a `policy_denial` error.
+
+## Authentication Detection
+
+When `browser_navigate` lands on a page that appears to be a login/authentication page, the tool returns an `auth_page_detected: true` flag. This helps agents understand they've been redirected to a login flow and cannot proceed without credentials.
+
+## Session Limits
+
+| Limit | Default | Range | Configurable |
+|-------|---------|-------|-------------|
+| Sessions per day | 10 | 1-100 | Per tenant |
+| Actions per session | 25 | 1-100 | Per tenant/agent |
+| Session duration | 120s | 10-300s | Per tenant/agent |
+| Actions per minute | 30 | — | Per tenant/agent |
+
+When limits are reached, the session returns a `budget_exceeded` error and the agent is informed. Limits can be adjusted via the guardrail config API.
+
+## Advanced Guardrails
+
+Browser automation has additional safety controls beyond basic session limits:
+
+### No-Progress Detection
+
+If an agent performs multiple browser actions that produce no page-state change (same URL + same DOM), the guardrail system detects this and halts the run after 5 consecutive no-progress actions (configurable).
+
+This catches agents that are stuck clicking on non-interactive elements or performing actions that have no effect.
+
+### Action Rate Limiting
+
+Browser actions are rate-limited to 30 per minute by default. This prevents agents from performing extremely rapid-fire actions that could overwhelm target pages or create excessive load.
+
+### Browser Action Budget
+
+The overall browser action budget (default: 25 per run) is enforced by the core guardrail system. This is separate from the session-level limit and applies across all browser actions in a single run.
+
+## SSRF Protection
+
+All browser navigation passes through the same SSRF protection as `web_fetch`:
+
+- Private IP ranges blocked (10.x, 172.16-31.x, 192.168.x)
+- Localhost and loopback blocked
+- Cloud metadata endpoints blocked (169.254.169.254)
+- `.internal` and `.local` domains blocked
+- Only HTTPS URLs allowed
+
+## Cost Model
+
+Browser sessions consume resources beyond normal API token usage. The guardrail system enforces:
+
+- **Per-run spend budget** — Includes browser session costs in the overall run spend limit
+- **Session duration budget** — Maximum time a browser session can stay open (default: 2 minutes)
+- **Daily session quota** — Limits total sessions per tenant per day
+
+These controls ensure browser automation doesn't create unbounded cost amplification. See [Safety Guardrails](/docs/tools/guardrails) for details on configuring these limits.

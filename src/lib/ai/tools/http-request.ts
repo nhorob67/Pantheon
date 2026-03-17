@@ -53,9 +53,11 @@ export function createHttpRequestTool(
   return {
     http_request: tool({
       description:
-        "Make an HTTP request to an external API. Supports GET, POST, PUT, PATCH, DELETE. " +
+        "Make an authenticated HTTP request to an external API. Supports GET, POST, PUT, PATCH, DELETE. " +
         "To authenticate, first call use_credential to get a credential_handle, then pass it here. " +
         "The credential is injected server-side — you never see the raw secret. " +
+        "Use this for authenticated API calls. For open-web research, prefer web_search (discovery) " +
+        "and web_fetch (reading public pages) instead. " +
         "Requests to internal/private networks are blocked.",
       inputSchema: z.object({
         url: z.string().url().describe("The full URL to request"),

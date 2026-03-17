@@ -28,6 +28,10 @@ const TENANT_RUNTIME_RUN_SELECT = [
   "canceled_at",
   "lock_expires_at",
   "worker_id",
+  "parent_run_id",
+  "delegation_depth",
+  "deadline_at",
+  "delegation_kind",
   "metadata",
   "created_at",
   "updated_at",
@@ -153,6 +157,10 @@ function mapRuntimeRunRow(row: Record<string, unknown>): TenantRuntimeRun {
     lock_expires_at:
       typeof row.lock_expires_at === "string" ? row.lock_expires_at : null,
     worker_id: typeof row.worker_id === "string" ? row.worker_id : null,
+    parent_run_id: typeof row.parent_run_id === "string" ? row.parent_run_id : null,
+    delegation_depth: Number(row.delegation_depth || 0),
+    deadline_at: typeof row.deadline_at === "string" ? row.deadline_at : null,
+    delegation_kind: typeof row.delegation_kind === "string" ? row.delegation_kind : null,
     metadata: sanitizeObject(row.metadata),
     created_at: String(row.created_at || ""),
     updated_at: String(row.updated_at || ""),
@@ -469,6 +477,120 @@ export async function patchTenantRuntimeRunMetadata(
   return mapRuntimeRunRow(data as unknown as Record<string, unknown>);
 }
 
+export async function accountAsyncDelegationBudget(
+  admin: SupabaseClient,
+  input: {
+    parentRunId: string;
+    childRunId: string;
+    inputTokens: number;
+    outputTokens: number;
+    estimatedCostCents: number;
+  }
+): Promise<{
+  accounted: boolean;
+  already_accounted: boolean;
+  async_delegation_input_tokens?: number;
+  async_delegation_output_tokens?: number;
+  async_delegation_spend_cents?: number;
+}> {
+  const { data, error } = await admin.rpc("account_async_delegation_budget", {
+    p_parent_run_id: input.parentRunId,
+    p_child_run_id: input.childRunId,
+    p_input_tokens: input.inputTokens,
+    p_output_tokens: input.outputTokens,
+    p_estimated_cost_cents: input.estimatedCostCents,
+  });
+
+  if (error) {
+    throw new TenantRuntimeQueueError(
+      500,
+      safeErrorMessage(error, "Failed to account async delegation budget")
+    );
+  }
+
+  const payload =
+    typeof data === "object" && data !== null ? (data as Record<string, unknown>) : {};
+
+  return {
+    accounted: payload.accounted === true,
+    already_accounted: payload.already_accounted === true,
+    async_delegation_input_tokens:
+      typeof payload.async_delegation_input_tokens === "number"
+        ? payload.async_delegation_input_tokens
+        : undefined,
+    async_delegation_output_tokens:
+      typeof payload.async_delegation_output_tokens === "number"
+        ? payload.async_delegation_output_tokens
+        : undefined,
+    async_delegation_spend_cents:
+      typeof payload.async_delegation_spend_cents === "number"
+        ? payload.async_delegation_spend_cents
+        : undefined,
+  };
+}
+
+export async function reserveAsyncDelegationBudget(
+  admin: SupabaseClient,
+  input: {
+    parentRunId: string;
+    childRunId: string;
+    maxTotalCostCents: number;
+    reservedCostCents: number;
+  }
+): Promise<{ reserved_cents: number; already_reserved: boolean }> {
+  const { data, error } = await admin.rpc("reserve_async_delegation_budget", {
+    p_parent_run_id: input.parentRunId,
+    p_child_run_id: input.childRunId,
+    p_max_total_cost_cents: input.maxTotalCostCents,
+    p_reserved_cost_cents: input.reservedCostCents,
+  });
+
+  if (error) {
+    throw new TenantRuntimeQueueError(
+      500,
+      safeErrorMessage(error, "Failed to reserve async delegation budget")
+    );
+  }
+
+  const payload =
+    typeof data === "object" && data !== null ? (data as Record<string, unknown>) : {};
+
+  return {
+    reserved_cents:
+      typeof payload.reserved_cents === "number" ? payload.reserved_cents : 0,
+    already_reserved: payload.already_reserved === true,
+  };
+}
+
+export async function releaseAsyncDelegationBudgetReservation(
+  admin: SupabaseClient,
+  input: {
+    parentRunId: string;
+    childRunId: string;
+  }
+): Promise<{ released: boolean; released_cents: number }> {
+  const { data, error } = await admin.rpc("release_async_delegation_budget_reservation", {
+    p_parent_run_id: input.parentRunId,
+    p_child_run_id: input.childRunId,
+  });
+
+  if (error) {
+    throw new TenantRuntimeQueueError(
+      500,
+      safeErrorMessage(error, "Failed to release async delegation budget reservation")
+    );
+  }
+
+  const payload =
+    typeof data === "object" && data !== null ? (data as Record<string, unknown>) : {};
+
+  return {
+    released: payload.released === true,
+    released_cents:
+      typeof payload.released_cents === "number" ? payload.released_cents : 0,
+  };
+}
+
 export async function transitionTenantRuntimeRun(
   admin: SupabaseClient,
   run: TenantRuntimeRun,
@@ -544,4 +666,112 @@ export async function transitionTenantRuntimeRun(
   }
 
   return mapRuntimeRunRow(data as unknown as Record<string, unknown>);
+}
+
+// ---------------------------------------------------------------------------
+// Async Delegation Helpers
+// ---------------------------------------------------------------------------
+
+export interface EnqueueAsyncDelegationRunInput {
+  tenantId: string;
+  customerId: string;
+  parentRunId: string;
+  delegationDepth: number;
+  deadlineAt: string;
+  requestTraceId?: string | null;
+  payload: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
+}
+
+export async function enqueueAsyncDelegationRun(
+  admin: SupabaseClient,
+  input: EnqueueAsyncDelegationRunInput
+): Promise<TenantRuntimeRun> {
+  const { data, error } = await admin
+    .from("tenant_runtime_runs")
+    .insert({
+      tenant_id: input.tenantId,
+      customer_id: input.customerId,
+      run_kind: "delegation_runtime",
+      source: "system",
+      status: "queued",
+      request_trace_id: input.requestTraceId ?? null,
+      parent_run_id: input.parentRunId,
+      delegation_depth: input.delegationDepth,
+      deadline_at: input.deadlineAt,
+      delegation_kind: "async",
+      payload: input.payload,
+      metadata: {
+        ...(input.metadata || {}),
+        delegation: true,
+        async: true,
+      },
+      queued_at: new Date().toISOString(),
+    })
+    .select(TENANT_RUNTIME_RUN_SELECT)
+    .single();
+
+  if (error || !data) {
+    throw new TenantRuntimeQueueError(
+      500,
+      safeErrorMessage(error, "Failed to enqueue async delegation run")
+    );
+  }
+
+  return mapRuntimeRunRow(data as unknown as Record<string, unknown>);
+}
+
+export async function listChildRunsByParent(
+  admin: SupabaseClient,
+  parentRunId: string,
+  statuses?: TenantRuntimeRunStatus[]
+): Promise<TenantRuntimeRun[]> {
+  let query = admin
+    .from("tenant_runtime_runs")
+    .select(TENANT_RUNTIME_RUN_SELECT)
+    .eq("parent_run_id", parentRunId)
+    .order("created_at", { ascending: true })
+    .limit(50);
+
+  if (statuses && statuses.length > 0) {
+    query = query.in("status", statuses);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    throw new TenantRuntimeQueueError(
+      500,
+      safeErrorMessage(error, "Failed to list child runs")
+    );
+  }
+
+  return ((data || []) as unknown as Record<string, unknown>[]).map(mapRuntimeRunRow);
+}
+
+export async function cancelDelegationTree(
+  admin: SupabaseClient,
+  parentRunId: string
+): Promise<number> {
+  const cancelableStatuses: TenantRuntimeRunStatus[] = ["queued", "running", "awaiting_approval"];
+  const children = await listChildRunsByParent(admin, parentRunId, cancelableStatuses);
+
+  let canceledCount = 0;
+  for (const child of children) {
+    try {
+      await transitionTenantRuntimeRun(admin, child, "cancel");
+      if (child.parent_run_id) {
+        await releaseAsyncDelegationBudgetReservation(admin, {
+          parentRunId: child.parent_run_id,
+          childRunId: child.id,
+        }).catch(() => {});
+      }
+      canceledCount++;
+      // Recursively cancel grandchildren
+      canceledCount += await cancelDelegationTree(admin, child.id);
+    } catch {
+      // Best-effort: child may have already transitioned
+    }
+  }
+
+  return canceledCount;
 }

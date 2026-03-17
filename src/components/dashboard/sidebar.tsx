@@ -19,6 +19,7 @@ import {
   BookOpen,
   MessageSquare,
   Settings,
+  Shield,
   type LucideIcon,
 } from "lucide-react";
 import { useHelp } from "./help-provider";
@@ -50,6 +51,7 @@ const settingsIconsByHref: Record<string, LucideIcon> = {
   "/settings/extensions": Puzzle,
   "/settings/memory": Brain,
   "/settings/mcp-servers": Wrench,
+  "/settings/tool-catalog": Shield,
   "/settings/secrets": KeyRound,
   "/settings/ai-model": Settings,
   "/settings/billing": CreditCard,

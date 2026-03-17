@@ -46,9 +46,12 @@ When adding a custom server, you will need to provide:
 |---|---|---|
 | `server_key` | Unique lowercase identifier (letters, numbers, hyphens) | `my-custom-server` |
 | `display_name` | Human-readable label shown in the dashboard | `My Custom Server` |
-| `command` | The executable to run | `npx` |
-| `args` | Arguments passed to the command (space-separated) | `-y @my-org/my-mcp-server /data` |
-| `env_vars` | Optional environment variables for the server process | `{"API_KEY": "..."}` |
+| `transport` | Connection method: **stdio** (local process) or **SSE** (remote HTTP) | `stdio` |
+| `command` | (stdio only) The executable to run | `npx` |
+| `args` | (stdio only) Arguments passed to the command (space-separated) | `-y @my-org/my-mcp-server /data` |
+| `env_vars` | (stdio only) Environment variables for the server process | `API_KEY=...` |
+| `url` | (SSE only) The SSE endpoint URL for the remote server | `https://mcp.example.com/sse` |
+| `headers` | (SSE only) Custom HTTP headers for authentication | `Authorization: Bearer ...` |
 | `scope` | `instance` (all agents) or `agent` (specific agent only) | `instance` |
 | `enabled` | Whether the server is active | `true` |
 
@@ -56,13 +59,93 @@ When adding a custom server, you will need to provide:
 The `server_key` cannot be changed after creation. If you need a different key, delete the server and create a new one.
 </Callout>
 
+## Transport types
+
+Pantheon supports two transport types for connecting to MCP servers:
+
+- **stdio (local process)** -- Runs the MCP server as a local process on the runtime host. You provide a command and arguments. Best for community MCP servers distributed as npm packages (e.g., `npx -y @modelcontextprotocol/server-filesystem`).
+- **SSE (remote HTTP)** -- Connects to a remote MCP server over Server-Sent Events. You provide a URL and optional authentication headers. Best for self-hosted or third-party MCP servers accessible over the network.
+
 ## Scoping
 
 MCP servers are defined at the workspace level by default, meaning every agent in a multi-agent setup can use them. You can also scope a server to a specific agent if you want to restrict access.
 
 Each server is identified by a unique `server_key`. The key is used internally to reference the server in the agent's configuration.
 
+## Health monitoring
+
+Pantheon monitors the health of your MCP servers and shows their status on the server card:
+
+- **Healthy** -- Connected and responding normally.
+- **Degraded** -- Responding but with errors or slowness.
+- **Unhealthy** -- Failing to respond to health checks.
+- **Unreachable** -- Cannot establish a connection.
+
+If a server becomes unavailable, your agent will continue without its tools rather than failing entirely. You can check the last error message on the server card for diagnostics.
+
+## How tool discovery works
+
+When you add or enable an MCP server, tools are not immediately available. Here is how the lifecycle works:
+
+1. **Server saved** — The server configuration is stored in the database.
+2. **Runtime connection** — On the next agent conversation, the runtime connects to the MCP server and discovers its available tools.
+3. **Tool registration** — Discovered tools are registered in the Tool Catalog and become available to the agent.
+4. **Caching** — Discovered tools are cached for approximately 10 minutes. After the cache expires, the next conversation triggers a fresh discovery.
+
+Tools are available on the next agent conversation after the server connects and discovers tools — not immediately after saving. If a server is unreachable, the agent continues without its tools rather than failing.
+
+<Callout variant="info" title="Check the Tool Catalog">
+After your first conversation with a new MCP server enabled, check **Settings > Tool Catalog** to verify that tools were discovered. MCP tools appear with their server name prefix.
+</Callout>
+
+## Runtime Execution
+
+When an agent calls an MCP tool during a conversation, the following happens:
+
+1. **Connection check** — The runtime checks if a connection to the server already exists in the connection pool. If not, it establishes one.
+2. **Tool execution** — The tool call is sent to the MCP server with a 30-second timeout.
+3. **Result parsing** — The server's response is parsed. JSON responses are parsed into structured data; non-JSON responses are returned as raw text.
+4. **Policy enforcement** — MCP tool invocations go through the same unified policy pipeline as native tools (approval gating, audit logging, guardrail checks).
+5. **Trace recording** — The invocation is recorded in the conversation trace with input/output summaries.
+
+### Connection Pool
+
+The runtime maintains a connection pool to avoid re-connecting on every tool call:
+
+- Connections are reused across tool calls within the same conversation
+- Idle connections are cleaned up after 5 minutes
+- If a connection becomes stale, the runtime automatically reconnects on the next tool call
+
+### Error Handling
+
+MCP tools handle errors gracefully:
+
+- **Server unreachable:** Tools from that server are excluded from the agent's available set. The agent continues with native tools.
+- **Tool execution error:** The error message is returned to the agent, which can retry or use an alternative approach.
+- **Timeout:** If a tool call takes longer than 30 seconds, a timeout error is returned. The server's health status is downgraded to "degraded."
+- **Invalid response:** Non-parseable responses fall back to raw text. The agent receives the text and can interpret it.
+
+### Guardrails
+
+MCP tool invocations are subject to all standard guardrails:
+
+- Loop detection (identical call patterns)
+- Budget enforcement (invocation count, tokens, spend)
+- Ping-pong detection (alternating between MCP and native tools)
+- Per-run rate limits
+
+### Troubleshooting
+
+If MCP tools aren't working:
+
+1. Check the server's health status on the MCP Servers settings page
+2. Verify the server key and transport configuration
+3. Check the Tool Catalog — discovered tools should appear with the server name prefix
+4. Look at the conversation trace for error messages in tool invocation records
+5. Check the guardrail events dashboard for any halt events related to MCP tools
+
 ## What's next
 
+- [Quickstart](/docs/mcp-servers/quickstart) -- Set up your first MCP server
 - [Filesystem Server](/docs/mcp-servers/filesystem) -- Example: read and write files in a workspace directory
 - [Extensions](/docs/extensions) -- Add more capabilities through the extension marketplace

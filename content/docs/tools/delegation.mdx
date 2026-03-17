@@ -1,0 +1,66 @@
+---
+title: Agent Delegation
+description: How agents delegate tasks to other agents on your team for parallel and specialized work.
+---
+
+# Agent Delegation
+
+Delegation lets agents hand off tasks to other agents on your team. A research agent can delegate a data lookup to a specialist, or a manager agent can fan out work to multiple workers.
+
+## How It Works
+
+### Sync Delegation
+
+The parent agent calls `delegate_task` with a target agent and task description. The child agent executes the task and returns the result directly to the parent.
+
+```
+Parent Agent → delegate_task(agentId, task) → Child Agent executes → Result returned to Parent
+```
+
+The parent waits for the child to complete before continuing.
+
+### Async Delegation
+
+The parent agent calls `delegate_task_async` to queue a task for background execution. The parent continues its own work and can poll for results later.
+
+```
+Parent → delegate_task_async(agentId, task, deadline) → Delegation ID returned
+Parent → delegation_poll([delegationId]) → Status + result when complete
+Parent → delegation_cancel(delegationId) → Cancel if no longer needed
+```
+
+Async delegations have a configurable deadline (1-30 minutes, default 5). Expired delegations are automatically canceled on the next poll.
+
+## Safety Controls
+
+### Depth Limits
+
+Delegation chains are capped at 3 levels by default. Agent A can delegate to Agent B, who can delegate to Agent C, but C cannot delegate further. This prevents unbounded nesting.
+
+### Recursion Detection
+
+Circular delegation chains (A → B → A) are detected by the guardrail system and immediately halted. This applies to indirect cycles too (A → B → C → A).
+
+### Fan-Out Limits
+
+Async delegation limits the number of concurrent child tasks per parent (default: 3). This prevents a single agent from spawning unbounded parallel work.
+
+### Permission Narrowing
+
+Child agents only have access to tools that the parent agent also has access to. Core tools (memory, schedules, self-config) always pass through. This ensures delegation doesn't escalate permissions.
+
+### Budget Inheritance
+
+Child runs receive a reduced budget based on what the parent has already consumed. If the parent used 50% of its token budget, the child gets at most the remaining 50%. Child token usage is deducted from the parent's guardrail budget.
+
+## Enabling Delegation
+
+1. Set `can_delegate: true` on the parent agent
+2. Set `can_receive_delegation: true` on target agents
+3. Enable the `tools.delegation_sync` feature flag (and `tools.delegation_async` for async)
+
+## Debugging Delegation
+
+- **Run Inspector**: The delegation tree section shows the full parent → child hierarchy with status, latency, and error messages
+- **Conversation Traces**: Delegation events are recorded with parent/child agent names, task descriptions, and token usage
+- **Guardrail Events**: Recursion and depth limit violations appear in the guardrail events dashboard

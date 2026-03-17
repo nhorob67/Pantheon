@@ -14,6 +14,9 @@ import {
 } from "./tenant-runtime-query-tools";
 import { evaluateTenantToolPolicy } from "./tenant-runtime-policy";
 import { executeRuntimeSafeTool } from "./tenant-runtime-safe-tools";
+import { createUnifiedToolExecutor } from "./unified-tool-executor";
+import { loadGuardrailConfig, loadMiddlewareRateLimits } from "./guardrail-config-loader";
+import { createDefaultGuardrailPipeline } from "./guardrail-middleware";
 
 interface ToolRequest {
   toolKey: string;
@@ -39,6 +42,10 @@ export interface TenantToolInvocationOutcome {
   errorMessage?: string;
 }
 
+/**
+ * @deprecated Only remaining caller is `credentials.ts` (intentional defense-in-depth
+ * for break-glass secret reveals). All other external tools should use the unified executor.
+ */
 export async function executeTenantExternalToolInvocation(
   admin: SupabaseClient,
   input: {
@@ -537,6 +544,14 @@ export async function resumeTenantToolInvocationWithToken(
   }
 }
 
+/**
+ * Execute an operator/runtime-triggered tool invocation through the unified executor.
+ *
+ * This function creates a unified executor instance and calls `executeDirect`,
+ * then handles operator-specific concerns (approval enqueue, continuation tokens,
+ * audit logging). The unified executor handles policy evaluation, guardrails,
+ * and invocation recording — the same pipeline used by the AI workers.
+ */
 export async function executeTenantToolInvocation(
   admin: SupabaseClient,
   input: {
@@ -546,33 +561,43 @@ export async function executeTenantToolInvocation(
     actorId: string | null;
   }
 ): Promise<TenantToolInvocationOutcome> {
-  const policy = await evaluateTenantToolPolicy(admin, {
+  const [guardrailConfig, middlewareRateLimits] = await Promise.all([
+    loadGuardrailConfig(admin, input.run.tenant_id, null),
+    loadMiddlewareRateLimits(admin, input.run.tenant_id, null),
+  ]);
+  const middlewarePipeline = createDefaultGuardrailPipeline(middlewareRateLimits);
+  const executor = createUnifiedToolExecutor({
+    admin,
     tenantId: input.run.tenant_id,
     customerId: input.run.customer_id,
-    toolKey: input.toolRequest.toolKey,
+    agentId: null,
+    run: input.run,
     actorRole: input.actorRole,
+    actorId: input.actorId,
+    workerKind: "discord_runtime",
+    enforcePolicy: true,
+    guardrailConfig,
+    middlewarePipeline,
   });
 
-  const requestPayload = {
-    args: input.toolRequest.args,
-    actor_role: input.actorRole,
-    actor_id: input.actorId,
-  };
+  const directResult = await executor.executeDirect(
+    input.toolRequest.toolKey,
+    input.toolRequest.args,
+    async (args) => {
+      const executed = await executeToolWithCircuitBreaker(
+        admin,
+        input.run,
+        input.toolRequest.toolKey,
+        args
+      );
+      return executed.output;
+    },
+    { persistApprovalInvocation: false }
+  );
 
-  if (policy.decision === "denied") {
-    await insertToolInvocation(admin, {
-      run: input.run,
-      toolId: policy.toolId,
-      toolKey: input.toolRequest.toolKey,
-      policyDecision: "denied",
-      status: "rejected",
-      requestPayload,
-      resultPayload: {
-        reason: policy.reason,
-      },
-      errorMessage: "Tool invocation denied by policy",
-    });
+  // ----- Map unified executor result to operator-facing outcome -----
 
+  if (directResult.outcome === "denied") {
     auditLog({
       action: "tenant.tool.invocation.denied",
       actor: input.actorId || "runtime",
@@ -580,7 +605,7 @@ export async function executeTenantToolInvocation(
       resource_id: `${input.run.tenant_id}:${input.toolRequest.toolKey}`,
       details: {
         run_id: input.run.id,
-        reason: policy.reason,
+        reason: directResult.policyReason,
       },
     });
 
@@ -590,35 +615,43 @@ export async function executeTenantToolInvocation(
       result: {
         tool_key: input.toolRequest.toolKey,
         policy_decision: "denied",
-        reason: policy.reason,
+        reason: directResult.policyReason,
       },
     };
   }
 
-  if (policy.decision === "requires_approval") {
+  if (directResult.outcome === "requires_approval") {
+    // Operator path: enqueue a real approval record for human review
     const continuationToken = randomUUID();
     const invocation = await insertToolInvocation(admin, {
       run: input.run,
-      toolId: policy.toolId,
+      toolId: directResult.toolId,
       toolKey: input.toolRequest.toolKey,
       policyDecision: "requires_approval",
       status: "pending",
-      requestPayload,
-      resultPayload: {
-        reason: policy.reason,
+      requestPayload: {
+        args: input.toolRequest.args,
+        actor_role: input.actorRole,
+        actor_id: input.actorId,
       },
+      resultPayload: { reason: directResult.policyReason },
       continuationToken,
     });
 
     const approval = await enqueueApproval(admin, {
       run: input.run,
-      toolId: policy.toolId,
+      toolId: directResult.toolId,
       toolKey: input.toolRequest.toolKey,
-      requiredRole: policy.requiredRole,
-      requestPayload,
+      requiredRole: directResult.requiredRole ?? "admin",
+      requestPayload: {
+        args: input.toolRequest.args,
+        actor_role: input.actorRole,
+        actor_id: input.actorId,
+      },
       invocationId: invocation.id,
       continuationToken: invocation.continuation_token,
     });
+    await executor.flush({ skipInvocationRecords: true });
 
     auditLog({
       action: "tenant.tool.invocation.approval_requested",
@@ -628,7 +661,7 @@ export async function executeTenantToolInvocation(
       details: {
         run_id: input.run.id,
         tool_key: input.toolRequest.toolKey,
-        required_role: policy.requiredRole,
+        required_role: directResult.requiredRole,
       },
     });
 
@@ -647,40 +680,25 @@ export async function executeTenantToolInvocation(
     };
   }
 
-  const invocation = await insertToolInvocation(admin, {
-    run: input.run,
-    toolId: policy.toolId,
-    toolKey: input.toolRequest.toolKey,
-    policyDecision: "allowed",
-    status: "approved",
-    requestPayload,
-  });
+  if (directResult.outcome === "guardrail_halt") {
+    return {
+      outcome: "failed",
+      errorMessage: (directResult.result as Record<string, unknown>).message as string
+        || "Run halted by guardrail",
+      result: {
+        tool_key: input.toolRequest.toolKey,
+        policy_decision: directResult.policyDecision,
+        ...directResult.result,
+      },
+    };
+  }
 
-  try {
-    const executed = await executeToolWithCircuitBreaker(
-      admin,
-      input.run,
-      input.toolRequest.toolKey,
-      input.toolRequest.args
-    );
-    const { error: updateError } = await admin
-      .from("tenant_tool_invocations")
-      .update({
-        status: "completed",
-        result_payload: executed.output,
-        completed_at: new Date().toISOString(),
-      })
-      .eq("id", invocation.id);
-
-    if (updateError) {
-      throw new Error(safeErrorMessage(updateError, "Failed to update tool invocation"));
-    }
-
+  if (directResult.outcome === "completed") {
     auditLog({
       action: "tenant.tool.invocation.completed",
       actor: input.actorId || "runtime",
       resource_type: "tenant_tool_invocation",
-      resource_id: invocation.id,
+      resource_id: input.run.id,
       details: {
         run_id: input.run.id,
         tool_key: input.toolRequest.toolKey,
@@ -691,44 +709,30 @@ export async function executeTenantToolInvocation(
       outcome: "completed",
       result: {
         tool_key: input.toolRequest.toolKey,
-        invocation_id: invocation.id,
-        policy_decision: "allowed",
-        tool_output: executed.output,
-      },
-    };
-  } catch (error) {
-    const { error: updateError } = await admin
-      .from("tenant_tool_invocations")
-      .update({
-        status: "failed",
-        error_message: safeErrorMessage(error, "Tool execution failed"),
-        completed_at: new Date().toISOString(),
-      })
-      .eq("id", invocation.id);
-
-    if (updateError) {
-      throw new Error(safeErrorMessage(updateError, "Failed to record tool failure"));
-    }
-
-    auditLog({
-      action: "tenant.tool.invocation.failed",
-      actor: input.actorId || "runtime",
-      resource_type: "tenant_tool_invocation",
-      resource_id: invocation.id,
-      details: {
-        run_id: input.run.id,
-        tool_key: input.toolRequest.toolKey,
-      },
-    });
-
-    return {
-      outcome: "failed",
-      errorMessage: safeErrorMessage(error, "Tool execution failed"),
-      result: {
-        tool_key: input.toolRequest.toolKey,
-        invocation_id: invocation.id,
-        policy_decision: "allowed",
+        policy_decision: directResult.policyDecision,
+        tool_output: directResult.result,
       },
     };
   }
+
+  // Failed
+  auditLog({
+    action: "tenant.tool.invocation.failed",
+    actor: input.actorId || "runtime",
+    resource_type: "tenant_tool_invocation",
+    resource_id: input.run.id,
+    details: {
+      run_id: input.run.id,
+      tool_key: input.toolRequest.toolKey,
+    },
+  });
+
+  return {
+    outcome: "failed",
+    errorMessage: directResult.errorMessage || "Tool execution failed",
+    result: {
+      tool_key: input.toolRequest.toolKey,
+      policy_decision: directResult.policyDecision,
+    },
+  };
 }

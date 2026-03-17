@@ -6,6 +6,7 @@ import {
   resolveCustomSkillsForAgent,
   formatCustomSkillsForPrompt,
 } from "./custom-skill-resolver";
+import { sanitizeOrFilterValue } from "@/lib/security/postgrest-sanitize";
 
 interface TeamProfileRow {
   team_name: string;
@@ -43,7 +44,7 @@ export async function buildSystemPrompt(
     admin
       .from("knowledge_files")
       .select("display_name")
-      .or(`agent_id.eq.${agent.id},agent_id.is.null`)
+      .or(`agent_id.eq.${sanitizeOrFilterValue(agent.id)},agent_id.is.null`)
       .eq("customer_id", agent.customer_id),
   ]);
 

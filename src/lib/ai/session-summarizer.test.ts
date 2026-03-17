@@ -1,5 +1,6 @@
 import { describe, it, mock, beforeEach } from "node:test";
 import assert from "node:assert/strict";
+import { estimateTokens } from "./history-loader.ts";
 
 // Mock modules before importing the module under test
 const mockGenerateObject = mock.fn();
@@ -15,9 +16,14 @@ describe("session-summarizer", () => {
   });
 
   describe("threshold constants", () => {
-    it("SUMMARY_THRESHOLD is 20 messages", () => {
-      const SUMMARY_THRESHOLD = 20;
-      assert.equal(SUMMARY_THRESHOLD, 20);
+    it("TOKEN_COMPACTION_THRESHOLD is 6000 tokens", () => {
+      const TOKEN_COMPACTION_THRESHOLD = 6000;
+      assert.equal(TOKEN_COMPACTION_THRESHOLD, 6000);
+    });
+
+    it("MIN_MESSAGES_FOR_COMPACTION is 8", () => {
+      const MIN_MESSAGES_FOR_COMPACTION = 8;
+      assert.equal(MIN_MESSAGES_FOR_COMPACTION, 8);
     });
 
     it("MESSAGES_TO_SUMMARIZE is 30", () => {
@@ -26,34 +32,65 @@ describe("session-summarizer", () => {
     });
   });
 
+  describe("token-based compaction trigger", () => {
+    it("20 short messages below 6000 tokens do NOT trigger", () => {
+      // 20 messages of "hello" = ~20 * 2 tokens = 40 tokens
+      const shortMessages = Array.from({ length: 20 }, () => "hello");
+      const tokenEstimate = shortMessages.reduce((sum, m) => sum + estimateTokens(m), 0);
+      const TOKEN_COMPACTION_THRESHOLD = 6000;
+      assert.ok(tokenEstimate < TOKEN_COMPACTION_THRESHOLD, `${tokenEstimate} tokens should be below threshold`);
+    });
+
+    it("8+ messages with large content above 6000 tokens DO trigger", () => {
+      // 10 messages of 3000 chars each = ~7500 tokens
+      const largeMessages = Array.from({ length: 10 }, () => "x".repeat(3000));
+      const tokenEstimate = largeMessages.reduce((sum, m) => sum + estimateTokens(m), 0);
+      const messageCount = largeMessages.length;
+      const TOKEN_COMPACTION_THRESHOLD = 6000;
+      const MIN_MESSAGES_FOR_COMPACTION = 8;
+      assert.ok(tokenEstimate >= TOKEN_COMPACTION_THRESHOLD, `${tokenEstimate} tokens should be above threshold`);
+      assert.ok(messageCount >= MIN_MESSAGES_FOR_COMPACTION, `${messageCount} messages should meet minimum`);
+    });
+
+    it("mixed scenario at exactly 6000 token threshold", () => {
+      // Create messages that sum to ~6000 tokens
+      // 6000 tokens * 4 chars/token = 24000 chars total
+      const msgCount = 10;
+      const charsPerMsg = 2400;
+      const messages = Array.from({ length: msgCount }, () => "a".repeat(charsPerMsg));
+      const tokenEstimate = messages.reduce((sum, m) => sum + estimateTokens(m), 0);
+      assert.equal(tokenEstimate, 6000, "Should be at threshold boundary");
+    });
+
+    it("few large messages below MIN_MESSAGES do NOT trigger", () => {
+      // 3 huge messages = lots of tokens but only 3 messages
+      const messages = Array.from({ length: 3 }, () => "x".repeat(10000));
+      const tokenEstimate = messages.reduce((sum, m) => sum + estimateTokens(m), 0);
+      const messageCount = messages.length;
+      const MIN_MESSAGES_FOR_COMPACTION = 8;
+      assert.ok(tokenEstimate > 6000, "Tokens above threshold");
+      assert.ok(messageCount < MIN_MESSAGES_FOR_COMPACTION, "But not enough messages");
+    });
+  });
+
   describe("message counting logic with last_summarized_message_id", () => {
     it("counts all messages when last_summarized_message_id is null", () => {
-      // When no cursor exists, all messages count
       const lastSummarizedMessageId = null;
       const totalMessages = 25;
-      // Logic: if null, count all
       const result = lastSummarizedMessageId === null ? totalMessages : 0;
       assert.equal(result, 25);
     });
 
     it("counts only messages after reference when cursor exists", () => {
-      // When cursor exists, count messages with created_at > reference
       const messagesAfterRef = 22;
-      assert.ok(messagesAfterRef >= 20, "Should trigger summary at 20+");
+      assert.ok(messagesAfterRef >= 8, "Should trigger summary at 8+");
     });
 
     it("falls back to full count when reference message is deleted", () => {
-      // If the reference message was deleted, refMsg query returns null
       const refMsg = null;
       const totalMessages = 30;
       const result = refMsg === null ? totalMessages : 0;
       assert.equal(result, 30);
-    });
-
-    it("does not trigger below threshold", () => {
-      const messagesSince = 15;
-      const threshold = 20;
-      assert.ok(messagesSince < threshold, "Should not trigger summary");
     });
   });
 

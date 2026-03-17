@@ -1,0 +1,142 @@
+---
+title: Safety Guardrails
+description: How Pantheon protects your agents from runaway behavior, excessive costs, and unsafe patterns.
+---
+
+# Safety Guardrails
+
+Pantheon includes built-in safety guardrails that monitor every agent run in real time. These guardrails detect problematic patterns, enforce budgets, and halt runs before they cause damage — without requiring any configuration.
+
+## What's Monitored
+
+Every tool invocation during an agent run is checked against multiple guardrail layers:
+
+### Loop Detection
+
+Agents can get stuck calling the same tool repeatedly with identical arguments. Pantheon detects this pattern and intervenes:
+
+- **Warning** at 3 identical calls (configurable)
+- **Halt** at 5 identical calls (configurable)
+
+The system also detects **no-progress patterns** — when a tool returns the same result repeatedly, even if the arguments vary slightly.
+
+### Ping-Pong Detection
+
+When two tools alternate back and forth (A → B → A → B), it usually indicates the agent is stuck in an unproductive loop. Pantheon detects this alternation pattern and halts after 4 full cycles by default.
+
+### Delegation Recursion
+
+When agents delegate tasks to each other, Pantheon tracks the delegation chain to prevent circular patterns like A → B → A. It also enforces a maximum delegation depth (default: 5 levels) to prevent unbounded nesting.
+
+### Budget Enforcement
+
+Every run has hard limits that prevent excessive resource consumption:
+
+| Budget | Default | What It Prevents |
+|--------|---------|-----------------|
+| Tool invocations | 50 per run | Unbounded tool loops |
+| Elapsed time | 5 minutes | Stuck or slow runs |
+| Token usage | 200,000 tokens | Excessive LLM costs |
+| Spend | $5.00 per run | Cost overruns |
+| Browser actions | 25 per run | Browser automation abuse |
+| Browser session | 2 minutes | Long-running sessions |
+
+### Per-Capability Rate Limits
+
+Certain tools have additional rate limits to prevent abuse:
+
+- **web_fetch**: 20 calls per run
+- **Delegation fan-out**: 3 concurrent child tasks
+- **Browser actions**: 30 per minute
+
+### Prompt Injection Scanning
+
+When agents fetch content from the web, the results are automatically scanned for prompt injection patterns:
+
+- "Ignore previous instructions" variations
+- Role tag markup (`<system>`, `<assistant>`)
+- Instruction override attempts
+
+Suspicious content generates a warning in the run trace (the tool result is still returned to the agent — we warn rather than block to avoid false positives).
+
+## What Happens When a Guardrail Fires
+
+1. **Warning events** are logged but don't stop the run. The agent continues working normally.
+2. **Halt events** stop the run immediately. The agent receives a message explaining why the run was halted, and no further tool calls are allowed.
+
+All guardrail events are:
+- Recorded in the conversation trace
+- Persisted to the guardrail events table
+- Visible in the admin observability dashboard
+
+## Configuring Guardrails
+
+### Per-Tenant Overrides
+
+Admins can adjust guardrail thresholds for a specific workspace. This is useful when a workspace legitimately needs higher limits (e.g., a research agent that makes many web fetches).
+
+Overrides are set via the admin API:
+
+```
+POST /api/admin/guardrail-configs
+{
+  "tenant_id": "...",
+  "customer_id": "...",
+  "max_tool_invocations": 100,
+  "max_spend_cents": 1000,
+  "ping_pong_threshold": 6
+}
+```
+
+### Per-Agent Overrides
+
+You can also set overrides for a specific agent within a workspace. Agent-level overrides take priority over workspace-level settings.
+
+```
+POST /api/admin/guardrail-configs
+{
+  "tenant_id": "...",
+  "customer_id": "...",
+  "agent_id": "...",
+  "max_browser_actions": 50,
+  "browser_no_progress_threshold": 8
+}
+```
+
+### Adaptive Thresholds
+
+Some tools legitimately retry operations (e.g., `http_request` polling an API). You can mark these tools as retry-safe, which doubles their loop detection thresholds:
+
+```
+POST /api/admin/guardrail-configs
+{
+  "tenant_id": "...",
+  "customer_id": "...",
+  "retry_allowed_tools": ["http_request"]
+}
+```
+
+## Viewing Guardrail Events
+
+### Admin Dashboard
+
+Navigate to **Admin → Observability → Guardrails** to see:
+
+- Total events, halts, and warnings in the last 24 hours
+- Event breakdown by type (loop, budget, ping-pong, etc.)
+- Top tenants triggering halts
+- Trigger frequency over the last 7 days
+- Estimated cost savings from prevented runaway runs
+- False-positive rate estimate
+
+### Run Inspector
+
+When viewing an individual run in **Admin → Observability → Runs**, the guardrail events section shows every event that fired during that run, including thresholds and actual values.
+
+### Operator Controls
+
+From the run inspector, operators can:
+
+- **Terminate** a running or queued run
+- **Replay** a failed run with the same payload
+- **Resume** a halted run by re-enqueuing it

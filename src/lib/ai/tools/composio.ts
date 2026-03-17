@@ -1,8 +1,6 @@
 import { tool, type ToolSet } from "ai";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { TenantRole, TenantRuntimeRun } from "@/types/tenant-runtime";
 import { getComposioToolsForAgent } from "@/lib/composio/sdk-client";
-import { executeTenantExternalToolInvocation } from "@/lib/runtime/tenant-runtime-tools";
 
 interface CreateComposioToolsInput {
   admin: SupabaseClient;
@@ -10,9 +8,6 @@ interface CreateComposioToolsInput {
   customerId: string;
   composioUserId: string;
   toolkitIds: string[];
-  runtimeRun: TenantRuntimeRun;
-  actorRole: TenantRole;
-  actorId: string | null;
 }
 
 interface TenantToolRow {
@@ -29,6 +24,8 @@ interface ComposioCatalogEntry {
   tenantToolKey: string;
   description: string | undefined;
 }
+
+import type { TenantRole } from "@/types/tenant-runtime";
 
 const ALL_TENANT_ROLES: TenantRole[] = ["owner", "admin", "operator", "viewer"];
 
@@ -48,18 +45,6 @@ function toCatalogEntry(composioToolName: string, toolDef: ToolSet[string]): Com
     tenantToolKey: toTenantToolKey(composioToolName),
     description: toolDef.description,
   };
-}
-
-function normalizeToolOutput(value: unknown): Record<string, unknown> {
-  if (typeof value === "object" && value !== null && !Array.isArray(value)) {
-    return value as Record<string, unknown>;
-  }
-
-  if (value === undefined) {
-    return { ok: true };
-  }
-
-  return { result: value };
 }
 
 async function ensureComposioTenantToolCatalog(
@@ -169,11 +154,23 @@ async function ensureComposioTenantToolCatalog(
   }
 }
 
+/**
+ * Build a mapping from Composio model-facing tool names to their policy keys.
+ * e.g. `GITHUB_CREATE_ISSUE` -> `composio.github_create_issue`
+ */
+export function buildComposioToolKeyMap(rawTools: ToolSet): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const composioToolName of Object.keys(rawTools)) {
+    map.set(composioToolName, toTenantToolKey(composioToolName));
+  }
+  return map;
+}
+
 export async function createComposioTools(
   input: CreateComposioToolsInput
-): Promise<ToolSet> {
+): Promise<{ tools: ToolSet; keyMap: Map<string, string> }> {
   if (input.toolkitIds.length === 0) {
-    return {};
+    return { tools: {}, keyMap: new Map() };
   }
 
   const rawTools = await getComposioToolsForAgent(
@@ -191,52 +188,24 @@ export async function createComposioTools(
     catalog
   );
 
-  const wrappedTools: ToolSet = {};
+  const keyMap = buildComposioToolKeyMap(rawTools);
 
+  // Return raw tools — the unified executor handles policy, guardrails, and telemetry
+  const tools: ToolSet = {};
   for (const [composioToolName, rawTool] of Object.entries(rawTools)) {
-    const tenantToolKey = toTenantToolKey(composioToolName);
-
-    wrappedTools[composioToolName] = tool({
+    tools[composioToolName] = tool({
       description: rawTool.description,
       inputSchema: rawTool.inputSchema,
       execute: async (args) => {
-        const outcome = await executeTenantExternalToolInvocation(input.admin, {
-          run: input.runtimeRun,
-          toolRequest: {
-            toolKey: tenantToolKey,
-            args: (args || {}) as Record<string, unknown>,
-          },
-          actorRole: input.actorRole,
-          actorId: input.actorId,
-          executeAllowedTool: async () =>
-            normalizeToolOutput(
-              await (rawTool.execute as (input: unknown) => Promise<unknown>)(args)
-            ),
-        });
-
-        if (outcome.outcome === "awaiting_approval") {
-          return {
-            error: "This tool call requires tenant approval before it can run.",
-            ...outcome.result,
-          };
+        const result = await (rawTool.execute as (input: unknown) => Promise<unknown>)(args);
+        // Normalize output to Record<string, unknown>
+        if (typeof result === "object" && result !== null && !Array.isArray(result)) {
+          return result as Record<string, unknown>;
         }
-
-        if (outcome.outcome === "failed") {
-          return {
-            error:
-              outcome.errorMessage || "This tool call was blocked by tenant policy.",
-            ...outcome.result,
-          };
-        }
-
-        return outcome.result.tool_output &&
-          typeof outcome.result.tool_output === "object" &&
-          !Array.isArray(outcome.result.tool_output)
-          ? (outcome.result.tool_output as Record<string, unknown>)
-          : outcome.result;
+        return result === undefined ? { ok: true } : { result };
       },
     });
   }
 
-  return wrappedTools;
+  return { tools, keyMap };
 }

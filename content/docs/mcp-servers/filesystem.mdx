@@ -16,9 +16,10 @@ The Filesystem MCP server gives your AI agent the ability to read, write, and ma
 | Field | Value |
 |---|---|
 | **Package** | `@modelcontextprotocol/server-filesystem` |
+| **Transport** | stdio (local process) |
 | **Command** | `npx` |
-| **Arguments** | `-y @modelcontextprotocol/server-filesystem` |
-| **Scope** | Workspace (available to all agents) |
+| **Arguments** | `-y @modelcontextprotocol/server-filesystem /workspace` |
+| **Scope** | Instance (available to all agents) |
 
 The Filesystem server is a custom MCP server you can add to your workspace if you need file read/write capabilities. It is not required for any built-in platform tools -- memory, knowledge files, and email all work without it.
 
@@ -64,11 +65,15 @@ Files saved by the Filesystem server persist between conversations and are avail
 
 1. Go to **Settings > MCP Servers**.
 2. Click **Add MCP Server**.
-3. Select **From Preset**.
-4. Click **Filesystem** from the preset list.
-5. Review the pre-filled fields and click **Add Server**.
+3. Fill in the following fields:
+   - **Key:** `filesystem`
+   - **Display Name:** `Filesystem`
+   - **Transport:** stdio (local process)
+   - **Command:** `npx`
+   - **Arguments:** `-y @modelcontextprotocol/server-filesystem /workspace`
+4. Click **Add Server**.
 
-The server is available to your agent after saving.
+The server's tools will be available to your agent on the next conversation after the runtime connects and discovers tools. You can verify discovery in **Settings > Tool Catalog**.
 
 ## Enabling and disabling
 

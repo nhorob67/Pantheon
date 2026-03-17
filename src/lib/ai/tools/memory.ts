@@ -38,8 +38,8 @@ export function createMemoryTools(
       inputSchema: z.object({
         content: z.string().describe("The fact or preference to remember"),
         memory_type: z
-          .enum(["fact", "preference", "commitment", "outcome"])
-          .describe("Type of memory: fact (data), preference (likes/dislikes), commitment (plans), outcome (result)"),
+          .enum(["fact", "preference", "commitment", "outcome", "daily_log"])
+          .describe("Type of memory: fact (data), preference (likes/dislikes), commitment (plans), outcome (result), daily_log (activity summary)"),
         confidence: z
           .number()
           .min(0)
@@ -84,6 +84,7 @@ export function createMemoryTools(
           const scored = await searchFn(admin, tenantId, query, limit ?? 5);
           return {
             memories: scored.map((m) => ({
+              id: m.id,
               content: m.content,
               type: m.memory_type,
               tier: m.memory_tier,
@@ -95,6 +96,45 @@ export function createMemoryTools(
           };
         } catch (err) {
           return { error: `Memory search failed: ${err instanceof Error ? err.message : "unknown error"}` };
+        }
+      },
+    }),
+
+    memory_read: tool({
+      description:
+        "Fetch a specific memory record by ID. Use this after memory_search to get the full details of a particular memory.",
+      inputSchema: z.object({
+        id: z.string().uuid().describe("The memory record ID to fetch"),
+      }),
+      execute: async ({ id }) => {
+        try {
+          const { data, error } = await admin
+            .from("tenant_memory_records")
+            .select("id, content_text, memory_type, memory_tier, confidence, source, created_at, content_json")
+            .eq("id", id)
+            .eq("tenant_id", tenantId)
+            .eq("is_tombstoned", false)
+            .maybeSingle();
+
+          if (error) {
+            return { error: `Memory read failed: ${error.message}` };
+          }
+
+          if (!data) {
+            return { error: "Memory not found" };
+          }
+
+          return {
+            content: data.content_text,
+            type: data.memory_type,
+            tier: data.memory_tier,
+            confidence: data.confidence,
+            source: data.source,
+            saved_at: data.created_at,
+            metadata: data.content_json ?? {},
+          };
+        } catch (err) {
+          return { error: `Memory read failed: ${err instanceof Error ? err.message : "unknown error"}` };
         }
       },
     }),

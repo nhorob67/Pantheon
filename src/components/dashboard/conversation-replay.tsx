@@ -2,8 +2,10 @@
 
 import { useState, useMemo } from "react";
 import { formatDistanceToNow } from "date-fns";
-import { MessageCircle } from "lucide-react";
+import { ExternalLink, GitBranch, Globe, MessageCircle, Shield, ShieldAlert } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
+import type { GuardrailSummary, WebCitation } from "@/lib/ai/trace-recorder";
 
 interface Message {
   id: string;
@@ -33,10 +35,21 @@ interface Trace {
     source: string;
     chunk_preview: string;
   }>;
+  web_citations: WebCitation[] | null;
+  delegation_events: Array<{
+    parent_agent_name: string;
+    child_agent_name: string;
+    task: string;
+    success: boolean;
+    delegation_kind?: "sync" | "async";
+    child_run_id?: string | null;
+    depth: number;
+  }> | null;
   model_id: string | null;
   input_tokens: number | null;
   output_tokens: number | null;
   total_latency_ms: number | null;
+  guardrail_summary: GuardrailSummary | null;
   created_at: string;
 }
 
@@ -59,6 +72,45 @@ function TraceMetadata({ trace }: { trace: Trace }) {
         )}
       </div>
     </>
+  );
+}
+
+function TraceGuardrailSummary({
+  summary,
+}: {
+  summary: GuardrailSummary | null;
+}) {
+  if (!summary) return null;
+  if (summary.eventCount === 0 && !summary.halted) return null;
+
+  return (
+    <div>
+      <div className="flex items-center gap-1.5 mb-1">
+        {summary.halted ? (
+          <ShieldAlert className="w-3.5 h-3.5 text-destructive" />
+        ) : (
+          <Shield className="w-3.5 h-3.5 text-amber-400" />
+        )}
+        <p className="font-medium text-foreground/80">Guardrails</p>
+        {summary.halted && (
+          <Badge variant="error">halted</Badge>
+        )}
+        {summary.warningCount > 0 && !summary.halted && (
+          <Badge variant="neutral">{summary.warningCount} warning{summary.warningCount !== 1 ? "s" : ""}</Badge>
+        )}
+      </div>
+      <div className="flex gap-4 text-foreground/50">
+        <span>{summary.totalInvocations} tool calls</span>
+        <span>{summary.totalTokens.toLocaleString()} tokens</span>
+        <span>{(summary.elapsedMs / 1000).toFixed(1)}s</span>
+        {summary.totalSpendCents > 0 && (
+          <span>${(summary.totalSpendCents / 100).toFixed(2)}</span>
+        )}
+      </div>
+      {summary.halted && summary.haltReason && (
+        <p className="text-destructive mt-1">{summary.haltReason}</p>
+      )}
+    </div>
   );
 }
 
@@ -131,6 +183,82 @@ function TraceKnowledge({
             {k.chunk_preview}
           </li>
         ))}
+      </ul>
+    </div>
+  );
+}
+
+function TraceDelegations({
+  delegations,
+}: {
+  delegations: Trace["delegation_events"];
+}) {
+  if (!Array.isArray(delegations) || delegations.length === 0) return null;
+  return (
+    <div>
+      <div className="flex items-center gap-1.5 mb-1">
+        <GitBranch className="w-3.5 h-3.5 text-primary/60" />
+        <p className="font-medium text-foreground/80">Delegations</p>
+      </div>
+      <div className="space-y-1.5">
+        {delegations.map((d, i) => (
+          <div key={i} className="rounded bg-card border border-border p-2">
+            <div className="flex items-center gap-2 mb-0.5">
+              <span className="font-medium text-foreground/80">{d.child_agent_name}</span>
+              <Badge variant={d.success ? "success" : "error"}>
+                {d.success ? "success" : "failed"}
+              </Badge>
+              {d.delegation_kind && (
+                <Badge variant="neutral">{d.delegation_kind}</Badge>
+              )}
+              <span className="text-foreground/30">depth {d.depth}</span>
+            </div>
+            <p className="text-foreground/50 line-clamp-2">{d.task}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TraceCitations({
+  citations,
+}: {
+  citations: WebCitation[] | null;
+}) {
+  if (!Array.isArray(citations) || citations.length === 0) return null;
+  return (
+    <div>
+      <div className="flex items-center gap-1.5 mb-1">
+        <Globe className="w-3.5 h-3.5 text-primary/60" />
+        <p className="font-medium text-foreground/80">Sources</p>
+      </div>
+      <ul className="space-y-1.5">
+        {citations.map((c, i) => {
+          const hostname = new URL(c.url).hostname;
+          return (
+          <li key={i} className="rounded bg-card border border-border p-2">
+            <a
+              href={c.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-primary hover:text-primary/80 transition-colors font-medium truncate"
+            >
+              <ExternalLink className="w-3 h-3 shrink-0" />
+              {c.title || hostname}
+            </a>
+            {c.snippet && (
+              <p className="text-foreground/50 mt-0.5 line-clamp-2">
+                {c.snippet}
+              </p>
+            )}
+            <div className="flex gap-3 mt-0.5 text-foreground/30">
+              <span>{hostname}</span>
+              <span>{c.tool === "web_search" ? "search" : "fetched"}</span>
+            </div>
+          </li>
+          );
+        })}
       </ul>
     </div>
   );
@@ -237,7 +365,10 @@ export function ConversationReplay({
                 {expandedTraces.has(trace.id) && (
                   <div className="mt-2 rounded-lg border border-border bg-background p-4 space-y-3 text-xs">
                     <TraceMetadata trace={trace} />
+                    <TraceGuardrailSummary summary={trace.guardrail_summary} />
                     <TraceToolsInvoked tools={trace.tools_invoked} />
+                    <TraceDelegations delegations={trace.delegation_events} />
+                    <TraceCitations citations={trace.web_citations} />
                     <TraceMemories memories={trace.memories_referenced} />
                     <TraceKnowledge knowledge={trace.knowledge_referenced} />
                   </div>

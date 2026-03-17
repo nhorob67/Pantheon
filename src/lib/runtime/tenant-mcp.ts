@@ -1,10 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { safeErrorMessage } from "@/lib/security/safe-error";
+import { sanitizeOrFilterValue } from "@/lib/security/postgrest-sanitize";
 import type { CreateMcpServerData, UpdateMcpServerData } from "@/lib/validators/mcp-server";
 import type { McpServerConfig } from "@/types/mcp";
+import { encryptMcpSecrets, decryptMcpSecrets } from "./mcp-secrets";
 
 const MCP_SERVER_SELECT =
-  "id, instance_id, customer_id, server_key, display_name, command, args, env_vars, scope, agent_id, enabled, created_at, updated_at";
+  "id, instance_id, customer_id, server_key, display_name, command, args, env_vars, scope, agent_id, enabled, transport, url, headers, health_status, last_health_check, last_error, tools_discovered_at, tool_count, created_at, updated_at";
 
 interface TenantMcpServerRow {
   id: string;
@@ -18,6 +20,14 @@ interface TenantMcpServerRow {
   scope: string;
   agent_id: string | null;
   enabled: boolean;
+  transport: string;
+  url: string | null;
+  headers: unknown;
+  health_status: string;
+  last_health_check: string | null;
+  last_error: string | null;
+  tools_discovered_at: string | null;
+  tool_count: number;
   created_at: string;
   updated_at: string;
 }
@@ -81,10 +91,18 @@ function mapMcpServerRow(row: TenantMcpServerRow): McpServerConfig {
     display_name: row.display_name,
     command: row.command,
     args: normalizeArgs(row.args),
-    env_vars: normalizeEnvVars(row.env_vars),
+    env_vars: decryptMcpSecrets(normalizeEnvVars(row.env_vars)),
     scope: row.scope === "agent" ? "agent" : "instance",
     agent_id: row.agent_id,
     enabled: row.enabled,
+    transport: row.transport === "sse" ? "sse" : "stdio",
+    url: row.url,
+    headers: decryptMcpSecrets(normalizeEnvVars(row.headers)),
+    health_status: (row.health_status || "unknown") as McpServerConfig["health_status"],
+    last_health_check: row.last_health_check,
+    last_error: row.last_error,
+    tools_discovered_at: row.tools_discovered_at,
+    tool_count: row.tool_count ?? 0,
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
@@ -130,7 +148,7 @@ async function resolveLegacyAgentId(
     .from("tenant_agents")
     .select("id, legacy_agent_id, status")
     .eq("tenant_id", context.tenantId)
-    .or(`id.eq.${requestedAgentId},legacy_agent_id.eq.${requestedAgentId}`)
+    .or(`id.eq.${sanitizeOrFilterValue(requestedAgentId)},legacy_agent_id.eq.${sanitizeOrFilterValue(requestedAgentId)}`)
     .maybeSingle();
 
   if (tenantAgentError) {
@@ -245,6 +263,8 @@ export async function createTenantMcpServer(
       ? await resolveLegacyAgentId(admin, context, data.agent_id)
       : null;
 
+  const transport = data.transport ?? "stdio";
+
   const { data: created, error } = await admin
     .from("mcp_server_configs")
     .insert({
@@ -252,9 +272,12 @@ export async function createTenantMcpServer(
       customer_id: context.customerId,
       server_key: data.server_key,
       display_name: data.display_name,
-      command: data.command,
+      transport,
+      command: data.command ?? "",
       args: data.args,
-      env_vars: data.env_vars,
+      env_vars: data.env_vars ? encryptMcpSecrets(data.env_vars) : {},
+      url: transport === "sse" ? (data.url ?? null) : null,
+      headers: transport === "sse" ? encryptMcpSecrets(data.headers ?? {}) : {},
       scope,
       agent_id: scope === "agent" ? agentId : null,
       enabled: data.enabled,
@@ -287,6 +310,9 @@ export async function updateTenantMcpServer(
   if (data.display_name !== undefined) {
     updatePayload["display_name"] = data.display_name;
   }
+  if (data.transport !== undefined) {
+    updatePayload["transport"] = data.transport;
+  }
   if (data.command !== undefined) {
     updatePayload["command"] = data.command;
   }
@@ -294,7 +320,13 @@ export async function updateTenantMcpServer(
     updatePayload["args"] = data.args;
   }
   if (data.env_vars !== undefined) {
-    updatePayload["env_vars"] = data.env_vars;
+    updatePayload["env_vars"] = encryptMcpSecrets(data.env_vars);
+  }
+  if (data.url !== undefined) {
+    updatePayload["url"] = data.url;
+  }
+  if (data.headers !== undefined) {
+    updatePayload["headers"] = encryptMcpSecrets(data.headers);
   }
   if (data.enabled !== undefined) {
     updatePayload["enabled"] = data.enabled;

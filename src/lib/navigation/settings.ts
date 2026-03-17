@@ -18,6 +18,8 @@ const SETTINGS_TABS_BASE: SettingsNavItem[] = [
   { href: "/settings/email", label: "Email" },
   { href: "/settings/extensions", label: "Integrations" },
   { href: "/settings/mcp-servers", label: "Tools" },
+  { href: "/settings/tool-catalog", label: "Tool Catalog" },
+  { href: "/settings/browser-automation", label: "Browser Automation" },
   { href: "/settings/secrets", label: "Secrets Vault" },
   { href: "/settings/ai-model", label: "AI Model" },
   { href: "/settings/billing", label: "Billing" },
@@ -35,6 +37,8 @@ const SIDEBAR_NAV_ITEMS: SettingsNavItem[] = [
   // CONFIGURE
   { href: "/settings/memory", label: "Memory" },
   { href: "/settings/mcp-servers", label: "Tools" },
+  { href: "/settings/tool-catalog", label: "Tool Catalog" },
+  { href: "/settings/browser-automation", label: "Browser" },
   { href: "/settings/secrets", label: "Secrets" },
   { href: "/settings/ai-model", label: "AI Model" },
   { href: "/settings/billing", label: "Billing" },

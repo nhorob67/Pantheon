@@ -4,8 +4,9 @@ import type { TenantMessage } from "@/types/tenant-runtime";
 
 const DEFAULT_MESSAGE_LIMIT = 50;
 const MAX_ESTIMATED_TOKENS = 8000;
+const OVERLAP_TOKEN_BUDGET = 500;
 
-function estimateTokens(text: string): number {
+export function estimateTokens(text: string): number {
   return Math.max(1, Math.ceil(text.length / 4));
 }
 
@@ -45,10 +46,12 @@ export async function loadConversationHistory(
   options?: {
     limit?: number;
     maxTokens?: number;
+    overlapTokens?: number;
   }
 ): Promise<ModelMessage[]> {
   const limit = options?.limit ?? DEFAULT_MESSAGE_LIMIT;
   const maxTokens = options?.maxTokens ?? MAX_ESTIMATED_TOKENS;
+  const overlapTokens = options?.overlapTokens ?? OVERLAP_TOKEN_BUDGET;
 
   const { data, error } = await admin
     .from("tenant_messages")
@@ -66,11 +69,12 @@ export async function loadConversationHistory(
   rows.reverse();
 
   // Convert to ModelMessage format with token budget
-  const messages: ModelMessage[] = [];
   let tokenBudget = maxTokens;
 
   // Add messages from most recent backward until budget is exhausted
   const converted: ModelMessage[] = [];
+  let mainCutoffIndex = -1;
+
   for (let i = rows.length - 1; i >= 0; i--) {
     const coreMessages = messageToCore(rows[i]);
     if (coreMessages.length === 0) continue;
@@ -82,12 +86,58 @@ export async function loadConversationHistory(
       groupTokens += estimateTokens(text);
     }
 
-    if (tokenBudget - groupTokens < 0 && converted.length > 0) break;
+    if (tokenBudget - groupTokens < 0 && converted.length > 0) {
+      mainCutoffIndex = i;
+      break;
+    }
 
     tokenBudget -= groupTokens;
     converted.unshift(...coreMessages);
   }
 
-  messages.push(...converted);
-  return messages;
+  // Overlap: load additional older messages beyond main cutoff
+  if (overlapTokens > 0 && mainCutoffIndex >= 0) {
+    let overlapBudget = overlapTokens;
+    const overlapMessages: ModelMessage[] = [];
+
+    for (let i = mainCutoffIndex; i >= 0; i--) {
+      const coreMessages = messageToCore(rows[i]);
+      if (coreMessages.length === 0) continue;
+
+      let groupTokens = 0;
+      for (const core of coreMessages) {
+        const text = typeof core.content === "string" ? core.content : JSON.stringify(core.content);
+        groupTokens += estimateTokens(text);
+      }
+
+      if (overlapBudget - groupTokens < 0 && overlapMessages.length > 0) break;
+
+      overlapBudget -= groupTokens;
+      overlapMessages.unshift(...coreMessages);
+    }
+
+    // Ensure oldest loaded message starts on a user role boundary
+    if (overlapMessages.length > 0 && overlapMessages[0].role !== "user") {
+      // Walk back one more row to find preceding user message
+      const firstOverlapIdx = rows.findIndex((r) => {
+        const core = messageToCore(r);
+        return core.length > 0 && core[0] === overlapMessages[0];
+      });
+      if (firstOverlapIdx > 0) {
+        for (let i = firstOverlapIdx - 1; i >= 0; i--) {
+          const coreMessages = messageToCore(rows[i]);
+          if (coreMessages.length === 0) continue;
+          if (coreMessages[0].role === "user") {
+            overlapMessages.unshift(...coreMessages);
+            break;
+          }
+          break; // Only walk back one non-empty message
+        }
+      }
+    }
+
+    converted.unshift(...overlapMessages);
+  }
+
+  return converted;
 }

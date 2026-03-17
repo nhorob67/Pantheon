@@ -20,6 +20,7 @@ import {
 } from "./proactive-suggestions";
 import { resolveCanonicalLegacyInstanceForTenant } from "@/lib/runtime/tenant-agents";
 import { buildToolDocumentation } from "./tool-docs";
+import type { DelegationToolConfig } from "./tools/delegation";
 
 export interface AssembledContext {
   systemPrompt: string;
@@ -32,6 +33,10 @@ export interface AssembledContext {
   memorySettings: TenantMemorySettings;
   memoryIds: string[];
   knowledgeIds: string[];
+  /** Composio model-facing name -> policy key mapping (e.g. GITHUB_CREATE_ISSUE -> composio.github_create_issue) */
+  composioKeyMap?: Map<string, string>;
+  /** MCP model-facing name -> policy key mapping (e.g. mcp_github_create_issue -> mcp.github.create_issue) */
+  mcpKeyMap?: Map<string, string>;
 }
 
 interface AssembleInput {
@@ -49,6 +54,8 @@ interface AssembleInput {
   actorDiscordId?: string | null;
   fastModel?: LanguageModel;
   revealedSecretValues?: string[];
+  /** Delegation config — passed through to tool registry for delegate_task tool */
+  delegationConfig?: Omit<DelegationToolConfig, "admin" | "tenantId" | "customerId" | "parentAgent"> | null;
 }
 
 export async function assembleContext(
@@ -118,8 +125,10 @@ export async function assembleContext(
     sourceEventId: input.messageId,
   });
 
-  // 5. Load conversation history
-  let messages = await loadConversationHistory(admin, session.id);
+  // 5. Load conversation history (skip overlap when rolling summary provides context bridge)
+  let messages = await loadConversationHistory(admin, session.id, {
+    overlapTokens: session.rolling_summary ? 0 : undefined,
+  });
 
   // If image attachments, modify the last user message to multimodal content
   if (input.imageUrls && input.imageUrls.length > 0 && messages.length > 0) {
@@ -152,11 +161,12 @@ export async function assembleContext(
   let composioUserId: string | null = null;
   let secretsEnabled = false;
   let legacyInstanceId: string | null = null;
+  let mcpEnabled = false;
 
   if (agent) {
     const agentToolkits = (agent.config?.composio_toolkits ?? []) as string[];
 
-    const [profileResult, composioResult, secretsCountResult, legacyInstanceResult] = await Promise.all([
+    const [profileResult, composioResult, secretsCountResult, legacyInstanceResult, mcpCountResult] = await Promise.all([
       admin
         .from("team_profiles")
         .select("timezone")
@@ -174,6 +184,11 @@ export async function assembleContext(
         .select("id", { count: "exact", head: true })
         .eq("tenant_id", input.tenantId),
       resolveCanonicalLegacyInstanceForTenant(admin, input.tenantId).catch(() => ({ instanceId: null, ambiguous: false })),
+      admin
+        .from("mcp_server_configs")
+        .select("id", { count: "exact", head: true })
+        .eq("customer_id", agent.customer_id)
+        .eq("enabled", true),
     ]);
 
     teamTimezone = profileResult.data?.timezone ?? "America/Chicago";
@@ -189,9 +204,10 @@ export async function assembleContext(
 
     secretsEnabled = (secretsCountResult.count ?? 0) > 0;
     legacyInstanceId = legacyInstanceResult?.instanceId ?? null;
+    mcpEnabled = (mcpCountResult.count ?? 0) > 0;
   }
 
-  const tools = agent
+  const toolResult = agent
     ? await resolveToolsForAgent({
         admin,
         tenantId: input.tenantId,
@@ -210,8 +226,11 @@ export async function assembleContext(
         legacyInstanceId,
         secretsEnabled,
         revealedSecretValues: input.revealedSecretValues,
+        mcpEnabled,
+        delegationConfig: input.delegationConfig,
       })
-    : {};
+    : { tools: {}, composioKeyMap: new Map<string, string>(), mcpKeyMap: new Map<string, string>() };
+  const tools = toolResult.tools;
 
   // Append dynamic tool documentation so the prompt matches actual available tools
   const toolDocSection = buildToolDocumentation(Object.keys(tools));
@@ -228,6 +247,8 @@ export async function assembleContext(
     memorySettings,
     memoryIds,
     knowledgeIds,
+    composioKeyMap: toolResult.composioKeyMap,
+    mcpKeyMap: toolResult.mcpKeyMap,
   };
 }
 

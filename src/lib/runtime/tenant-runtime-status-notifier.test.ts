@@ -37,6 +37,10 @@ function buildRun(
       notify_on_completion: true,
       completion_notification_source: "team_default",
     },
+    parent_run_id: null,
+    delegation_depth: 0,
+    deadline_at: null,
+    delegation_kind: null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     ...overrides,
@@ -114,6 +118,29 @@ test("shouldSendDiscordRuntimeCompletionNotification allows explicit cron overri
       notify_on_completion: true,
       completion_notification_source: "run_override",
     },
+  });
+
+  assert.equal(shouldSendDiscordRuntimeCompletionNotification(run), true);
+});
+
+test("shouldSendDiscordRuntimeCompletionNotification skips when AI worker already dispatched response", () => {
+  const run = buildRun({
+    result: {
+      ack: "ai_response_dispatched",
+      response_preview: "Done — here's what I did:\n- **memory write**: completed",
+    },
+  });
+
+  assert.equal(shouldSendDiscordRuntimeCompletionNotification(run), false);
+});
+
+test("shouldSendDiscordRuntimeCompletionNotification still sends for failed AI worker runs", () => {
+  const run = buildRun({
+    status: "failed",
+    result: {
+      ack: "ai_response_dispatched",
+    },
+    error_message: "Circuit breaker open",
   });
 
   assert.equal(shouldSendDiscordRuntimeCompletionNotification(run), true);

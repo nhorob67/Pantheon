@@ -4,6 +4,18 @@ import {
 } from "./tenant-role-policy.ts";
 import { isMutatingRuntimeTool } from "./tenant-runtime-mutating-tools.ts";
 
+const RISK_AUTO_APPROVAL_EXEMPT_TOOLS = new Set([
+  "delegate_task",
+  "delegate_task_async",
+  "delegation_poll",
+  "delegation_cancel",
+  "browser_navigate",
+  "browser_extract",
+  "browser_click",
+  "browser_fill",
+  "browser_screenshot",
+]);
+
 export interface TenantToolApprovalRequirementInput {
   toolKey: string;
   actorRole: TenantRole;
@@ -50,7 +62,8 @@ export function resolveTenantToolApprovalRequirement(
   const mutatingTool = isMutatingRuntimeTool(input.toolKey);
   const explicitApprovalMode = input.approvalMode || "none";
   const riskRequiresApproval =
-    input.riskLevel === "high" || input.riskLevel === "critical";
+    (input.riskLevel === "high" || input.riskLevel === "critical")
+    && !RISK_AUTO_APPROVAL_EXEMPT_TOOLS.has(input.toolKey);
 
   let requiredRole = approvalModeToRole(explicitApprovalMode);
   if (mutatingTool) {

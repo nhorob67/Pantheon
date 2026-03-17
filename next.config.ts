@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  serverExternalPackages: ["playwright"],
   experimental: {
     optimizePackageImports: ["lucide-react", "date-fns", "recharts"],
   },

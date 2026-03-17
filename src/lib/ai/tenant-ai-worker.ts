@@ -1,15 +1,23 @@
 import { generateText } from "ai";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { AI_CONFIG } from "./client";
-import { recordTokenUsage } from "./usage-tracker";
+import { estimateTokenUsageCostCents, recordTokenUsage } from "./usage-tracker";
 import { assembleContext } from "./context-assembler";
 import { storeOutboundMessage } from "./message-store";
 import { safeErrorMessage } from "@/lib/security/safe-error";
 import { maybeGenerateSummary } from "./session-summarizer";
 import { parseAttachmentsFromPayload, isImageAttachment } from "./attachment-handler";
 import { extractBehavioralPatterns } from "./procedural-memory";
-import { recordConversationTrace } from "./trace-recorder";
+import { recordConversationTrace, extractWebCitations, extractDelegationEvents } from "./trace-recorder";
+import { flushBrowserSessionsForRun } from "./tools/browser";
 import { resolveWorkerModels } from "./model-resolver";
+import {
+  createUnifiedToolExecutor,
+  registerComposioToolKeyMappings,
+  registerMcpToolKeyMappings,
+} from "@/lib/runtime/unified-tool-executor";
+import { loadGuardrailConfig, loadMiddlewareRateLimits } from "@/lib/runtime/guardrail-config-loader";
+import { createDefaultGuardrailPipeline } from "@/lib/runtime/guardrail-middleware";
 import {
   sendDiscordChannelMessage,
   sendDiscordChannelMessageSequence,
@@ -210,6 +218,20 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
 
         const startTime = Date.now();
 
+        // Mutable delegation context — parentGuardrails/parentRecords/parentToolKeys
+        // populated after executor creation (below), before any tool executes.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const delegationCtx: any = {
+          currentDepth: 0,
+          parentRun: context.run,
+          actorRole,
+          actorId,
+          actorDiscordId,
+          workerKind: "discord_runtime" as const,
+          resolvedModels: context.resolvedModels,
+          revealedSecretValues,
+        };
+
         // Assemble context: resolve agent, build system prompt, persist messages, load history
         const assembled = await assembleContext(admin, {
           tenantId: context.run.tenant_id,
@@ -226,6 +248,9 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           actorDiscordId,
           fastModel: fastModel,
           revealedSecretValues,
+          // delegationConfig uses a mutable object — parentGuardrails and parentRecords
+          // are populated after executor creation (below), before any tool executes.
+          delegationConfig: delegationCtx,
         });
 
         // Custom cron jobs can scope tools to a subset
@@ -233,6 +258,7 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
         if (isCron) {
           // Exclude Composio tools from cron runs — they require interactive OAuth context
           const BUILT_IN_PREFIXES = ["memory_", "schedule_"];
+          const DELEGATION_TOOLS = ["delegate_task", "delegate_task_async", "delegation_poll", "delegation_cancel"];
           const filtered: typeof resolvedTools = {};
 
           if (Array.isArray(payload.custom_tools) && payload.custom_tools.length > 0) {
@@ -242,7 +268,7 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
               (s) => SKILL_TOOL_PREFIXES[s] || []
             );
             for (const [name, tool] of Object.entries(resolvedTools)) {
-              const isAlwaysAvailable = name.startsWith("memory_") || name.startsWith("schedule_");
+              const isAlwaysAvailable = name.startsWith("memory_") || name.startsWith("schedule_") || DELEGATION_TOOLS.includes(name);
               const matchesSkill = allowedPrefixes.some((p) => name.startsWith(p));
               if (isAlwaysAvailable || matchesSkill) {
                 filtered[name] = tool;
@@ -251,7 +277,7 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           } else {
             // For standard cron runs, keep all built-in tools but exclude Composio tools
             for (const [name, tool] of Object.entries(resolvedTools)) {
-              if (BUILT_IN_PREFIXES.some((p) => name.startsWith(p))) {
+              if (BUILT_IN_PREFIXES.some((p) => name.startsWith(p)) || DELEGATION_TOOLS.includes(name)) {
                 filtered[name] = tool;
               }
             }
@@ -259,6 +285,46 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
 
           resolvedTools = filtered;
         }
+
+        // Wrap tools with unified executor (policy enforced: denied/approval-required tools blocked)
+        const agentAutonomy = assembled.agent?.config?.autonomy_level;
+        const [guardrailConfig, middlewareRateLimits] = await Promise.all([
+          loadGuardrailConfig(admin, context.run.tenant_id, assembled.agentId),
+          loadMiddlewareRateLimits(admin, context.run.tenant_id, assembled.agentId),
+        ]);
+        const middlewarePipeline = createDefaultGuardrailPipeline(middlewareRateLimits);
+        const executor = createUnifiedToolExecutor({
+          admin,
+          tenantId: context.run.tenant_id,
+          customerId: context.run.customer_id,
+          agentId: assembled.agentId,
+          run: context.run,
+          actorRole,
+          actorId,
+          workerKind: "discord_runtime",
+          enforcePolicy: true,
+          agentAutonomyLevel:
+            agentAutonomy === "assisted" || agentAutonomy === "copilot" || agentAutonomy === "autopilot"
+              ? agentAutonomy
+              : undefined,
+          guardrailConfig,
+          middlewarePipeline,
+        });
+        // Register Composio key mappings so the unified executor can resolve
+        // model-facing names (e.g. GITHUB_CREATE_ISSUE) to policy keys (composio.github_create_issue)
+        if (assembled.composioKeyMap && assembled.composioKeyMap.size > 0) {
+          registerComposioToolKeyMappings(assembled.composioKeyMap);
+        }
+        if (assembled.mcpKeyMap && assembled.mcpKeyMap.size > 0) {
+          registerMcpToolKeyMappings(assembled.mcpKeyMap);
+        }
+
+        resolvedTools = executor.wrapAll(resolvedTools);
+
+        // Populate delegation context with executor references (captured by closure)
+        delegationCtx.parentGuardrails = executor.guardrails;
+        delegationCtx.parentRecords = executor.records as unknown[];
+        delegationCtx.parentToolKeys = new Set(Object.keys(resolvedTools));
 
         const hasTools = Object.keys(resolvedTools).length > 0;
 
@@ -313,17 +379,54 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
 
         // Capture multi-step messages for history reconstruction
         const responseMessages = result.response?.messages ?? [];
+        const inputTokens = result.totalUsage?.inputTokens ?? 0;
+        const outputTokens = result.totalUsage?.outputTokens ?? 0;
+        const estimatedCostCents = estimateTokenUsageCostCents({
+          model: primaryModelId,
+          inputTokens,
+          outputTokens,
+          inputCostPerMillion: primaryInputCost,
+          outputCostPerMillion: primaryOutputCost,
+        });
+        const usageGuardrailEvent = executor.guardrails?.recordTokenUsage(
+          inputTokens,
+          outputTokens,
+          estimatedCostCents
+        );
+        if (usageGuardrailEvent?.action === "halt") {
+          console.warn(`[ai-worker] Guardrail halt after model usage: ${usageGuardrailEvent.message}`);
+        }
 
         let responseText = result.text?.trim() || "";
 
-        // Fallback when maxSteps exhausted on a tool-call step with no final text
+        // Fallback when maxSteps exhausted on a tool-call step with no final text.
+        // Build a contextual summary from tool invocation records instead of
+        // just listing tool names.
         if (!responseText) {
-          const allToolNames = result.steps
-            .flatMap((s) => s.toolCalls.map((tc) => tc.toolName));
-          if (allToolNames.length > 0) {
-            responseText = `Done. I used ${[...new Set(allToolNames)].join(", ")} to complete that.`;
+          const successfulRecords = executor.records.filter((r) => r.success);
+          if (successfulRecords.length > 0) {
+            const summaryParts = successfulRecords.map((r) => {
+              const label = r.toolName.replace(/_/g, " ");
+              // Use the output summary (truncated JSON) for context if available
+              const output = r.outputSummary?.trim();
+              if (output && output !== "{}" && output !== "null") {
+                // Extract a human-readable snippet from the output (first 120 chars)
+                const snippet = output.length > 120
+                  ? `${output.slice(0, 117).trimEnd()}...`
+                  : output;
+                return `- **${label}**: ${snippet}`;
+              }
+              return `- **${label}**: completed`;
+            });
+            responseText = `Done — here's what I did:\n${summaryParts.join("\n")}`;
           } else {
-            responseText = "[Pantheon] No response generated.";
+            const allToolNames = result.steps
+              .flatMap((s) => s.toolCalls.map((tc) => tc.toolName));
+            if (allToolNames.length > 0) {
+              responseText = `I attempted ${[...new Set(allToolNames)].map((n) => n.replace(/_/g, " ")).join(", ")} but wasn't able to produce a final result. Let me know if you'd like me to try again.`;
+            } else {
+              responseText = "I wasn't able to generate a response for that. Could you try rephrasing?";
+            }
           }
         }
 
@@ -342,7 +445,7 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           sessionId: assembled.sessionId,
           agentId: assembled.agentId,
           content: responseText,
-          tokenCount: (result.totalUsage?.inputTokens ?? 0) + (result.totalUsage?.outputTokens ?? 0),
+          tokenCount: inputTokens + outputTokens,
           toolCalls: responseMessages.length > 0
             ? responseMessages.map((m) => m as Record<string, unknown>)
             : undefined,
@@ -357,6 +460,7 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
             tenantId: context.run.tenant_id,
             customerId: context.run.customer_id,
             sessionId: assembled.sessionId,
+            agentId: assembled.agentId ?? undefined,
             captureLevel: assembled.memorySettings.captureLevel,
             excludeCategories: assembled.memorySettings.excludeCategories,
             model: fastModel,
@@ -382,9 +486,14 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           console.error("[ai-worker] Pattern extraction failed:", safeErrorMessage(err));
         });
 
+        // Fire-and-forget: flush unified tool executor (invocations + telemetry)
+        executor.flush().catch((err) => {
+          console.error("[ai-worker] Unified executor flush failed:", safeErrorMessage(err));
+        });
+
         // Fire-and-forget: record conversation trace (Feature 7)
         const totalLatencyMs = Date.now() - startTime;
-        const toolCalls = result.toolCalls || [];
+        const browserSessions = await flushBrowserSessionsForRun(context.run.id);
         recordConversationTrace(admin, {
           tenantId: context.run.tenant_id,
           customerId: context.run.customer_id,
@@ -393,13 +502,13 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           agentId: assembled.agentId,
           agentName: assembled.agentDisplayName,
           toolsAvailable: Object.keys(resolvedTools),
-          toolsInvoked: toolCalls.map((tc) => {
-            let inputSummary = JSON.stringify("args" in tc ? tc.args : {}).slice(0, 200);
+          toolsInvoked: executor.records.map((r) => {
+            let inputSummary = r.inputSummary;
             if (redactor) inputSummary = redactor(inputSummary);
             return {
-              name: tc.toolName,
+              name: r.toolName,
               input_summary: inputSummary,
-              output_summary: "",
+              output_summary: r.success ? r.outputSummary : `error: ${r.errorClass}`,
             };
           }),
           memoriesReferenced: assembled.memoryIds?.map((id) => ({
@@ -412,10 +521,25 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
             source: "",
             chunk_preview: "",
           })) || [],
+          webCitations: extractWebCitations(executor.records),
+          delegationEvents: extractDelegationEvents(
+            executor.records,
+            assembled.agentId ?? "unknown",
+            assembled.agentDisplayName
+          ),
+          browserSessions: browserSessions.map((session) => ({
+            session_id: session.sessionId,
+            action_count: session.actionCount,
+            duration_ms: session.durationMs,
+            status: session.status,
+            urls_visited: session.urlsVisited,
+            artifact_count: session.artifactCount,
+          })),
           modelId: primaryModelId,
-          inputTokens: result.totalUsage?.inputTokens ?? 0,
-          outputTokens: result.totalUsage?.outputTokens ?? 0,
+          inputTokens,
+          outputTokens,
           totalLatencyMs,
+          guardrailSummary: executor.guardrails?.getSummary() ?? null,
         }).catch((err) => {
           console.error("[ai-worker] Trace recording failed:", safeErrorMessage(err));
         });
@@ -425,8 +549,8 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           tenantId: context.run.tenant_id,
           customerId: context.run.customer_id,
           model: primaryModelId,
-          inputTokens: result.totalUsage?.inputTokens ?? 0,
-          outputTokens: result.totalUsage?.outputTokens ?? 0,
+          inputTokens,
+          outputTokens,
           inputCostPerMillion: primaryInputCost,
           outputCostPerMillion: primaryOutputCost,
         }).catch((err) => {
@@ -471,8 +595,8 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
             agent_id: assembled.agentId,
             agent_name: assembled.agentDisplayName,
             session_id: assembled.sessionId,
-            input_tokens: result.totalUsage?.inputTokens ?? 0,
-            output_tokens: result.totalUsage?.outputTokens ?? 0,
+            input_tokens: inputTokens,
+            output_tokens: outputTokens,
             dispatched_channel_id: channelId,
             dispatched_message_ids: sent.messageIds,
             dispatched_message_parts: sent.partsSent,
@@ -482,6 +606,7 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           },
         };
       } catch (error) {
+        await flushBrowserSessionsForRun(context.run.id).catch(() => []);
         const rateLimitError = error instanceof DiscordApiError && error.status === 429;
         const retryAfterSeconds =
           error instanceof DiscordApiError ? error.retryAfterSeconds : null;

@@ -7,7 +7,7 @@ import Link from "next/link";
 export default async function AdminRunsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; tenant?: string; page?: string }>;
+  searchParams: Promise<{ status?: string; kind?: string; tenant?: string; page?: string }>;
 }) {
   await requireAdmin();
   const sp = await searchParams;
@@ -18,6 +18,7 @@ export default async function AdminRunsPage({
   const admin = createAdminClient();
   const { runs, total } = await listRuns(admin, {
     status: sp.status,
+    runKind: sp.kind,
     tenantId: sp.tenant,
     limit,
     offset,
@@ -40,28 +41,55 @@ export default async function AdminRunsPage({
       </div>
 
       {/* Filter controls */}
-      <div className="flex gap-2">
-        {["queued", "running", "completed", "failed"].map((status) => (
-          <Link
-            key={status}
-            href={`/admin/observability/runs?status=${status}`}
-            className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
-              sp.status === status
-                ? "bg-primary/10 border-primary/30 text-primary"
-                : "border-border text-foreground/60 hover:text-foreground"
-            }`}
-          >
-            {status}
-          </Link>
-        ))}
-        {sp.status && (
-          <Link
-            href="/admin/observability/runs"
-            className="px-3 py-1 rounded-full text-xs font-medium border border-border text-foreground/40 hover:text-foreground"
-          >
-            Clear
-          </Link>
-        )}
+      <div className="flex flex-col gap-2">
+        <div className="flex gap-2">
+          {["queued", "running", "completed", "failed"].map((v) => {
+            const params = new URLSearchParams();
+            params.set("status", v);
+            if (sp.kind) params.set("kind", sp.kind);
+            return (
+              <Link
+                key={v}
+                href={`/admin/observability/runs?${params}`}
+                className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+                  sp.status === v
+                    ? "bg-primary/10 border-primary/30 text-primary"
+                    : "border-border text-foreground/60 hover:text-foreground"
+                }`}
+              >
+                {v}
+              </Link>
+            );
+          })}
+          {(sp.status || sp.kind) && (
+            <Link
+              href="/admin/observability/runs"
+              className="px-3 py-1 rounded-full text-xs font-medium border border-border text-foreground/40 hover:text-foreground"
+            >
+              Clear
+            </Link>
+          )}
+        </div>
+        <div className="flex gap-2">
+          {["discord_runtime", "email_runtime", "discord_heartbeat", "delegation_runtime"].map((v) => {
+            const params = new URLSearchParams();
+            params.set("kind", v);
+            if (sp.status) params.set("status", sp.status);
+            return (
+              <Link
+                key={v}
+                href={`/admin/observability/runs?${params}`}
+                className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+                  sp.kind === v
+                    ? "bg-primary/10 border-primary/30 text-primary"
+                    : "border-border text-foreground/60 hover:text-foreground"
+                }`}
+              >
+                {v.replace(/_/g, " ")}
+              </Link>
+            );
+          })}
+        </div>
       </div>
 
       {/* Runs table */}
@@ -71,6 +99,7 @@ export default async function AdminRunsPage({
             <tr className="border-b border-border text-left text-xs font-medium uppercase tracking-wider text-foreground/40">
               <th className="px-4 py-3">ID</th>
               <th className="px-4 py-3">Kind</th>
+              <th className="px-4 py-3">Depth</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Created</th>
               <th className="px-4 py-3">Error</th>
@@ -89,6 +118,9 @@ export default async function AdminRunsPage({
                 </td>
                 <td className="px-4 py-3 text-foreground/60">
                   {run.run_kind}
+                </td>
+                <td className="px-4 py-3 text-foreground/40 text-xs">
+                  {run.delegation_depth > 0 ? run.delegation_depth : "—"}
                 </td>
                 <td className="px-4 py-3">
                   <span
@@ -115,7 +147,7 @@ export default async function AdminRunsPage({
             ))}
             {runs.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-foreground/40">
+                <td colSpan={6} className="px-4 py-8 text-center text-foreground/40">
                   No runs found.
                 </td>
               </tr>
@@ -133,7 +165,7 @@ export default async function AdminRunsPage({
           <div className="flex gap-2">
             {page > 1 && (
               <Link
-                href={`/admin/observability/runs?page=${page - 1}${sp.status ? `&status=${sp.status}` : ""}`}
+                href={`/admin/observability/runs?page=${page - 1}${sp.status ? `&status=${sp.status}` : ""}${sp.kind ? `&kind=${sp.kind}` : ""}`}
                 className="px-3 py-1 rounded border border-border text-foreground/60 hover:text-foreground"
               >
                 Previous
@@ -141,7 +173,7 @@ export default async function AdminRunsPage({
             )}
             {page < totalPages && (
               <Link
-                href={`/admin/observability/runs?page=${page + 1}${sp.status ? `&status=${sp.status}` : ""}`}
+                href={`/admin/observability/runs?page=${page + 1}${sp.status ? `&status=${sp.status}` : ""}${sp.kind ? `&kind=${sp.kind}` : ""}`}
                 className="px-3 py-1 rounded border border-border text-foreground/60 hover:text-foreground"
               >
                 Next

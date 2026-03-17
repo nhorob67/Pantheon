@@ -1,0 +1,107 @@
+---
+title: Web Research
+description: Let your agents search the web and fetch content from URLs for real-time information.
+---
+
+# Web Research
+
+Web research tools give your agents access to real-time information from the internet. Instead of relying solely on their training data, agents can search the web and extract content from specific URLs.
+
+## Tools
+
+### web_search
+
+Searches the web and returns structured results with URLs, titles, and snippets.
+
+**When agents use it:** Answering questions about current events, researching competitors, looking up product information, finding documentation, verifying facts.
+
+**Input:**
+- `query` — The search query (required)
+- `max_results` — Number of results to return (default: 5, max: 10)
+- `recency` — Filter by freshness: `day`, `week`, `month`, `year` (optional)
+- `include_domains` — Restrict to specific domains (optional)
+
+**Output:** Array of results, each with `title`, `url`, `snippet`, `published_date`, and `score`.
+
+### web_fetch
+
+Fetches and extracts content from a specific URL. Returns clean text, not raw HTML.
+
+**When agents use it:** Reading full articles, extracting data from a known page, getting details from a URL found via `web_search`.
+
+**Input:**
+- `url` — The URL to fetch (required, must be HTTPS)
+- `extract_mode` — `text` (default) or `raw`
+
+**Output:** Extracted text content, page title, and metadata.
+
+## Citations
+
+When an agent uses web research tools, the source URLs are automatically tracked:
+
+- URLs appear in the **conversation trace** as `web_citations`
+- Each citation includes the URL, title, snippet, and timestamp
+- The agent is instructed to reference sources in its responses
+
+This ensures responses are verifiable — users can check the original sources.
+
+## Policy Controls
+
+### Three-Tier Gating
+
+Web research tools use the standard three-tier gating system:
+
+1. **Global kill switch** — `tools.web_research_pause` disables all web research instantly
+2. **Customer feature flag** — `tools.web_search` and `tools.web_fetch` can be enabled per customer
+3. **Tenant tool status** — Per-workspace enablement in the tool catalog
+
+All three gates must pass for the tool to be available to an agent.
+
+### Domain Policies
+
+Operators can configure domain allowlists and blocklists that apply to `web_fetch`:
+
+- **Allowlist:** When set, only listed domains can be fetched
+- **Blocklist:** Listed domains are never fetched (takes precedence over allowlist)
+
+### SSRF Protection
+
+All URLs are validated before fetching:
+
+- Private IP ranges blocked (10.x, 172.16-31.x, 192.168.x)
+- Localhost and loopback blocked
+- Cloud metadata endpoints blocked (169.254.169.254)
+- `.internal` and `.local` domains blocked
+
+## Rate Limits
+
+Web research tools have per-run rate limits enforced by the guardrail middleware:
+
+| Tool | Default Limit | Scope |
+|------|--------------|-------|
+| `web_fetch` | 20 calls per run | Per run |
+| `web_search` | (uses tool invocation budget) | Per run |
+
+When the rate limit is reached, the tool returns a `rate_limit` error and the agent is informed. The limit can be adjusted via guardrail config overrides.
+
+## Prompt Injection Scanning
+
+Content fetched from the web is automatically scanned for prompt injection patterns:
+
+- "Ignore previous instructions" variations
+- Role tag markup (`<system>`, `<assistant>`)
+- Instruction override attempts
+
+Suspicious content generates a **warning** in the run trace. The content is still returned to the agent — we warn rather than block to minimize false positives. Warnings are visible in the admin guardrail dashboard.
+
+## Comparison: web_search vs. http_request
+
+| | web_search | http_request |
+|---|-----------|-------------|
+| **Purpose** | Discovery — find relevant pages | Execution — call a known API |
+| **Input** | Natural language query | Full URL + method + headers |
+| **Output** | Structured results with URLs | Raw response body |
+| **Authentication** | None | Supports headers/tokens |
+| **Best for** | "What are the latest reviews of X?" | "GET /api/users from our CRM" |
+
+Agents are guided to prefer `web_search` for discovery and `http_request` for authenticated API calls.

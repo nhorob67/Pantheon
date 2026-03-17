@@ -1,0 +1,55 @@
+---
+title: Browser Automation
+description: Enable your agents to interact with web pages through headless browser automation.
+---
+
+# Browser Automation
+
+Browser automation gives your agents the ability to interact with web pages that don't have APIs. This is useful for portal lookups, form submissions, invoice retrieval, status checks, and data extraction.
+
+## How It Works
+
+Pantheon uses headless Chromium (via Playwright) to give agents 5 semantic browser tools:
+
+| Tool | Description | Risk |
+|------|-------------|------|
+| `browser_navigate` | Navigate to a URL | High |
+| `browser_extract` | Extract structured data from the current page | High |
+| `browser_click` | Click an element by description | High |
+| `browser_fill` | Fill a form field by description | High |
+| `browser_screenshot` | Take a screenshot of the current page | High |
+
+Agents interact with pages using **natural language descriptions**, not CSS selectors. The runtime uses the page's accessibility tree to resolve elements.
+
+## Safety
+
+- Each browser session runs in an isolated context (separate cookies/storage)
+- Sessions are destroyed after each run (no persistent state)
+- Only HTTPS URLs are allowed
+- Internal/private network addresses are blocked (SSRF protection)
+- Password and payment fields cannot be filled
+- `browser_click` and `browser_fill` require approval for L1/L2 agents
+- Domain allowlists and blocklists enforce navigation boundaries
+- Sessions have hard limits on actions (25) and duration (120s)
+
+## Cost
+
+- ~$0.02-0.03 per session
+- **Base plan:** 50 sessions/month included
+- **Overage:** $0.05/session metered
+- **Defaults:** 10 sessions/day, 25 actions/session, 120s max duration
+
+## v1 Limitations
+
+- No file download/upload through the browser
+- No JavaScript execution (`page.evaluate`) exposed to agents
+- No multi-tab sessions
+- No persistent sessions across runs
+- No credential/password storage in browser sessions
+- No purchases or payment form submissions
+- L3 (autopilot) agents require explicit tenant opt-in for browser tools
+
+## Next Steps
+
+- [Quickstart](/docs/browser-automation/quickstart) — Enable browser tools and run your first workflow
+- [Safety & Policies](/docs/browser-automation/safety) — Configure domain policies and approval requirements

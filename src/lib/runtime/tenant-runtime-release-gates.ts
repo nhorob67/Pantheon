@@ -221,3 +221,96 @@ export async function buildPhase3ReleaseGateReport(
     checks,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Phase 7.2.4: Feature Flag Dependency Enforcement
+// ---------------------------------------------------------------------------
+
+/**
+ * Canonical rollout order. Each capability lists its prerequisites.
+ * A capability cannot be enabled unless all prerequisites are also enabled.
+ */
+const FLAG_DEPENDENCIES: Record<string, string[]> = {
+  "tools.web_search": [],
+  "tools.web_fetch": [],
+  "tools.mcp_runtime": [],
+  "tools.delegation": [],
+  "tools.browser_automation": [],
+};
+
+export interface FlagDependencyViolation {
+  flag: string;
+  missingPrerequisite: string;
+}
+
+/**
+ * Check that a set of enabled flags respects the canonical dependency order.
+ * Returns an array of violations (empty = all good).
+ */
+export function checkFlagDependencies(
+  enabledFlags: Set<string>
+): FlagDependencyViolation[] {
+  const violations: FlagDependencyViolation[] = [];
+
+  for (const [flag, prerequisites] of Object.entries(FLAG_DEPENDENCIES)) {
+    if (!enabledFlags.has(flag)) continue;
+
+    for (const prereq of prerequisites) {
+      if (!enabledFlags.has(prereq)) {
+        violations.push({ flag, missingPrerequisite: prereq });
+      }
+    }
+  }
+
+  return violations;
+}
+
+/**
+ * Canonical rollout order for staged rollout verification.
+ * Each entry must be enabled before entries after it in the list.
+ */
+const CANONICAL_ROLLOUT_ORDER = [
+  "tools.web_search",
+  "tools.web_fetch",
+  "tools.mcp_runtime",
+  "tools.delegation",
+  "tools.browser_automation",
+];
+
+export interface RolloutOrderViolation {
+  flag: string;
+  enabledPosition: number;
+  disabledPredecessor: string;
+  predecessorPosition: number;
+}
+
+/**
+ * Verify that enabled flags respect the canonical rollout order.
+ * An earlier capability in the order should not be disabled if a later one is enabled.
+ * Returns violations (empty = order respected).
+ */
+export function verifyRolloutOrder(
+  enabledFlags: Set<string>
+): RolloutOrderViolation[] {
+  const violations: RolloutOrderViolation[] = [];
+
+  for (let i = 0; i < CANONICAL_ROLLOUT_ORDER.length; i++) {
+    const flag = CANONICAL_ROLLOUT_ORDER[i];
+    if (!enabledFlags.has(flag)) continue;
+
+    // Check all predecessors are enabled
+    for (let j = 0; j < i; j++) {
+      const predecessor = CANONICAL_ROLLOUT_ORDER[j];
+      if (!enabledFlags.has(predecessor)) {
+        violations.push({
+          flag,
+          enabledPosition: i,
+          disabledPredecessor: predecessor,
+          predecessorPosition: j,
+        });
+      }
+    }
+  }
+
+  return violations;
+}

@@ -1,0 +1,60 @@
+---
+title: Browser Automation Quickstart
+description: Enable browser automation tools and configure your first workflow.
+---
+
+# Browser Automation Quickstart
+
+## 1. Enable Browser Tools
+
+Browser tools are disabled by default. To enable them:
+
+1. Go to **Settings > Tool Catalog**
+2. Find the **Browser** category
+3. Toggle on the tools you need (start with `browser_navigate` and `browser_extract`)
+
+## 2. Configure Domain Policy
+
+Navigate to **Settings > Browser Automation** to set up your domain policy:
+
+- **Domain Allowlist:** Restrict agents to specific websites (recommended for production)
+- **Domain Blocklist:** Block specific sites agents should never visit
+- **Session Limits:** Adjust daily session count, actions per session, and max duration
+
+## 3. Test with an Agent
+
+Send a message to your agent asking it to look something up:
+
+> "Check the shipping status on our vendor portal at https://portal.example.com/orders"
+
+The agent will:
+1. Navigate to the URL using `browser_navigate`
+2. Extract the relevant data using `browser_extract`
+3. Report back with the findings
+
+## 4. Monitor in Run Inspector
+
+After the agent completes:
+1. Go to **Admin > Observability > Runs**
+2. Find the run and open the inspector
+3. The **Browser Sessions** tab shows URLs visited, action count, and screenshots
+
+## Common Workflows
+
+### Portal Lookup
+```
+User: "Check if invoice #1234 is paid on the client portal"
+Agent: browser_navigate → browser_fill (search box) → browser_click (search) → browser_extract
+```
+
+### Form Submission
+```
+User: "Submit a support ticket for the broken widget"
+Agent: browser_navigate → browser_fill (fields) → browser_click (submit) → browser_screenshot
+```
+
+### Data Extraction
+```
+User: "Get the latest pricing from competitor-site.com/pricing"
+Agent: browser_navigate → browser_extract (pricing table)
+```

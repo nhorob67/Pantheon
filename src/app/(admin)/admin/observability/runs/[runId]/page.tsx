@@ -1,7 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/auth/admin-session";
 import { notFound } from "next/navigation";
-import { getRunDetails } from "@/lib/queries/admin-observability";
+import { getRunDetails, getChildRuns } from "@/lib/queries/admin-observability";
 import { RunInspector } from "@/components/admin/run-inspector";
 import Link from "next/link";
 
@@ -13,7 +13,10 @@ export default async function AdminRunDetailPage({
   const { runId } = await params;
   await requireAdmin();
   const admin = createAdminClient();
-  const run = await getRunDetails(admin, runId);
+  const [run, childRuns] = await Promise.all([
+    getRunDetails(admin, runId),
+    getChildRuns(admin, runId),
+  ]);
 
   if (!run) {
     notFound();
@@ -37,7 +40,7 @@ export default async function AdminRunDetailPage({
         <p className="text-foreground/60 text-sm font-mono">{runId}</p>
       </div>
 
-      <RunInspector run={run} />
+      <RunInspector run={run} childRuns={childRuns} />
     </div>
   );
 }

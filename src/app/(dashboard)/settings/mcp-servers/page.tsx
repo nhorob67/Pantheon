@@ -57,13 +57,26 @@ async function ToolsContent({ customerId }: { customerId: string }) {
     .maybeSingle();
 
   let mcpServers: McpServerConfig[] = [];
+  let agents: { id: string; name: string }[] = [];
   if (mappingResult.data?.instance_id) {
-    const { data: mappedMcpServers } = await admin
-      .from("mcp_server_configs")
-      .select("*")
-      .eq("instance_id", mappingResult.data.instance_id)
-      .order("created_at", { ascending: true });
-    mcpServers = mappedMcpServers || [];
+    const [mcpResult, agentResult] = await Promise.all([
+      admin
+        .from("mcp_server_configs")
+        .select("*")
+        .eq("instance_id", mappingResult.data.instance_id)
+        .order("created_at", { ascending: true }),
+      admin
+        .from("tenant_agents")
+        .select("id, name")
+        .eq("tenant_id", tenant.id)
+        .eq("status", "active")
+        .order("name"),
+    ]);
+    mcpServers = mcpResult.data || [];
+    agents = (agentResult.data || []).map((a) => ({
+      id: a.id,
+      name: a.name,
+    }));
   }
 
   const composioConfig: ComposioConfig | null = composioResult.data
@@ -90,7 +103,7 @@ async function ToolsContent({ customerId }: { customerId: string }) {
             MCP Servers
           </h4>
         </div>
-        <McpServerList initialServers={mcpServers} tenantId={tenant.id} />
+        <McpServerList initialServers={mcpServers} tenantId={tenant.id} agents={agents} />
       </div>
 
       {/* Divider */}

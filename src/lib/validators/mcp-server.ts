@@ -1,6 +1,6 @@
 import { z } from "zod/v4";
 
-export const createMcpServerSchema = z.object({
+const mcpServerFields = {
   server_key: z
     .string()
     .min(1, "Key is required")
@@ -13,18 +13,57 @@ export const createMcpServerSchema = z.object({
     .string()
     .min(1, "Name is required")
     .max(100, "Name must be 100 characters or less"),
+  transport: z.enum(["stdio", "sse"]).default("stdio"),
+  // stdio transport fields
   command: z
     .string()
-    .min(1, "Command is required")
-    .max(500),
+    .max(500)
+    .default(""),
   args: z.array(z.string().max(500)).default([]),
   env_vars: z.record(z.string(), z.string()).default({}),
+  // sse transport fields
+  url: z.string().url().nullable().optional(),
+  headers: z.record(z.string(), z.string()).default({}),
+  // scope
   scope: z.enum(["instance", "agent"]).default("instance"),
   agent_id: z.string().uuid().nullable().optional(),
   enabled: z.boolean().default(true),
+} satisfies z.ZodRawShape;
+
+const mcpServerSchema = z.object(mcpServerFields);
+
+function addTransportIssues(
+  data: {
+    transport?: "stdio" | "sse";
+    command?: string;
+    url?: string | null;
+  },
+  ctx: z.RefinementCtx
+) {
+  if (data.transport === "stdio" && (!data.command || data.command.length === 0)) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["command"],
+      message: "stdio transport requires a command",
+    });
+  }
+
+  if (data.transport === "sse" && !data.url) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["url"],
+      message: "sse transport requires a URL",
+    });
+  }
+}
+
+export const createMcpServerSchema = mcpServerSchema.superRefine((data, ctx) => {
+  addTransportIssues(data, ctx);
 });
 
-export const updateMcpServerSchema = createMcpServerSchema.partial();
+export const updateMcpServerSchema = mcpServerSchema.partial().superRefine((data, ctx) => {
+  addTransportIssues(data, ctx);
+});
 
 export type CreateMcpServerData = z.infer<typeof createMcpServerSchema>;
 export type UpdateMcpServerData = z.infer<typeof updateMcpServerSchema>;

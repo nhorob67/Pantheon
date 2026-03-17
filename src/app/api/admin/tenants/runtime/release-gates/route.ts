@@ -4,7 +4,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { isAdmin } from "@/lib/auth/admin";
 import { constantTimeTokenInSet } from "@/lib/security/constant-time";
 import { safeErrorMessage } from "@/lib/security/safe-error";
-import { buildPhase3ReleaseGateReport } from "@/lib/runtime/tenant-runtime-release-gates";
+import {
+  buildPhase3ReleaseGateReport,
+  checkFlagDependencies,
+  verifyRolloutOrder,
+} from "@/lib/runtime/tenant-runtime-release-gates";
 import { getSupabaseServiceRoleEnvIssues } from "@/lib/runtime/supabase-env";
 
 async function isAuthorized(request: Request): Promise<boolean> {
@@ -78,10 +82,34 @@ export async function GET(request: Request) {
       },
     });
 
+    // Check feature flag consistency if flags param is provided
+    const flagsParam = url.searchParams.get("enabled_flags");
+    let flagWarnings: unknown[] | undefined;
+    if (flagsParam) {
+      const enabledFlags = new Set(flagsParam.split(",").map((f) => f.trim()).filter(Boolean));
+      const depViolations = checkFlagDependencies(enabledFlags);
+      const orderViolations = verifyRolloutOrder(enabledFlags);
+      if (depViolations.length > 0 || orderViolations.length > 0) {
+        flagWarnings = [
+          ...depViolations.map((v) => ({
+            type: "dependency_violation",
+            flag: v.flag,
+            missing: v.missingPrerequisite,
+          })),
+          ...orderViolations.map((v) => ({
+            type: "rollout_order_violation",
+            flag: v.flag,
+            disabledPredecessor: v.disabledPredecessor,
+          })),
+        ];
+      }
+    }
+
     return NextResponse.json(
       {
         phase: "phase_3_release_gates",
         report,
+        ...(flagWarnings ? { flag_warnings: flagWarnings } : {}),
       },
       { status: report.passed ? 200 : 409 }
     );

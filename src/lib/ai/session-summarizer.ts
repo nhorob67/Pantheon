@@ -3,9 +3,12 @@ import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { pantheonFastModel } from "./client";
 import { writeMemoryRecord } from "./memory-record-writer";
+import { estimateTokens } from "./history-loader";
+import { runPreCompactionFlush } from "./pre-compaction-flush";
 import type { MemoryCaptureLevel } from "@/types/memory";
 
-const SUMMARY_THRESHOLD = 20;
+const TOKEN_COMPACTION_THRESHOLD = 6000;
+const MIN_MESSAGES_FOR_COMPACTION = 8;
 const MESSAGES_TO_SUMMARIZE = 30;
 const MAX_OUTPUT_TOKENS = 300;
 
@@ -27,6 +30,7 @@ export interface SummarizeInput {
   tenantId: string;
   customerId: string;
   sessionId: string;
+  agentId?: string;
   captureLevel?: MemoryCaptureLevel;
   excludeCategories?: string[];
   model?: LanguageModel;
@@ -50,14 +54,14 @@ export async function maybeGenerateSummary(input: SummarizeInput): Promise<void>
 
   if (sessionError || !session) return;
 
-  // Count messages since last summary using exact cursor
-  const messagesSince = await countMessagesSinceSummary(
+  // Estimate tokens since last summary (adaptive trigger)
+  const { tokenEstimate, messageCount } = await estimateTokensSinceSummary(
     admin,
     sessionId,
     session.last_summarized_message_id
   );
 
-  if (messagesSince < SUMMARY_THRESHOLD) return;
+  if (tokenEstimate < TOKEN_COMPACTION_THRESHOLD || messageCount < MIN_MESSAGES_FOR_COMPACTION) return;
 
   // Load oldest unsummarized messages (starting after cursor) so we don't skip backlogs.
   // Uses composite (created_at, id) ordering for deterministic tie-breaking.
@@ -86,10 +90,29 @@ export async function maybeGenerateSummary(input: SummarizeInput): Promise<void>
 
   const { data: messages } = await query;
 
-  if (!messages || messages.length < SUMMARY_THRESHOLD) return;
+  if (!messages || messages.length < MIN_MESSAGES_FOR_COMPACTION) return;
 
   // Cursor advances to the newest message in this batch
   const newestMessageId = messages[messages.length - 1].id;
+
+  // Pre-compaction flush: let the agent save important details before summarization
+  if (input.agentId) {
+    try {
+      await runPreCompactionFlush({
+        admin,
+        tenantId: input.tenantId,
+        customerId: input.customerId,
+        agentId: input.agentId,
+        sessionId,
+        messages,
+        captureLevel,
+        excludeCategories,
+        model: input.model,
+      });
+    } catch {
+      // Flush failure must not block summarization
+    }
+  }
 
   // Format for summarization
   const transcript = messages
@@ -152,44 +175,40 @@ export async function maybeGenerateSummary(input: SummarizeInput): Promise<void>
   }
 }
 
-async function countMessagesSinceSummary(
+async function estimateTokensSinceSummary(
   admin: SupabaseClient,
   sessionId: string,
   lastSummarizedMessageId: string | null
-): Promise<number> {
-  if (!lastSummarizedMessageId) {
-    // No summary yet — count all messages
-    const { count } = await admin
+): Promise<{ tokenEstimate: number; messageCount: number }> {
+  let query = admin
+    .from("tenant_messages")
+    .select("id, content_text")
+    .eq("session_id", sessionId);
+
+  if (lastSummarizedMessageId) {
+    const { data: refMsg } = await admin
       .from("tenant_messages")
-      .select("id", { count: "exact", head: true })
-      .eq("session_id", sessionId);
-    return count ?? 0;
+      .select("created_at, id")
+      .eq("id", lastSummarizedMessageId)
+      .maybeSingle();
+
+    if (refMsg) {
+      query = query.or(
+        `created_at.gt.${refMsg.created_at},and(created_at.eq.${refMsg.created_at},id.gt.${refMsg.id})`
+      );
+    }
+    // If refMsg deleted, query returns all messages (same as no cursor)
   }
 
-  // Get the timestamp + id of the last summarized message for composite cursor
-  const { data: refMsg } = await admin
-    .from("tenant_messages")
-    .select("created_at, id")
-    .eq("id", lastSummarizedMessageId)
-    .maybeSingle();
+  const { data } = await query;
+  const messages = data ?? [];
 
-  if (!refMsg) {
-    // Reference message was deleted — fall back to full count
-    const { count } = await admin
-      .from("tenant_messages")
-      .select("id", { count: "exact", head: true })
-      .eq("session_id", sessionId);
-    return count ?? 0;
+  let tokenEstimate = 0;
+  for (const msg of messages) {
+    if (msg.content_text) {
+      tokenEstimate += estimateTokens(msg.content_text);
+    }
   }
 
-  // Count messages strictly after the cursor (composite tie-break on id)
-  const { count } = await admin
-    .from("tenant_messages")
-    .select("id", { count: "exact", head: true })
-    .eq("session_id", sessionId)
-    .or(
-      `created_at.gt.${refMsg.created_at},and(created_at.eq.${refMsg.created_at},id.gt.${refMsg.id})`
-    );
-
-  return count ?? 0;
+  return { tokenEstimate, messageCount: messages.length };
 }

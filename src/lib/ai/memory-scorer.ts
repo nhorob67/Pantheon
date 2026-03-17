@@ -33,9 +33,9 @@ const RECENCY_FLOOR = 0.05;
  * Knowledge/facts barely decay; working/outcomes decay quickly.
  */
 const HALF_LIFE_TABLE: Record<string, Record<string, number>> = {
-  knowledge: { fact: 90,  preference: 180, commitment: 180, outcome: 60, summary: 60, other: 60 },
-  episodic:  { fact: 60,  preference: 90,  commitment: 60,  outcome: 30, summary: 30, other: 30 },
-  working:   { fact: 14,  preference: 14,  commitment: 14,  outcome: 7,  summary: 7,  other: 7  },
+  knowledge: { fact: 90,  preference: 180, commitment: 180, outcome: 60, summary: 60, daily_log: 30, other: 60 },
+  episodic:  { fact: 60,  preference: 90,  commitment: 60,  outcome: 30, summary: 30, daily_log: 30, other: 30 },
+  working:   { fact: 14,  preference: 14,  commitment: 14,  outcome: 7,  summary: 7,  daily_log: 7,  other: 7  },
 };
 
 export function getHalfLifeDays(tier?: string, type?: string): number {

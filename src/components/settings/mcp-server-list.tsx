@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { McpServerConfig } from "@/types/mcp";
 import { McpServerCard } from "./mcp-server-card";
-import { McpServerForm } from "./mcp-server-form";
+import { McpServerForm, type McpServerFormData } from "./mcp-server-form";
 import { Dialog } from "@/components/ui/dialog";
 import { Plus, Server } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -11,11 +11,13 @@ import { EmptyState } from "@/components/ui/empty-state";
 interface McpServerListProps {
   initialServers: McpServerConfig[];
   tenantId: string;
+  agents?: { id: string; name: string }[];
 }
 
 export function McpServerList({
   initialServers,
   tenantId,
+  agents = [],
 }: McpServerListProps) {
   const [servers, setServers] = useState<McpServerConfig[]>(initialServers);
   const [formOpen, setFormOpen] = useState(false);
@@ -31,14 +33,7 @@ export function McpServerList({
     }
   };
 
-  const handleCreate = async (data: {
-    server_key: string;
-    display_name: string;
-    command: string;
-    args: string[];
-    env_vars: Record<string, string>;
-    enabled: boolean;
-  }) => {
+  const handleCreate = async (data: McpServerFormData) => {
     const res = await fetch(`/api/tenants/${tenantId}/mcp-servers`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -54,14 +49,7 @@ export function McpServerList({
     await refreshServers();
   };
 
-  const handleUpdate = async (data: {
-    server_key: string;
-    display_name: string;
-    command: string;
-    args: string[];
-    env_vars: Record<string, string>;
-    enabled: boolean;
-  }) => {
+  const handleUpdate = async (data: McpServerFormData) => {
     if (!editServer) return;
 
     const res = await fetch(
@@ -176,6 +164,7 @@ export function McpServerList({
         }}
         onSubmit={editServer ? handleUpdate : handleCreate}
         editServer={editServer}
+        agents={agents}
       />
 
       <Dialog

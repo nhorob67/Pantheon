@@ -1,13 +1,15 @@
 "use client";
 
-import type { ObservabilitySnapshot } from "@/lib/queries/admin-observability";
+import type { ObservabilitySnapshot, DelegationAnalytics } from "@/lib/queries/admin-observability";
 
 interface ObservabilityDashboardProps {
   snapshot: ObservabilitySnapshot;
+  delegationAnalytics?: DelegationAnalytics;
 }
 
 export function ObservabilityDashboard({
   snapshot,
+  delegationAnalytics,
 }: ObservabilityDashboardProps) {
   const errorRate =
     snapshot.runs_last_hour.total > 0
@@ -73,6 +75,61 @@ export function ObservabilityDashboard({
           </div>
         </div>
       </div>
+
+      {/* Delegation Analytics */}
+      {delegationAnalytics && delegationAnalytics.totalDelegations > 0 && (
+        <div className="bg-card rounded-xl border border-border shadow-sm p-6">
+          <h3 className="font-mono text-[11px] text-foreground uppercase tracking-[0.12em] mb-4">
+            Delegation (24h)
+          </h3>
+          <div className="grid gap-3 md:grid-cols-4">
+            <div className="rounded-lg border border-border px-3 py-2">
+              <p className="text-xs text-foreground/60">Total</p>
+              <p className="text-xl font-semibold text-foreground">
+                {delegationAnalytics.totalDelegations}
+              </p>
+            </div>
+            <div className="rounded-lg border border-border px-3 py-2">
+              <p className="text-xs text-foreground/60">Success Rate</p>
+              <p className="text-xl font-semibold text-green-500">
+                {(delegationAnalytics.successRate * 100).toFixed(1)}%
+              </p>
+            </div>
+            <div className="rounded-lg border border-border px-3 py-2">
+              <p className="text-xs text-foreground/60">Avg Latency</p>
+              <p className="text-xl font-semibold text-foreground">
+                {delegationAnalytics.avgLatencyMs > 0
+                  ? `${(delegationAnalytics.avgLatencyMs / 1000).toFixed(1)}s`
+                  : "—"}
+              </p>
+            </div>
+            <div className="rounded-lg border border-border px-3 py-2">
+              <p className="text-xs text-foreground/60">Max Depth</p>
+              <p className="text-xl font-semibold text-foreground">
+                {delegationAnalytics.depthDistribution.length > 0
+                  ? delegationAnalytics.depthDistribution[delegationAnalytics.depthDistribution.length - 1].depth
+                  : 0}
+              </p>
+            </div>
+          </div>
+          {delegationAnalytics.topDelegatingAgents.length > 0 && (
+            <div className="mt-4">
+              <p className="text-xs text-foreground/50 mb-2">Top delegating agents:</p>
+              <ul className="space-y-1">
+                {delegationAnalytics.topDelegatingAgents.slice(0, 5).map((a) => (
+                  <li
+                    key={a.agentName}
+                    className="flex justify-between text-sm"
+                  >
+                    <span className="text-foreground/80">{a.agentName}</span>
+                    <span className="text-foreground/50 font-mono">{a.count}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Two-column: Error tenants + Tool usage */}
       <div className="grid gap-6 md:grid-cols-2">

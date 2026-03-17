@@ -1,5 +1,5 @@
 export type MemoryTier = "working" | "episodic" | "knowledge";
-export type MemoryType = "fact" | "preference" | "commitment" | "outcome" | "summary" | "other";
+export type MemoryType = "fact" | "preference" | "commitment" | "outcome" | "summary" | "daily_log" | "other";
 
 /**
  * Classify a memory record into a tier based on type, confidence, and content length.
@@ -16,6 +16,11 @@ export function classifyMemoryTier(
   content: string
 ): MemoryTier {
   const trimmed = content.trim();
+
+  // Daily logs are always episodic (time-bound but persist for weeks)
+  if (memoryType === "daily_log") {
+    return "episodic";
+  }
 
   // Working tier: low-signal records
   if (

@@ -129,6 +129,13 @@ export function shouldSendDiscordRuntimeCompletionNotification(
     return false;
   }
 
+  // The AI worker already sends the response directly to Discord — skip the
+  // duplicate completion notification so the user doesn't see the same message twice.
+  const ack = pickString(run.result.ack);
+  if (ack === "ai_response_dispatched" && run.status === "completed") {
+    return false;
+  }
+
   const payloadRunKind = pickString(run.payload.run_kind);
   if (payloadRunKind === "discord_cron" && run.metadata.completion_notification_source !== "run_override") {
     return false;

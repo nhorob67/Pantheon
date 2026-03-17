@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { generateEmbedding } from "./embeddings";
 import { computeRRFScore } from "./memory-scorer";
-import { sanitizeLikePattern } from "@/lib/security/postgrest-sanitize";
+import { sanitizeLikePattern, sanitizeOrFilterValue } from "@/lib/security/postgrest-sanitize";
 
 interface KnowledgeChunkResult {
   id: string;
@@ -193,7 +193,7 @@ async function textFallbackSearch(
 
   // Include shared knowledge (agent_id IS NULL) and agent-specific
   if (agentId) {
-    q = q.or(`agent_id.is.null,agent_id.eq.${agentId}`);
+    q = q.or(`agent_id.is.null,agent_id.eq.${sanitizeOrFilterValue(agentId)}`);
   }
 
   const { data, error } = await q;

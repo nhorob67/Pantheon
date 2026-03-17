@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { parseFile } from "@/lib/knowledge/parser";
 import { validateFileTypeMatchesMagicBytes } from "@/lib/knowledge/detect-file-type";
 import { safeErrorMessage } from "@/lib/security/safe-error";
+import { sanitizeOrFilterValue } from "@/lib/security/postgrest-sanitize";
 
 import { tasks } from "@trigger.dev/sdk";
 import type { indexKnowledgeDocumentTask } from "@/trigger/index-knowledge-document";
@@ -288,7 +289,7 @@ async function fetchTenantKnowledgeByIdentifier(
     .from("tenant_knowledge_items")
     .select(TENANT_KNOWLEDGE_SELECT)
     .eq("tenant_id", tenantId)
-    .or(`id.eq.${fileIdentifier},legacy_knowledge_file_id.eq.${fileIdentifier}`)
+    .or(`id.eq.${sanitizeOrFilterValue(fileIdentifier)},legacy_knowledge_file_id.eq.${sanitizeOrFilterValue(fileIdentifier)}`)
     .maybeSingle();
 
   if (error) {
@@ -314,7 +315,7 @@ async function resolveAgentAssignment(
     .from("tenant_agents")
     .select("id, legacy_agent_id, status")
     .eq("tenant_id", context.tenantId)
-    .or(`id.eq.${requestedAgentId},legacy_agent_id.eq.${requestedAgentId}`)
+    .or(`id.eq.${sanitizeOrFilterValue(requestedAgentId)},legacy_agent_id.eq.${sanitizeOrFilterValue(requestedAgentId)}`)
     .maybeSingle();
 
   if (error) {

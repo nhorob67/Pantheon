@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CreateAgentData, UpdateAgentData } from "@/lib/validators/agent";
 import { toAutonomyLevel, type AutonomyLevel, type ToolApprovalLevel } from "@/types/agent";
 import { safeErrorMessage } from "@/lib/security/safe-error";
+import { sanitizeOrFilterValue } from "@/lib/security/postgrest-sanitize";
 
 const TENANT_AGENT_SELECT =
   "id, tenant_id, customer_id, legacy_agent_id, agent_key, display_name, status, policy_profile, is_default, sort_order, skills, config, created_at, updated_at";
@@ -447,7 +448,7 @@ async function fetchTenantAgentByIdentifier(
     .from("tenant_agents")
     .select(TENANT_AGENT_SELECT)
     .eq("tenant_id", tenantId)
-    .or(`id.eq.${agentIdentifier},legacy_agent_id.eq.${agentIdentifier}`)
+    .or(`id.eq.${sanitizeOrFilterValue(agentIdentifier)},legacy_agent_id.eq.${sanitizeOrFilterValue(agentIdentifier)}`)
     .maybeSingle();
 
   if (error) {

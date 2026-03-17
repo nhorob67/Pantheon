@@ -110,7 +110,7 @@ export async function POST(
         .eq("customer_id", agent.customer_id)
         .maybeSingle();
 
-      const tools = await resolveToolsForAgent({
+      const toolResult = await resolveToolsForAgent({
         admin: state.admin,
         tenantId: state.tenantContext.tenantId,
         customerId: state.tenantContext.customerId,
@@ -118,6 +118,7 @@ export async function POST(
         timezone: teamProfile?.timezone ?? "America/Chicago",
         channelId: "preview",
       });
+      const tools = toolResult.tools;
 
       const hasTools = Object.keys(tools).length > 0;
 
