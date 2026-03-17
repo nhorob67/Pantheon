@@ -3,27 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { constantTimeTokenInSet } from "@/lib/security/constant-time";
 import { safeErrorMessage } from "@/lib/security/safe-error";
 import { enqueueDiscordRuntimeRun } from "@/lib/runtime/tenant-runtime-queue";
-
-function parseCronNextRun(cronExpr: string, timezone: string, lastRun: Date): Date {
-  // Simple cron parser for common patterns
-  // Format: minute hour * * * (only supports minute/hour for now)
-  const parts = cronExpr.trim().split(/\s+/);
-  const minute = parts[0] === "*" ? lastRun.getMinutes() : parseInt(parts[0], 10);
-  const hour = parts.length > 1 && parts[1] !== "*" ? parseInt(parts[1], 10) : lastRun.getHours();
-
-  const next = new Date(lastRun);
-  next.setMinutes(minute);
-  next.setHours(hour);
-  next.setSeconds(0);
-  next.setMilliseconds(0);
-
-  // If the calculated time is in the past, advance to next day
-  if (next <= lastRun) {
-    next.setDate(next.getDate() + 1);
-  }
-
-  return next;
-}
+import { computeNextRun } from "@/lib/schedules/compute-next-run";
 
 export async function POST(request: Request) {
   const expectedTokens = [
@@ -92,17 +72,16 @@ export async function POST(request: Request) {
         });
 
         // Update last_run_at and next_run_at
-        const nextRun = parseCronNextRun(
+        const nextRun = computeNextRun(
           msg.cron_expression,
-          msg.timezone || "America/Chicago",
-          new Date()
+          msg.timezone || "America/Chicago"
         );
 
         await admin
           .from("tenant_scheduled_messages")
           .update({
             last_run_at: now,
-            next_run_at: nextRun.toISOString(),
+            next_run_at: nextRun,
             updated_at: now,
           })
           .eq("id", msg.id);
