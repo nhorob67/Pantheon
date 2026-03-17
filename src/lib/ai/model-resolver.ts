@@ -9,6 +9,7 @@ export interface ResolvedModel {
   provider: string;
   inputCostPerMillion: number;
   outputCostPerMillion: number;
+  contextWindowTokens: number;
 }
 
 export interface ResolvedModels {
@@ -50,9 +51,12 @@ export function resolveWorkerModels(rm?: ResolvedModels) {
     modelId: rm?.primary.modelId ?? DEFAULT_PRIMARY_MODEL_ID,
     inputCost: rm?.primary.inputCostPerMillion,
     outputCost: rm?.primary.outputCostPerMillion,
+    contextWindowTokens: rm?.primary.contextWindowTokens ?? DEFAULT_CONTEXT_WINDOW,
     fastModel: rm?.fast.model,
   };
 }
+
+const DEFAULT_CONTEXT_WINDOW = 200_000;
 
 const SYSTEM_DEFAULTS = {
   primary: {
@@ -60,12 +64,14 @@ const SYSTEM_DEFAULTS = {
     provider: "anthropic",
     input_cost_per_million: 300,
     output_cost_per_million: 1500,
+    context_window: DEFAULT_CONTEXT_WINDOW,
   },
   fast: {
     id: DEFAULT_FAST_MODEL_ID,
     provider: "anthropic",
     input_cost_per_million: 100,
     output_cost_per_million: 500,
+    context_window: DEFAULT_CONTEXT_WINDOW,
   },
 };
 
@@ -74,6 +80,7 @@ function buildResolvedModel(entry: {
   provider: string;
   input_cost_per_million: number;
   output_cost_per_million: number;
+  context_window?: number | null;
 }): ResolvedModel {
   return {
     model: createModelFromCatalog({ id: entry.id, provider: entry.provider }),
@@ -81,6 +88,7 @@ function buildResolvedModel(entry: {
     provider: entry.provider,
     inputCostPerMillion: entry.input_cost_per_million,
     outputCostPerMillion: entry.output_cost_per_million,
+    contextWindowTokens: entry.context_window ?? DEFAULT_CONTEXT_WINDOW,
   };
 }
 
@@ -117,7 +125,7 @@ export async function resolveModels(
 
   const { data: catalogRows } = await admin
     .from("model_catalog")
-    .select("id, provider, input_cost_per_million, output_cost_per_million, is_approved")
+    .select("id, provider, input_cost_per_million, output_cost_per_million, context_window, is_approved")
     .in("id", modelIds);
 
   const catalogMap = new Map(

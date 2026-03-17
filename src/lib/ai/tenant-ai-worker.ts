@@ -133,7 +133,7 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
   return {
     kind: "discord_runtime",
     async execute(context: TenantRuntimeWorkerContext): Promise<TenantRuntimeWorkerResult> {
-      const { model: primaryModel, modelId: primaryModelId, inputCost: primaryInputCost, outputCost: primaryOutputCost, fastModel } = resolveWorkerModels(context.resolvedModels);
+      const { model: primaryModel, modelId: primaryModelId, inputCost: primaryInputCost, outputCost: primaryOutputCost, contextWindowTokens, fastModel } = resolveWorkerModels(context.resolvedModels);
       try {
         // Spending cap + trial expiration circuit breaker
         const { data: custRow } = await admin
@@ -464,6 +464,7 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
             captureLevel: assembled.memorySettings.captureLevel,
             excludeCategories: assembled.memorySettings.excludeCategories,
             model: fastModel,
+            contextWindowTokens,
           }).catch((err) => {
             console.error("[ai-worker] Session summarization failed:", safeErrorMessage(err));
           });
