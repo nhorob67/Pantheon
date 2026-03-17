@@ -112,12 +112,26 @@ IMPORTANT: When you have tools available and a user asks you to do something or 
 ${data.backstory.trim()}`);
   }
 
-  // 3. Team context
+  // 3. Team context (include current date/time so the agent knows "today")
+  const now = new Date();
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: data.timezone,
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+  const currentDateTime = formatter.format(now);
+
   sections.push(`## Team Context
 
 - **Team:** ${data.team_name}
 - **Team Goal:** ${data.team_goal}
-- **Timezone:** ${data.timezone}`);
+- **Timezone:** ${data.timezone}
+- **Current Date/Time:** ${currentDateTime}`);
 
   // 4. Autonomy rules
   sections.push(renderAutonomyRules(data.autonomy_level));
