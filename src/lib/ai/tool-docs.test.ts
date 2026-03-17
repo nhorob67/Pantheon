@@ -46,6 +46,12 @@ describe("buildToolDocumentation", () => {
     assert.ok(result.includes("**Integrations:**"));
   });
 
+  it("groups conversation_search under Memory", () => {
+    const result = buildToolDocumentation(["memory_search", "conversation_search"]);
+    assert.ok(result.includes("**Memory:**"));
+    assert.ok(result.includes("`conversation_search`"));
+  });
+
   it("puts unknown-prefix tools under Other", () => {
     const result = buildToolDocumentation(["custom_tool", "memory_search"]);
     assert.ok(result.includes("**Other:**"));
@@ -64,7 +70,7 @@ describe("buildToolDocumentation", () => {
   it("includes behavioral instruction", () => {
     const result = buildToolDocumentation(["memory_search"]);
     assert.ok(
-      result.includes("call the appropriate tool immediately"),
+      result.includes("Call tools immediately when needed"),
       "Should include instruction to call tools immediately"
     );
   });

@@ -15,6 +15,7 @@ const CATEGORY_ORDER = [
 
 const PREFIX_TO_CATEGORY: Record<string, (typeof CATEGORY_ORDER)[number]> = {
   memory_: "Memory",
+  conversation_: "Memory",
   schedule_: "Schedules",
   config_: "Self-Configuration",
   credential_: "Credentials",

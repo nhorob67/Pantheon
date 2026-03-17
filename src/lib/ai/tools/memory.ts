@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { MemoryType } from "../memory-tier-classifier";
 import { writeMemoryRecord } from "../memory-record-writer";
 import { hybridMemorySearch } from "../memory-retrieval";
+import { searchConversations } from "../conversation-search";
 import type { ScoredMemory } from "../memory-scorer";
 import type { MemoryCaptureLevel } from "@/types/memory";
 
@@ -135,6 +136,33 @@ export function createMemoryTools(
           };
         } catch (err) {
           return { error: `Memory read failed: ${err instanceof Error ? err.message : "unknown error"}` };
+        }
+      },
+    }),
+
+    conversation_search: tool({
+      description:
+        "Search past conversation messages for specific topics, decisions, or discussions. Use this when the user asks about previous conversations or when memory_search doesn't have the answer. Returns matching messages ranked by relevance.",
+      inputSchema: z.object({
+        query: z.string().describe("What to search for in conversation history"),
+        limit: z.number().optional().describe("Max results (default 10, max 25)"),
+      }),
+      execute: async ({ query, limit }) => {
+        try {
+          const results = await searchConversations(admin, tenantId, query, limit ?? 10);
+          return {
+            messages: results.map((r) => ({
+              id: r.id,
+              session_id: r.session_id,
+              direction: r.direction,
+              content: r.content_text,
+              sent_at: r.created_at,
+              relevance: r.rank,
+            })),
+            count: results.length,
+          };
+        } catch (err) {
+          return { error: `Conversation search failed: ${err instanceof Error ? err.message : "unknown error"}` };
         }
       },
     }),

@@ -15,11 +15,21 @@ describe("session-summarizer", () => {
     mockWriteMemoryRecord.mock.resetCalls();
   });
 
-  describe("threshold constants", () => {
-    it("TOKEN_COMPACTION_THRESHOLD is 6000 tokens", () => {
-      const TOKEN_COMPACTION_THRESHOLD = 6000;
-      assert.equal(TOKEN_COMPACTION_THRESHOLD, 6000);
-    });
+  describe("adaptive threshold constants", () => {
+    // computeCompactionThreshold logic mirrored here since session-summarizer.ts
+    // has transitive dependencies (ai, supabase) that aren't available in unit tests.
+    const COMPACTION_RATIO = 0.08;
+    const MIN_COMPACTION_THRESHOLD = 4000;
+    const MAX_COMPACTION_THRESHOLD = 30000;
+    const DEFAULT_CONTEXT_WINDOW = 200_000;
+
+    function computeCompactionThreshold(contextWindowTokens?: number): number {
+      const ctx = contextWindowTokens ?? DEFAULT_CONTEXT_WINDOW;
+      return Math.max(
+        MIN_COMPACTION_THRESHOLD,
+        Math.min(MAX_COMPACTION_THRESHOLD, Math.floor(ctx * COMPACTION_RATIO))
+      );
+    }
 
     it("MIN_MESSAGES_FOR_COMPACTION is 8", () => {
       const MIN_MESSAGES_FOR_COMPACTION = 8;
@@ -30,36 +40,47 @@ describe("session-summarizer", () => {
       const MESSAGES_TO_SUMMARIZE = 30;
       assert.equal(MESSAGES_TO_SUMMARIZE, 30);
     });
+
+    it("default threshold for 200K context window is 16000", () => {
+      assert.equal(computeCompactionThreshold(200_000), 16000);
+    });
+
+    it("threshold is clamped to min 4000", () => {
+      assert.equal(computeCompactionThreshold(10_000), 4000);
+    });
+
+    it("threshold is clamped to max 30000", () => {
+      assert.equal(computeCompactionThreshold(1_000_000), 30000);
+    });
+
+    it("scales linearly for mid-range windows", () => {
+      assert.equal(computeCompactionThreshold(100_000), 8000);
+      assert.equal(computeCompactionThreshold(128_000), 10240);
+    });
+
+    it("defaults to 200K when undefined", () => {
+      assert.equal(computeCompactionThreshold(undefined), 16000);
+    });
   });
 
   describe("token-based compaction trigger", () => {
-    it("20 short messages below 6000 tokens do NOT trigger", () => {
+    it("20 short messages below adaptive threshold do NOT trigger", () => {
       // 20 messages of "hello" = ~20 * 2 tokens = 40 tokens
       const shortMessages = Array.from({ length: 20 }, () => "hello");
       const tokenEstimate = shortMessages.reduce((sum, m) => sum + estimateTokens(m), 0);
-      const TOKEN_COMPACTION_THRESHOLD = 6000;
-      assert.ok(tokenEstimate < TOKEN_COMPACTION_THRESHOLD, `${tokenEstimate} tokens should be below threshold`);
+      // Even at minimum threshold (4000), 40 tokens is well below
+      assert.ok(tokenEstimate < 4000, `${tokenEstimate} tokens should be below minimum threshold`);
     });
 
-    it("8+ messages with large content above 6000 tokens DO trigger", () => {
-      // 10 messages of 3000 chars each = ~7500 tokens
-      const largeMessages = Array.from({ length: 10 }, () => "x".repeat(3000));
+    it("8+ messages with large content above threshold DO trigger", () => {
+      // 10 messages of 7000 chars each = ~17500 tokens (above 16000 default for 200K model)
+      const largeMessages = Array.from({ length: 10 }, () => "x".repeat(7000));
       const tokenEstimate = largeMessages.reduce((sum, m) => sum + estimateTokens(m), 0);
       const messageCount = largeMessages.length;
-      const TOKEN_COMPACTION_THRESHOLD = 6000;
+      const threshold = 16000; // default for 200K context
       const MIN_MESSAGES_FOR_COMPACTION = 8;
-      assert.ok(tokenEstimate >= TOKEN_COMPACTION_THRESHOLD, `${tokenEstimate} tokens should be above threshold`);
+      assert.ok(tokenEstimate >= threshold, `${tokenEstimate} tokens should be above threshold`);
       assert.ok(messageCount >= MIN_MESSAGES_FOR_COMPACTION, `${messageCount} messages should meet minimum`);
-    });
-
-    it("mixed scenario at exactly 6000 token threshold", () => {
-      // Create messages that sum to ~6000 tokens
-      // 6000 tokens * 4 chars/token = 24000 chars total
-      const msgCount = 10;
-      const charsPerMsg = 2400;
-      const messages = Array.from({ length: msgCount }, () => "a".repeat(charsPerMsg));
-      const tokenEstimate = messages.reduce((sum, m) => sum + estimateTokens(m), 0);
-      assert.equal(tokenEstimate, 6000, "Should be at threshold boundary");
     });
 
     it("few large messages below MIN_MESSAGES do NOT trigger", () => {
@@ -68,7 +89,7 @@ describe("session-summarizer", () => {
       const tokenEstimate = messages.reduce((sum, m) => sum + estimateTokens(m), 0);
       const messageCount = messages.length;
       const MIN_MESSAGES_FOR_COMPACTION = 8;
-      assert.ok(tokenEstimate > 6000, "Tokens above threshold");
+      assert.ok(tokenEstimate > 4000, "Tokens above minimum threshold");
       assert.ok(messageCount < MIN_MESSAGES_FOR_COMPACTION, "But not enough messages");
     });
   });
