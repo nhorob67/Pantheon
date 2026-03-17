@@ -21,10 +21,13 @@ import { createDefaultGuardrailPipeline } from "@/lib/runtime/guardrail-middlewa
 import {
   sendDiscordChannelMessage,
   sendDiscordChannelMessageSequence,
+  sendDiscordChannelMessageWithAttachments,
   sendDiscordTypingIndicator,
   buildDiscordRuntimeResponseParts,
   DiscordApiError,
+  type DiscordFileAttachment,
 } from "@/lib/runtime/tenant-runtime-discord";
+import { FILE_CREATION_LIMITS } from "@/types/file-creation";
 import {
   CircuitBreakerOpenError,
   runWithCircuitBreaker,
@@ -218,6 +221,16 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
 
         const startTime = Date.now();
 
+        // Collect files created by the file_create tool during generation
+        const pendingFileAttachments: Array<{
+          filename: string;
+          buffer: Buffer;
+          contentType: string;
+          sizeBytes: number;
+          storageKey: string;
+          signedUrl: string;
+        }> = [];
+
         // Mutable delegation context — parentGuardrails/parentRecords/parentToolKeys
         // populated after executor creation (below), before any tool executes.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -251,6 +264,9 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           // delegationConfig uses a mutable object — parentGuardrails and parentRecords
           // are populated after executor creation (below), before any tool executes.
           delegationConfig: delegationCtx,
+          onFileCreated: (file) => {
+            pendingFileAttachments.push(file);
+          },
         });
 
         // Custom cron jobs can scope tools to a subset
@@ -570,10 +586,62 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           }
         };
 
+        // If there are file attachments from file_create tool calls, send them
+        // with the first message part using multipart/form-data.
+        const discordAttachments: DiscordFileAttachment[] = pendingFileAttachments
+          .filter((f) => f.sizeBytes <= FILE_CREATION_LIMITS.discordAttachmentMaxBytes)
+          .map((f) => ({
+            filename: f.filename,
+            data: f.buffer,
+            contentType: f.contentType,
+          }));
+
         const sent = await runWithCircuitBreaker(
           `discord_dispatch:${context.run.tenant_id}`,
-          () =>
-            sendDiscordChannelMessageSequence(
+          async () => {
+            if (discordAttachments.length > 0) {
+              // Send first part with attachments, then remaining parts as text
+              const firstPart = responseParts[0] || "";
+              const attachmentResult = await sendDiscordChannelMessageWithAttachments(
+                {
+                  botToken,
+                  channelId,
+                  content: firstPart,
+                  attachments: discordAttachments,
+                  replyToMessageId: inboundMessageId,
+                },
+                timeoutFetch
+              );
+
+              // Send remaining text parts if any
+              if (responseParts.length > 1) {
+                const remaining = await sendDiscordChannelMessageSequence(
+                  {
+                    botToken,
+                    channelId,
+                    contents: responseParts.slice(1),
+                  },
+                  timeoutFetch
+                );
+                return {
+                  messageIds: [
+                    ...(attachmentResult.messageId ? [attachmentResult.messageId] : []),
+                    ...remaining.messageIds,
+                  ],
+                  status: remaining.status,
+                  partsSent: 1 + remaining.partsSent,
+                };
+              }
+
+              return {
+                messageIds: attachmentResult.messageId ? [attachmentResult.messageId] : [],
+                status: attachmentResult.status,
+                partsSent: 1,
+              };
+            }
+
+            // No attachments — standard text-only dispatch
+            return sendDiscordChannelMessageSequence(
               {
                 botToken,
                 channelId,
@@ -581,7 +649,8 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
                 replyToMessageId: inboundMessageId,
               },
               timeoutFetch
-            ),
+            );
+          },
           {
             failureThreshold: CIRCUIT_FAILURE_THRESHOLD,
             cooldownMs: CIRCUIT_COOLDOWN_MS,

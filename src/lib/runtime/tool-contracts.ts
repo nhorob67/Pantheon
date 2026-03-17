@@ -29,6 +29,7 @@ export type ToolCategory =
   | "composio"
   | "mcp"
   | "browser"
+  | "file-creation"
   | "internal-control";
 
 // ---------------------------------------------------------------------------

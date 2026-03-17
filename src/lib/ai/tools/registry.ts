@@ -28,6 +28,7 @@ import { createBrowserTools } from "./browser";
 import { isBrowserToolAvailable } from "./browser-tool-gating";
 import { isDelegationToolAvailable } from "./delegation-tool-gating";
 import { checkFlagDependencies } from "@/lib/runtime/tenant-runtime-release-gates";
+import { createFileCreationTool, type FileCreationToolConfig } from "./file-creation";
 
 type ToolMap = Record<string, Tool>;
 
@@ -61,6 +62,8 @@ export interface ToolRegistryInput {
   browserEnabled?: boolean;
   /** Delegation config — when provided, enables the delegate_task tool */
   delegationConfig?: Omit<DelegationToolConfig, "admin" | "tenantId" | "customerId" | "parentAgent"> | null;
+  /** Callback invoked when an agent creates a file via file_create tool */
+  onFileCreated?: FileCreationToolConfig["onFileCreated"];
 }
 
 function buildMemoryTools(input: ToolRegistryInput): ToolMap {
@@ -262,6 +265,19 @@ export async function resolveToolsForAgent(input: ToolRegistryInput): Promise<To
       );
     }
   }
+
+  // File creation tool — always available
+  Object.assign(
+    tools,
+    createFileCreationTool({
+      admin: input.admin,
+      tenantId: input.tenantId,
+      customerId: input.customerId,
+      agentId: input.agent.id,
+      channelId: input.channelId,
+      onFileCreated: input.onFileCreated,
+    })
+  );
 
   // Self-configuration tools — always available, role-gated internally
   const selfConfigTools = createSelfConfigTools({

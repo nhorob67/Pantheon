@@ -118,6 +118,7 @@ describe("tool-catalog", () => {
       "config_set_my_delegation", "config_update_team_profile",
       "config_create_agent", "config_archive_agent", "config_undo_last_change",
       "use_credential", "reveal_secret",
+      "file_create",
       "delegate_task", "delegate_task_async", "delegation_poll", "delegation_cancel",
       "browser_navigate", "browser_extract", "browser_click", "browser_fill", "browser_screenshot",
       "http_request",
