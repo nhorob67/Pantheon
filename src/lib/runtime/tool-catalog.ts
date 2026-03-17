@@ -323,6 +323,16 @@ const NATIVE_TOOLS: NativeToolEntry[] = [
     { defaultStatus: "disabled" }
   ),
 
+  // ── File Creation ──────────────────────────────────────────────────────
+  native(
+    "file_create",
+    "Create File",
+    "Generate a file (CSV, Excel, PDF, JSON, TXT, Markdown, HTML) and send it as a Discord attachment",
+    "file-creation",
+    "medium",
+    { writesState: true }
+  ),
+
   // ── Network ─────────────────────────────────────────────────────────────
   native(
     "http_request",

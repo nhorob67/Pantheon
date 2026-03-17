@@ -56,6 +56,15 @@ interface AssembleInput {
   revealedSecretValues?: string[];
   /** Delegation config — passed through to tool registry for delegate_task tool */
   delegationConfig?: Omit<DelegationToolConfig, "admin" | "tenantId" | "customerId" | "parentAgent"> | null;
+  /** Callback invoked when an agent creates a file via file_create tool */
+  onFileCreated?: (file: {
+    filename: string;
+    buffer: Buffer;
+    contentType: string;
+    sizeBytes: number;
+    storageKey: string;
+    signedUrl: string;
+  }) => void;
 }
 
 export async function assembleContext(
@@ -228,6 +237,7 @@ export async function assembleContext(
         revealedSecretValues: input.revealedSecretValues,
         mcpEnabled,
         delegationConfig: input.delegationConfig,
+        onFileCreated: input.onFileCreated,
       })
     : { tools: {}, composioKeyMap: new Map<string, string>(), mcpKeyMap: new Map<string, string>() };
   const tools = toolResult.tools;

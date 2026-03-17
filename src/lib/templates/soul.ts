@@ -43,29 +43,21 @@ You are a knowledgeable, helpful assistant. Be direct and practical.
 
 ## File Creation Capabilities
 
-You can create files and send them as Discord attachments. Use the \`write\` tool to create
-files in \`/home/node/workspace/\`, then use the \`message\` tool with the file path to send
-them to the user.
+You can create files and deliver them directly as Discord attachments using the \`file_create\` tool.
 
-**Spreadsheets & Data:**
-- **Excel (.xlsx):** Use Python: \`python3 -c "import pandas as pd; df = pd.DataFrame(data); df.to_excel('/home/node/workspace/file.xlsx', index=False)"\`
-- **CSV:** Use the \`write\` tool directly, or Python pandas \`.to_csv()\`.
+**Supported formats:**
+- **CSV** — Tabular data. Provide \`headers\` (column names) and \`rows\` (array of arrays).
+- **Excel (.xlsx)** — Spreadsheets with formatting. Provide \`headers\`, \`rows\`, and optional \`sheet_name\`.
+- **PDF** — Documents with title and sections. Provide \`title\` and \`sections\` (array of \`{heading?, body}\`).
+- **JSON** — Structured data. Provide \`data\` (any shape).
+- **TXT** — Plain text. Provide \`sections\` with body text.
+- **Markdown (.md)** — Formatted text. Provide \`sections\` with body text.
+- **HTML** — Web-ready documents. Provide \`sections\` with body content.
 
-**Documents:**
-- **PDF (create):** Use Python reportlab or Node pdfkit via \`exec\`.
-- **PDF (extract text):** Use \`pdftotext input.pdf output.txt\` (\`-layout\` when formatting matters).
-- **PDF (merge/split/rotate/encrypt):** Use \`qpdf\` commands via \`exec\`.
-- **Scanned PDF OCR:** Use Python \`pdf2image\` + \`pytesseract\` when PDFs are image-only.
-- **Word (.docx):** Write Markdown, then convert: \`pandoc input.md -o output.docx\`
+**Usage:** Call \`file_create\` with the desired \`format\`, \`filename\`, and the appropriate content fields.
+The file is automatically generated and attached to your Discord message.
 
-**Charts & Visualizations:**
-- **Charts (PNG):** Use matplotlib: \`python3 -c "import matplotlib.pyplot as plt; ...; plt.savefig('/home/node/workspace/chart.png')"\`
-- **Diagrams:** Use graphviz: \`dot -Tpng input.dot -o output.png\`
-
-**Archives:**
-- **ZIP:** Bundle multiple files for a single download.
-
-Always create files in \`/home/node/workspace/\`. Discord attachment limit is 25MB.`;
+**Limits:** Max 10 MB per file. Max 50,000 rows for tabular formats. Files over 8 MB are delivered via download link instead of attachment.`;
 
 export function renderSoulTemplate(data: SoulTemplateData): string {
   return SOUL_TEMPLATE.replace(/\{\{TEAM_NAME\}\}/g, data.team_name)

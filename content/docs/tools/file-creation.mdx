@@ -1,0 +1,100 @@
+---
+title: File Creation
+description: Generate and deliver files -- spreadsheets, PDFs, CSVs, and more -- directly as Discord attachments.
+section: Tools
+order: 12
+icon: FileOutput
+tags: [files, csv, excel, pdf, json, export, download]
+---
+
+# File Creation
+
+Your agents can generate files and deliver them directly as Discord attachments. Ask your agent to create a spreadsheet, PDF report, data export, or any other supported format, and it will create and send the file in the conversation.
+
+## Supported formats
+
+| Format | Extension | Best for |
+|---|---|---|
+| **CSV** | `.csv` | Tabular data, data imports, simple spreadsheets |
+| **Excel** | `.xlsx` | Formatted spreadsheets with headers and styling |
+| **PDF** | `.pdf` | Reports, documents, printable content |
+| **JSON** | `.json` | Structured data, API responses, configurations |
+| **Text** | `.txt` | Plain text notes, logs, simple content |
+| **Markdown** | `.md` | Formatted text with headings, lists, emphasis |
+| **HTML** | `.html` | Web-ready documents, styled content |
+
+## How it works
+
+1. Ask your agent to create a file (e.g., "Create an Excel spreadsheet of our Q1 metrics")
+2. The agent calls the `file_create` tool with the appropriate format and data
+3. The file is generated, stored securely, and attached to the Discord message
+4. Files over 8 MB are delivered via a time-limited download link instead
+
+## Examples
+
+**Spreadsheet from conversation data:**
+> "Create a CSV with the project tasks we discussed -- include name, status, and due date"
+
+**PDF report:**
+> "Generate a PDF summary of today's meeting notes with sections for decisions, action items, and next steps"
+
+**Data export:**
+> "Export the sales figures as an Excel spreadsheet with totals"
+
+**Structured data:**
+> "Create a JSON file with the API configuration we just defined"
+
+## Limits
+
+| Limit | Value |
+|---|---|
+| Maximum file size | 10 MB |
+| Maximum rows (CSV/Excel) | 50,000 |
+| Maximum columns (CSV/Excel) | 200 |
+| Maximum document sections | 100 |
+| Discord attachment limit | 8 MB (larger files use download link) |
+| Download link expiry | 1 hour |
+
+## File storage
+
+Generated files are stored in your workspace's secure storage. Each file is:
+
+- Scoped to your team (other teams cannot access your files)
+- Tracked with metadata (format, size, timestamp, generating agent)
+- Available via signed download link for 1 hour after creation
+
+## Format details
+
+### CSV and Excel
+
+For tabular formats, the agent provides column headers and data rows. Excel files include:
+- Bold header row with light gray background
+- Auto-fitted column widths
+- Custom worksheet name support
+
+### PDF
+
+PDF documents support:
+- Document title
+- Multiple sections with headings
+- Formatted body text with paragraph spacing
+- A4 page size with standard margins
+
+### JSON
+
+JSON output is pretty-printed with 2-space indentation for readability. The agent can structure any data shape -- objects, arrays, nested structures.
+
+### Text and Markdown
+
+Plain text and Markdown documents are structured with:
+- Optional title (with underline)
+- Sections with headings
+- Body text content
+
+### HTML
+
+HTML documents include:
+- Full document structure with doctype
+- Clean, readable default styling
+- Responsive layout
+- Proper HTML escaping for security
