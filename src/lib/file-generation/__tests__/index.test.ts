@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { resolveContent, generateFile } from "../index.ts";
-import type { FileCreateToolInput, TabularContent, DocumentContent, JsonContent } from "../../../../types/file-creation.ts";
+import type { FileCreateToolInput, TabularContent, DocumentContent, JsonContent } from "../../../types/file-creation.ts";
 
 describe("resolveContent", () => {
   it("resolves CSV input to tabular content", () => {

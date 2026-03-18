@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { generateHtml } from "../html-generator.ts";
-import type { DocumentContent } from "../../../../types/file-creation.ts";
+import type { DocumentContent } from "../../../types/file-creation.ts";
 
 describe("generateHtml", () => {
   it("generates valid HTML document structure", () => {
