@@ -259,7 +259,7 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
         let resolvedTools = assembled.tools;
         if (isCron) {
           // Exclude Composio tools from cron runs — they require interactive OAuth context
-          const BUILT_IN_PREFIXES = ["memory_", "schedule_"];
+          const BUILT_IN_PREFIXES = ["memory_", "schedule_", "conversation_"];
           const DELEGATION_TOOLS = ["delegate_task", "delegate_task_async", "delegation_poll", "delegation_cancel"];
           const STANDALONE_TOOLS = ["file_create"];
           const filtered: typeof resolvedTools = {};

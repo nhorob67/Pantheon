@@ -110,7 +110,7 @@ describe("tool-catalog", () => {
 
   it("covers all expected native tools", () => {
     const expected = [
-      "memory_write", "memory_search", "memory_read",
+      "memory_write", "memory_search", "memory_read", "conversation_search",
       "schedule_create", "schedule_list", "schedule_toggle", "schedule_delete",
       "config_view_my_config", "config_list_agents",
       "config_set_my_goal", "config_set_my_role", "config_set_my_backstory",
@@ -121,7 +121,6 @@ describe("tool-catalog", () => {
       "file_create",
       "delegate_task", "delegate_task_async", "delegation_poll", "delegation_cancel",
       "browser_navigate", "browser_extract", "browser_click", "browser_fill", "browser_screenshot",
-      "file_create",
       "http_request",
       "web_search", "web_fetch",
     ];
