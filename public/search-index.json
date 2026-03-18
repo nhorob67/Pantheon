@@ -1520,6 +1520,58 @@
     "body": "Data Exports\n\nPantheon lets you export your workspace data for backup, analysis, or migration. Export conversations, knowledge files, memory records, and metadata as JSONL or CSV files.\n\nCreating an export\n\n1. Go to Settings > Exports\n2. Choose the scope:\n- Full tenant -- All data including conversations, knowledge, memory, and metadata\n- Knowledge + memory only -- Just your knowledge files and memory vault records\n- Metadata only -- Configuration and account data without conversation content\n3. Choose the format: JSONL or CSV\n4. Optionally check Include blobs to include binary attachments and files\n5. Click Queue Export\n\nExports are processed in the background. You can navigate away and check back later.\n\nExport lifecycle\n\n| Status | Meaning |\n|---|---|\n| Queued | Waiting to start |\n| Running | Currently being processed |\n| Completed | Ready to download |\n| Failed | Job errored -- you can retry |\n| Expired | Old exports are automatically cleaned up after the retention period |\n\nDownloading exports\n\nOnce an export shows \"Completed\":\n\n1. Click on the export to view details\n2. Download the manifest file and individual data files\n3. Each file includes a checksum for integrity verification\n\nWhat's next\n\n- Knowledge Files -- Manage your uploaded documents\n- Memory Vault -- View and manage persistent memories\n- Billing -- Manage your subscription"
   },
   {
+    "slug": "tools/file-creation",
+    "title": "File Creation",
+    "section": "Tools",
+    "headings": [
+      {
+        "id": "supported-formats",
+        "title": "Supported formats"
+      },
+      {
+        "id": "how-it-works",
+        "title": "How it works"
+      },
+      {
+        "id": "examples",
+        "title": "Examples"
+      },
+      {
+        "id": "limits",
+        "title": "Limits"
+      },
+      {
+        "id": "file-storage",
+        "title": "File storage"
+      },
+      {
+        "id": "format-details",
+        "title": "Format details"
+      },
+      {
+        "id": "csv-and-excel",
+        "title": "CSV and Excel"
+      },
+      {
+        "id": "pdf",
+        "title": "PDF"
+      },
+      {
+        "id": "json",
+        "title": "JSON"
+      },
+      {
+        "id": "text-and-markdown",
+        "title": "Text and Markdown"
+      },
+      {
+        "id": "html",
+        "title": "HTML"
+      }
+    ],
+    "body": "File Creation\n\nYour agents can generate files and deliver them directly as Discord attachments. Ask your agent to create a spreadsheet, PDF report, data export, or any other supported format, and it will create and send the file in the conversation.\n\nSupported formats\n\n| Format | Extension | Best for |\n|---|---|---|\n| CSV | .csv | Tabular data, data imports, simple spreadsheets |\n| Excel | .xlsx | Formatted spreadsheets with headers and styling |\n| PDF | .pdf | Reports, documents, printable content |\n| JSON | .json | Structured data, API responses, configurations |\n| Text | .txt | Plain text notes, logs, simple content |\n| Markdown | .md | Formatted text with headings, lists, emphasis |\n| HTML | .html | Web-ready documents, styled content |\n\nHow it works\n\n1. Ask your agent to create a file (e.g., \"Create an Excel spreadsheet of our Q1 metrics\")\n2. The agent calls the filecreate tool with the appropriate format and data\n3. The file is generated, stored securely, and attached to the Discord message\n4. Files over 8 MB are delivered via a time-limited download link instead\n\nExamples\n\nSpreadsheet from conversation data:\n> \"Create a CSV with the project tasks we discussed -- include name, status, and due date\"\n\nPDF report:\n> \"Generate a PDF summary of today's meeting notes with sections for decisions, action items, and next steps\"\n\nData export:\n> \"Export the sales figures as an Excel spreadsheet with totals\"\n\nStructured data:\n> \"Create a JSON file with the API configuration we just defined\"\n\nLimits\n\n| Limit | Value |\n|---|---|\n| Maximum file size | 10 MB |\n| Maximum rows (CSV/Excel) | 50,000 |\n| Maximum columns (CSV/Excel) | 200 |\n| Maximum document sections | 100 |\n| Discord attachment limit | 8 MB (larger files use download link) |\n| Download link expiry | 1 hour |\n\nFile storage\n\nGenerated files are stored in your workspace's secure storage. Each file is:\n\n- Scoped to your team (other teams cannot access your files)\n- Tracked with metadata (format, size, timestamp, generating agent)\n- Available via signed download link for 1 hour after creation\n\nFormat details\n\nCSV and Excel\n\nFor tabular formats, the agent provides column headers and data rows. Excel files include:\n- Bold header row with light gray background\n- Auto-fitted column widths\n- Custom worksheet name support\n\nPDF\n\nPDF documents support:\n- Document title\n- Multiple sections with headings\n- Formatted body text with paragraph spacing\n- A4 page size with standard margins\n\nJSON\n\nJSON output is pretty-printed with 2-space indentation for readability. The agent can structure any data shape -- objects, arrays, nested structures.\n\nText and Markdown\n\nPlain text and Markdown documents are structured with:\n- Optional title (with underline)\n- Sections with headings\n- Body text content\n\nHTML\n\nHTML documents include:\n- Full document structure with doctype\n- Clean, readable default styling\n- Responsive layout\n- Proper HTML escaping for security"
+  },
+  {
     "slug": "tools",
     "title": "Tools",
     "section": "Tools",
