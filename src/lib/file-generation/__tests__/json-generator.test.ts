@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { generateJson } from "../json-generator.ts";
-import type { JsonContent } from "../../../../types/file-creation.ts";
+import type { JsonContent } from "../../../types/file-creation.ts";
 
 describe("generateJson", () => {
   it("generates pretty-printed JSON", () => {

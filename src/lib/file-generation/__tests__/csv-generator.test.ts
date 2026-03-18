@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { generateCsv } from "../csv-generator.ts";
-import type { TabularContent } from "../../../../types/file-creation.ts";
+import type { TabularContent } from "../../../types/file-creation.ts";
 
 describe("generateCsv", () => {
   it("generates valid CSV with headers and rows", () => {

@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { generateXlsx } from "../xlsx-generator.ts";
-import type { TabularContent } from "../../../../types/file-creation.ts";
+import type { TabularContent } from "../../../types/file-creation.ts";
 
 describe("generateXlsx", () => {
   it("generates a valid xlsx buffer", async () => {

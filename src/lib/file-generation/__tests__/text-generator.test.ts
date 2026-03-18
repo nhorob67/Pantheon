@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { generateText } from "../text-generator.ts";
-import type { DocumentContent } from "../../../../types/file-creation.ts";
+import type { DocumentContent } from "../../../types/file-creation.ts";
 
 describe("generateText", () => {
   it("generates text with title and sections", () => {

@@ -1,30 +1,28 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
-  sendDiscordChannelMessageWithAttachments,
+  sendDiscordChannelMessageWithFiles,
   type DiscordFileAttachment,
 } from "./tenant-runtime-discord.ts";
 
-describe("sendDiscordChannelMessageWithAttachments", () => {
-  it("falls back to text-only when no attachments provided", async () => {
-    let capturedBody: string | undefined;
+describe("sendDiscordChannelMessageWithFiles", () => {
+  it("falls back to text-only when no files provided", async () => {
     let capturedContentType: string | undefined;
 
     const mockFetch = async (url: string | URL | Request, init?: RequestInit) => {
       capturedContentType = (init?.headers as Record<string, string>)?.["Content-Type"];
-      capturedBody = typeof init?.body === "string" ? init.body : undefined;
       return new Response(JSON.stringify({ id: "msg_123" }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
       });
     };
 
-    const result = await sendDiscordChannelMessageWithAttachments(
+    const result = await sendDiscordChannelMessageWithFiles(
       {
         botToken: "test-token",
         channelId: "channel-1",
         content: "Hello",
-        attachments: [],
+        files: [],
       },
       mockFetch as unknown as typeof fetch
     );
@@ -35,7 +33,7 @@ describe("sendDiscordChannelMessageWithAttachments", () => {
     assert.equal(capturedContentType, "application/json");
   });
 
-  it("sends multipart/form-data when attachments are provided", async () => {
+  it("sends multipart/form-data when files are provided", async () => {
     let capturedBody: FormData | undefined;
     let hadContentTypeHeader = false;
 
@@ -52,17 +50,17 @@ describe("sendDiscordChannelMessageWithAttachments", () => {
     };
 
     const attachment: DiscordFileAttachment = {
-      filename: "report.csv",
+      name: "report.csv",
       data: Buffer.from("Name,Age\nAlice,30\n"),
       contentType: "text/csv",
     };
 
-    const result = await sendDiscordChannelMessageWithAttachments(
+    const result = await sendDiscordChannelMessageWithFiles(
       {
         botToken: "test-token",
         channelId: "channel-1",
         content: "Here's your report",
-        attachments: [attachment],
+        files: [attachment],
       },
       mockFetch as unknown as typeof fetch
     );
@@ -88,14 +86,14 @@ describe("sendDiscordChannelMessageWithAttachments", () => {
       });
     };
 
-    await sendDiscordChannelMessageWithAttachments(
+    await sendDiscordChannelMessageWithFiles(
       {
         botToken: "test-token",
         channelId: "channel-1",
         content: "Reply with file",
-        attachments: [
+        files: [
           {
-            filename: "data.json",
+            name: "data.json",
             data: Buffer.from("{}"),
             contentType: "application/json",
           },
@@ -123,14 +121,14 @@ describe("sendDiscordChannelMessageWithAttachments", () => {
 
     await assert.rejects(
       () =>
-        sendDiscordChannelMessageWithAttachments(
+        sendDiscordChannelMessageWithFiles(
           {
             botToken: "test-token",
             channelId: "channel-1",
             content: "Test",
-            attachments: [
+            files: [
               {
-                filename: "file.txt",
+                name: "file.txt",
                 data: Buffer.from("hello"),
                 contentType: "text/plain",
               },
