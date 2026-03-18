@@ -52,6 +52,7 @@ function categorize(toolName: string): string | null {
   // Fallback prefix matching for non-catalog tools
   if (toolName.startsWith("composio_")) return "composio";
   if (toolName.startsWith("mcp_")) return "mcp";
+  if (toolName.startsWith("conversation_")) return "memory";
 
   return null;
 }

@@ -261,6 +261,7 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           // Exclude Composio tools from cron runs — they require interactive OAuth context
           const BUILT_IN_PREFIXES = ["memory_", "schedule_"];
           const DELEGATION_TOOLS = ["delegate_task", "delegate_task_async", "delegation_poll", "delegation_cancel"];
+          const STANDALONE_TOOLS = ["file_create"];
           const filtered: typeof resolvedTools = {};
 
           if (Array.isArray(payload.custom_tools) && payload.custom_tools.length > 0) {
@@ -270,7 +271,7 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
               (s) => SKILL_TOOL_PREFIXES[s] || []
             );
             for (const [name, tool] of Object.entries(resolvedTools)) {
-              const isAlwaysAvailable = name.startsWith("memory_") || name.startsWith("schedule_") || DELEGATION_TOOLS.includes(name);
+              const isAlwaysAvailable = name.startsWith("memory_") || name.startsWith("schedule_") || DELEGATION_TOOLS.includes(name) || STANDALONE_TOOLS.includes(name);
               const matchesSkill = allowedPrefixes.some((p) => name.startsWith(p));
               if (isAlwaysAvailable || matchesSkill) {
                 filtered[name] = tool;
@@ -279,7 +280,7 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           } else {
             // For standard cron runs, keep all built-in tools but exclude Composio tools
             for (const [name, tool] of Object.entries(resolvedTools)) {
-              if (BUILT_IN_PREFIXES.some((p) => name.startsWith(p)) || DELEGATION_TOOLS.includes(name)) {
+              if (BUILT_IN_PREFIXES.some((p) => name.startsWith(p)) || DELEGATION_TOOLS.includes(name) || STANDALONE_TOOLS.includes(name)) {
                 filtered[name] = tool;
               }
             }

@@ -49,7 +49,7 @@ describe("buildToolDocumentation", () => {
 
   it("groups conversation_search under Memory", () => {
     const result = buildToolDocumentation(["memory_search", "conversation_search"]);
-    assert.ok(result.includes("**Memory:**"));
+    assert.ok(result.includes("**Memory** —"));
     assert.ok(result.includes("`conversation_search`"));
   });
 

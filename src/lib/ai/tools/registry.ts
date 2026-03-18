@@ -60,6 +60,15 @@ export interface ToolRegistryInput {
   mcpEnabled?: boolean;
   /** Whether browser automation tools are enabled for this tenant */
   browserEnabled?: boolean;
+  /** Callback invoked when an agent creates a file via file_create tool */
+  onFileCreated?: (file: {
+    filename: string;
+    buffer: Buffer;
+    contentType: string;
+    sizeBytes: number;
+    storageKey: string;
+    signedUrl: string;
+  }) => void;
   /** Delegation config — when provided, enables the delegate_task tool */
   delegationConfig?: Omit<DelegationToolConfig, "admin" | "tenantId" | "customerId" | "parentAgent"> | null;
 }

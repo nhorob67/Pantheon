@@ -327,7 +327,7 @@ const NATIVE_TOOLS: NativeToolEntry[] = [
   native(
     "file_create",
     "File Create",
-    "Create CSV, Excel, PDF, JSON, TXT, Markdown, or HTML files and deliver as Discord attachments",
+    "Create CSV, JSON, TXT, Markdown, or HTML files and deliver as Discord attachments",
     "file-creation",
     "medium",
     { writesState: true }
