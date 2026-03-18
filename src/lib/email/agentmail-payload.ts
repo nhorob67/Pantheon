@@ -35,5 +35,9 @@ export function extractAgentMailProviderMessageId(
   payload: Record<string, unknown>
 ): string | null {
   const normalized = normalizeAgentMailMessagePayload(payload);
-  return toTrimmedString(normalized.id);
+  return (
+    toTrimmedString(normalized.id) ??
+    toTrimmedString(normalized.message_id) ??
+    toTrimmedString(normalized.messageId)
+  );
 }

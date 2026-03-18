@@ -19,7 +19,8 @@ test("normalizeAgentMailMessagePayload merges nested message fields", () => {
   assert.equal(payload.created_at, "2026-03-17T00:00:00Z");
 });
 
-test("extractAgentMailProviderMessageId returns the provider resource id only", () => {
+test("extractAgentMailProviderMessageId prefers id, falls back to message_id and messageId", () => {
+  // Prefers .id when present
   assert.equal(
     extractAgentMailProviderMessageId({
       id: "msg_456",
@@ -28,9 +29,26 @@ test("extractAgentMailProviderMessageId returns the provider resource id only", 
     "msg_456"
   );
 
+  // Falls back to message_id
   assert.equal(
     extractAgentMailProviderMessageId({
       message_id: "<internet@example.com>",
+    }),
+    "<internet@example.com>"
+  );
+
+  // Falls back to messageId
+  assert.equal(
+    extractAgentMailProviderMessageId({
+      messageId: "msg_789",
+    }),
+    "msg_789"
+  );
+
+  // Returns null when no id fields present
+  assert.equal(
+    extractAgentMailProviderMessageId({
+      subject: "Hello",
     }),
     null
   );

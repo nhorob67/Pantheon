@@ -458,26 +458,7 @@ export async function POST(request: Request) {
   const fromParsed = parseAddressValue(messageData.from);
   const ccRecipients = extractRecipients(messageData.cc);
   const bccRecipients = extractRecipients(messageData.bcc);
-  const providerEmailId = extractAgentMailProviderMessageId(messageData);
-
-  if (!providerEmailId) {
-    await markProcessed(svixId);
-    await trackEmailWebhookOutcome({
-      provider: "agentmail",
-      eventType,
-      outcome: "invalid_payload",
-      providerEventId: svixId,
-      context: {
-        reason: "missing_provider_message_id",
-        provider_mailbox_id: inboxId,
-      },
-    });
-
-    return NextResponse.json({
-      received: true,
-      ignored: "missing_provider_message_id",
-    });
-  }
+  const providerEmailId = extractAgentMailProviderMessageId(messageData) ?? svixId;
 
   const attachmentCount =
     typeof messageData.attachments_count === "number"

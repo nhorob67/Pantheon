@@ -78,6 +78,14 @@ const NATIVE_TOOLS: NativeToolEntry[] = [
     "low",
     { writesState: false }
   ),
+  native(
+    "conversation_search",
+    "Conversation Search",
+    "Search past conversation messages for specific topics, decisions, or discussions",
+    "memory",
+    "low",
+    { writesState: false }
+  ),
 
   // ── Schedules ───────────────────────────────────────────────────────────
   native(
