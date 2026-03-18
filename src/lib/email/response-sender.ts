@@ -1,5 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAgentMailClient } from "./providers/agentmail";
+import {
+  buildAgentMailSendPayload,
+  loadAgentMailIdentityForSend,
+} from "./agentmail-send";
 
 interface SendEmailResponseInput {
   customerId: string;
@@ -46,14 +50,22 @@ export async function sendEmailResponse(
   const agentMail = createAgentMailClient();
   let providerMessageId: string | null = null;
   let emailMessageId: string | null = null;
+  const identity = await loadAgentMailIdentityForSend(
+    admin,
+    input.identityId,
+    input.fromEmail
+  );
 
-  const result = await agentMail.sendMessage({
-    to: input.toEmail,
-    from: input.fromEmail,
-    subject: replySubject,
-    text: input.bodyText,
-    headers,
-  });
+  const result = await agentMail.sendMessage(
+    buildAgentMailSendPayload({
+      mailboxId: identity.provider_mailbox_id!,
+      fromEmail: identity.address,
+      toEmail: input.toEmail,
+      subject: replySubject,
+      text: input.bodyText,
+      headers,
+    })
+  );
 
   providerMessageId =
     typeof result.id === "string"

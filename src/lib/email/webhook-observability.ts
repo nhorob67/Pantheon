@@ -4,6 +4,7 @@ export type EmailWebhookOutcome =
   | "webhook_secret_missing"
   | "invalid_signature"
   | "invalid_json"
+  | "invalid_payload"
   | "missing_svix_id"
   | "duplicate_event"
   | "db_error_event"
@@ -38,6 +39,7 @@ function logOutcome(payload: {
     payload.outcome === "webhook_secret_missing" ||
     payload.outcome === "invalid_signature" ||
     payload.outcome === "invalid_json" ||
+    payload.outcome === "invalid_payload" ||
     payload.outcome === "missing_svix_id" ||
     payload.outcome === "db_error_event" ||
     payload.outcome === "db_error_inbound";

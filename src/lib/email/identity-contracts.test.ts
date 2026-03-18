@@ -15,6 +15,10 @@ const migrationSource = readFileSync(
   "supabase/migrations/00083_email_identity_types.sql",
   "utf8"
 );
+const teamUniquenessMigrationSource = readFileSync(
+  "supabase/migrations/00098_email_team_identity_uniqueness.sql",
+  "utf8"
+);
 
 test("agent email identity data access stays tenant-scoped", () => {
   assert.match(identitySource, /getActiveAgentEmailIdentityForTenant/);
@@ -39,4 +43,19 @@ test("email identities record a durable identity type for routing", () => {
   assert.match(migrationSource, /ADD COLUMN IF NOT EXISTS identity_type TEXT/);
   assert.match(migrationSource, /identity_type IN \('team', 'agent'\)/);
   assert.match(migrationSource, /SET identity_type = 'agent'/);
+});
+
+test("team email identities keep a single active identity per customer", () => {
+  assert.match(
+    teamUniquenessMigrationSource,
+    /CREATE UNIQUE INDEX IF NOT EXISTS email_identities_active_team_customer_unique/
+  );
+  assert.match(
+    teamUniquenessMigrationSource,
+    /identity_type = 'team'/
+  );
+  assert.match(
+    teamUniquenessMigrationSource,
+    /agent_id IS NULL/
+  );
 });

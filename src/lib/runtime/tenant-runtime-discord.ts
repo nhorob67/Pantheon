@@ -223,71 +223,57 @@ export async function sendDiscordChannelMessage(
 }
 
 // ---------------------------------------------------------------------------
-// File Attachment Support
+// File attachment support
 // ---------------------------------------------------------------------------
 
 export interface DiscordFileAttachment {
-  filename: string;
-  data: Buffer;
+  name: string;
+  data: Buffer | Uint8Array;
   contentType: string;
-  description?: string;
 }
 
-export interface DiscordSendMessageWithAttachmentsInput {
+export interface DiscordSendMessageWithFilesInput {
   botToken: string;
   channelId: string;
   content: string;
-  attachments: DiscordFileAttachment[];
+  files: DiscordFileAttachment[];
   replyToMessageId?: string | null;
 }
 
 /**
  * Send a Discord message with file attachments using multipart/form-data.
- * Falls back to text-only if attachment upload fails.
+ * Discord API v10 supports files[n] fields for file uploads.
  */
-export async function sendDiscordChannelMessageWithAttachments(
-  input: DiscordSendMessageWithAttachmentsInput,
+export async function sendDiscordChannelMessageWithFiles(
+  input: DiscordSendMessageWithFilesInput,
   fetchImpl: typeof fetch = fetch
 ): Promise<DiscordSendMessageResult> {
-  if (!input.attachments || input.attachments.length === 0) {
-    return sendDiscordChannelMessage(
-      {
-        botToken: input.botToken,
-        channelId: input.channelId,
-        content: input.content,
-        replyToMessageId: input.replyToMessageId,
-      },
-      fetchImpl
-    );
-  }
+  const formData = new FormData();
 
-  const form = new FormData();
-
-  // Build the payload_json part with attachment metadata
-  const payloadJson: Record<string, unknown> = {
+  // JSON payload as payload_json field
+  const jsonPayload = {
     content: input.content,
     allowed_mentions: { parse: [] as string[] },
-    attachments: input.attachments.map((att, i) => ({
+    ...(input.replyToMessageId
+      ? {
+          message_reference: {
+            message_id: input.replyToMessageId,
+            fail_if_not_exists: false,
+          },
+        }
+      : {}),
+    attachments: input.files.map((f, i) => ({
       id: i,
-      filename: att.filename,
-      description: att.description || att.filename,
+      filename: f.name,
     })),
   };
+  formData.append("payload_json", JSON.stringify(jsonPayload));
 
-  if (input.replyToMessageId) {
-    payloadJson.message_reference = {
-      message_id: input.replyToMessageId,
-      fail_if_not_exists: false,
-    };
-  }
-
-  form.append("payload_json", JSON.stringify(payloadJson));
-
-  // Append each file
-  for (let i = 0; i < input.attachments.length; i++) {
-    const att = input.attachments[i];
-    const blob = new Blob([att.data], { type: att.contentType });
-    form.append(`files[${i}]`, blob, att.filename);
+  // Attach files
+  for (let i = 0; i < input.files.length; i++) {
+    const file = input.files[i];
+    const blob = new Blob([new Uint8Array(file.data)], { type: file.contentType });
+    formData.append(`files[${i}]`, blob, file.name);
   }
 
   const response = await fetchImpl(
@@ -296,9 +282,9 @@ export async function sendDiscordChannelMessageWithAttachments(
       method: "POST",
       headers: {
         Authorization: `Bot ${input.botToken}`,
-        // Do NOT set Content-Type — fetch sets it automatically with the boundary
+        // Content-Type is set automatically by FormData
       },
-      body: form,
+      body: formData,
     }
   );
 

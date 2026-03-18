@@ -1,5 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAgentMailClient } from "./providers/agentmail";
+import {
+  buildAgentMailSendPayload,
+  loadAgentMailIdentityForSend,
+} from "./agentmail-send";
 
 interface AttachmentSummary {
   filename: string;
@@ -89,13 +93,21 @@ export async function sendAcknowledgment(
   let emailMessageId: string | null = null;
 
   try {
-    const result = await agentMail.sendMessage({
-      to: input.fromEmail,
-      from: input.toEmail,
-      subject: ackSubject,
-      text: ackBody,
-      headers,
-    });
+    const identity = await loadAgentMailIdentityForSend(
+      admin,
+      input.identityId,
+      input.toEmail
+    );
+    const result = await agentMail.sendMessage(
+      buildAgentMailSendPayload({
+        mailboxId: identity.provider_mailbox_id!,
+        fromEmail: identity.address,
+        toEmail: input.fromEmail,
+        subject: ackSubject,
+        text: ackBody,
+        headers,
+      })
+    );
 
     providerMessageId =
       typeof result.id === "string"

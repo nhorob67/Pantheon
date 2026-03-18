@@ -28,11 +28,33 @@ export async function extractEmailBody(
   return extractBodyFromPayload(payload);
 }
 
-async function extractBodyFromPayload(
+function asObject(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+
+  return value as Record<string, unknown>;
+}
+
+function normalizePayload(payload: Record<string, unknown>): Record<string, unknown> {
+  const base = asObject(payload.data) || payload;
+  const nestedMessage = asObject(base.message) || asObject(payload.message);
+
+  if (!nestedMessage) {
+    return base;
+  }
+
+  return {
+    ...base,
+    ...nestedMessage,
+  };
+}
+
+export async function extractBodyFromPayload(
   payload: Record<string, unknown>
 ): Promise<string> {
   // Detect provider format and extract accordingly
-  const data = (payload.data || payload) as Record<string, unknown>;
+  const data = normalizePayload(payload);
 
   // Cloudflare provider: base64-encoded RFC 822 raw_email
   if (typeof data.raw_email === "string") {

@@ -7,6 +7,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { verifySvixSignature } from "@/lib/email/webhook-signature";
 import { trackEmailWebhookOutcome } from "@/lib/email/webhook-observability";
 import { safeErrorMessage } from "@/lib/security/safe-error";
+import {
+  extractAgentMailProviderMessageId,
+  normalizeAgentMailMessagePayload,
+} from "@/lib/email/agentmail-payload";
 
 export const runtime = "nodejs";
 
@@ -142,22 +146,6 @@ function extractOriginalRecipient(headers: unknown): string | null {
 
   const parsed = extractRecipients(candidate);
   return parsed.length > 0 ? parsed[0] : null;
-}
-
-function normalizeMessageData(
-  payload: AgentMailEvent
-): Record<string, unknown> {
-  const base = asObject(payload.data) || {};
-  const nestedMessage = asObject(base.message);
-
-  if (!nestedMessage) {
-    return base;
-  }
-
-  return {
-    ...base,
-    ...nestedMessage,
-  };
 }
 
 function extractInboxId(message: Record<string, unknown>): string | null {
@@ -394,7 +382,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ received: true, ignored: true });
   }
 
-  const messageData = normalizeMessageData(event);
+  const messageData = normalizeAgentMailMessagePayload(
+    (asObject(event) || {}) as Record<string, unknown>
+  );
   const inboxId = extractInboxId(messageData);
   const originalRecipient = extractOriginalRecipient(messageData.headers);
   const recipients = [
@@ -468,11 +458,26 @@ export async function POST(request: Request) {
   const fromParsed = parseAddressValue(messageData.from);
   const ccRecipients = extractRecipients(messageData.cc);
   const bccRecipients = extractRecipients(messageData.bcc);
-  const providerEmailId =
-    (typeof messageData.id === "string" && messageData.id) ||
-    (typeof messageData.message_id === "string" && messageData.message_id) ||
-    (typeof messageData.messageId === "string" && messageData.messageId) ||
-    svixId;
+  const providerEmailId = extractAgentMailProviderMessageId(messageData);
+
+  if (!providerEmailId) {
+    await markProcessed(svixId);
+    await trackEmailWebhookOutcome({
+      provider: "agentmail",
+      eventType,
+      outcome: "invalid_payload",
+      providerEventId: svixId,
+      context: {
+        reason: "missing_provider_message_id",
+        provider_mailbox_id: inboxId,
+      },
+    });
+
+    return NextResponse.json({
+      received: true,
+      ignored: "missing_provider_message_id",
+    });
+  }
 
   const attachmentCount =
     typeof messageData.attachments_count === "number"
@@ -503,11 +508,13 @@ export async function POST(request: Request) {
         agentmail_event_type: eventType,
         agentmail_received_at: extractReceivedAt(event, messageData),
         to: messageData.to || null,
+        headers: asObject(messageData.headers),
         matched_recipient: matchedRecipient,
         original_recipient: originalRecipient,
         provider_mailbox_id: inboxId,
         message_id: extractHeaderValue(messageData.headers, "message-id"),
         in_reply_to: extractHeaderValue(messageData.headers, "in-reply-to"),
+        references_header: extractHeaderValue(messageData.headers, "references"),
       },
       status: "queued",
       received_at: extractReceivedAt(event, messageData),

@@ -94,7 +94,8 @@ export async function getActiveEmailIdentity(
     .eq("is_active", true)
     .eq("identity_type", "team")
     .is("agent_id", null)
-    .order("created_at", { ascending: true })
+    .order("updated_at", { ascending: false })
+    .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
 

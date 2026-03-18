@@ -121,6 +121,7 @@ describe("tool-catalog", () => {
       "file_create",
       "delegate_task", "delegate_task_async", "delegation_poll", "delegation_cancel",
       "browser_navigate", "browser_extract", "browser_click", "browser_fill", "browser_screenshot",
+      "file_create",
       "http_request",
       "web_search", "web_fetch",
     ];
