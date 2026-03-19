@@ -48,7 +48,7 @@ $$;
 
 -- ─── Phase 3: Summary DAG ─────────────────────────────────────────────────────
 
-CREATE TABLE session_summary_nodes (
+CREATE TABLE IF NOT EXISTS session_summary_nodes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   session_id UUID NOT NULL REFERENCES tenant_sessions(id) ON DELETE CASCADE,
   parent_node_id UUID REFERENCES session_summary_nodes(id) ON DELETE SET NULL,
@@ -63,33 +63,41 @@ CREATE TABLE session_summary_nodes (
 );
 
 -- Indexes for efficient DAG traversal
-CREATE INDEX idx_ssn_session_depth
+CREATE INDEX IF NOT EXISTS idx_ssn_session_depth
   ON session_summary_nodes(session_id, depth, created_at DESC);
 
-CREATE INDEX idx_ssn_parent
+CREATE INDEX IF NOT EXISTS idx_ssn_parent
   ON session_summary_nodes(parent_node_id)
   WHERE parent_node_id IS NOT NULL;
 
 -- RLS: inherit access from tenant_sessions
 ALTER TABLE session_summary_nodes ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view own session summary nodes"
-  ON session_summary_nodes FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM tenant_sessions ts
-      WHERE ts.id = session_summary_nodes.session_id
-        AND is_tenant_member(ts.tenant_id)
-    )
-  );
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'session_summary_nodes' AND policyname = 'Users can view own session summary nodes') THEN
+    CREATE POLICY "Users can view own session summary nodes"
+      ON session_summary_nodes FOR SELECT
+      USING (
+        EXISTS (
+          SELECT 1 FROM tenant_sessions ts
+          WHERE ts.id = session_summary_nodes.session_id
+            AND is_tenant_member(ts.tenant_id)
+        )
+      );
+  END IF;
 
-CREATE POLICY "System can insert session summary nodes"
-  ON session_summary_nodes FOR INSERT
-  WITH CHECK (true);
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'session_summary_nodes' AND policyname = 'System can insert session summary nodes') THEN
+    CREATE POLICY "System can insert session summary nodes"
+      ON session_summary_nodes FOR INSERT
+      WITH CHECK (true);
+  END IF;
 
-CREATE POLICY "System can update session summary nodes"
-  ON session_summary_nodes FOR UPDATE
-  USING (true)
-  WITH CHECK (true);
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'session_summary_nodes' AND policyname = 'System can update session summary nodes') THEN
+    CREATE POLICY "System can update session summary nodes"
+      ON session_summary_nodes FOR UPDATE
+      USING (true)
+      WITH CHECK (true);
+  END IF;
+END $$;
 
 COMMIT;

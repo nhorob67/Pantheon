@@ -11,6 +11,7 @@ CREATE INDEX IF NOT EXISTS idx_tmr_agent_id
   WHERE agent_id IS NOT NULL AND is_tombstoned = false;
 
 -- Update semantic search RPC to return agent_id
+DROP FUNCTION IF EXISTS match_tenant_memories(UUID, vector, INT, FLOAT);
 CREATE OR REPLACE FUNCTION match_tenant_memories(
   p_tenant_id UUID,
   p_embedding vector(1536),
@@ -53,6 +54,7 @@ END;
 $$;
 
 -- Update keyword search RPC to return agent_id
+DROP FUNCTION IF EXISTS keyword_match_tenant_memories(UUID, TEXT, INT);
 CREATE OR REPLACE FUNCTION keyword_match_tenant_memories(
   p_tenant_id UUID,
   p_query TEXT,
@@ -93,6 +95,8 @@ END;
 $$;
 
 -- Update atomic upsert to accept agent_id
+DROP FUNCTION IF EXISTS upsert_memory_with_dedup(UUID, UUID, UUID, TEXT, TEXT, TEXT, JSONB, NUMERIC, TEXT, TEXT, vector, FLOAT);
+DROP FUNCTION IF EXISTS upsert_memory_with_dedup(UUID, UUID, UUID, TEXT, TEXT, TEXT, JSONB, NUMERIC, TEXT, TEXT, vector, FLOAT, UUID);
 CREATE OR REPLACE FUNCTION upsert_memory_with_dedup(
   p_tenant_id UUID,
   p_customer_id UUID,
