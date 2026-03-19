@@ -403,32 +403,40 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
         let responseText = result.text?.trim() || "";
 
         // Fallback when maxSteps exhausted on a tool-call step with no final text.
-        // Build a contextual summary from tool invocation records instead of
-        // just listing tool names.
+        // Build a natural-language summary — never expose raw JSON or tool names.
         if (!responseText) {
           const successfulRecords = executor.records.filter((r) => r.success);
           if (successfulRecords.length > 0) {
-            const summaryParts = successfulRecords.map((r) => {
-              const label = r.toolName.replace(/_/g, " ");
-              // Use the output summary (truncated JSON) for context if available
-              const output = r.outputSummary?.trim();
-              if (output && output !== "{}" && output !== "null") {
-                // Extract a human-readable snippet from the output (first 120 chars)
-                const snippet = output.length > 120
-                  ? `${output.slice(0, 117).trimEnd()}...`
-                  : output;
-                return `- **${label}**: ${snippet}`;
-              }
-              return `- **${label}**: completed`;
+            // Map tool names to friendly action descriptions
+            const friendlyActions = successfulRecords.map((r) => {
+              const name = r.toolName;
+              if (name.startsWith("memory_search")) return "searched your memories";
+              if (name.startsWith("memory_create") || name.startsWith("memory_upsert")) return "saved that to memory";
+              if (name.startsWith("memory_update")) return "updated your memory";
+              if (name.startsWith("memory_delete")) return "removed that from memory";
+              if (name.startsWith("schedule_create")) return "set up the schedule";
+              if (name.startsWith("schedule_delete")) return "removed the schedule";
+              if (name.startsWith("schedule_")) return "updated your schedules";
+              if (name.startsWith("conversation_")) return "checked our conversation history";
+              if (name === "delegate_task" || name === "delegate_task_async") return "handed that off to a teammate";
+              if (name === "file_create") return "created a file";
+              if (name.startsWith("config_")) return "updated the configuration";
+              return name.replace(/_/g, " ");
             });
-            responseText = `Done — here's what I did:\n${summaryParts.join("\n")}`;
+            // Deduplicate and join naturally
+            const unique = [...new Set(friendlyActions)];
+            if (unique.length === 1) {
+              responseText = `Done! I ${unique[0]}.`;
+            } else {
+              responseText = `All set! I ${unique.slice(0, -1).join(", ")} and ${unique[unique.length - 1]}.`;
+            }
           } else {
             const allToolNames = result.steps
               .flatMap((s) => s.toolCalls.map((tc) => tc.toolName));
             if (allToolNames.length > 0) {
-              responseText = `I attempted ${[...new Set(allToolNames)].map((n) => n.replace(/_/g, " ")).join(", ")} but wasn't able to produce a final result. Let me know if you'd like me to try again.`;
+              responseText = "I tried to handle that but ran into a snag. Want me to give it another shot?";
             } else {
-              responseText = "I wasn't able to generate a response for that. Could you try rephrasing?";
+              responseText = "Hmm, I wasn't able to put together a response for that. Could you try rephrasing?";
             }
           }
         }
