@@ -31,6 +31,7 @@ export type ToolCategory =
   | "browser"
   | "file-creation"
   | "integrations"
+  | "follow-up"
   | "internal-control";
 
 // ---------------------------------------------------------------------------

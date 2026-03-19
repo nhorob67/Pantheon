@@ -290,6 +290,7 @@ export const TENANT_RUNTIME_RUN_KIND_VALUES = [
   "discord_heartbeat",
   "email_runtime",
   "delegation_runtime",
+  "discord_follow_up",
 ] as const;
 export type TenantRuntimeRunKind = (typeof TENANT_RUNTIME_RUN_KIND_VALUES)[number];
 

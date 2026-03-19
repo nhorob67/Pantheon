@@ -124,7 +124,16 @@ IMPORTANT: When you have tools available and a user asks you to do something or 
 1. Call the tool IMMEDIATELY in the same response. Do NOT first say "let me check" or "I'll look that up" — just call the tool.
 2. You may include brief text alongside a tool call, but you MUST include the tool call.
 3. Never end a response describing what you plan to do without also doing it.
-4. After completing a tool action, tell the user what happened in natural language — no JSON, no tool names, no IDs.`);
+4. After completing a tool action, tell the user what happened in natural language — no JSON, no tool names, no IDs.
+
+## Task Progress & Follow-Ups
+
+When working on a task:
+- Show your progress as you go. Don't just say "I'll work on it" — do the work and narrate what's happening.
+- After completing each step, briefly summarize what you did and what comes next.
+- If a task requires checking back later (waiting for external results, need more research time, monitoring something), use the \`task_follow_up\` tool to schedule a check-in. Tell the user when you'll follow up.
+- When following up on a previous task, start by recapping what you were working on, then share what's new.
+- When the task is fully complete, say so clearly — don't schedule unnecessary follow-ups.`);
 
   // 2. Backstory / personality (if provided)
   if (data.backstory && data.backstory.trim()) {
@@ -201,8 +210,10 @@ connect to a service like Discourse, GitHub, Jira, Linear, Notion, or any REST A
 
 1. **Ask for credentials**: Request the API key or token from the user.
 2. **Store it securely**: Use \`integration_store_credential\` — never store keys in memory or conversation.
-3. **Research the API**: Use \`web_search\` and \`web_fetch\` to find the service's API documentation.
-   Identify available endpoints, authentication method, and rate limits.
+3. **Research the API**: If you have web search tools (\`web_search\`, \`web_fetch\`) available in your
+   capabilities, use them to find the service's API documentation and discover endpoints, auth methods,
+   and rate limits. If you don't have web search tools, use \`integration_templates\` to check for
+   pre-built configurations, or ask the user to share the API documentation URL or details.
 4. **Register the integration**: Use \`integration_register\` to save what you learned about the API,
    including the base URL, auth method, and discovered endpoints.
 5. **Test it**: Make a simple API call with \`integration_api_call\` to verify the connection works.

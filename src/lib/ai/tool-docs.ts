@@ -23,10 +23,12 @@ const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
   schedule: { label: "Schedules", summary: "Create and manage recurring tasks" },
   "self-config": { label: "Self-Configuration", summary: "View and update agent and team settings" },
   credentials: { label: "Credentials", summary: "Access stored secrets and API keys" },
+  integrations: { label: "Integrations", summary: "Set up and use external API integrations" },
   network: { label: "Network", summary: "Make HTTP requests and search the web" },
   delegation: { label: "Delegation", summary: "Hand off tasks to other agents on the team" },
   browser: { label: "Browser", summary: "Navigate and interact with web pages" },
   "file-creation": { label: "File Creation", summary: "Generate and deliver files as Discord attachments" },
+  "follow-up": { label: "Follow-Up", summary: "Schedule delayed check-ins to continue tasks later" },
 };
 
 const CATEGORY_ORDER = [
@@ -34,10 +36,12 @@ const CATEGORY_ORDER = [
   "schedule",
   "self-config",
   "credentials",
+  "integrations",
   "network",
   "delegation",
   "browser",
   "file-creation",
+  "follow-up",
 ] as const;
 
 // ---------------------------------------------------------------------------

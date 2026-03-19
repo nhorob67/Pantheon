@@ -20,6 +20,7 @@ import {
   createDelegationCancelTool,
 } from "./async-delegation";
 import { createFileCreateTool } from "./file-create";
+import { createFollowUpTool } from "./follow-up";
 import { createIntegrationTools } from "./integrations";
 import { ensureNativeToolCatalog } from "@/lib/runtime/tool-catalog";
 import {
@@ -300,6 +301,26 @@ export async function resolveToolsForAgent(input: ToolRegistryInput): Promise<To
   // File creation tool — always available when there's a runtime run
   if (input.runtimeRun?.id) {
     Object.assign(tools, createFileCreateTool(input.runtimeRun.id));
+  }
+
+  // Follow-up tool — available for runtime runs with a channel (not cron)
+  if (channelId && input.runtimeRun?.id) {
+    const followUpDepth =
+      typeof input.runtimeRun.metadata?.follow_up_depth === "number"
+        ? input.runtimeRun.metadata.follow_up_depth
+        : 0;
+    Object.assign(
+      tools,
+      createFollowUpTool({
+        admin: input.admin,
+        tenantId: input.tenantId,
+        customerId: input.customerId,
+        agentId: input.agent.id,
+        channelId,
+        runId: input.runtimeRun.id,
+        followUpDepth,
+      })
+    );
   }
 
   // Self-configuration tools — always available, role-gated internally

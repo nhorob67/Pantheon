@@ -341,6 +341,16 @@ const NATIVE_TOOLS: NativeToolEntry[] = [
     { writesState: true }
   ),
 
+  // ── Follow-Up ──────────────────────────────────────────────────────────
+  native(
+    "task_follow_up",
+    "Task Follow-Up",
+    "Schedule a delayed follow-up to continue working on a task after a pause",
+    "follow-up",
+    "medium",
+    { writesState: true }
+  ),
+
   // ── Integrations ────────────────────────────────────────────────────────
   native(
     "integration_store_credential",

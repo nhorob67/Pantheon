@@ -88,6 +88,24 @@ interface BriefingSections {
   ticket_summary?: boolean;
 }
 
+function buildFollowUpPrompt(payload: Record<string, unknown>): string {
+  const taskSummary =
+    typeof payload.task_summary === "string"
+      ? payload.task_summary
+      : "a previous task";
+  const reason =
+    typeof payload.reason === "string" ? payload.reason : "";
+  const parts = [
+    "This is a scheduled follow-up. You previously started working on a task and scheduled this check-in.",
+    `Task: ${taskSummary}`,
+  ];
+  if (reason) parts.push(`Reason for follow-up: ${reason}`);
+  parts.push(
+    "Continue the work, update the user on progress, and if the task is complete, let them know clearly. If more time is needed, you can schedule another follow-up."
+  );
+  return parts.join("\n\n");
+}
+
 function buildCronPrompt(
   scheduleKey: string | null,
   payload?: Record<string, unknown>
@@ -191,10 +209,13 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
 
         // Cron messages have synthetic content — replace with a prompt
         const isCron = typeof payload.run_kind === "string" && payload.run_kind === "discord_cron";
+        const isFollowUp = typeof payload.run_kind === "string" && payload.run_kind === "discord_follow_up";
         const scheduleKey = typeof payload.schedule_key === "string" ? payload.schedule_key : null;
         const userContent = isCron
           ? buildCronPrompt(scheduleKey, payload)
-          : content;
+          : isFollowUp
+            ? buildFollowUpPrompt(payload)
+            : content;
 
         // Parse attachments from payload
         const attachments = parseAttachmentsFromPayload(payload);
