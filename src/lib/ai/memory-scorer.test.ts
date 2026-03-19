@@ -191,4 +191,51 @@ describe("scoreMemories", () => {
     const workScore = results.find((r) => r.id === "work")!.final_score;
     assert.ok(knowScore > workScore, `Knowledge (${knowScore}) should score above working (${workScore})`);
   });
+
+  it("applies agent affinity bonus when queryingAgentId matches", () => {
+    const agentA = "agent-aaa";
+    const mem = makeCandidate({ agent_id: agentA });
+    const withAffinity = scoreMemories([mem], { now: NOW, queryingAgentId: agentA });
+    const without = scoreMemories([mem], { now: NOW });
+    assert.ok(
+      withAffinity[0].final_score > without[0].final_score,
+      `With affinity (${withAffinity[0].final_score}) should exceed without (${without[0].final_score})`
+    );
+  });
+
+  it("does not apply affinity bonus when agent_id differs", () => {
+    const mem = makeCandidate({ agent_id: "agent-aaa" });
+    const withDifferent = scoreMemories([mem], { now: NOW, queryingAgentId: "agent-bbb" });
+    const without = scoreMemories([mem], { now: NOW });
+    assert.equal(withDifferent[0].final_score, without[0].final_score);
+  });
+
+  it("does not apply affinity bonus when memory has no agent_id", () => {
+    const mem = makeCandidate({ agent_id: null });
+    const withQuery = scoreMemories([mem], { now: NOW, queryingAgentId: "agent-aaa" });
+    const without = scoreMemories([mem], { now: NOW });
+    assert.equal(withQuery[0].final_score, without[0].final_score);
+  });
+
+  it("affinity nudges same-agent memory above other-agent memory with equal scores", () => {
+    const agentA = "agent-aaa";
+    const ownMem = makeCandidate({ id: "own", agent_id: agentA, semantic_score: 0.7, keyword_score: 0 });
+    const otherMem = makeCandidate({ id: "other", agent_id: "agent-bbb", semantic_score: 0.7, keyword_score: 0 });
+    const results = scoreMemories([ownMem, otherMem], { now: NOW, queryingAgentId: agentA });
+    const ownScore = results.find((r) => r.id === "own")!.final_score;
+    const otherScore = results.find((r) => r.id === "other")!.final_score;
+    assert.ok(ownScore > otherScore, `Own (${ownScore}) should rank above other (${otherScore})`);
+  });
+
+  it("returns agent_id on scored memories", () => {
+    const mem = makeCandidate({ agent_id: "agent-aaa" });
+    const results = scoreMemories([mem], { now: NOW });
+    assert.equal(results[0].agent_id, "agent-aaa");
+  });
+
+  it("returns null agent_id when memory has no agent", () => {
+    const mem = makeCandidate();
+    const results = scoreMemories([mem], { now: NOW });
+    assert.equal(results[0].agent_id, null);
+  });
 });
