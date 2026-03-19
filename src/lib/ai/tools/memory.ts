@@ -12,7 +12,9 @@ export type MemorySearchFn = (
   admin: SupabaseClient,
   tenantId: string,
   query: string,
-  limit: number
+  limit: number,
+  fastModel?: unknown,
+  queryingAgentId?: string | null
 ) => Promise<ScoredMemory[]>;
 
 interface MemoryToolsOptions {
@@ -20,6 +22,8 @@ interface MemoryToolsOptions {
   excludeCategories?: string[];
   /** Override search implementation (for testing) */
   searchFn?: MemorySearchFn;
+  /** The agent invoking these tools — used for write attribution and search affinity */
+  agentId?: string | null;
 }
 
 export function createMemoryTools(
@@ -31,6 +35,7 @@ export function createMemoryTools(
   const captureLevel = options?.captureLevel ?? "standard";
   const excludeCategories = options?.excludeCategories ?? [];
   const searchFn = options?.searchFn ?? hybridMemorySearch;
+  const agentId = options?.agentId ?? null;
 
   return {
     memory_write: tool({
@@ -63,6 +68,7 @@ export function createMemoryTools(
           source: "runtime",
           captureLevel,
           excludeCategories,
+          agentId,
         });
 
         if (!result.ok) {
@@ -82,7 +88,7 @@ export function createMemoryTools(
       }),
       execute: async ({ query, limit }) => {
         try {
-          const scored = await searchFn(admin, tenantId, query, limit ?? 5);
+          const scored = await searchFn(admin, tenantId, query, limit ?? 5, undefined, agentId);
           return {
             memories: scored.map((m) => ({
               id: m.id,
@@ -92,6 +98,7 @@ export function createMemoryTools(
               confidence: m.confidence,
               relevance: m.final_score,
               saved_at: m.created_at,
+              agent_id: m.agent_id ?? null,
             })),
             count: scored.length,
           };
@@ -111,7 +118,7 @@ export function createMemoryTools(
         try {
           const { data, error } = await admin
             .from("tenant_memory_records")
-            .select("id, content_text, memory_type, memory_tier, confidence, source, created_at, content_json")
+            .select("id, content_text, memory_type, memory_tier, confidence, source, created_at, content_json, agent_id")
             .eq("id", id)
             .eq("tenant_id", tenantId)
             .eq("is_tombstoned", false)
@@ -133,6 +140,7 @@ export function createMemoryTools(
             source: data.source,
             saved_at: data.created_at,
             metadata: data.content_json ?? {},
+            agent_id: data.agent_id ?? null,
           };
         } catch (err) {
           return { error: `Memory read failed: ${err instanceof Error ? err.message : "unknown error"}` };

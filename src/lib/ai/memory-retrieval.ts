@@ -15,6 +15,7 @@ interface RawMemoryRow {
   created_at: string;
   similarity?: number;
   rank?: number;
+  agent_id?: string | null;
 }
 
 const SEMANTIC_OVER_FETCH = 20;
@@ -51,7 +52,8 @@ export async function hybridMemorySearch(
   tenantId: string,
   query: string,
   limit: number = 5,
-  fastModel?: LanguageModel
+  fastModel?: LanguageModel,
+  queryingAgentId?: string | null
 ): Promise<ScoredMemory[]> {
   // Gate 1: Skip expansion for short, direct lookups
   let tagged: { text: string; type: string }[];
@@ -78,6 +80,7 @@ export async function hybridMemorySearch(
       created_at: string;
       semantic_score: number;
       keyword_score: number;
+      agent_id?: string | null;
     }>();
 
     for (const candidates of subResults) {
@@ -92,8 +95,8 @@ export async function hybridMemorySearch(
       }
     }
 
-    // Score with RRF
-    const scored = scoreMemories(Array.from(merged.values()));
+    // Score with RRF (agent affinity boost applied when queryingAgentId is set)
+    const scored = scoreMemories(Array.from(merged.values()), { queryingAgentId });
     scored.sort((a, b) => b.final_score - a.final_score);
 
     // Gate 2: Skip reranking when top results are already high-confidence
@@ -125,6 +128,7 @@ async function runSingleHybridSearch(
   created_at: string;
   semantic_score: number;
   keyword_score: number;
+  agent_id?: string | null;
 }>> {
   // Generate embedding for semantic search
   let embedding: number[] | null = null;
@@ -152,6 +156,7 @@ async function runSingleHybridSearch(
     created_at: string;
     semantic_score: number;
     keyword_score: number;
+    agent_id?: string | null;
   }>();
 
   for (const row of semanticResults) {
@@ -164,6 +169,7 @@ async function runSingleHybridSearch(
       created_at: row.created_at,
       semantic_score: row.similarity ?? 0,
       keyword_score: 0,
+      agent_id: row.agent_id ?? null,
     });
   }
 
@@ -181,6 +187,7 @@ async function runSingleHybridSearch(
         created_at: row.created_at,
         semantic_score: 0,
         keyword_score: row.rank ?? 0,
+        agent_id: row.agent_id ?? null,
       });
     }
   }
@@ -229,7 +236,7 @@ async function textFallbackSearch(
 ): Promise<ScoredMemory[]> {
   const { data, error } = await admin
     .from("tenant_memory_records")
-    .select("id, content_text, memory_type, memory_tier, confidence, created_at")
+    .select("id, content_text, memory_type, memory_tier, confidence, created_at, agent_id")
     .eq("tenant_id", tenantId)
     .eq("is_tombstoned", false)
     .ilike("content_text", `%${sanitizeLikePattern(query)}%`)
@@ -248,6 +255,7 @@ async function textFallbackSearch(
     semantic_score: 0,
     keyword_score: 0,
     final_score: 0.5, // fallback score
+    agent_id: m.agent_id ?? null,
   }));
 }
 

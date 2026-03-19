@@ -8,6 +8,7 @@ export interface ScoredMemory {
   semantic_score: number;
   keyword_score: number;
   final_score: number;
+  agent_id?: string | null;
 }
 
 interface RawCandidate {
@@ -19,6 +20,7 @@ interface RawCandidate {
   created_at: string;
   semantic_score?: number;
   keyword_score?: number;
+  agent_id?: string | null;
 }
 
 const RRF_K = 60;
@@ -27,6 +29,7 @@ const WEIGHT_RECENCY = 0.15;
 const WEIGHT_TRUST = 0.10;
 const DEFAULT_HALF_LIFE_DAYS = 30;
 const RECENCY_FLOOR = 0.05;
+const AGENT_AFFINITY_BONUS = 0.05;
 
 /**
  * Type-aware freshness decay half-life (in days).
@@ -103,15 +106,19 @@ export function computeTrustScore(confidence: number, tier: string): number {
  * 1. Rank candidates separately by semantic_score and keyword_score (desc, 1-indexed)
  * 2. Compute RRF score for each candidate across both ranked lists
  * 3. Normalize RRF scores to [0, 1]
- * 4. final_score = 0.70 * normalized_rrf + 0.15 * recency + 0.10 * trust + tier_bonus
+ * 4. final_score = 0.70 * normalized_rrf + 0.15 * recency + 0.10 * trust + tier_bonus + affinity_bonus
+ *
+ * When `queryingAgentId` is provided, memories authored by that agent receive
+ * a small affinity bonus (+0.05). All memories remain visible regardless.
  */
 export function scoreMemories(
   candidates: RawCandidate[],
-  options?: { now?: Date }
+  options?: { now?: Date; queryingAgentId?: string | null }
 ): ScoredMemory[] {
   if (candidates.length === 0) return [];
 
   const now = options?.now;
+  const queryingAgentId = options?.queryingAgentId ?? null;
 
   // Normalize keyword scores within batch (for display field only)
   const maxKeyword = Math.max(...candidates.map((c) => c.keyword_score ?? 0), 0.001);
@@ -148,12 +155,17 @@ export function scoreMemories(
     const recency = computeRecencyScore(c.created_at, now, c.memory_tier, c.memory_type);
     const trust = computeTrustScore(c.confidence, c.memory_tier);
     const tierBonus = TIER_BONUS[c.memory_tier] ?? 0;
+    const affinityBonus =
+      queryingAgentId && c.agent_id && c.agent_id === queryingAgentId
+        ? AGENT_AFFINITY_BONUS
+        : 0;
 
     const score =
       WEIGHT_RRF * normalizedRRF +
       WEIGHT_RECENCY * recency +
       WEIGHT_TRUST * trust +
-      tierBonus;
+      tierBonus +
+      affinityBonus;
 
     return {
       id: c.id,
@@ -165,6 +177,7 @@ export function scoreMemories(
       semantic_score: c.semantic_score ?? 0,
       keyword_score: (c.keyword_score ?? 0) / maxKeyword,
       final_score: Math.min(1.0, Math.round(score * 1000) / 1000),
+      agent_id: c.agent_id ?? null,
     };
   });
 }

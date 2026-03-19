@@ -17,6 +17,7 @@ export interface WriteMemoryRecordInput {
   source: "runtime" | "system";
   captureLevel?: MemoryCaptureLevel;
   excludeCategories?: string[];
+  agentId?: string | null;
 }
 
 export type WriteMemoryRecordResult =
@@ -42,6 +43,7 @@ export async function writeMemoryRecord(
     source,
     captureLevel = "standard",
     excludeCategories = [],
+    agentId = null,
   } = input;
 
   // 1. Validate content
@@ -98,6 +100,7 @@ export async function writeMemoryRecord(
     ...(embedding.length > 0
       ? { p_embedding: JSON.stringify(embedding) }
       : {}),
+    ...(agentId ? { p_agent_id: agentId } : {}),
   });
 
   if (error) {
