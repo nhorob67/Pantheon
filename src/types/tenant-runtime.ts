@@ -69,20 +69,7 @@ export interface TenantMember {
   updated_at: string;
 }
 
-export interface TenantIntegration {
-  id: string;
-  tenant_id: string;
-  customer_id: string;
-  integration_key: string;
-  provider: string;
-  status: "pending" | "active" | "disabled" | "error";
-  external_ref: string | null;
-  config: Record<string, unknown>;
-  secret_ref: string | null;
-  last_synced_at: string | null;
-  created_at: string;
-  updated_at: string;
-}
+export type { TenantIntegration } from "./integration";
 
 export interface TenantAgent {
   id: string;
