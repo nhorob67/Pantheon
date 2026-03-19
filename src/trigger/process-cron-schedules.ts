@@ -97,17 +97,17 @@ export const processCronSchedules = schedules.task({
 
         lastRunId = run.id;
 
-        // Fire the run processor and wait for it
-        await processRuntimeRun.trigger({ runId: run.id });
+        // Fire the run processor and wait for it to complete
+        const handle = await processRuntimeRun.triggerAndWait({ runId: run.id });
 
-        // Check the run result
+        // Check the run result from the DB (authoritative source)
         const { data: completedRun } = await admin
           .from("tenant_runtime_runs")
           .select("status, error_message")
           .eq("id", run.id)
           .maybeSingle();
 
-        if (completedRun?.status === "completed") {
+        if (completedRun?.status === "completed" || handle.ok) {
           lastOutcome = "completed";
           break;
         }
