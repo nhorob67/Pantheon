@@ -7,6 +7,7 @@ import {
   formatCustomSkillsForPrompt,
 } from "./custom-skill-resolver";
 import { sanitizeOrFilterValue } from "@/lib/security/postgrest-sanitize";
+import { getIntegrationsForPrompt } from "@/lib/runtime/tenant-integrations";
 
 interface TeamProfileRow {
   team_name: string;
@@ -27,7 +28,7 @@ export async function buildSystemPrompt(
   const canReceiveDelegation = config.can_receive_delegation === true;
 
   // Parallelize independent DB queries
-  const [teamProfileResult, siblingsResult, kFilesResult] = await Promise.all([
+  const [teamProfileResult, siblingsResult, kFilesResult, integrationsResult] = await Promise.all([
     admin
       .from("team_profiles")
       .select("team_name, team_goal, timezone")
@@ -46,6 +47,7 @@ export async function buildSystemPrompt(
       .select("display_name")
       .or(`agent_id.eq.${sanitizeOrFilterValue(agent.id)},agent_id.is.null`)
       .eq("customer_id", agent.customer_id),
+    getIntegrationsForPrompt(admin, agent.tenant_id),
   ]);
 
   const resolvedProfile = (teamProfileResult.data as TeamProfileRow | null) || {
@@ -71,6 +73,7 @@ export async function buildSystemPrompt(
     skills: agent.skills || [],
     other_agents: otherAgents,
     knowledge_files: knowledgeFiles,
+    integrations: integrationsResult,
   };
 
   let systemPrompt = renderAgentSoul(soulData);

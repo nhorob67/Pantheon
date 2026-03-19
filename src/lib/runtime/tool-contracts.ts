@@ -30,6 +30,7 @@ export type ToolCategory =
   | "mcp"
   | "browser"
   | "file-creation"
+  | "integrations"
   | "internal-control";
 
 // ---------------------------------------------------------------------------

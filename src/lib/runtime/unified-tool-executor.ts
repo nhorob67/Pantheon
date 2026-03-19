@@ -275,6 +275,9 @@ const AUTONOMY_GATED_TOOLS: Record<string, "assisted" | "copilot"> = {
   schedule_delete: "assisted",
   // Delegation: require approval for L1 only (copilot/autopilot can delegate freely)
   delegate_task: "assisted",
+  // Integrations: credential storage requires approval for L1+L2
+  integration_store_credential: "copilot",
+  integration_register: "assisted",
   // Browser: click/fill require approval for L1+L2, navigate for L1 only
   browser_click: "copilot",
   browser_fill: "copilot",
