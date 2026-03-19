@@ -19,6 +19,7 @@ import {
   createDelegationCancelTool,
 } from "./async-delegation";
 import { createFileCreateTool } from "./file-create";
+import { createIntegrationTools } from "./integrations";
 import { ensureNativeToolCatalog } from "@/lib/runtime/tool-catalog";
 import {
   isKillSwitchEnabled,
@@ -168,6 +169,18 @@ export async function resolveToolsForAgent(input: ToolRegistryInput): Promise<To
       )
     );
   }
+
+  // Integration tools — always available (self-contained credential management)
+  Object.assign(
+    tools,
+    createIntegrationTools({
+      admin: input.admin,
+      tenantId: input.tenantId,
+      customerId: input.customerId,
+      agentId: input.agent.id,
+      runId: input.runtimeRun?.id ?? null,
+    })
+  );
 
   // Web + browser tools — gated by rollout flags, kill switches, and tenant tool status.
   // Consolidated into a single Promise.all to reduce sequential DB round-trips.

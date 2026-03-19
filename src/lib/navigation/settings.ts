@@ -16,7 +16,8 @@ const SETTINGS_TABS_BASE: SettingsNavItem[] = [
   { href: "/settings/memory", label: "Memory" },
   { href: "/settings/approvals", label: "Approvals" },
   { href: "/settings/email", label: "Email" },
-  { href: "/settings/extensions", label: "Integrations" },
+  { href: "/settings/integrations", label: "Integrations" },
+  { href: "/settings/extensions", label: "Extensions" },
   { href: "/settings/mcp-servers", label: "Tools" },
   { href: "/settings/tool-catalog", label: "Tool Catalog" },
   { href: "/settings/browser-automation", label: "Browser Automation" },
@@ -33,7 +34,8 @@ const SIDEBAR_NAV_ITEMS: SettingsNavItem[] = [
   // CONNECT
   { href: "/settings/channels", label: "Discord" },
   { href: "/settings/email", label: "Email" },
-  { href: "/settings/extensions", label: "Integrations" },
+  { href: "/settings/integrations", label: "Integrations" },
+  { href: "/settings/extensions", label: "Extensions" },
   // CONFIGURE
   { href: "/settings/memory", label: "Memory" },
   { href: "/settings/mcp-servers", label: "Tools" },

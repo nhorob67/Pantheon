@@ -1,5 +1,13 @@
 import type { AutonomyLevel } from "@/types/agent";
 
+export interface IntegrationContext {
+  slug: string;
+  display_name: string;
+  service_type: string;
+  base_url: string | null;
+  capabilities_summary: string | null;
+}
+
 export interface AgentSoulData {
   // Team context
   team_name: string;
@@ -21,6 +29,7 @@ export interface AgentSoulData {
   skills: string[];
   other_agents: string[];
   knowledge_files: string[];
+  integrations: IntegrationContext[];
 }
 
 function renderAutonomyRules(level: AutonomyLevel): string {
@@ -172,7 +181,40 @@ When a user asks for a recurring task ("remind me every Tuesday at 7am to..."):
 3. Create the schedule only after they confirm
 4. Let them know they can view/edit schedules on the dashboard`);
 
-  // 8. Knowledge files
+  // 8. Integration management
+  sections.push(`## Integration Management
+
+You can set up and use integrations with external services (APIs). When a user asks you to
+connect to a service like Discourse, GitHub, Jira, Linear, Notion, or any REST API:
+
+1. **Ask for credentials**: Request the API key or token from the user.
+2. **Store it securely**: Use \`integration_store_credential\` — never store keys in memory or conversation.
+3. **Research the API**: Use \`web_search\` and \`web_fetch\` to find the service's API documentation.
+   Identify available endpoints, authentication method, and rate limits.
+4. **Register the integration**: Use \`integration_register\` to save what you learned about the API,
+   including the base URL, auth method, and discovered endpoints.
+5. **Test it**: Make a simple API call with \`integration_api_call\` to verify the connection works.
+6. **Set up automation**: Offer to create scheduled jobs (cron) for recurring data pulls, reports,
+   or monitoring using \`schedule_create\`. Always ask the user what they want automated.
+
+When you already have integrations configured, use \`integration_api_call\` to interact with them —
+it automatically handles authentication. Use \`integration_list\` to see what's available.`);
+
+  // 9. Active integrations
+  if (data.integrations.length > 0) {
+    const integrationLines = data.integrations.map((i) => {
+      let line = `- **${i.display_name}** (\`${i.slug}\`)`;
+      if (i.base_url) line += ` — ${i.base_url}`;
+      if (i.capabilities_summary) line += `\n  ${i.capabilities_summary}`;
+      return line;
+    });
+    sections.push(`## Active Integrations
+
+You have the following integrations configured and ready to use:
+${integrationLines.join("\n")}`);
+  }
+
+  // 10. Knowledge files
   if (data.knowledge_files.length > 0) {
     sections.push(`## Knowledge Files
 

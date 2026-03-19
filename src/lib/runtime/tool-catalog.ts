@@ -341,6 +341,41 @@ const NATIVE_TOOLS: NativeToolEntry[] = [
     { writesState: true }
   ),
 
+  // ── Integrations ────────────────────────────────────────────────────────
+  native(
+    "integration_store_credential",
+    "Store Integration Credential",
+    "Securely store an API key or token for an external service integration",
+    "integrations",
+    "high",
+    { writesState: true },
+    { defaultApprovalMode: "owner" }
+  ),
+  native(
+    "integration_register",
+    "Register Integration",
+    "Register a new external service integration with discovered API metadata",
+    "integrations",
+    "medium",
+    { writesState: true }
+  ),
+  native(
+    "integration_list",
+    "List Integrations",
+    "List all configured external service integrations for this workspace",
+    "integrations",
+    "low",
+    { writesState: false }
+  ),
+  native(
+    "integration_api_call",
+    "Integration API Call",
+    "Make an authenticated API call to a configured integration with automatic credential injection",
+    "integrations",
+    "medium",
+    { networkAccess: true, writesState: false }
+  ),
+
   // ── Network ─────────────────────────────────────────────────────────────
   native(
     "http_request",
