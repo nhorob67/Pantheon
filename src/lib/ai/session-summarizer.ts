@@ -106,9 +106,19 @@ export async function maybeGenerateSummary(input: SummarizeInput): Promise<void>
     }
   }
 
-  const { data: messages } = await query;
+  const { data: rawMessages } = await query;
 
-  if (!messages || messages.length < MIN_MESSAGES_FOR_COMPACTION) return;
+  if (!rawMessages || rawMessages.length < MIN_MESSAGES_FOR_COMPACTION) return;
+
+  // Fresh tail protection: exclude the most recent messages from compaction
+  // so we never summarize messages that are only minutes old
+  const FRESH_TAIL_COUNT = 10;
+  let messages = rawMessages;
+  if (messages.length > FRESH_TAIL_COUNT + MIN_MESSAGES_FOR_COMPACTION) {
+    messages = messages.slice(0, -FRESH_TAIL_COUNT);
+  }
+
+  if (messages.length < MIN_MESSAGES_FOR_COMPACTION) return;
 
   // Cursor advances to the newest message in this batch
   const newestMessageId = messages[messages.length - 1].id;
@@ -152,7 +162,7 @@ export async function maybeGenerateSummary(input: SummarizeInput): Promise<void>
       maxOutputTokens: MAX_LEAF_OUTPUT_TOKENS,
       temperature: 0.3,
       system:
-        "You are summarizing a conversation between a user and their AI agent. Extract a concise summary and up to 5 durable facts.",
+        "You are summarizing a conversation between a user and their AI agent. Preserve decisions, outcomes, blockers, and commitments. Include approximate timestamps. Extract up to 5 durable facts.",
       prompt: transcript,
     });
     summary = result.object.summary;
@@ -160,18 +170,29 @@ export async function maybeGenerateSummary(input: SummarizeInput): Promise<void>
 
     // Aggressive retry if summary is too short
     if (summary.length < 20) {
-      const retry = await generateObject({
-        model: input.model ?? pantheonFastModel,
-        schema: SummarySchema,
-        maxOutputTokens: Math.floor(MAX_LEAF_OUTPUT_TOKENS * 0.6),
-        temperature: 0.1,
-        system:
-          "You are summarizing a conversation between a user and their AI agent. Extract a concise summary and up to 5 durable facts. Be thorough.",
-        prompt: transcript,
-      });
-      if (retry.object.summary.length > summary.length) {
-        summary = retry.object.summary;
-        facts = retry.object.facts;
+      // First fallback: envelope-based summary without LLM
+      const envelopeSummary = buildEnvelopeSummary(messages, transcript);
+      if (envelopeSummary.length > summary.length) {
+        summary = envelopeSummary;
+      }
+
+      // Second fallback: retry with bullet-point format
+      try {
+        const retry = await generateObject({
+          model: input.model ?? pantheonFastModel,
+          schema: SummarySchema,
+          maxOutputTokens: Math.floor(MAX_LEAF_OUTPUT_TOKENS * 0.6),
+          temperature: 0.1,
+          system:
+            "Summarize this conversation as a bullet-point list. Each bullet: one decision, outcome, or topic. No narrative prose. Extract up to 5 durable facts.",
+          prompt: transcript,
+        });
+        if (retry.object.summary.length > summary.length) {
+          summary = retry.object.summary;
+          facts = retry.object.facts;
+        }
+      } catch {
+        // Keep whatever we have (envelope or original)
       }
     }
   } catch {
@@ -217,7 +238,7 @@ export async function maybeGenerateSummary(input: SummarizeInput): Promise<void>
   });
 
   // Attempt condensation of leaf nodes
-  await maybeCondenseNodes(admin, sessionId, input.model ?? pantheonFastModel).catch(() => {});
+  await maybeCondenseNodes(admin, sessionId, input.model ?? pantheonFastModel, input.tenantId, input.agentId ?? null).catch(() => {});
 
   // Store durable facts through the shared write pipeline
   for (const fact of facts) {
@@ -278,13 +299,15 @@ async function createLeafSummaryNode(
 async function maybeCondenseNodes(
   admin: SupabaseClient,
   sessionId: string,
-  model: LanguageModel
+  model: LanguageModel,
+  tenantId?: string,
+  agentId?: string | null
 ): Promise<void> {
   for (let depth = 0; depth < MAX_DAG_DEPTH; depth++) {
     // Find uncondensed nodes at this depth (no parent)
     const { data: nodes } = await admin
       .from("session_summary_nodes")
-      .select("id, summary_text, token_count")
+      .select("id, summary_text, token_count, message_time_start, message_time_end")
       .eq("session_id", sessionId)
       .eq("depth", depth)
       .is("parent_node_id", null)
@@ -296,6 +319,11 @@ async function maybeCondenseNodes(
     const batch = nodes.slice(0, CONDENSATION_FANOUT);
     const combinedText = batch.map((n) => n.summary_text).join("\n\n---\n\n");
 
+    const parentDepth = depth + 1;
+    const condensationPrompt = parentDepth === 1
+      ? "Merge these conversation summaries into a session-level arc. Preserve key decisions and outcomes. Use daily time markers. Drop anything planned in an earlier summary that was completed in a later one — just record completion."
+      : "Distill these summaries into a high-level overview. Only strategic decisions, major outcomes, and unresolved commitments. Be ruthlessly concise.";
+
     let condensedSummary: string;
     try {
       const result = await generateObject({
@@ -303,8 +331,7 @@ async function maybeCondenseNodes(
         schema: z.object({ summary: z.string() }),
         maxOutputTokens: MAX_CONDENSED_OUTPUT_TOKENS,
         temperature: 0.3,
-        system:
-          "You are condensing multiple conversation summaries into a single higher-level summary. Preserve key facts, decisions, and commitments. Be concise.",
+        system: condensationPrompt,
         prompt: combinedText,
       });
       condensedSummary = result.object.summary;
@@ -314,6 +341,14 @@ async function maybeCondenseNodes(
     }
 
     const childIds = batch.map((n) => n.id);
+
+    // Propagate time range from children
+    const timeStart = batch.reduce((min, n) =>
+      n.message_time_start && (!min || n.message_time_start < min) ? n.message_time_start : min,
+      null as string | null);
+    const timeEnd = batch.reduce((max, n) =>
+      n.message_time_end && (!max || n.message_time_end > max) ? n.message_time_end : max,
+      null as string | null);
 
     // Insert parent node
     const { data: parent, error: insertErr } = await admin
@@ -326,8 +361,8 @@ async function maybeCondenseNodes(
         source_message_ids: [],
         source_node_ids: childIds,
         token_count: estimateTokens(condensedSummary),
-        message_time_start: null,
-        message_time_end: null,
+        message_time_start: timeStart,
+        message_time_end: timeEnd,
       })
       .select("id")
       .single();
@@ -345,7 +380,67 @@ async function maybeCondenseNodes(
       .from("tenant_sessions")
       .update({ rolling_summary: condensedSummary })
       .eq("id", sessionId);
+
+    // Create cross-session bridge for depth 2+ summaries
+    if (parentDepth >= 2 && tenantId) {
+      try {
+        await admin
+          .from("tenant_summary_bridges")
+          .insert({
+            tenant_id: tenantId,
+            agent_id: agentId ?? null,
+            source_session_id: sessionId,
+            summary_text: condensedSummary,
+            token_count: estimateTokens(condensedSummary),
+            time_start: timeStart,
+            time_end: timeEnd,
+          });
+      } catch {
+        // Bridge write failure must not block condensation
+      }
+    }
   }
+}
+
+/**
+ * Build a deterministic envelope summary using simple keyword extraction.
+ * Used as a fallback when LLM returns empty/garbage.
+ */
+function buildEnvelopeSummary(
+  messages: Array<{ id: string; created_at: string; content_text: string | null }>,
+  transcript: string
+): string {
+  const timeStart = messages[0]?.created_at ?? "unknown";
+  const timeEnd = messages[messages.length - 1]?.created_at ?? "unknown";
+
+  // Simple TF-IDF-like keyword extraction: find words that appear 2+ times but aren't stopwords
+  const stopwords = new Set([
+    "the", "a", "an", "is", "are", "was", "were", "be", "been", "being",
+    "have", "has", "had", "do", "does", "did", "will", "would", "could",
+    "should", "may", "might", "can", "shall", "to", "of", "in", "for",
+    "on", "with", "at", "by", "from", "as", "into", "through", "during",
+    "before", "after", "above", "below", "between", "out", "off", "over",
+    "under", "again", "further", "then", "once", "and", "but", "or", "nor",
+    "not", "so", "yet", "both", "either", "neither", "each", "every", "all",
+    "any", "few", "more", "most", "other", "some", "such", "no", "only",
+    "own", "same", "than", "too", "very", "just", "because", "about", "up",
+    "this", "that", "these", "those", "i", "you", "he", "she", "it", "we",
+    "they", "me", "him", "her", "us", "them", "my", "your", "his", "its",
+    "our", "their", "what", "which", "who", "whom", "when", "where", "how",
+    "user", "assistant",
+  ]);
+  const words = transcript.toLowerCase().match(/\b[a-z]{3,}\b/g) ?? [];
+  const freq = new Map<string, number>();
+  for (const w of words) {
+    if (!stopwords.has(w)) freq.set(w, (freq.get(w) ?? 0) + 1);
+  }
+  const keywords = [...freq.entries()]
+    .filter(([, count]) => count >= 2)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8)
+    .map(([word]) => word);
+
+  return `[${messages.length} messages, ${new Date(timeStart).toISOString().slice(0, 16)} to ${new Date(timeEnd).toISOString().slice(0, 16)}] Topics: ${keywords.join(", ") || "general conversation"}`;
 }
 
 async function estimateTokensSinceSummary(

@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import type { SummaryNode } from "../session-summarizer.ts";
+import type { SummaryNode } from "../summary-dag.ts";
 
 /**
  * Hierarchical Summary DAG tests.
@@ -11,35 +11,36 @@ import type { SummaryNode } from "../session-summarizer.ts";
 
 function makeSummaryNode(overrides: Partial<SummaryNode> & { id: string }): SummaryNode {
   return {
-    parent_id: null,
+    session_id: "session-1",
+    parent_node_id: null,
     depth: 0,
     summary_text: "Test summary",
-    message_count: 30,
-    first_message_at: "2026-03-17T10:00:00Z",
-    last_message_at: "2026-03-17T11:00:00Z",
-    child_count: 0,
+    source_message_ids: [],
+    source_node_ids: [],
+    token_count: 50,
+    message_time_start: "2026-03-17T10:00:00Z",
+    message_time_end: "2026-03-17T11:00:00Z",
     created_at: "2026-03-17T11:01:00Z",
     ...overrides,
   };
 }
 
 describe("Hierarchical Summary DAG: Structural Invariants", () => {
-  it("leaf nodes have depth 0 and no children", () => {
-    const leaf = makeSummaryNode({ id: "leaf-1", depth: 0, child_count: 0, parent_id: null });
+  it("leaf nodes have depth 0 and no parent", () => {
+    const leaf = makeSummaryNode({ id: "leaf-1", depth: 0, parent_node_id: null });
     assert.equal(leaf.depth, 0);
-    assert.equal(leaf.child_count, 0);
-    assert.equal(leaf.parent_id, null);
+    assert.equal(leaf.parent_node_id, null);
   });
 
-  it("parent nodes have depth > 0 and child_count > 0", () => {
+  it("parent nodes have depth > 0 and source_node_ids", () => {
     const parent = makeSummaryNode({
       id: "parent-1",
       depth: 1,
-      child_count: 5,
+      source_node_ids: ["c1", "c2", "c3", "c4", "c5"],
       summary_text: "Consolidated summary of 5 conversation segments",
     });
     assert.ok(parent.depth > 0);
-    assert.ok(parent.child_count > 0);
+    assert.ok(parent.source_node_ids.length > 0);
   });
 
   it("children correctly reference their parent", () => {
@@ -48,13 +49,13 @@ describe("Hierarchical Summary DAG: Structural Invariants", () => {
       makeSummaryNode({
         id: `child-${i}`,
         depth: 0,
-        parent_id: parentId,
+        parent_node_id: parentId,
         summary_text: `Segment ${i} summary`,
       })
     );
 
     for (const child of children) {
-      assert.equal(child.parent_id, parentId);
+      assert.equal(child.parent_node_id, parentId);
       assert.equal(child.depth, 0);
     }
   });
@@ -66,7 +67,7 @@ describe("Hierarchical Summary DAG: Structural Invariants", () => {
     const parent = makeSummaryNode({
       id: "parent-1",
       depth: 1,
-      child_count: children.length,
+      source_node_ids: children.map((c) => c.id),
     });
 
     for (const child of children) {
@@ -80,7 +81,7 @@ describe("Hierarchical Summary DAG: Structural Invariants", () => {
       makeSummaryNode({
         id: `leaf-${i}`,
         depth: 0,
-        message_count: 30,
+        source_message_ids: Array.from({ length: 30 }, (_, j) => `msg-${i}-${j}`),
       })
     );
 
@@ -89,8 +90,7 @@ describe("Hierarchical Summary DAG: Structural Invariants", () => {
       makeSummaryNode({
         id: `l1-${i}`,
         depth: 1,
-        child_count: 5,
-        message_count: 150,
+        source_node_ids: leaves.slice(i * 5, (i + 1) * 5).map((l) => l.id),
         summary_text: `Level 1 consolidation #${i}`,
       })
     );
@@ -99,8 +99,7 @@ describe("Hierarchical Summary DAG: Structural Invariants", () => {
     const root = makeSummaryNode({
       id: "root",
       depth: 2,
-      child_count: 5,
-      message_count: 750,
+      source_node_ids: level1.map((l) => l.id),
       summary_text: "Top-level session summary",
     });
 
@@ -109,56 +108,55 @@ describe("Hierarchical Summary DAG: Structural Invariants", () => {
     assert.ok(level1.every((n) => n.depth === 1));
     assert.equal(root.depth, 2);
 
-    // Verify message count aggregation
-    const totalLeafMessages = leaves.reduce((s, n) => s + n.message_count, 0);
+    // Verify source_message_ids count
+    const totalLeafMessages = leaves.reduce((s, n) => s + n.source_message_ids.length, 0);
     assert.equal(totalLeafMessages, 750);
-    assert.equal(root.message_count, totalLeafMessages);
   });
 
-  it("message_count is always positive", () => {
-    const node = makeSummaryNode({ id: "n1", message_count: 30 });
-    assert.ok(node.message_count > 0);
+  it("token_count is non-negative", () => {
+    const node = makeSummaryNode({ id: "n1", token_count: 50 });
+    assert.ok(node.token_count >= 0);
   });
 
   it("time window is correctly bounded", () => {
     const node = makeSummaryNode({
       id: "n1",
-      first_message_at: "2026-03-17T10:00:00Z",
-      last_message_at: "2026-03-17T11:00:00Z",
+      message_time_start: "2026-03-17T10:00:00Z",
+      message_time_end: "2026-03-17T11:00:00Z",
     });
 
-    const first = new Date(node.first_message_at!).getTime();
-    const last = new Date(node.last_message_at!).getTime();
-    assert.ok(first <= last, "first_message_at should be <= last_message_at");
+    const first = new Date(node.message_time_start!).getTime();
+    const last = new Date(node.message_time_end!).getTime();
+    assert.ok(first <= last, "message_time_start should be <= message_time_end");
   });
 
   it("top-level retrieval returns highest depth nodes first", () => {
     const nodes: SummaryNode[] = [
-      makeSummaryNode({ id: "l0-1", depth: 0, parent_id: "l1-1" }),
-      makeSummaryNode({ id: "l0-2", depth: 0, parent_id: "l1-1" }),
-      makeSummaryNode({ id: "l1-1", depth: 1, child_count: 2, parent_id: "l2-1" }),
-      makeSummaryNode({ id: "l1-2", depth: 1, child_count: 3, parent_id: null }),
-      makeSummaryNode({ id: "l2-1", depth: 2, child_count: 1, parent_id: null }),
+      makeSummaryNode({ id: "l0-1", depth: 0, parent_node_id: "l1-1" }),
+      makeSummaryNode({ id: "l0-2", depth: 0, parent_node_id: "l1-1" }),
+      makeSummaryNode({ id: "l1-1", depth: 1, parent_node_id: "l2-1" }),
+      makeSummaryNode({ id: "l1-2", depth: 1, parent_node_id: null }),
+      makeSummaryNode({ id: "l2-1", depth: 2, parent_node_id: null }),
     ];
 
     // Simulate getTopLevelSummaries: filter to parentless, sort by depth desc
     const topLevel = nodes
-      .filter((n) => n.parent_id === null)
+      .filter((n) => n.parent_node_id === null)
       .sort((a, b) => b.depth - a.depth);
 
     assert.equal(topLevel[0].id, "l2-1", "Highest depth node should come first");
     assert.equal(topLevel[0].depth, 2);
   });
 
-  it("orphan nodes have null parent_id", () => {
+  it("orphan nodes have null parent_node_id", () => {
     const orphans = [
-      makeSummaryNode({ id: "o1", depth: 0, parent_id: null }),
-      makeSummaryNode({ id: "o2", depth: 0, parent_id: null }),
-      makeSummaryNode({ id: "o3", depth: 0, parent_id: null }),
+      makeSummaryNode({ id: "o1", depth: 0, parent_node_id: null }),
+      makeSummaryNode({ id: "o2", depth: 0, parent_node_id: null }),
+      makeSummaryNode({ id: "o3", depth: 0, parent_node_id: null }),
     ];
 
     for (const node of orphans) {
-      assert.equal(node.parent_id, null);
+      assert.equal(node.parent_node_id, null);
     }
   });
 });
@@ -170,30 +168,29 @@ describe("Hierarchical Summary DAG: Context Assembly", () => {
         id: "s1",
         depth: 1,
         summary_text: "Discussed project timeline and deliverables for Acme Corp.",
-        message_count: 150,
-        first_message_at: "2026-03-15T09:00:00Z",
+        source_node_ids: ["c1", "c2", "c3"],
+        message_time_start: "2026-03-15T09:00:00Z",
       }),
       makeSummaryNode({
         id: "s2",
         depth: 0,
         summary_text: "User asked about billing status.",
-        message_count: 30,
-        first_message_at: "2026-03-17T10:00:00Z",
+        source_message_ids: Array.from({ length: 30 }, (_, i) => `msg-${i}`),
+        message_time_start: "2026-03-17T10:00:00Z",
       }),
     ];
 
     // Simulate the context assembly formatting
     const lines = summaries.map((s) => {
-      const timeInfo = s.first_message_at
-        ? ` (${s.message_count} messages, from ${new Date(s.first_message_at).toLocaleDateString()})`
-        : ` (${s.message_count} messages)`;
+      const timeInfo = s.message_time_start
+        ? ` (from ${new Date(s.message_time_start).toLocaleDateString()})`
+        : "";
       return `- ${s.summary_text}${timeInfo}`;
     });
 
     const formatted = `## Previous conversation context\n\n${lines.join("\n")}`;
 
     assert.ok(formatted.includes("Acme Corp"), "Should include entity from summary");
-    assert.ok(formatted.includes("150 messages"), "Should include message count");
     assert.ok(formatted.includes("billing status"), "Should include recent topic");
   });
 });

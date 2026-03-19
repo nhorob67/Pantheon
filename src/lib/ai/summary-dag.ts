@@ -64,7 +64,8 @@ export async function assembleSummaryContext(
     const root = rootNodes[0];
     const tokens = root.token_count || estimateTokens(root.summary_text);
     if (tokens <= remaining) {
-      parts.push(`### Overall summary\n${root.summary_text}`);
+      const rangeLabel = formatTimeRange(root.message_time_start, root.message_time_end);
+      parts.push(`### Overall summary${rangeLabel}\n${root.summary_text}`);
       usedIds.push(root.id);
       remaining -= tokens;
     }
@@ -88,7 +89,7 @@ export async function assembleSummaryContext(
     recentLeaves.reverse();
     const leafTexts = recentLeaves.map((l) => {
       const timeLabel = l.message_time_end
-        ? ` (${new Date(l.message_time_end).toISOString().slice(0, 16)})`
+        ? ` [${formatFriendlyTimestamp(l.message_time_end)}]`
         : "";
       return `- ${l.summary_text}${timeLabel}`;
     });
@@ -102,6 +103,56 @@ export async function assembleSummaryContext(
     tokenCount: tokenBudget - remaining,
     nodeIds: usedIds,
   };
+}
+
+const CROSS_SESSION_TOKEN_BUDGET = 500;
+
+/**
+ * Load the most recent cross-session bridge summaries for an agent.
+ * These carry narrative context from previous conversations.
+ */
+export async function loadBridgeSummaries(
+  admin: SupabaseClient,
+  tenantId: string,
+  agentId: string | null,
+  currentSessionId: string,
+  tokenBudget: number = CROSS_SESSION_TOKEN_BUDGET
+): Promise<{ text: string; tokenCount: number }> {
+  // Load bridges for this agent (or tenant-wide if no agent), excluding current session
+  let query = admin
+    .from("tenant_summary_bridges")
+    .select("summary_text, token_count, time_start, time_end, source_session_id")
+    .eq("tenant_id", tenantId)
+    .neq("source_session_id", currentSessionId)
+    .order("created_at", { ascending: false })
+    .limit(5);
+
+  if (agentId) {
+    query = query.eq("agent_id", agentId);
+  }
+
+  const { data, error } = await query;
+  if (error || !data || data.length === 0) {
+    return { text: "", tokenCount: 0 };
+  }
+
+  const parts: string[] = [];
+  let remaining = tokenBudget;
+
+  for (const bridge of data) {
+    const tokens = bridge.token_count || estimateTokens(bridge.summary_text);
+    if (tokens > remaining) break;
+    const rangeLabel = formatTimeRange(bridge.time_start, bridge.time_end);
+    parts.push(`- ${bridge.summary_text}${rangeLabel}`);
+    remaining -= tokens;
+  }
+
+  if (parts.length === 0) {
+    return { text: "", tokenCount: 0 };
+  }
+
+  const text = `### Background from previous conversations\n${parts.join("\n")}`;
+  return { text, tokenCount: tokenBudget - remaining };
 }
 
 /**
@@ -144,3 +195,41 @@ export async function validateSummaryDAG(
 
   return issues;
 }
+
+// ─── Formatting helpers ───────────────────────────────────────────────────────
+
+/**
+ * Format a timestamp as a friendly short label, e.g. "Mar 18, 2:30 PM"
+ */
+function formatFriendlyTimestamp(iso: string): string {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" }) +
+    ", " +
+    d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+}
+
+/**
+ * Format a time range for condensed/root nodes, e.g. " [Jan 15 – Mar 18, 2026]"
+ * Returns empty string if no timestamps available.
+ */
+function formatTimeRange(start: string | null, end: string | null): string {
+  if (!start && !end) return "";
+  const fmt = (iso: string) => {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  };
+  if (start && end) {
+    const s = fmt(start);
+    const e = fmt(end);
+    return s === e ? ` [${s}]` : ` [${s} – ${e}]`;
+  }
+  return ` [${fmt(start ?? end!)}]`;
+}
+
+/**
+ * Format a time range for condensed nodes in the DAG display.
+ * Exported for use by the history exploration tool.
+ */
+export { formatTimeRange, formatFriendlyTimestamp };

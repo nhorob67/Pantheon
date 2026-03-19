@@ -80,6 +80,7 @@ function buildMemoryTools(input: ToolRegistryInput): ToolMap {
   return createMemoryTools(input.admin, input.tenantId, input.customerId, {
     captureLevel: input.memoryCaptureLevel,
     excludeCategories: input.memoryExcludeCategories,
+    sessionId: input.sessionId,
   });
 }
 

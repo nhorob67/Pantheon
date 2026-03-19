@@ -5,6 +5,8 @@ import type { MemoryType } from "../memory-tier-classifier";
 import { writeMemoryRecord } from "../memory-record-writer";
 import { hybridMemorySearch } from "../memory-retrieval";
 import { searchConversations } from "../conversation-search";
+import { loadSummaryDAG, formatTimeRange } from "../summary-dag";
+import { estimateTokens } from "../history-loader";
 import type { ScoredMemory } from "../memory-scorer";
 import type { MemoryCaptureLevel } from "@/types/memory";
 
@@ -24,6 +26,8 @@ interface MemoryToolsOptions {
   searchFn?: MemorySearchFn;
   /** The agent invoking these tools — used for write attribution and search affinity */
   agentId?: string | null;
+  /** Current session ID — needed for conversation_history_explore tool */
+  sessionId?: string | null;
 }
 
 export function createMemoryTools(
@@ -36,6 +40,7 @@ export function createMemoryTools(
   const excludeCategories = options?.excludeCategories ?? [];
   const searchFn = options?.searchFn ?? hybridMemorySearch;
   const agentId = options?.agentId ?? null;
+  const sessionId = options?.sessionId ?? null;
 
   return {
     memory_write: tool({
@@ -171,6 +176,113 @@ export function createMemoryTools(
           };
         } catch (err) {
           return { error: `Conversation search failed: ${err instanceof Error ? err.message : "unknown error"}` };
+        }
+      },
+    }),
+
+    conversation_history_explore: tool({
+      description:
+        "Explore the hierarchical summary of past conversations. Use this when the user asks about what happened over a longer period (e.g. 'what did we discuss last week?') or when conversation_search doesn't find older context that may have been compacted into summaries.",
+      inputSchema: z.object({
+        question: z.string().describe("Natural-language question about past conversations"),
+        time_start: z.string().optional().describe("ISO date to filter from (e.g. '2026-03-10')"),
+        time_end: z.string().optional().describe("ISO date to filter until (e.g. '2026-03-18')"),
+      }),
+      execute: async ({ question, time_start, time_end }) => {
+        if (!sessionId) {
+          return { error: "No active session for history exploration" };
+        }
+        try {
+          const nodes = await loadSummaryDAG(admin, sessionId);
+          if (nodes.length === 0) {
+            return { summaries: [], message: "No conversation summaries available yet" };
+          }
+
+          const TOKEN_BUDGET = 2000;
+          const questionLower = question.toLowerCase();
+          const queryTerms = questionLower.match(/\b[a-z]{3,}\b/g) ?? [];
+
+          // Filter nodes by time range if specified
+          let candidates = nodes;
+          if (time_start || time_end) {
+            candidates = nodes.filter((n) => {
+              if (!n.message_time_start && !n.message_time_end) return true; // include nodes without timestamps
+              const nodeStart = n.message_time_start ?? n.message_time_end!;
+              const nodeEnd = n.message_time_end ?? n.message_time_start!;
+              if (time_end && nodeStart > time_end) return false;
+              if (time_start && nodeEnd < time_start) return false;
+              return true;
+            });
+          }
+
+          // Score nodes by keyword overlap with the question
+          const scored = candidates.map((n) => {
+            const textLower = n.summary_text.toLowerCase();
+            let score = 0;
+            for (const term of queryTerms) {
+              if (textLower.includes(term)) score++;
+            }
+            // Boost higher-depth nodes slightly (broader context)
+            score += n.depth * 0.3;
+            return { node: n, score };
+          });
+
+          // Sort by relevance, then by depth desc (broader first)
+          scored.sort((a, b) => b.score - a.score || b.node.depth - a.node.depth);
+
+          // Collect results within token budget
+          const results: Array<{
+            depth: number;
+            time_range: string;
+            summary: string;
+          }> = [];
+          let tokensUsed = 0;
+
+          for (const { node, score } of scored) {
+            if (score <= 0 && results.length > 0) break; // stop after relevant nodes exhausted
+            const tokens = node.token_count || estimateTokens(node.summary_text);
+            if (tokensUsed + tokens > TOKEN_BUDGET) continue;
+
+            results.push({
+              depth: node.depth,
+              time_range: formatTimeRange(node.message_time_start, node.message_time_end).trim(),
+              summary: node.summary_text,
+            });
+            tokensUsed += tokens;
+          }
+
+          // If no keyword matches, return the root + most recent leaves
+          if (results.length === 0) {
+            let fallbackTokens = 0;
+            const rootNodes = candidates.filter((n) => n.depth === Math.max(...candidates.map((c) => c.depth)));
+            for (const root of rootNodes.slice(0, 1)) {
+              const tokens = root.token_count || estimateTokens(root.summary_text);
+              if (fallbackTokens + tokens <= TOKEN_BUDGET) {
+                results.push({
+                  depth: root.depth,
+                  time_range: formatTimeRange(root.message_time_start, root.message_time_end).trim(),
+                  summary: root.summary_text,
+                });
+                fallbackTokens += tokens;
+              }
+            }
+            const leaves = candidates.filter((n) => n.depth === 0).slice(0, 3);
+            for (const leaf of leaves) {
+              const tokens = leaf.token_count || estimateTokens(leaf.summary_text);
+              if (fallbackTokens + tokens <= TOKEN_BUDGET) {
+                results.push({
+                  depth: leaf.depth,
+                  time_range: formatTimeRange(leaf.message_time_start, leaf.message_time_end).trim(),
+                  summary: leaf.summary_text,
+                });
+                fallbackTokens += tokens;
+              }
+            }
+          }
+
+          return { summaries: results, count: results.length };
+        } catch (err) {
+          return { error: `History exploration failed: ${err instanceof Error ? err.message : "unknown error"}` };
         }
       },
     }),
