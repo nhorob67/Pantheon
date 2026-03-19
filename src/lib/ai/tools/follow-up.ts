@@ -5,11 +5,11 @@ import { enqueueDiscordRuntimeRun } from "@/lib/runtime/tenant-runtime-queue";
 import { processRuntimeRun } from "@/trigger/process-runtime-run";
 
 // ---------------------------------------------------------------------------
-// Constants
+// Constants (exported for shared use by safety net)
 // ---------------------------------------------------------------------------
 
-const MAX_FOLLOW_UP_DEPTH = 10;
-const MAX_PENDING_FOLLOW_UPS_PER_TENANT = 3;
+export const MAX_FOLLOW_UP_DEPTH = 10;
+export const MAX_PENDING_FOLLOW_UPS_PER_TENANT = 3;
 const MIN_DELAY_MINUTES = 5;
 const MAX_DELAY_MINUTES = 60;
 
@@ -119,4 +119,76 @@ export function createFollowUpTool(
       },
     }),
   };
+}
+
+// ---------------------------------------------------------------------------
+// Shared follow-up scheduling helper (used by both tool and safety net)
+// ---------------------------------------------------------------------------
+
+export interface ScheduleFollowUpInput {
+  admin: SupabaseClient;
+  tenantId: string;
+  customerId: string;
+  agentId: string;
+  channelId: string;
+  runId: string;
+  followUpDepth: number;
+  taskSummary: string;
+  reason: string;
+  delayMinutes: number;
+}
+
+export async function scheduleFollowUp(
+  input: ScheduleFollowUpInput
+): Promise<{ success: boolean; reason?: string }> {
+  // Guard: max chain depth
+  if (input.followUpDepth >= MAX_FOLLOW_UP_DEPTH) {
+    return { success: false, reason: "max_depth_reached" };
+  }
+
+  // Guard: max pending follow-ups per tenant
+  const { count } = await input.admin
+    .from("tenant_runtime_runs")
+    .select("id", { count: "exact", head: true })
+    .eq("tenant_id", input.tenantId)
+    .eq("run_kind", "discord_follow_up")
+    .in("status", ["queued"]);
+
+  if ((count ?? 0) >= MAX_PENDING_FOLLOW_UPS_PER_TENANT) {
+    return { success: false, reason: "max_pending_reached" };
+  }
+
+  const delayMinutes = Math.max(MIN_DELAY_MINUTES, Math.min(MAX_DELAY_MINUTES, input.delayMinutes));
+  const idempotencyKey = `follow_up:${input.runId}:${Date.now()}`;
+  const scheduledFor = new Date(
+    Date.now() + delayMinutes * 60 * 1000
+  ).toISOString();
+
+  const childRun = await enqueueDiscordRuntimeRun(input.admin, {
+    tenantId: input.tenantId,
+    customerId: input.customerId,
+    requestTraceId: `follow-up-${input.runId}`,
+    idempotencyKey,
+    runKind: "discord_follow_up",
+    payload: {
+      channel_id: input.channelId,
+      agent_id: input.agentId,
+      task_summary: input.taskSummary,
+      reason: input.reason,
+      follow_up_depth: input.followUpDepth + 1,
+      run_kind: "discord_follow_up",
+    },
+    metadata: {
+      follow_up_depth: input.followUpDepth + 1,
+      scheduled_for: scheduledFor,
+      originating_run_id: input.runId,
+    },
+  });
+
+  await processRuntimeRun.trigger(
+    { runId: childRun.id },
+    { delay: `${delayMinutes}m` }
+  );
+
+  return { success: true };
 }

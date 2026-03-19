@@ -4,12 +4,26 @@ const PANTHEON_API_URL = process.env.PANTHEON_API_URL || "http://localhost:3000"
 const PANTHEON_BOT_SECRET = process.env.PANTHEON_BOT_SECRET;
 const INGRESS_PATH = "/api/admin/tenants/runtime/discord/ingress";
 
+// Belt-and-suspenders dedup guard for gateway reconnect replays.
+// The ingress path already sends x-idempotency-key = message.id, so this is
+// a secondary defense against the bot POSTing the same messageCreate twice.
+const processedMessageIds = new Set<string>();
+const PROCESSED_MESSAGE_TTL_MS = 60_000;
+
 export async function handleMessage(message: Message): Promise<void> {
   // Ignore bot messages (including self)
   if (message.author.bot) return;
 
   // Ignore messages without text content
   if (!message.content && message.attachments.size === 0) return;
+
+  // Skip duplicate messageCreate events (gateway reconnect replays)
+  if (processedMessageIds.has(message.id)) {
+    console.log(`[bot] Skipping duplicate messageCreate: ${message.id}`);
+    return;
+  }
+  processedMessageIds.add(message.id);
+  setTimeout(() => processedMessageIds.delete(message.id), PROCESSED_MESSAGE_TTL_MS);
 
   // Send typing indicator while processing
   try {

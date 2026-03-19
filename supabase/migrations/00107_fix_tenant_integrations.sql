@@ -15,7 +15,7 @@ DROP TABLE IF EXISTS tenant_integrations CASCADE;
 -- Recreate with the correct schema (from migration 00103)
 CREATE TABLE tenant_integrations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id UUID NOT NULL REFERENCES instances(id) ON DELETE CASCADE,
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
   customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
 
   -- Identity

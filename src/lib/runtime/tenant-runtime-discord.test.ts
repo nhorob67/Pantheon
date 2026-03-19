@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   buildDiscordRuntimeResponseParts,
   buildDiscordCanaryResponseContent,
+  checkAndMarkFinalReply,
   DiscordApiError,
   DISCORD_CANARY_PREFIX,
   isDiscordCanaryLoopContent,
@@ -153,4 +154,84 @@ test("sendDiscordChannelMessageSequence sends all parts and only first part repl
   assert.ok(typeof calls[0].body.message_reference === "object");
   assert.equal(calls[1].body.message_reference, undefined);
   assert.equal(calls[2].body.message_reference, undefined);
+});
+
+// --- checkAndMarkFinalReply tests ---
+
+test("checkAndMarkFinalReply returns false on first call (not a duplicate)", () => {
+  const result = checkAndMarkFinalReply({
+    runId: "run-unique-1",
+    channelId: "ch-1",
+    replyToMessageId: "msg-1",
+    partIndex: 0,
+    content: "Hello, world!",
+  });
+  assert.equal(result, false);
+});
+
+test("checkAndMarkFinalReply returns true on second identical call (duplicate)", () => {
+  const key = {
+    runId: "run-dup-test",
+    channelId: "ch-2",
+    replyToMessageId: "msg-2",
+    partIndex: 0,
+    content: "Duplicate content here",
+  };
+  const first = checkAndMarkFinalReply(key);
+  const second = checkAndMarkFinalReply(key);
+  assert.equal(first, false);
+  assert.equal(second, true);
+});
+
+test("checkAndMarkFinalReply treats different content as distinct", () => {
+  const base = {
+    runId: "run-diff-content",
+    channelId: "ch-3",
+    replyToMessageId: "msg-3",
+    partIndex: 0,
+  };
+  const first = checkAndMarkFinalReply({ ...base, content: "Content A" });
+  const second = checkAndMarkFinalReply({ ...base, content: "Content B" });
+  assert.equal(first, false);
+  assert.equal(second, false);
+});
+
+test("checkAndMarkFinalReply treats different runIds as distinct", () => {
+  const base = {
+    channelId: "ch-4",
+    replyToMessageId: "msg-4",
+    partIndex: 0,
+    content: "Same content",
+  };
+  const first = checkAndMarkFinalReply({ ...base, runId: "run-A" });
+  const second = checkAndMarkFinalReply({ ...base, runId: "run-B" });
+  assert.equal(first, false);
+  assert.equal(second, false);
+});
+
+test("checkAndMarkFinalReply treats different partIndex as distinct", () => {
+  const base = {
+    runId: "run-part-idx",
+    channelId: "ch-5",
+    replyToMessageId: "msg-5",
+    content: "Same content",
+  };
+  const first = checkAndMarkFinalReply({ ...base, partIndex: 0 });
+  const second = checkAndMarkFinalReply({ ...base, partIndex: 1 });
+  assert.equal(first, false);
+  assert.equal(second, false);
+});
+
+test("checkAndMarkFinalReply handles null replyToMessageId", () => {
+  const key = {
+    runId: "run-null-reply",
+    channelId: "ch-6",
+    replyToMessageId: null,
+    partIndex: 0,
+    content: "No reply target",
+  };
+  const first = checkAndMarkFinalReply(key);
+  const second = checkAndMarkFinalReply(key);
+  assert.equal(first, false);
+  assert.equal(second, true);
 });

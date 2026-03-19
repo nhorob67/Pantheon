@@ -346,3 +346,51 @@ export async function sendDiscordChannelMessageSequence(
     partsSent: input.contents.length,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Opt-in final-reply dedup guard
+// ---------------------------------------------------------------------------
+// Scoped to final AI reply dispatch — NOT applied to intermediate sends,
+// canary dispatch, or completion notifications. Fingerprint includes runId
+// to avoid cross-run collisions.
+
+export interface FinalReplyDedupKey {
+  runId: string;
+  channelId: string;
+  replyToMessageId: string | null;
+  partIndex: number;
+  contentHash: string;
+}
+
+const finalReplySentKeys = new Set<string>();
+const FINAL_REPLY_DEDUP_TTL_MS = 120_000;
+
+function buildFinalReplyFingerprint(key: FinalReplyDedupKey): string {
+  return `${key.runId}:${key.channelId}:${key.replyToMessageId ?? ""}:${key.partIndex}:${key.contentHash}`;
+}
+
+function simpleContentHash(content: string): string {
+  // Fast, non-crypto hash — sufficient for dedup within a 2-minute window
+  let hash = 0;
+  for (let i = 0; i < content.length; i++) {
+    hash = ((hash << 5) - hash + content.charCodeAt(i)) | 0;
+  }
+  return hash.toString(36);
+}
+
+/**
+ * Check whether this exact final reply part was already sent.
+ * Returns true if the reply should be skipped (duplicate).
+ */
+export function checkAndMarkFinalReply(key: Omit<FinalReplyDedupKey, "contentHash"> & { content: string }): boolean {
+  const fingerprint = buildFinalReplyFingerprint({
+    ...key,
+    contentHash: simpleContentHash(key.content),
+  });
+  if (finalReplySentKeys.has(fingerprint)) {
+    return true; // duplicate — skip
+  }
+  finalReplySentKeys.add(fingerprint);
+  setTimeout(() => finalReplySentKeys.delete(fingerprint), FINAL_REPLY_DEDUP_TTL_MS);
+  return false; // not a duplicate — proceed
+}

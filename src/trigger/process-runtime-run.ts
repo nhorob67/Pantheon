@@ -28,35 +28,25 @@ export const processRuntimeRun = task({
       return { skipped: true, reason: "run_not_found", runId: payload.runId };
     }
 
-    // Skip if already terminal
-    if (run.status === "completed" || run.status === "failed" || run.status === "canceled") {
-      return { skipped: true, reason: "already_terminal", status: run.status };
+    // Only execute runs that this invocation successfully claims from "queued".
+    // If the run is already "running", it belongs to another worker — skip.
+    // Recovery of stuck "running" rows is the responsibility of stale-run recovery,
+    // not Trigger.dev retry re-entry.
+    if (run.status !== "queued") {
+      return { skipped: true, reason: "not_claimable", status: run.status };
     }
 
-    // Claim the run if still queued (uses optimistic locking)
-    let claimed = run;
-    if (run.status === "queued") {
-      const claimedById = await claimTenantRuntimeRunById(
-        admin,
-        payload.runId,
-        "trigger-dev",
-        120
-      );
-      if (!claimedById) {
-        // Another worker may have claimed it, or it's already running
-        const refetch = await getTenantRuntimeRunById(admin, payload.runId);
-        if (!refetch || refetch.status !== "running") {
-          return { skipped: true, reason: "claim_lost", status: refetch?.status };
-        }
-        claimed = refetch;
-      } else {
-        claimed = claimedById;
-      }
+    const claimedById = await claimTenantRuntimeRunById(
+      admin,
+      payload.runId,
+      "trigger-dev",
+      120
+    );
+    if (!claimedById) {
+      return { skipped: true, reason: "claim_lost", runId: payload.runId };
     }
 
-    if (claimed.status !== "running") {
-      return { skipped: true, reason: "not_running", status: claimed.status };
-    }
+    const claimed = claimedById;
 
     const resolvedModels = await resolveModels(admin, claimed.tenant_id);
     const worker = claimed.run_kind === "delegation_runtime"

@@ -25,8 +25,10 @@ import {
   sendDiscordTypingIndicator,
   buildDiscordRuntimeResponseParts,
   DiscordApiError,
+  checkAndMarkFinalReply,
 } from "@/lib/runtime/tenant-runtime-discord";
 import { collectPendingFiles } from "./tools/file-create";
+import { scheduleFollowUp, MAX_FOLLOW_UP_DEPTH } from "./tools/follow-up";
 import {
   CircuitBreakerOpenError,
   runWithCircuitBreaker,
@@ -96,12 +98,12 @@ function buildFollowUpPrompt(payload: Record<string, unknown>): string {
   const reason =
     typeof payload.reason === "string" ? payload.reason : "";
   const parts = [
-    "This is a scheduled follow-up. You previously started working on a task and scheduled this check-in.",
-    `Task: ${taskSummary}`,
+    `You scheduled this follow-up while working on: ${taskSummary}`,
   ];
-  if (reason) parts.push(`Reason for follow-up: ${reason}`);
+  if (reason) parts.push(`You wanted to check back because: ${reason}`);
   parts.push(
-    "Continue the work, update the user on progress, and if the task is complete, let them know clearly. If more time is needed, you can schedule another follow-up."
+    "Pick up where you left off naturally. Lead with your finding or update — don't announce this is a follow-up. " +
+      "If the task is done, share the result. If it needs more time, explain and optionally schedule another follow-up."
   );
   return parts.join("\n\n");
 }
@@ -211,10 +213,20 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
         const isCron = typeof payload.run_kind === "string" && payload.run_kind === "discord_cron";
         const isFollowUp = typeof payload.run_kind === "string" && payload.run_kind === "discord_follow_up";
         const scheduleKey = typeof payload.schedule_key === "string" ? payload.schedule_key : null;
+
+        // For follow-ups: separate retrieval, stored history, and system prompt concerns
+        const followUpPrompt = isFollowUp ? buildFollowUpPrompt(payload) : null;
+        const followUpRetrievalQuery = isFollowUp
+          ? [
+              typeof payload.task_summary === "string" ? payload.task_summary : "",
+              typeof payload.reason === "string" ? payload.reason : "",
+            ].filter(Boolean).join(" — ") || undefined
+          : undefined;
+
         const userContent = isCron
           ? buildCronPrompt(scheduleKey, payload)
           : isFollowUp
-            ? buildFollowUpPrompt(payload)
+            ? "[follow-up check-in]"
             : content;
 
         // Parse attachments from payload
@@ -274,6 +286,13 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           // delegationConfig uses a mutable object — parentGuardrails and parentRecords
           // are populated after executor creation (below), before any tool executes.
           delegationConfig: delegationCtx,
+          // Follow-up context separation: seed retrieval with real task summary,
+          // store a neutral placeholder in history, inject instructions via system prompt
+          ...(isFollowUp ? {
+            retrievalQuery: followUpRetrievalQuery,
+            storedInboundContent: "[follow-up check-in]",
+            systemPromptAddendum: followUpPrompt ?? undefined,
+          } : {}),
         });
 
         // Custom cron jobs can scope tools to a subset
@@ -355,7 +374,8 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
         // Show typing indicator while generating
         await sendDiscordTypingIndicator(botToken, channelId);
 
-        const sentIntermediateTexts: string[] = [];
+        // Track chunks that were actually delivered to Discord (not just attempted)
+        const deliveredIntermediateChunks: string[] = [];
 
         const result = await generateText({
           model: primaryModel,
@@ -382,22 +402,23 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
               intermediateText = stepRedactor(intermediateText);
             }
 
-            // Fire-and-forget: send progress to Discord (no reply, reserved for final)
-            sendDiscordChannelMessage(
-              {
-                botToken,
-                channelId,
-                content: intermediateText.slice(0, 1900),
-              },
-              fetch
-            ).catch((err) => {
+            const sentChunk = intermediateText.slice(0, 1900);
+            try {
+              await sendDiscordChannelMessage(
+                {
+                  botToken,
+                  channelId,
+                  content: sentChunk,
+                },
+                fetch
+              );
+              deliveredIntermediateChunks.push(sentChunk);
+            } catch (err) {
               console.error("[ai-worker] Intermediate Discord send failed:", safeErrorMessage(err));
-            });
+            }
 
             // Refresh typing indicator for next step
             sendDiscordTypingIndicator(botToken, channelId).catch(() => {});
-
-            sentIntermediateTexts.push(intermediateText);
           },
         });
 
@@ -422,6 +443,25 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
         }
 
         let responseText = result.text?.trim() || "";
+
+        // Reconcile intermediate sends with final text to avoid duplicate content.
+        // AI SDK v6 concatenates all step texts into result.text, so if intermediate
+        // chunks were already delivered to Discord, strip them from the final send.
+        let skipFinalSend = false;
+        if (deliveredIntermediateChunks.length > 0 && responseText) {
+          let stripped = responseText;
+          for (const delivered of deliveredIntermediateChunks) {
+            if (stripped.startsWith(delivered)) {
+              stripped = stripped.slice(delivered.length).trim();
+            }
+          }
+          if (stripped.length > 0) {
+            responseText = stripped;
+          } else {
+            // Entire response was already delivered as intermediate messages
+            skipFinalSend = true;
+          }
+        }
 
         // Fallback when maxSteps exhausted on a tool-call step with no final text.
         // Build a natural-language summary — never expose raw JSON or tool names.
@@ -468,6 +508,43 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           : null;
         if (redactor) {
           responseText = redactor(responseText);
+        }
+
+        // Safety net: detect "promise without action" and auto-schedule follow-up.
+        // Only fires when the agent says it will do something but didn't call any tools
+        // or schedule an explicit follow-up.
+        const followUpDepth = typeof payload.follow_up_depth === "number" ? payload.follow_up_depth : 0;
+        if (
+          !isCron &&
+          !skipFinalSend &&
+          responseText.length > 0 &&
+          followUpDepth < MAX_FOLLOW_UP_DEPTH
+        ) {
+          const hasToolSuccess = executor.records.some((r) => r.success);
+          const hasExplicitFollowUp = executor.records.some(
+            (r) => r.toolName === "task_follow_up" && r.success
+          );
+          const promisePattern = /\b(?:let me (?:try|check|set up|look into|work on|handle)|i['']ll (?:try|check|set up|look into|work on|handle|get|do|take care))/i;
+          const hasPromise = promisePattern.test(responseText);
+
+          if (hasPromise && !hasToolSuccess && !hasExplicitFollowUp && assembled.agentId) {
+            const scheduled = await scheduleFollowUp({
+              admin,
+              tenantId: context.run.tenant_id,
+              customerId: context.run.customer_id,
+              agentId: assembled.agentId,
+              channelId,
+              runId: context.run.id,
+              followUpDepth,
+              taskSummary: responseText.slice(0, 300),
+              reason: "Auto-detected promise without action — scheduling follow-up to attempt the task.",
+              delayMinutes: 5,
+            }).catch(() => ({ success: false }));
+
+            if (scheduled.success) {
+              responseText += "\n\nI'll check back on this in about 5 minutes.";
+            }
+          }
         }
 
         // Store outbound message
@@ -590,72 +667,90 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           console.error("[ai-worker] Failed to record usage:", safeErrorMessage(err));
         });
 
-        // Send to Discord
-        const responseParts = buildDiscordRuntimeResponseParts(responseText);
-        const timeoutFetch: typeof fetch = async (url, init) => {
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), governance.dispatch_timeout_ms);
-          try {
-            return await fetch(url, { ...init, signal: controller.signal });
-          } finally {
-            clearTimeout(timeout);
+        // Send to Discord (skip if intermediate sends already covered the full response)
+        let sent: { messageIds: string[]; partsSent: number } = { messageIds: [], partsSent: 0 };
+
+        if (!skipFinalSend) {
+          // Opt-in dedup guard: skip if this exact final reply was already sent
+          // (protects against re-entrant execution of the same run)
+          const isDuplicate = checkAndMarkFinalReply({
+            runId: context.run.id,
+            channelId,
+            replyToMessageId: inboundMessageId,
+            partIndex: 0,
+            content: responseText,
+          });
+          if (isDuplicate) {
+            skipFinalSend = true;
+            console.log(`[ai-worker] Skipping duplicate final reply for run ${context.run.id}`);
           }
-        };
+        }
 
-        // Collect any files created by file_create tool during this run
-        const pendingFiles = context.run?.id ? collectPendingFiles(context.run.id) : [];
-
-        let sent: { messageIds: string[]; partsSent: number };
-
-        if (pendingFiles.length > 0) {
-          // Send text + file attachments together via multipart
-          const attachmentText = responseParts.join("\n\n");
-          sent = await runWithCircuitBreaker(
-            `discord_dispatch:${context.run.tenant_id}`,
-            async () => {
-              const result = await sendDiscordChannelMessageWithFiles(
-                {
-                  botToken,
-                  channelId,
-                  content: attachmentText.slice(0, 1900),
-                  files: pendingFiles.map((f) => ({
-                    name: f.fileName,
-                    data: f.data,
-                    contentType: f.contentType,
-                  })),
-                  replyToMessageId: inboundMessageId,
-                },
-                timeoutFetch
-              );
-              return {
-                messageIds: result.messageId ? [result.messageId] : [],
-                partsSent: 1,
-              };
-            },
-            {
-              failureThreshold: CIRCUIT_FAILURE_THRESHOLD,
-              cooldownMs: CIRCUIT_COOLDOWN_MS,
+        if (!skipFinalSend) {
+          const responseParts = buildDiscordRuntimeResponseParts(responseText);
+          const timeoutFetch: typeof fetch = async (url, init) => {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), governance.dispatch_timeout_ms);
+            try {
+              return await fetch(url, { ...init, signal: controller.signal });
+            } finally {
+              clearTimeout(timeout);
             }
-          );
-        } else {
-          // Standard text-only send
-          sent = await runWithCircuitBreaker(
-            `discord_dispatch:${context.run.tenant_id}`,
-            () =>
-              sendDiscordChannelMessageSequence(
-                {
-                  botToken,
-                  channelId,
-                  contents: responseParts,
-                  replyToMessageId: inboundMessageId,
-                },
-                timeoutFetch
-              ),
-            {
-              failureThreshold: CIRCUIT_FAILURE_THRESHOLD,
-              cooldownMs: CIRCUIT_COOLDOWN_MS,
-            }
-          );
+          };
+
+          // Collect any files created by file_create tool during this run
+          const pendingFiles = context.run?.id ? collectPendingFiles(context.run.id) : [];
+
+          if (pendingFiles.length > 0) {
+            // Send text + file attachments together via multipart
+            const attachmentText = responseParts.join("\n\n");
+            sent = await runWithCircuitBreaker(
+              `discord_dispatch:${context.run.tenant_id}`,
+              async () => {
+                const result = await sendDiscordChannelMessageWithFiles(
+                  {
+                    botToken,
+                    channelId,
+                    content: attachmentText.slice(0, 1900),
+                    files: pendingFiles.map((f) => ({
+                      name: f.fileName,
+                      data: f.data,
+                      contentType: f.contentType,
+                    })),
+                    replyToMessageId: inboundMessageId,
+                  },
+                  timeoutFetch
+                );
+                return {
+                  messageIds: result.messageId ? [result.messageId] : [],
+                  partsSent: 1,
+                };
+              },
+              {
+                failureThreshold: CIRCUIT_FAILURE_THRESHOLD,
+                cooldownMs: CIRCUIT_COOLDOWN_MS,
+              }
+            );
+          } else {
+            // Standard text-only send
+            sent = await runWithCircuitBreaker(
+              `discord_dispatch:${context.run.tenant_id}`,
+              () =>
+                sendDiscordChannelMessageSequence(
+                  {
+                    botToken,
+                    channelId,
+                    contents: responseParts,
+                    replyToMessageId: inboundMessageId,
+                  },
+                  timeoutFetch
+                ),
+              {
+                failureThreshold: CIRCUIT_FAILURE_THRESHOLD,
+                cooldownMs: CIRCUIT_COOLDOWN_MS,
+              }
+            );
+          }
         }
 
         return {
