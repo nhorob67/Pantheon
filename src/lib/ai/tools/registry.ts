@@ -4,6 +4,7 @@ import type { TenantAgent } from "@/types/tenant-runtime";
 import type { TenantRole, TenantRuntimeRun } from "@/types/tenant-runtime";
 import type { MemoryCaptureLevel } from "@/types/memory";
 import { createMemoryTools } from "./memory";
+import { createConversationSearchTool } from "./conversation-search";
 import { createScheduleTools } from "./schedules";
 import { createComposioTools } from "./composio";
 import { createCredentialTools } from "./credentials";
@@ -46,6 +47,7 @@ export interface ToolRegistryInput {
   memoryCaptureLevel?: MemoryCaptureLevel;
   memoryExcludeCategories?: string[];
   channelId?: string;
+  sessionId?: string;
   timezone?: string;
   composioToolkits?: string[];
   composioUserId?: string;
@@ -101,6 +103,14 @@ export async function resolveToolsForAgent(input: ToolRegistryInput): Promise<To
 
   // Memory tools are always available
   Object.assign(tools, buildMemoryTools(input));
+
+  // Conversation search tool — always available when session context exists
+  if (input.sessionId) {
+    Object.assign(
+      tools,
+      createConversationSearchTool(input.admin, input.tenantId, input.sessionId)
+    );
+  }
 
   // Schedule tools are always available
   const channelId = input.channelId || "";
