@@ -340,7 +340,7 @@ const BLOCKED_HOSTS = [
   "metadata.google.internal", "169.254.169.254",
 ];
 
-function isBlockedHost(hostname: string): boolean {
+export function isBlockedHost(hostname: string): boolean {
   const lower = hostname.toLowerCase();
   if (BLOCKED_HOSTS.includes(lower)) return true;
   if (lower.endsWith(".internal") || lower.endsWith(".local")) return true;
@@ -368,6 +368,7 @@ export interface IntegrationApiCallResult {
   headers: Record<string, string>;
   body: string;
   integration: string;
+  rate_limit_warning?: string;
 }
 
 export async function executeIntegrationApiCall(
@@ -401,6 +402,20 @@ export async function executeIntegrationApiCall(
   }
   if (fullUrl.protocol !== "https:") {
     return { error: "Only HTTPS URLs are allowed." };
+  }
+
+  // Check for active rate limit
+  const rateLimit = (integration.config as Record<string, unknown>)?._rate_limit as
+    | { retry_after: string; recorded_at: string }
+    | undefined;
+  if (rateLimit?.retry_after) {
+    const retryAt = new Date(rateLimit.retry_after);
+    if (retryAt > new Date()) {
+      const waitSec = Math.ceil((retryAt.getTime() - Date.now()) / 1000);
+      return {
+        error: `Rate limited by ${input.integrationSlug}. Try again in ~${waitSec}s.`,
+      };
+    }
   }
 
   // Resolve credential
@@ -463,6 +478,30 @@ export async function executeIntegrationApiCall(
 
     let responseBody = await response.text();
 
+    // Parse rate limit headers
+    const rateLimitRemaining = response.headers.get("x-ratelimit-remaining");
+    const retryAfter = response.headers.get("retry-after");
+
+    // If we got a 429, record it and include guidance
+    if (response.status === 429) {
+      const retrySeconds = retryAfter ? parseInt(retryAfter, 10) : 60;
+      const retryAt = new Date(Date.now() + retrySeconds * 1000).toISOString();
+
+      // Store rate limit state on the integration
+      void input.admin
+        .from("tenant_integrations")
+        .update({
+          last_error: `Rate limited until ${retryAt}`,
+          config: {
+            ...(integration.config as Record<string, unknown>),
+            _rate_limit: { retry_after: retryAt, recorded_at: new Date().toISOString() },
+          },
+        })
+        .eq("tenant_id", input.tenantId)
+        .eq("slug", input.integrationSlug)
+        .then(() => {});
+    }
+
     // Truncate
     if (responseBody.length > MAX_RESPONSE_BODY_LENGTH) {
       responseBody = responseBody.slice(0, MAX_RESPONSE_BODY_LENGTH) + "\n[...truncated]";
@@ -482,6 +521,13 @@ export async function executeIntegrationApiCall(
       .eq("slug", input.integrationSlug)
       .then(() => {});
 
+    // Warn when rate limit headroom is very low
+    const rateLimitRemainingNum = rateLimitRemaining !== null ? parseInt(rateLimitRemaining, 10) : null;
+    const rateLimitWarning =
+      rateLimitRemainingNum !== null && !isNaN(rateLimitRemainingNum) && rateLimitRemainingNum <= 5
+        ? `Rate limit headroom is low: ${rateLimitRemainingNum} request(s) remaining.`
+        : undefined;
+
     return {
       status: response.status,
       status_text: response.statusText,
@@ -493,6 +539,7 @@ export async function executeIntegrationApiCall(
       ),
       body: responseBody,
       integration: input.integrationSlug,
+      ...(rateLimitWarning !== undefined ? { rate_limit_warning: rateLimitWarning } : {}),
     };
   } catch (err) {
     // Record the error on the integration

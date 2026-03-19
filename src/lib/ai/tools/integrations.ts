@@ -7,6 +7,7 @@ import {
   listIntegrations,
   executeIntegrationApiCall,
 } from "@/lib/runtime/tenant-integrations";
+import { findTemplate, getTemplateList } from "@/lib/runtime/integration-templates";
 
 export interface CreateIntegrationToolsInput {
   admin: SupabaseClient;
@@ -226,6 +227,32 @@ export function createIntegrationTools(input: CreateIntegrationToolsInput) {
             error: err instanceof Error ? err.message : "Integration API call failed",
           };
         }
+      },
+    }),
+
+    integration_templates: tool({
+      description:
+        "Look up pre-built integration templates for common services (Discourse, GitHub, Jira, Linear, Slack, Notion). " +
+        "Returns base URLs, auth methods, known endpoints, and setup instructions so you don't need to research the API from scratch. " +
+        "Call with no arguments to list all available templates, or pass a slug to get full details for one service.",
+      inputSchema: z.object({
+        slug: z
+          .string()
+          .optional()
+          .describe("Service slug to look up (e.g., 'github'). Omit to list all available templates."),
+      }),
+      execute: async ({ slug }) => {
+        if (slug) {
+          const template = findTemplate(slug);
+          if (!template) {
+            return {
+              error: `No template found for "${slug}".`,
+              available: getTemplateList().map((t) => t.slug),
+            };
+          }
+          return { template };
+        }
+        return { templates: getTemplateList() };
       },
     }),
   };

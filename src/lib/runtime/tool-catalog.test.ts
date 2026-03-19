@@ -121,7 +121,7 @@ describe("tool-catalog", () => {
       "file_create",
       "delegate_task", "delegate_task_async", "delegation_poll", "delegation_cancel",
       "browser_navigate", "browser_extract", "browser_click", "browser_fill", "browser_screenshot",
-      "integration_store_credential", "integration_register", "integration_list", "integration_api_call",
+      "integration_store_credential", "integration_register", "integration_list", "integration_api_call", "integration_templates",
       "http_request",
       "web_search", "web_fetch",
     ];

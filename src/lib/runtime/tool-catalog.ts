@@ -375,6 +375,14 @@ const NATIVE_TOOLS: NativeToolEntry[] = [
     "medium",
     { networkAccess: true, writesState: false }
   ),
+  native(
+    "integration_templates",
+    "Integration Templates",
+    "Look up pre-built integration templates for common services with known endpoints and setup instructions",
+    "integrations",
+    "low",
+    { writesState: false }
+  ),
 
   // ── Network ─────────────────────────────────────────────────────────────
   native(
