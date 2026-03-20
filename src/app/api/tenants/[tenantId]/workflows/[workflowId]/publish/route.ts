@@ -38,6 +38,8 @@ export async function POST(
       tenantId,
       requestTraceId: parsed.requestTraceId,
       requiredGate: "writes",
+      requireManageRuntimeData: true,
+      roleErrorMessage: "Insufficient role for workflow management",
       fallbackErrorMessage: "Failed to publish workflow",
     },
     async (state) => {

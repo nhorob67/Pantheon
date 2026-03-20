@@ -6,6 +6,7 @@ import { STRIPE_CONFIG } from "@/lib/stripe/config";
 import { encrypt } from "@/lib/crypto";
 import { consumeDurableRateLimit } from "@/lib/security/durable-rate-limit";
 import { completePendingSignup } from "@/lib/stripe/complete-pending-signup";
+import { findAuthUserByEmail } from "@/lib/supabase/admin-auth";
 
 const createSubscriptionSchema = z.object({
   action: z.literal("create-subscription"),
@@ -34,6 +35,15 @@ const SIGNUP_EMAIL_WINDOW_SECONDS = 60 * 60;
 const SIGNUP_EMAIL_MAX_ATTEMPTS = 5;
 const SIGNUP_NETWORK_WINDOW_SECONDS = 10 * 60;
 const SIGNUP_NETWORK_MAX_ATTEMPTS = 20;
+
+async function rollbackStripeSubscription(subscriptionId: string): Promise<void> {
+  try {
+    const stripe = getStripe();
+    await stripe.subscriptions.cancel(subscriptionId);
+  } catch (error) {
+    console.error("[SIGNUP] Failed to roll back Stripe subscription:", error);
+  }
+}
 
 function getClientNetworkKey(request: Request): string {
   const realIp = request.headers.get("x-real-ip")?.trim();
@@ -123,13 +133,13 @@ async function handleCreateSubscription(body: unknown, request: Request) {
   const admin = createAdminClient();
 
   // Check for existing customer + auth user (parallel)
-  const [{ data: existingCustomer }, { data: authUsers }] = await Promise.all([
+  const [{ data: existingCustomer }, existingUser] = await Promise.all([
     admin
       .from("customers")
       .select("id")
       .eq("email", email)
       .single(),
-    admin.auth.admin.listUsers(),
+    findAuthUserByEmail(admin, email),
   ]);
 
   if (existingCustomer) {
@@ -139,7 +149,6 @@ async function handleCreateSubscription(body: unknown, request: Request) {
     );
   }
 
-  const existingUser = authUsers?.users?.find((u) => u.email === email);
   if (existingUser) {
     return NextResponse.json(
       { error: "An account with this email already exists. Please sign in." },
@@ -223,7 +232,7 @@ async function handleCreateSubscription(body: unknown, request: Request) {
   }
 
   // Update pending signup with Stripe IDs
-  await admin
+  const { error: pendingSignupUpdateError } = await admin
     .from("pending_signups")
     .update({
       stripe_customer_id: stripeCustomer.id,
@@ -233,6 +242,15 @@ async function handleCreateSubscription(body: unknown, request: Request) {
     })
     .eq("email", email)
     .in("status", ["pending", "payment_processing"]);
+
+  if (pendingSignupUpdateError) {
+    console.error("[SIGNUP] Failed to persist Stripe signup linkage:", pendingSignupUpdateError);
+    await rollbackStripeSubscription(subscription.id);
+    return NextResponse.json(
+      { error: "Unable to finalize billing setup. Please try again." },
+      { status: 500 }
+    );
+  }
 
   // Extract client secret from the expanded PaymentIntent
   // Stripe SDK v20 changed the Invoice shape; payment_intent is on the expanded object
@@ -410,13 +428,13 @@ async function handleCreateTrial(body: unknown, request: Request) {
     const admin = createAdminClient();
 
     // Check for existing customer + auth user (parallel)
-    const [{ data: existingCustomer }, { data: authUsers }] = await Promise.all([
+    const [{ data: existingCustomer }, existingUser] = await Promise.all([
       admin
         .from("customers")
         .select("id")
         .eq("email", email)
         .single(),
-      admin.auth.admin.listUsers(),
+      findAuthUserByEmail(admin, email),
     ]);
 
     if (existingCustomer) {
@@ -426,7 +444,6 @@ async function handleCreateTrial(body: unknown, request: Request) {
       );
     }
 
-    const existingUser = authUsers?.users?.find((u) => u.email === email);
     if (existingUser) {
       return NextResponse.json(
         { error: "An account with this email already exists. Please sign in." },
@@ -465,6 +482,11 @@ async function handleCreateTrial(body: unknown, request: Request) {
 
     if (insertError) {
       console.error("[SIGNUP] Failed to insert trial customer:", insertError);
+      try {
+        await admin.auth.admin.deleteUser(newUser.user.id);
+      } catch (rollbackError) {
+        console.error("[SIGNUP] Failed to roll back trial auth user:", rollbackError);
+      }
       return NextResponse.json(
         { error: "Unable to complete signup. Please try again." },
         { status: 500 }

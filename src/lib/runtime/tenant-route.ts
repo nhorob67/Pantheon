@@ -16,6 +16,7 @@ import {
 } from "./tenant-auth";
 import { REQUEST_ID_HEADER, resolveRequestTraceIdFromHeaders } from "./request-trace";
 import { resolveTenantRuntimeGateState } from "./tenant-runtime-gates";
+import { getTenantRouteTenantStatusError } from "./tenant-route-access";
 
 type TenantRouteGate = "reads" | "writes";
 
@@ -335,6 +336,17 @@ export async function runTenantRoute(
         requestTraceId,
         { error: "Tenant not found" },
         { status: 404 }
+      );
+    }
+
+    const tenantStatusError = getTenantRouteTenantStatusError(
+      tenantContext.tenantStatus
+    );
+    if (tenantStatusError) {
+      return jsonWithTenantRequestTrace(
+        requestTraceId,
+        { error: tenantStatusError },
+        { status: 403 }
       );
     }
 

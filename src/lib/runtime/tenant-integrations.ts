@@ -69,7 +69,7 @@ export async function storeIntegrationCredential(
         ? `${input.apiKey.slice(0, 2)}***`
         : `${input.apiKey.slice(0, 4)}***${input.apiKey.slice(-3)}`;
 
-    await input.admin
+    const { error: updateError } = await input.admin
       .from("tenant_secrets")
       .update({
         encrypted_value: encryptedValue,
@@ -79,6 +79,10 @@ export async function storeIntegrationCredential(
         updated_at: new Date().toISOString(),
       })
       .eq("id", existing.id);
+
+    if (updateError) {
+      throw new Error(`Failed to update integration credential: ${updateError.message}`);
+    }
 
     return {
       secret_id: existing.id,
@@ -135,19 +139,31 @@ export interface RegisterIntegrationInput {
 export async function registerIntegration(
   input: RegisterIntegrationInput
 ): Promise<TenantIntegration> {
-  // Check limits
-  const { count, error: countError } = await input.admin
+  const { data: existingIntegration, error: existingError } = await input.admin
     .from("tenant_integrations")
-    .select("id", { count: "exact", head: true })
-    .eq("tenant_id", input.tenantId);
+    .select("id")
+    .eq("tenant_id", input.tenantId)
+    .eq("slug", input.slug)
+    .maybeSingle();
 
-  if (countError) throw new Error(`Failed to count integrations: ${countError.message}`);
-  if ((count ?? 0) >= MAX_INTEGRATIONS_PER_TENANT) {
-    throw new Error(`Maximum of ${MAX_INTEGRATIONS_PER_TENANT} integrations per workspace`);
+  if (existingError) {
+    throw new Error(`Failed to load integration: ${existingError.message}`);
+  }
+
+  if (!existingIntegration) {
+    const { count, error: countError } = await input.admin
+      .from("tenant_integrations")
+      .select("id", { count: "exact", head: true })
+      .eq("tenant_id", input.tenantId);
+
+    if (countError) throw new Error(`Failed to count integrations: ${countError.message}`);
+    if ((count ?? 0) >= MAX_INTEGRATIONS_PER_TENANT) {
+      throw new Error(`Maximum of ${MAX_INTEGRATIONS_PER_TENANT} integrations per workspace`);
+    }
   }
 
   // If no explicit connector_account_id, try to find the matching secret
-  let connectorAccountId = input.connectorAccountId ?? null;
+  const connectorAccountId = input.connectorAccountId ?? null;
   if (!connectorAccountId) {
     const secretLabel = `integration-${input.slug}`;
     const { data: secret } = await input.admin
@@ -348,6 +364,15 @@ export function isBlockedHost(hostname: string): boolean {
   return false;
 }
 
+function isDomainAllowed(hostname: string, allowedDomains: string[] | null): boolean {
+  if (!allowedDomains || allowedDomains.length === 0) return true;
+  const lower = hostname.toLowerCase();
+  return allowedDomains.some((domain) => {
+    const normalized = domain.toLowerCase();
+    return lower === normalized || lower.endsWith(`.${normalized}`);
+  });
+}
+
 export interface IntegrationApiCallInput {
   admin: SupabaseClient;
   tenantId: string;
@@ -388,8 +413,17 @@ export async function executeIntegrationApiCall(
     return { error: `Integration "${input.integrationSlug}" has no base URL configured.` };
   }
 
+  // Keep paths pinned to the configured integration origin.
+  if (input.path.startsWith("//")) {
+    return { error: "Integration paths must be relative to the configured base URL." };
+  }
+
   // Build the full URL
   const fullUrl = new URL(input.path, integration.base_url);
+  const integrationOrigin = new URL(integration.base_url).origin;
+  if (fullUrl.origin !== integrationOrigin) {
+    return { error: "Integration paths must stay on the configured integration host." };
+  }
   if (input.queryParams) {
     for (const [key, value] of Object.entries(input.queryParams)) {
       fullUrl.searchParams.set(key, value);
@@ -442,6 +476,11 @@ export async function executeIntegrationApiCall(
 
       const credential = await consumeCredentialHandle(input.admin, handle.handleId, input.tenantId);
       if (credential) {
+        if (!isDomainAllowed(fullUrl.hostname, credential.allowedDomains)) {
+          return {
+            error: `Integration credential is not allowed for domain "${fullUrl.hostname}".`,
+          };
+        }
         secretValue = credential.value;
         switch (credential.scheme) {
           case "bearer":

@@ -65,6 +65,15 @@ function buildRateLimitWarning(remaining: string | null): string | undefined {
   return undefined;
 }
 
+function isDomainAllowed(hostname: string, allowedDomains: string[] | null): boolean {
+  if (!allowedDomains || allowedDomains.length === 0) return true;
+  const lower = hostname.toLowerCase();
+  return allowedDomains.some((domain) => {
+    const normalized = domain.toLowerCase();
+    return lower === normalized || lower.endsWith(`.${normalized}`);
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -276,6 +285,20 @@ describe("tenant-integrations", () => {
       // documented value so any accidental change is caught by CI.
       const MAX_INTEGRATIONS_PER_TENANT = 25;
       assert.equal(MAX_INTEGRATIONS_PER_TENANT, 25);
+    });
+  });
+
+  describe("credential domain scoping", () => {
+    it("allows exact hostname match", () => {
+      assert.equal(isDomainAllowed("api.example.com", ["api.example.com"]), true);
+    });
+
+    it("allows subdomains of an allowed hostname", () => {
+      assert.equal(isDomainAllowed("v2.api.example.com", ["api.example.com"]), true);
+    });
+
+    it("blocks a different public hostname", () => {
+      assert.equal(isDomainAllowed("attacker.example.net", ["api.example.com"]), false);
     });
   });
 });

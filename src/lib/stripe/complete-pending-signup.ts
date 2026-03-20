@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripe } from "./client";
 import { decrypt } from "@/lib/crypto";
+import { findAuthUserByEmail } from "@/lib/supabase/admin-auth";
 
 interface PendingSignup {
   id: string;
@@ -38,10 +39,7 @@ export async function completePendingSignup(signup: PendingSignup) {
       authError.message.includes("already been registered") ||
       authError.message.includes("already exists")
     ) {
-      const { data: authUsers } = await supabase.auth.admin.listUsers();
-      const existing = authUsers?.users?.find(
-        (u) => u.email === signup.email
-      );
+      const existing = await findAuthUserByEmail(supabase, signup.email);
       if (!existing) {
         throw new Error(
           `Auth user reported as existing but not found: ${signup.email}`

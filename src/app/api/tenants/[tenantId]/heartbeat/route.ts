@@ -70,6 +70,8 @@ export async function PUT(
       tenantId: parsed.data.tenantId,
       requestTraceId: parsed.requestTraceId,
       requiredGate: "writes",
+      requireManageRuntimeData: true,
+      roleErrorMessage: "Insufficient role for heartbeat management",
       fallbackErrorMessage: "Failed to update heartbeat config",
     },
     async ({ admin, tenantContext, user }) => {

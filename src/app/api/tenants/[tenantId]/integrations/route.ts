@@ -99,6 +99,7 @@ export async function POST(
         displayName: parsed.data.display_name,
         serviceType: parsed.data.service_type,
         baseUrl: parsed.data.base_url,
+        connectorAccountId: parsed.data.connector_account_id,
         authMethod: parsed.data.auth_method,
         authHeader: parsed.data.auth_header,
         apiDocsUrl: parsed.data.api_docs_url,

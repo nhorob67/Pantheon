@@ -6,6 +6,8 @@ import {
   type ResendAttachmentRef,
 } from "@/lib/email/resend-receiving";
 import { createAgentMailClient } from "@/lib/email/providers/agentmail";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { simpleParser } from "mailparser";
 
 export interface InboundAttachmentRef {
   id: string | null;
@@ -159,6 +161,47 @@ function parseAgentMailAttachmentList(
   return asInboundAttachmentRefList(candidates, "agentmail");
 }
 
+async function fetchCloudflareWebhookPayload(
+  providerEmailId: string
+): Promise<Record<string, unknown>> {
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("email_webhook_events")
+    .select("payload")
+    .eq("provider", "cloudflare")
+    .eq("provider_event_id", providerEmailId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to load Cloudflare email payload: ${error.message}`);
+  }
+
+  const payload = asObject((data as { payload?: unknown } | null)?.payload);
+  if (!payload) {
+    throw new Error(`Cloudflare email payload not found for event ${providerEmailId}`);
+  }
+
+  return payload;
+}
+
+async function buildCloudflareAttachmentRefs(
+  payload: Record<string, unknown>
+): Promise<InboundAttachmentRef[]> {
+  const data = asObject(payload.data);
+  if (!data || typeof data.raw_email !== "string" || data.raw_email.length === 0) {
+    return [];
+  }
+
+  const parsed = await simpleParser(Buffer.from(data.raw_email, "base64"));
+  return parsed.attachments.map((attachment, index) => ({
+    id: `cloudflare-${index + 1}`,
+    filename: attachment.filename || `attachment-${index + 1}.bin`,
+    content_type: attachment.contentType || null,
+    size: attachment.size ?? attachment.content.byteLength,
+    content_base64: attachment.content.toString("base64"),
+  }));
+}
+
 const resendAdapter: InboundProviderAdapter = {
   provider: "resend",
   fetchReceivedEmail: fetchResendReceivedEmail,
@@ -199,6 +242,43 @@ const agentMailAdapter: InboundProviderAdapter = {
   },
 };
 
+const cloudflareAdapter: InboundProviderAdapter = {
+  provider: "cloudflare",
+  fetchReceivedEmail: async (providerEmailId) => {
+    const payload = await fetchCloudflareWebhookPayload(providerEmailId);
+    const attachments = await buildCloudflareAttachmentRefs(payload);
+    return {
+      ...payload,
+      cloudflare_attachments: attachments,
+    };
+  },
+  extractAttachmentRefs: (emailPayload) =>
+    asInboundAttachmentRefList(
+      Array.isArray(emailPayload.cloudflare_attachments)
+        ? emailPayload.cloudflare_attachments
+        : [],
+      "cloudflare"
+    ),
+  fetchAttachmentList: async (providerEmailId) => {
+    const payload = await fetchCloudflareWebhookPayload(providerEmailId);
+    return buildCloudflareAttachmentRefs(payload);
+  },
+  fetchAttachmentBinary: async (providerEmailId, attachmentId) => {
+    const payload = await fetchCloudflareWebhookPayload(providerEmailId);
+    const attachments = await buildCloudflareAttachmentRefs(payload);
+    const attachment = attachments.find((item) => item.id === attachmentId);
+
+    if (!attachment?.content_base64) {
+      throw new Error(`Cloudflare attachment ${attachmentId} not found`);
+    }
+
+    return {
+      buffer: Buffer.from(attachment.content_base64, "base64"),
+      contentType: attachment.content_type,
+    };
+  },
+};
+
 export function getInboundProviderAdapter(provider: string): InboundProviderAdapter {
   if (provider === "resend") {
     return resendAdapter;
@@ -206,6 +286,10 @@ export function getInboundProviderAdapter(provider: string): InboundProviderAdap
 
   if (provider === "agentmail") {
     return agentMailAdapter;
+  }
+
+  if (provider === "cloudflare") {
+    return cloudflareAdapter;
   }
 
   throw new Error(`Unsupported inbound provider: ${provider}`);

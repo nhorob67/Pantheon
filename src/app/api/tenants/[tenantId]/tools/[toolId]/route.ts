@@ -33,6 +33,8 @@ export async function PATCH(
       tenantId: parsedParams.data.tenantId,
       requestTraceId: parsedParams.requestTraceId,
       requiredGate: "writes",
+      requireManageRuntimeData: true,
+      roleErrorMessage: "Insufficient role for tool management",
       fallbackErrorMessage: "Failed to update tool",
     },
     async (state) => {

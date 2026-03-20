@@ -58,6 +58,15 @@ const TENANT_MUTATION_ROUTE_FILES = [
   "src/app/api/tenants/[tenantId]/import/dry-run/route.ts",
 ];
 
+const TENANT_MANAGE_RUNTIME_ROUTE_FILES = [
+  "src/app/api/tenants/[tenantId]/tools/[toolId]/route.ts",
+  "src/app/api/tenants/[tenantId]/heartbeat/route.ts",
+  "src/app/api/tenants/[tenantId]/heartbeat/agents/[agentId]/route.ts",
+  "src/app/api/tenants/[tenantId]/workflows/route.ts",
+  "src/app/api/tenants/[tenantId]/workflows/[workflowId]/publish/route.ts",
+  "src/app/api/tenants/[tenantId]/workflow-runs/[runId]/cancel/route.ts",
+];
+
 test("all launch-critical tenant routes use runTenantRoute wrapper", () => {
   for (const file of TENANT_ROUTE_FILES) {
     const source = readFileSync(file, "utf8");
@@ -77,6 +86,17 @@ test("all tenant write routes declare tenant runtime write gate", () => {
       source,
       /requiredGate:\s*"writes"/,
       `${file} must enforce requiredGate: \"writes\"`
+    );
+  }
+});
+
+test("privileged tenant mutation routes require runtime management role", () => {
+  for (const file of TENANT_MANAGE_RUNTIME_ROUTE_FILES) {
+    const source = readFileSync(file, "utf8");
+    assert.match(
+      source,
+      /requireManageRuntimeData:\s*true/,
+      `${file} must enforce requireManageRuntimeData: true`
     );
   }
 });

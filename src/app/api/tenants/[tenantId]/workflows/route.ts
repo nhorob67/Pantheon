@@ -95,6 +95,8 @@ export async function POST(
       tenantId: parsed.data.tenantId,
       requestTraceId: parsed.requestTraceId,
       requiredGate: "writes",
+      requireManageRuntimeData: true,
+      roleErrorMessage: "Insufficient role for workflow management",
       fallbackErrorMessage: "Failed to create workflow",
     },
     async (state) => {

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getStripe } from "@/lib/stripe/client";
+import { createPortalSession, getStripe } from "@/lib/stripe/client";
 import { STRIPE_CONFIG } from "@/lib/stripe/config";
 
 export async function POST() {
@@ -17,7 +17,7 @@ export async function POST() {
   const admin = createAdminClient();
   const { data: customer } = await admin
     .from("customers")
-    .select("id, email, subscription_status, stripe_customer_id")
+    .select("id, email, subscription_status, stripe_customer_id, stripe_subscription_id")
     .eq("user_id", user.id)
     .single();
 
@@ -30,6 +30,21 @@ export async function POST() {
       { error: "You already have an active subscription." },
       { status: 400 }
     );
+  }
+
+  if (
+    customer.stripe_subscription_id &&
+    customer.subscription_status !== "canceled"
+  ) {
+    if (!customer.stripe_customer_id) {
+      return NextResponse.json(
+        { error: "Existing subscription requires billing recovery before creating a new one." },
+        { status: 409 }
+      );
+    }
+
+    const session = await createPortalSession(customer.stripe_customer_id);
+    return NextResponse.json({ url: session.url });
   }
 
   const stripe = getStripe();
