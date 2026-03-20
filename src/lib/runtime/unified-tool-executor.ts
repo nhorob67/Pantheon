@@ -98,6 +98,13 @@ export interface UnifiedToolExecutorConfig {
    * Default: 30000 (30 seconds)
    */
   toolTimeoutMs?: number;
+  /**
+   * Tool keys that have been pre-approved via the tenant approval queue.
+   * When a tool key is in this set, the executor skips the approval gate
+   * (both policy-level and autonomy-level) so the tool executes immediately.
+   * Used when resuming a run after an approval decision.
+   */
+  preApprovedToolKeys?: Set<string>;
 }
 
 /**
@@ -569,7 +576,7 @@ export function createUnifiedToolExecutor(config: UnifiedToolExecutorConfig) {
             return denialResult;
           }
 
-          if (enforce && policy.decision === "requires_approval") {
+          if (enforce && policy.decision === "requires_approval" && !config.preApprovedToolKeys?.has(name)) {
             const approvalId = await enqueueAiPathApprovalIfNeeded(
               config,
               name,
@@ -604,7 +611,7 @@ export function createUnifiedToolExecutor(config: UnifiedToolExecutorConfig) {
 
           // ----- Autonomy-level gating (applies even when policy says "allowed") -----
           const autonomyGateReason = checkAutonomyGate(name, config.agentAutonomyLevel);
-          if (enforce && autonomyGateReason && policy.decision !== "denied") {
+          if (enforce && autonomyGateReason && policy.decision !== "denied" && !config.preApprovedToolKeys?.has(name)) {
             const approvalId = await enqueueAiPathApprovalIfNeeded(
               config,
               name,

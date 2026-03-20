@@ -66,6 +66,10 @@ export const processRuntimeRun = task({
       await transitionTenantRuntimeRun(admin, claimed, "complete", {
         result: result.result,
       });
+    } else if (result.outcome === "awaiting_approval") {
+      await transitionTenantRuntimeRun(admin, claimed, "request_approval", {
+        result: result.result,
+      });
     } else if (result.outcome === "failed") {
       await transitionTenantRuntimeRun(admin, claimed, "fail", {
         result: result.result,

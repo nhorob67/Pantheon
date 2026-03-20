@@ -1,5 +1,6 @@
 import { Client, GatewayIntentBits, Partials } from "discord.js";
 import { handleMessage } from "./message-handler.ts";
+import { handleInteraction } from "./interaction-handler.ts";
 import { startHealthServer } from "./health.ts";
 
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
@@ -30,6 +31,12 @@ client.on("messageCreate", (message) => {
   console.log(`[bot] messageCreate: guild=${message.guildId} channel=${message.channelId} author=${message.author.tag} bot=${message.author.bot} content=${message.content.slice(0, 50)}`);
   handleMessage(message).catch((err) => {
     console.error("[bot] Unhandled message error:", err);
+  });
+});
+
+client.on("interactionCreate", (interaction) => {
+  handleInteraction(interaction).catch((err) => {
+    console.error("[bot] Unhandled interaction error:", err);
   });
 });
 

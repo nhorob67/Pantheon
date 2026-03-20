@@ -2,7 +2,6 @@ import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { HeartbeatTriggerMode } from "@/types/heartbeat";
 import type { TenantRole } from "@/types/tenant-runtime";
-
 export interface HeartbeatApprovalIssueContext {
   fingerprint: string;
   attention_type: string;
@@ -121,5 +120,35 @@ export async function enqueueHeartbeatApproval(
     throw new Error(error?.message || "Failed to enqueue heartbeat approval");
   }
 
-  return { approvalId: String((data as { id: string }).id) };
+  const approvalId = String((data as { id: string }).id);
+
+  // Send Discord button notification (non-blocking, dynamic import to avoid breaking pure-function tests)
+  const botToken = process.env.DISCORD_BOT_TOKEN;
+  if (botToken) {
+    import("@/lib/runtime/tenant-approval-discord-notifier").then(({ sendDiscordApprovalButtonMessage }) =>
+    sendDiscordApprovalButtonMessage(admin, botToken, {
+      id: approvalId,
+      tenant_id: input.tenantId,
+      approval_type: "policy",
+      required_role: input.requiredRole ?? "operator",
+      request_payload: input.payload as unknown as Record<string, unknown>,
+      expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+    })
+      .then(async (result) => {
+        if (result?.messageId) {
+          await admin
+            .from("tenant_approvals")
+            .update({
+              discord_message_id: result.messageId,
+              discord_channel_id: result.channelId,
+            })
+            .eq("id", approvalId);
+        }
+      })
+    ).catch(() => {
+        // Non-critical — web dashboard approval still works
+      });
+  }
+
+  return { approvalId };
 }

@@ -9,6 +9,7 @@ import { maybeGenerateSummary } from "./session-summarizer";
 import { parseAttachmentsFromPayload, isImageAttachment } from "./attachment-handler";
 import { extractBehavioralPatterns } from "./procedural-memory";
 import { recordConversationTrace, extractWebCitations, extractDelegationEvents } from "./trace-recorder";
+import { formatInformationalFallback, getToolStatusMessage, isGenericInformationalResponse } from "./fallback-formatter";
 import { flushBrowserSessionsForRun } from "./tools/browser";
 import { resolveWorkerModels } from "./model-resolver";
 import {
@@ -41,7 +42,7 @@ import type {
   TenantRuntimeWorkerContext,
   TenantRuntimeWorkerResult,
 } from "@/lib/runtime/tenant-runtime-worker";
-import type { TenantRole } from "@/types/tenant-runtime";
+import type { TenantRole, TenantRuntimeRun } from "@/types/tenant-runtime";
 
 const CIRCUIT_FAILURE_THRESHOLD = 3;
 const CIRCUIT_COOLDOWN_MS = 30_000;
@@ -149,6 +150,40 @@ function buildCronPrompt(
     return CRON_PROMPTS[scheduleKey];
   }
   return "Generate a proactive update for the team based on your role and the current context.";
+}
+
+/**
+ * When a run is resumed after approval, resolve which tool keys were approved
+ * so the executor can bypass the approval gate for those tools.
+ */
+async function resolvePreApprovedToolKeys(
+  adminClient: SupabaseClient,
+  run: TenantRuntimeRun
+): Promise<Set<string>> {
+  const keys = new Set<string>();
+  const meta = run.metadata;
+  if (!meta?.resumed_after_approval || typeof meta.approval_id !== "string") {
+    return keys;
+  }
+
+  const { data } = await adminClient
+    .from("tenant_approvals")
+    .select("status, request_payload")
+    .eq("id", meta.approval_id)
+    .eq("tenant_id", run.tenant_id)
+    .maybeSingle();
+
+  if (data?.status === "approved" && data.request_payload) {
+    const payload =
+      typeof data.request_payload === "object" && !Array.isArray(data.request_payload)
+        ? (data.request_payload as Record<string, unknown>)
+        : {};
+    if (typeof payload.tool_key === "string") {
+      keys.add(payload.tool_key);
+    }
+  }
+
+  return keys;
 }
 
 export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker {
@@ -337,6 +372,10 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           loadMiddlewareRateLimits(admin, context.run.tenant_id, assembled.agentId),
         ]);
         const middlewarePipeline = createDefaultGuardrailPipeline(middlewareRateLimits);
+
+        // Resolve pre-approved tool keys from run metadata (set when resuming after approval)
+        const preApprovedToolKeys = await resolvePreApprovedToolKeys(admin, context.run);
+
         const executor = createUnifiedToolExecutor({
           admin,
           tenantId: context.run.tenant_id,
@@ -353,6 +392,7 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
               : undefined,
           guardrailConfig,
           middlewarePipeline,
+          preApprovedToolKeys: preApprovedToolKeys.size > 0 ? preApprovedToolKeys : undefined,
         });
         // Register Composio key mappings so the unified executor can resolve
         // model-facing names (e.g. GITHUB_CREATE_ISSUE) to policy keys (composio.github_create_issue)
@@ -414,6 +454,21 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
               step.finishReason !== "tool-calls" ||
               !step.text?.trim()
             ) {
+              // Layer 3: send contextual status message for silent tool calls
+              if (
+                !isCron &&
+                step.finishReason === "tool-calls" &&
+                !step.text?.trim() &&
+                step.toolCalls.length > 0 &&
+                deliveredIntermediateChunks.length === 0
+              ) {
+                const statusMsg = getToolStatusMessage(step.toolCalls[0].toolName);
+                if (statusMsg) {
+                  sendDiscordChannelMessage({ botToken, channelId, content: statusMsg }, fetch)
+                    .then(() => { deliveredIntermediateChunks.push(statusMsg); lastUserVisibleActivityAt = Date.now(); })
+                    .catch(() => {});
+                }
+              }
               return;
             }
 
@@ -492,39 +547,48 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
 
         // Fallback when maxSteps exhausted on a tool-call step with no final text.
         // Build a natural-language summary — never expose raw JSON or tool names.
+        let usedInformationalFallback = false;
         if (!responseText) {
-          const successfulRecords = executor.records.filter((r) => r.success);
-          if (successfulRecords.length > 0) {
-            // Map tool names to friendly action descriptions
-            const friendlyActions = successfulRecords.map((r) => {
-              const name = r.toolName;
-              if (name.startsWith("memory_search")) return "searched your memories";
-              if (name.startsWith("memory_create") || name.startsWith("memory_upsert")) return "saved that to memory";
-              if (name.startsWith("memory_update")) return "updated your memory";
-              if (name.startsWith("memory_delete")) return "removed that from memory";
-              if (name.startsWith("schedule_create")) return "set up the schedule";
-              if (name.startsWith("schedule_delete")) return "removed the schedule";
-              if (name.startsWith("schedule_")) return "updated your schedules";
-              if (name.startsWith("conversation_")) return "checked our conversation history";
-              if (name === "delegate_task" || name === "delegate_task_async") return "handed that off to a teammate";
-              if (name === "file_create") return "created a file";
-              if (name.startsWith("config_")) return "updated the configuration";
-              return name.replace(/_/g, " ");
-            });
-            // Deduplicate and join naturally
-            const unique = [...new Set(friendlyActions)];
-            if (unique.length === 1) {
-              responseText = `Done! I ${unique[0]}.`;
-            } else {
-              responseText = `All set! I ${unique.slice(0, -1).join(", ")} and ${unique[unique.length - 1]}.`;
-            }
+          // Layer 1: Try rich informational fallback first (web_search, web_fetch results)
+          const richFallback = formatInformationalFallback(result.steps, executor.records);
+          if (richFallback) {
+            responseText = richFallback;
+            usedInformationalFallback = true;
           } else {
-            const allToolNames = result.steps
-              .flatMap((s) => s.toolCalls.map((tc) => tc.toolName));
-            if (allToolNames.length > 0) {
-              responseText = "I tried to handle that but ran into a snag. Want me to give it another shot?";
+            // Action-only fallback path
+            const successfulRecords = executor.records.filter((r) => r.success);
+            if (successfulRecords.length > 0) {
+              // Map tool names to friendly action descriptions
+              const friendlyActions = successfulRecords.map((r) => {
+                const name = r.toolName;
+                if (name.startsWith("memory_search")) return "searched your memories";
+                if (name.startsWith("memory_create") || name.startsWith("memory_upsert")) return "saved that to memory";
+                if (name.startsWith("memory_update")) return "updated your memory";
+                if (name.startsWith("memory_delete")) return "removed that from memory";
+                if (name.startsWith("schedule_create")) return "set up the schedule";
+                if (name.startsWith("schedule_delete")) return "removed the schedule";
+                if (name.startsWith("schedule_")) return "updated your schedules";
+                if (name.startsWith("conversation_")) return "checked our conversation history";
+                if (name === "delegate_task" || name === "delegate_task_async") return "handed that off to a teammate";
+                if (name === "file_create") return "created a file";
+                if (name.startsWith("config_")) return "updated the configuration";
+                return name.replace(/_/g, " ");
+              });
+              // Deduplicate and join naturally
+              const unique = [...new Set(friendlyActions)];
+              if (unique.length === 1) {
+                responseText = `Done! I ${unique[0]}.`;
+              } else {
+                responseText = `All set! I ${unique.slice(0, -1).join(", ")} and ${unique[unique.length - 1]}.`;
+              }
             } else {
-              responseText = "Hmm, I wasn't able to put together a response for that. Could you try rephrasing?";
+              const allToolNames = result.steps
+                .flatMap((s) => s.toolCalls.map((tc) => tc.toolName));
+              if (allToolNames.length > 0) {
+                responseText = "I tried to handle that but ran into a snag. Want me to give it another shot?";
+              } else {
+                responseText = "Hmm, I wasn't able to put together a response for that. Could you try rephrasing?";
+              }
             }
           }
         }
@@ -535,6 +599,22 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           : null;
         if (redactor) {
           responseText = redactor(responseText);
+        }
+
+        // Layer 4: Success-without-substance detector — replace generic confirmations
+        // when informational tools succeeded but the model didn't share findings.
+        if (
+          !usedInformationalFallback &&
+          responseText.length > 0 &&
+          isGenericInformationalResponse(responseText, executor.records)
+        ) {
+          const richReplacement = formatInformationalFallback(result.steps, executor.records);
+          if (richReplacement) {
+            responseText = richReplacement;
+            usedInformationalFallback = true;
+          } else {
+            console.warn("[ai-worker] Success-without-substance: informational tools succeeded but could not format fallback");
+          }
         }
 
         // Safety net: detect "promise without action" and auto-schedule follow-up.
@@ -786,23 +866,32 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           }
         }
 
+        // Check if any tool was blocked by the approval gate — if so, the run
+        // should park in awaiting_approval so the approval decision route can
+        // resume it after the user approves.
+        const hasApprovalRequired = executor.records.some(
+          (r) => r.errorClass === "approval_required"
+        );
+
+        const runResult = {
+          ack: "ai_response_dispatched",
+          model: primaryModelId,
+          agent_id: assembled.agentId,
+          agent_name: assembled.agentDisplayName,
+          session_id: assembled.sessionId,
+          input_tokens: inputTokens,
+          output_tokens: outputTokens,
+          dispatched_channel_id: channelId,
+          dispatched_message_ids: sent.messageIds,
+          dispatched_message_parts: sent.partsSent,
+          response_preview: responseText.slice(0, 500),
+          request_trace_id: context.requestTraceId,
+          processed_at: new Date().toISOString(),
+        };
+
         return {
-          outcome: "completed",
-          result: {
-            ack: "ai_response_dispatched",
-            model: primaryModelId,
-            agent_id: assembled.agentId,
-            agent_name: assembled.agentDisplayName,
-            session_id: assembled.sessionId,
-            input_tokens: inputTokens,
-            output_tokens: outputTokens,
-            dispatched_channel_id: channelId,
-            dispatched_message_ids: sent.messageIds,
-            dispatched_message_parts: sent.partsSent,
-            response_preview: responseText.slice(0, 500),
-            request_trace_id: context.requestTraceId,
-            processed_at: new Date().toISOString(),
-          },
+          outcome: hasApprovalRequired ? "awaiting_approval" : "completed",
+          result: runResult,
         };
       } catch (error) {
         if (heartbeatInterval) clearInterval(heartbeatInterval);

@@ -34,6 +34,15 @@ describe("renderAgentSoul", () => {
     assert.ok(prompt.includes("schedule_create"));
   });
 
+  it("includes sharing research results section", () => {
+    const prompt = renderAgentSoul(baseSoulData());
+    assert.ok(prompt.includes("## Sharing Research Results"));
+    assert.ok(prompt.includes("MUST present the key findings"));
+    assert.ok(prompt.includes("Include source URLs"));
+    assert.ok(prompt.includes("sparse or inconclusive"));
+    assert.ok(prompt.includes("Synthesize multiple sources"));
+  });
+
   it("does not include active integrations when none configured", () => {
     const prompt = renderAgentSoul(baseSoulData({ integrations: [] }));
     assert.ok(!prompt.includes("## Active Integrations"));
