@@ -1,6 +1,7 @@
 import { schedules } from "@trigger.dev/sdk";
 import { createTriggerAdminClient } from "./lib/supabase";
 import { transitionTenantRuntimeRun } from "@/lib/runtime/tenant-runtime-queue";
+import { sendDiscordRuntimeCompletionNotification } from "@/lib/runtime/tenant-runtime-status-notifier";
 import type { TenantRuntimeRun } from "@/types/tenant-runtime";
 
 const STALE_LOCK_THRESHOLD_MINUTES = 5;
@@ -93,7 +94,7 @@ export const reapStaleRuns = schedules.task({
       const run = row as unknown as TenantRuntimeRun;
       try {
         const event = run.status === "running" ? "fail" : "cancel";
-        await transitionTenantRuntimeRun(admin, run, event, {
+        const transitioned = await transitionTenantRuntimeRun(admin, run, event, {
           errorMessage: `Reaped by stale-lock reaper: ${run.status} run with expired lock (lock_expires_at=${run.lock_expires_at}, created_at=${run.created_at})`,
           metadataPatch: {
             reaped: true,
@@ -104,6 +105,13 @@ export const reapStaleRuns = schedules.task({
                 : "queued_without_claim",
           },
         });
+
+        // Notify Discord for reaped discord_runtime runs via shared notifier
+        if (event === "fail" && run.run_kind === "discord_runtime") {
+          await sendDiscordRuntimeCompletionNotification(admin, transitioned).catch((err) => {
+            console.error(`[reap-stale-runs] Failed to notify Discord for run ${run.id}:`, err);
+          });
+        }
 
         results.push({
           runId: run.id,

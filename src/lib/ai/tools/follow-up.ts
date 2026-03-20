@@ -10,7 +10,7 @@ import { processRuntimeRun } from "@/trigger/process-runtime-run";
 
 export const MAX_FOLLOW_UP_DEPTH = 10;
 export const MAX_PENDING_FOLLOW_UPS_PER_TENANT = 3;
-const MIN_DELAY_MINUTES = 5;
+const MIN_DELAY_MINUTES = 1;
 const MAX_DELAY_MINUTES = 60;
 
 // ---------------------------------------------------------------------------

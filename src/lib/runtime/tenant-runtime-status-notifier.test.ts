@@ -72,10 +72,36 @@ test("buildDiscordRuntimeCompletionNotificationContent renders failure details",
   );
 });
 
-test("shouldSendDiscordRuntimeCompletionNotification skips when disabled", () => {
+test("shouldSendDiscordRuntimeCompletionNotification skips completed runs when disabled", () => {
   const run = buildRun({
     metadata: {
       notify_on_completion: false,
+    },
+  });
+
+  assert.equal(shouldSendDiscordRuntimeCompletionNotification(run), false);
+});
+
+test("shouldSendDiscordRuntimeCompletionNotification sends for failed runs even when notify_on_completion is false", () => {
+  const run = buildRun({
+    status: "failed",
+    error_message: "Tool execution timed out",
+    metadata: {
+      notify_on_completion: false,
+    },
+  });
+
+  assert.equal(shouldSendDiscordRuntimeCompletionNotification(run), true);
+});
+
+test("shouldSendDiscordRuntimeCompletionNotification dedupes failed run notifications", () => {
+  const run = buildRun({
+    status: "failed",
+    error_message: "Tool execution timed out",
+    metadata: {
+      notify_on_completion: false,
+      completion_notification_event: "failed",
+      completion_notification_sent_at: new Date().toISOString(),
     },
   });
 

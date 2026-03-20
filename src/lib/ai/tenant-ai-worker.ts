@@ -156,6 +156,7 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
     kind: "discord_runtime",
     async execute(context: TenantRuntimeWorkerContext): Promise<TenantRuntimeWorkerResult> {
       const { model: primaryModel, modelId: primaryModelId, inputCost: primaryInputCost, outputCost: primaryOutputCost, contextWindowTokens, fastModel } = resolveWorkerModels(context.resolvedModels);
+      let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
       try {
         // Spending cap + trial expiration circuit breaker
         const { data: custRow } = await admin
@@ -374,6 +375,28 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
         // Show typing indicator while generating
         await sendDiscordTypingIndicator(botToken, channelId);
 
+        // Run-scoped activity heartbeat: keep typing indicator alive during long operations.
+        // Discord typing expires after ~10s, so refresh every 8s while the worker is active.
+        let lastUserVisibleActivityAt = Date.now();
+        let statusMessageSent = false;
+        heartbeatInterval = setInterval(async () => {
+          const silenceMs = Date.now() - lastUserVisibleActivityAt;
+          if (silenceMs > 10_000) {
+            sendDiscordTypingIndicator(botToken, channelId).catch(() => {});
+          }
+          // After 25s of silence with no user-visible text, send one status message
+          if (silenceMs > 25_000 && !statusMessageSent && deliveredIntermediateChunks.length === 0) {
+            statusMessageSent = true;
+            sendDiscordChannelMessage(
+              { botToken, channelId, content: "Still working on this..." },
+              fetch
+            ).then(() => {
+              lastUserVisibleActivityAt = Date.now();
+              deliveredIntermediateChunks.push("Still working on this...");
+            }).catch(() => {});
+          }
+        }, 8_000);
+
         // Track chunks that were actually delivered to Discord (not just attempted)
         const deliveredIntermediateChunks: string[] = [];
 
@@ -413,6 +436,7 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
                 fetch
               );
               deliveredIntermediateChunks.push(sentChunk);
+              lastUserVisibleActivityAt = Date.now();
             } catch (err) {
               console.error("[ai-worker] Intermediate Discord send failed:", safeErrorMessage(err));
             }
@@ -421,6 +445,9 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
             sendDiscordTypingIndicator(botToken, channelId).catch(() => {});
           },
         });
+
+        // Stop the activity heartbeat now that generation is complete
+        clearInterval(heartbeatInterval);
 
         // Capture multi-step messages for history reconstruction
         const responseMessages = result.response?.messages ?? [];
@@ -526,8 +553,12 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           );
           const promisePattern = /\b(?:let me (?:try|check|set up|look into|work on|handle)|i['']ll (?:try|check|set up|look into|work on|handle|get|do|take care))/i;
           const hasPromise = promisePattern.test(responseText);
+          const allToolsFailed = executor.records.length > 0 && !hasToolSuccess;
+          const shouldAutoFollowUp =
+            (hasPromise && !hasToolSuccess && !hasExplicitFollowUp) ||
+            (allToolsFailed && !hasExplicitFollowUp);
 
-          if (hasPromise && !hasToolSuccess && !hasExplicitFollowUp && assembled.agentId) {
+          if (shouldAutoFollowUp && assembled.agentId) {
             const scheduled = await scheduleFollowUp({
               admin,
               tenantId: context.run.tenant_id,
@@ -537,12 +568,14 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
               runId: context.run.id,
               followUpDepth,
               taskSummary: responseText.slice(0, 300),
-              reason: "Auto-detected promise without action — scheduling follow-up to attempt the task.",
-              delayMinutes: 5,
+              reason: allToolsFailed
+                ? "All tool calls failed — scheduling follow-up to retry."
+                : "Auto-detected promise without action — scheduling follow-up to attempt the task.",
+              delayMinutes: 2,
             }).catch(() => ({ success: false }));
 
             if (scheduled.success) {
-              responseText += "\n\nI'll check back on this in about 5 minutes.";
+              responseText += "\n\nI'll automatically retry this in about 2 minutes.";
             }
           }
         }
@@ -772,6 +805,7 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           },
         };
       } catch (error) {
+        if (heartbeatInterval) clearInterval(heartbeatInterval);
         await flushBrowserSessionsForRun(context.run.id).catch(() => []);
         const rateLimitError = error instanceof DiscordApiError && error.status === 429;
         const retryAfterSeconds =

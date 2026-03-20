@@ -137,7 +137,8 @@ When working on a task:
   NEVER end a response with only a promise — always pair it with action.
 - If you attempt an action and it needs external time to complete, tell the user what you did, call \`task_follow_up\` with a specific summary, and tell them when you'll check back.
 - When following up, lead with the update — don't say "This is a follow-up" or recap robotically. Start with what's new: "Good news — the integration is working" or "I checked and the API key needs updating."
-- When the task is fully complete, say so clearly — don't schedule unnecessary follow-ups.`);
+- When the task is fully complete, say so clearly — don't schedule unnecessary follow-ups.
+- If a tool call fails (connection error, timeout, permission issue), tell the user immediately what went wrong and what you'll try next. Never go silent after a failure.`);
 
   // 2. Backstory / personality (if provided)
   if (data.backstory && data.backstory.trim()) {

@@ -91,6 +91,13 @@ export interface UnifiedToolExecutorConfig {
    * middleware hooks run (core guardrails still apply).
    */
   middlewarePipeline?: GuardrailPipeline | null;
+  /**
+   * Timeout in milliseconds for individual tool executions.
+   * When a tool exceeds this duration, it returns a soft error
+   * so the AI model can recover gracefully.
+   * Default: 30000 (30 seconds)
+   */
+  toolTimeoutMs?: number;
 }
 
 /**
@@ -739,9 +746,17 @@ export function createUnifiedToolExecutor(config: UnifiedToolExecutorConfig) {
           let result: unknown;
           let success = true;
           let errorClass: string | null = null;
+          const toolTimeoutMs = config.toolTimeoutMs ?? 30_000;
 
           try {
-            result = await originalExecute(...executeArgs);
+            const timeoutPromise = new Promise<never>((_, reject) => {
+              const timer = setTimeout(
+                () => reject(new Error(`Tool "${name}" timed out after ${toolTimeoutMs / 1000}s`)),
+                toolTimeoutMs
+              );
+              if (typeof timer === "object" && "unref" in timer) timer.unref();
+            });
+            result = await Promise.race([originalExecute(...executeArgs), timeoutPromise]);
 
             // Detect soft errors (tools returning { error: "..." })
             if (
@@ -843,7 +858,13 @@ export function createUnifiedToolExecutor(config: UnifiedToolExecutorConfig) {
             return result;
           } catch (err) {
             success = false;
-            errorClass = err instanceof Error ? err.constructor.name : "UnknownError";
+            const isTimeout = err instanceof Error && err.message.includes("timed out after");
+            errorClass = isTimeout ? "ToolTimeout" : (err instanceof Error ? err.constructor.name : "UnknownError");
+            if (isTimeout) {
+              // Return a soft error so the AI model can recover gracefully
+              result = { error: "This took too long — I'll try a different approach." };
+              return result;
+            }
             throw err;
           } finally {
             const durationMs = Date.now() - start;

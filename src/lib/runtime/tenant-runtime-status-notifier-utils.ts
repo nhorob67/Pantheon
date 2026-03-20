@@ -118,7 +118,9 @@ export function shouldSendDiscordRuntimeCompletionNotification(
     return false;
   }
 
-  if (run.metadata.notify_on_completion !== true) {
+  // Terminal failed runs always notify — users should never be left hanging.
+  // Success notifications still require explicit opt-in.
+  if (run.status !== "failed" && run.metadata.notify_on_completion !== true) {
     return false;
   }
 
