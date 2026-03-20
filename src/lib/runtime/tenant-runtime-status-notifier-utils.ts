@@ -75,7 +75,9 @@ function buildFailedSummary(run: TenantRuntimeRun): string | null {
 
   const ack = pickString(run.result.ack);
   if (ack) {
-    return ack.replace(/_/g, " ");
+    const formatted = formatAckSummary(ack);
+    if (formatted) return formatted;
+    // Don't expose raw ack values — fall through to default
   }
 
   return null;

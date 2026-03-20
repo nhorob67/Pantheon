@@ -582,12 +582,29 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
                 responseText = `All set! I ${unique.slice(0, -1).join(", ")} and ${unique[unique.length - 1]}.`;
               }
             } else {
-              const allToolNames = result.steps
-                .flatMap((s) => s.toolCalls.map((tc) => tc.toolName));
-              if (allToolNames.length > 0) {
-                responseText = "I tried to handle that but ran into a snag. Want me to give it another shot?";
+              // Check if failure is due to approval gates
+              const approvalBlockedRecords = executor.records.filter(
+                (r) => r.errorClass === "approval_required"
+              );
+              if (approvalBlockedRecords.length > 0) {
+                const toolNames = approvalBlockedRecords.map((r) => {
+                  const name = r.toolName;
+                  if (name === "config_create_agent") return "creating an agent";
+                  if (name === "config_archive_agent") return "archiving an agent";
+                  if (name.startsWith("config_")) return "updating the configuration";
+                  if (name.startsWith("schedule_")) return "modifying schedules";
+                  return name.replace(/_/g, " ");
+                });
+                const unique = [...new Set(toolNames)];
+                responseText = `I need approval from a team admin before ${unique.join(" and ")}. I've sent an approval request — once it's approved, I'll take care of it.`;
               } else {
-                responseText = "Hmm, I wasn't able to put together a response for that. Could you try rephrasing?";
+                const allToolNames = result.steps
+                  .flatMap((s) => s.toolCalls.map((tc) => tc.toolName));
+                if (allToolNames.length > 0) {
+                  responseText = "I tried to handle that but ran into a snag. Want me to give it another shot?";
+                } else {
+                  responseText = "Hmm, I wasn't able to put together a response for that. Could you try rephrasing?";
+                }
               }
             }
           }

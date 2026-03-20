@@ -198,7 +198,11 @@ export async function POST(request: Request) {
         resolvedModels,
       });
 
-      const event = result.outcome === "completed" ? "complete" : "fail";
+      const event = result.outcome === "completed"
+        ? "complete"
+        : result.outcome === "awaiting_approval"
+          ? "request_approval"
+          : "fail";
       const transitionedRun = await transitionTenantRuntimeRun(admin, claimedRun, event, {
         result: result.result,
         errorMessage: result.outcome === "failed"
