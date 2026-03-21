@@ -476,7 +476,8 @@ function AddSecretForm({
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to create secret");
+        const errMsg = typeof data.error === "string" ? data.error : "Failed to create secret";
+        throw new Error(errMsg);
       }
 
       const data = await res.json();
