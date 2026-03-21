@@ -1,6 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
+  formatActionFallback,
   formatInformationalFallback,
   getToolStatusMessage,
   isGenericInformationalResponse,
@@ -227,39 +228,112 @@ describe("formatInformationalFallback", () => {
 });
 
 // ---------------------------------------------------------------------------
+// formatActionFallback
+// ---------------------------------------------------------------------------
+
+describe("formatActionFallback", () => {
+  it("formats integration_api_call with a concrete success outcome", () => {
+    const result = formatActionFallback([
+      {
+        toolName: "integration_api_call",
+        success: true,
+        outputSummary: JSON.stringify({
+          status: 200,
+          status_text: "OK",
+          integration: "discourse",
+          body: "{\"success\":true}",
+        }),
+      },
+    ]);
+
+    assert.equal(result, "Tried it again. Discourse responded with 200 OK. The response says: {\"success\":true}");
+  });
+
+  it("formats integration_api_call failures with API detail", () => {
+    const result = formatActionFallback([
+      {
+        toolName: "integration_api_call",
+        success: true,
+        outputSummary: JSON.stringify({
+          status: 401,
+          status_text: "Unauthorized",
+          integration: "discourse",
+          body: "{\"error\":\"Invalid API key\"}",
+        }),
+      },
+    ]);
+
+    assert.equal(
+      result,
+      "Tried it again. Discourse responded with 401 Unauthorized, so the request still did not go through cleanly. The response says: Invalid API key"
+    );
+  });
+
+  it("combines specialized integration outcomes with generic action confirmations", () => {
+    const result = formatActionFallback([
+      {
+        toolName: "integration_api_call",
+        success: true,
+        outputSummary: JSON.stringify({
+          status: 200,
+          status_text: "OK",
+          integration: "fullstack-ag",
+          body: "",
+        }),
+      },
+      {
+        toolName: "integration_register",
+        success: true,
+        outputSummary: "{}",
+      },
+    ]);
+
+    assert.equal(result, "Tried it again. Fullstack Ag responded with 200 OK. I also registered the integration.");
+  });
+
+  it("falls back to generic action copy when no specialized formatter exists", () => {
+    const result = formatActionFallback([
+      { toolName: "memory_create", success: true, outputSummary: "{}" },
+    ]);
+
+    assert.equal(result, "Done! I saved that to memory.");
+  });
+});
+
+// ---------------------------------------------------------------------------
 // getToolStatusMessage
 // ---------------------------------------------------------------------------
 
 describe("getToolStatusMessage", () => {
   it("returns status for web_search", () => {
-    assert.equal(getToolStatusMessage("web_search"), "Searching the web...");
+    assert.equal(getToolStatusMessage("web_search"), "I'm checking a few sources now.");
   });
 
   it("returns status for web_fetch", () => {
-    assert.equal(getToolStatusMessage("web_fetch"), "Reading that page...");
+    assert.equal(getToolStatusMessage("web_fetch"), "I'm reading through that now.");
   });
 
   it("returns status for memory_search", () => {
-    assert.equal(getToolStatusMessage("memory_search"), "Checking my memory...");
+    assert.equal(getToolStatusMessage("memory_search"), "I'm checking what I already know about that.");
   });
 
   it("returns status for conversation_search", () => {
-    assert.equal(getToolStatusMessage("conversation_search"), "Looking through our conversations...");
+    assert.equal(getToolStatusMessage("conversation_search"), "I'm looking back through our earlier messages.");
   });
 
   it("returns status for delegation tools", () => {
-    assert.equal(getToolStatusMessage("delegate_task"), "Handing that off to a teammate...");
-    assert.equal(getToolStatusMessage("delegate_task_async"), "Handing that off to a teammate...");
+    assert.equal(getToolStatusMessage("delegate_task"), "I'm looping in a teammate on that part.");
+    assert.equal(getToolStatusMessage("delegate_task_async"), "I'm looping in a teammate on that part.");
   });
 
   it("returns status for browser_ tools", () => {
-    assert.equal(getToolStatusMessage("browser_navigate"), "Opening a browser...");
-    assert.equal(getToolStatusMessage("browser_click"), "Opening a browser...");
+    assert.equal(getToolStatusMessage("browser_navigate"), "I'm opening it directly so I can check it myself.");
+    assert.equal(getToolStatusMessage("browser_click"), "I'm opening it directly so I can check it myself.");
   });
 
   it("returns null for unknown/action tools", () => {
     assert.equal(getToolStatusMessage("memory_create"), null);
-    assert.equal(getToolStatusMessage("schedule_create"), null);
+    assert.equal(getToolStatusMessage("schedule_toggle"), null);
     assert.equal(getToolStatusMessage("file_create"), null);
   });
 });

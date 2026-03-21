@@ -72,6 +72,7 @@ interface TenantAgentConfig {
   goal: string | null;
   backstory: string | null;
   tool_approval_overrides: Record<string, ToolApprovalLevel>;
+  typing_mode: "instant" | "thinking" | "message";
 }
 
 interface TenantAgentConfigPatch {
@@ -91,6 +92,7 @@ interface TenantAgentConfigPatch {
   goal?: string | null;
   backstory?: string | null;
   tool_approval_overrides?: Record<string, ToolApprovalLevel>;
+  typing_mode?: "instant" | "thinking" | "message";
 }
 
 const COMPATIBILITY_PERSONALITY_PRESET = "custom";
@@ -115,6 +117,7 @@ export interface TenantRuntimeAgent {
   goal: string | null;
   backstory: string | null;
   tool_approval_overrides: Record<string, ToolApprovalLevel>;
+  typing_mode: "instant" | "thinking" | "message";
   sort_order: number;
   created_at: string;
   updated_at: string;
@@ -204,6 +207,7 @@ function parseTenantAgentConfig(config: unknown): TenantAgentConfig {
       goal: null,
       backstory: null,
       tool_approval_overrides: {},
+      typing_mode: "instant",
     };
   }
 
@@ -220,6 +224,9 @@ function parseTenantAgentConfig(config: unknown): TenantAgentConfig {
   const goal = asNullableString(config["goal"]);
   const backstory = asNullableString(config["backstory"]);
   const toolApprovalOverrides = parseToolApprovalOverrides(config["tool_approval_overrides"]);
+  const typingMode = config["typing_mode"] === "thinking" || config["typing_mode"] === "message"
+    ? config["typing_mode"]
+    : "instant";
 
   return {
     // Preset identity is compatibility-only. Runtime behavior must come from
@@ -237,6 +244,7 @@ function parseTenantAgentConfig(config: unknown): TenantAgentConfig {
     goal,
     backstory,
     tool_approval_overrides: toolApprovalOverrides,
+    typing_mode: typingMode,
   };
 }
 
@@ -272,6 +280,7 @@ function buildTenantAgentConfig(
     goal: patch.goal !== undefined ? patch.goal : current.goal,
     backstory,
     tool_approval_overrides: patch.tool_approval_overrides ?? current.tool_approval_overrides,
+    typing_mode: patch.typing_mode ?? current.typing_mode,
   };
 }
 
@@ -720,6 +729,7 @@ function mapTenantAgentRow(row: TenantAgentRow): TenantRuntimeAgent {
     goal: config.goal,
     backstory: config.backstory,
     tool_approval_overrides: config.tool_approval_overrides,
+    typing_mode: config.typing_mode,
     sort_order: row.sort_order,
     created_at: row.created_at,
     updated_at: row.updated_at,

@@ -73,7 +73,11 @@ test("buildFollowUpPrompt always ends with the pickup instruction", () => {
 
 function reconcile(
   deliveredIntermediateChunks: string[],
-  responseText: string
+  responseText: string,
+  options?: {
+    hasToolCallsAfterText?: boolean;
+    recordCount?: number;
+  }
 ): { responseText: string; skipFinalSend: boolean } {
   let skipFinalSend = false;
   if (deliveredIntermediateChunks.length > 0 && responseText) {
@@ -86,7 +90,11 @@ function reconcile(
     if (stripped.length > 0) {
       responseText = stripped;
     } else {
-      skipFinalSend = true;
+      if (options?.hasToolCallsAfterText && (options.recordCount ?? 0) > 0) {
+        responseText = "";
+      } else {
+        skipFinalSend = true;
+      }
     }
   }
   return { responseText, skipFinalSend };
@@ -115,6 +123,19 @@ test("reconciliation sets skipFinalSend when entire response was delivered", () 
 test("reconciliation sets skipFinalSend when chunks cover response with trailing whitespace", () => {
   const result = reconcile(["Full response"], "Full response   ");
   assert.equal(result.skipFinalSend, true);
+});
+
+test("reconciliation clears the final text when tools completed after intermediate progress", () => {
+  const result = reconcile(
+    ["Let me try that one more time."],
+    "Let me try that one more time.",
+    {
+      hasToolCallsAfterText: true,
+      recordCount: 1,
+    }
+  );
+  assert.equal(result.responseText, "");
+  assert.equal(result.skipFinalSend, false);
 });
 
 test("reconciliation does nothing when there are no intermediate chunks", () => {

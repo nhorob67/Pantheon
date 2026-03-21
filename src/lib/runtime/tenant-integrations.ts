@@ -179,6 +179,17 @@ export async function registerIntegration(
     // Store the secret ID in config so we can look it up later for API calls
     if (secret) {
       input.config = { ...input.config, _secret_id: secret.id };
+
+      // Reconcile the secret's inject_scheme to match the integration's auth_method.
+      // This fixes cases where the credential was stored before multi_header support
+      // was added, leaving inject_scheme as "header" while auth_method is "multi_header".
+      const expectedScheme = AUTH_METHOD_TO_INJECT_SCHEME[input.authMethod];
+      if (expectedScheme) {
+        await input.admin
+          .from("tenant_secrets")
+          .update({ inject_scheme: expectedScheme, updated_at: new Date().toISOString() })
+          .eq("id", secret.id);
+      }
     }
   }
 
@@ -485,7 +496,8 @@ export async function executeIntegrationApiCall(
           };
         }
         secretValue = credential.value;
-        switch (credential.scheme) {
+        const effectiveScheme = AUTH_METHOD_TO_INJECT_SCHEME[integration.auth_method as IntegrationAuthMethod] ?? credential.scheme;
+        switch (effectiveScheme) {
           case "bearer":
             requestHeaders["Authorization"] = `Bearer ${credential.value}`;
             break;

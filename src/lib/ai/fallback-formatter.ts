@@ -63,9 +63,19 @@ const STATUS_MESSAGES: Record<string, string> = {
   web_search: "I'm checking a few sources now.",
   web_fetch: "I'm reading through that now.",
   memory_search: "I'm checking what I already know about that.",
+  memory_store: "I'm saving that for later.",
   conversation_search: "I'm looking back through our earlier messages.",
+  knowledge_search: "I'm checking the knowledge base.",
   delegate_task: "I'm looping in a teammate on that part.",
   delegate_task_async: "I'm looping in a teammate on that part.",
+  integration_api_call: "I'm making that API call now.",
+  integration_register: "I'm setting up the integration.",
+  integration_store_credential: "I'm storing the credential securely.",
+  schedule_create: "I'm setting up that schedule now.",
+  schedule_update: "I'm updating the schedule.",
+  schedule_delete: "I'm removing that schedule.",
+  self_config_update: "I'm adjusting my settings.",
+  task_follow_up: "I'm scheduling a follow-up on that.",
 };
 
 /**
@@ -174,7 +184,147 @@ function friendlyAction(toolName: string): string | null {
   if (toolName === "task_follow_up") return "scheduled a follow-up";
   if (toolName === "file_create") return "created a file";
   if (toolName.startsWith("config_")) return "updated the configuration";
+  if (toolName === "integration_store_credential") return "stored the credential securely";
+  if (toolName === "integration_register") return "registered the integration";
+  if (toolName === "integration_api_call") return "made the API call";
+  if (toolName === "integration_list") return "checked your integrations";
+  if (toolName === "integration_templates") return "looked up integration templates";
   return null;
+}
+
+function parseJsonObject(summary: string): Record<string, unknown> | null {
+  try {
+    const parsed = JSON.parse(summary);
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return parsed as Record<string, unknown>;
+    }
+  } catch {
+    // Ignore invalid JSON and fall back to generic text.
+  }
+  return null;
+}
+
+function humanizeSlug(value: string): string {
+  return value
+    .split(/[-_]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function normalizeWhitespace(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function truncateSentence(value: string, maxLen: number): string {
+  const normalized = normalizeWhitespace(value);
+  if (normalized.length <= maxLen) return normalized;
+  return normalized.slice(0, maxLen).trimEnd() + "…";
+}
+
+function extractApiBodyDetail(body: unknown): string | null {
+  if (typeof body !== "string" || !body.trim()) return null;
+
+  const bodyText = body.trim();
+  try {
+    const parsed = JSON.parse(bodyText) as Record<string, unknown>;
+    const detail = [
+      parsed.message,
+      parsed.error,
+      parsed.detail,
+      parsed.reason,
+      parsed.title,
+    ].find((value) => typeof value === "string" && value.trim().length > 0);
+
+    if (typeof detail === "string") {
+      return `The response says: ${truncateSentence(detail, 140)}`;
+    }
+  } catch {
+    // Plain text response body.
+  }
+
+  const compact = truncateSentence(bodyText, 140);
+  if (!compact || compact === "{}" || compact === "[]") return null;
+  return `The response says: ${compact}`;
+}
+
+function formatIntegrationApiCallOutcome(outputSummary: string): string | null {
+  const parsed = parseJsonObject(outputSummary);
+  if (!parsed || typeof parsed.status !== "number") return null;
+
+  const integrationName =
+    typeof parsed.integration === "string" && parsed.integration.trim().length > 0
+      ? humanizeSlug(parsed.integration)
+      : "The integration";
+  const statusText =
+    typeof parsed.status_text === "string" && parsed.status_text.trim().length > 0
+      ? ` ${parsed.status_text.trim()}`
+      : "";
+  const status = parsed.status;
+  const bodyDetail = extractApiBodyDetail(parsed.body);
+  const rateLimitWarning =
+    typeof parsed.rate_limit_warning === "string" && parsed.rate_limit_warning.trim().length > 0
+      ? parsed.rate_limit_warning.trim()
+      : null;
+
+  const lead =
+    status >= 200 && status < 300
+      ? `Tried it again. ${integrationName} responded with ${status}${statusText}.`
+      : `Tried it again. ${integrationName} responded with ${status}${statusText}, so the request still did not go through cleanly.`;
+
+  return [lead, bodyDetail, rateLimitWarning].filter(Boolean).join(" ");
+}
+
+function formatSpecializedActionOutcome(record: ExecutorRecord): string | null {
+  if (!record.success) return null;
+
+  if (record.toolName === "integration_api_call") {
+    return formatIntegrationApiCallOutcome(record.outputSummary);
+  }
+
+  return null;
+}
+
+function joinActionTexts(texts: string[]): string {
+  if (texts.length === 1) return texts[0];
+  return `${texts.slice(0, -1).join(", ")} and ${texts[texts.length - 1]}`;
+}
+
+export function formatActionFallback(records: ReadonlyArray<ExecutorRecord>): string | null {
+  const successfulRecords = records.filter((record) => record.success);
+  if (successfulRecords.length === 0) return null;
+
+  const specializedMessages: string[] = [];
+  const genericActions: string[] = [];
+
+  for (const record of successfulRecords) {
+    const specialized = formatSpecializedActionOutcome(record);
+    if (specialized) {
+      if (!specializedMessages.includes(specialized)) {
+        specializedMessages.push(specialized);
+      }
+      continue;
+    }
+
+    const action = friendlyAction(record.toolName) ?? record.toolName.replace(/_/g, " ");
+    if (!genericActions.includes(action)) {
+      genericActions.push(action);
+    }
+  }
+
+  if (specializedMessages.length > 0) {
+    const messageParts = [...specializedMessages];
+    if (genericActions.length > 0) {
+      messageParts.push(`I also ${joinActionTexts(genericActions)}.`);
+    }
+    return messageParts.join(" ");
+  }
+
+  if (genericActions.length === 1) {
+    return `Done! I ${genericActions[0]}.`;
+  }
+
+  return `All set! I ${joinActionTexts(genericActions)}.`;
 }
 
 // ---------------------------------------------------------------------------

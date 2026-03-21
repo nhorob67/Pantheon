@@ -11,6 +11,7 @@ import { parseAttachmentsFromPayload, isImageAttachment } from "./attachment-han
 import { extractBehavioralPatterns } from "./procedural-memory";
 import { recordConversationTrace, extractWebCitations, extractDelegationEvents } from "./trace-recorder";
 import {
+  formatActionFallback,
   formatInformationalFallback,
   getToolStatusKey,
   getToolStatusMessage,
@@ -67,11 +68,45 @@ const TYPING_REFRESH_INTERVAL_MS = 10_000;
 const LONG_TASK_PROGRESS_UPDATE_MS = 20_000;
 const OBLIGATION_HEARTBEAT_UPDATE_MS = 20_000;
 const MAX_AUTOMATED_PROGRESS_UPDATES = 3;
-const PROGRESS_HEARTBEAT_MESSAGES = [
-  "Still working through it now.",
-  "I'm checking the next piece now.",
-  "Still on it - I'll share the result as soon as I have it.",
+const GENERIC_PROGRESS_MESSAGES = [
+  "Still working through it.",
+  "Almost there.",
+  "Just finishing up.",
 ];
+
+const CONTEXTUAL_PROGRESS_MESSAGES: Record<string, string[]> = {
+  web_search: [
+    "I'm reading through the search results now.",
+    "Checking one more source to be thorough.",
+  ],
+  web_fetch: [
+    "I'm going through the page now.",
+    "Almost done reading through it.",
+  ],
+  delegate_task: [
+    "My teammate is working on that part.",
+    "Waiting on the result from my teammate.",
+  ],
+  delegate_task_async: [
+    "My teammate is working on that part.",
+    "Waiting on the result from my teammate.",
+  ],
+  memory_search: [
+    "I'm digging through my notes on that.",
+  ],
+  integration_api_call: [
+    "Waiting on the API response.",
+    "Still waiting on the response.",
+  ],
+};
+
+function getContextualProgressMessage(toolPhase: string | null, index: number): string {
+  if (toolPhase && CONTEXTUAL_PROGRESS_MESSAGES[toolPhase]) {
+    const msgs = CONTEXTUAL_PROGRESS_MESSAGES[toolPhase];
+    return msgs[Math.min(index, msgs.length - 1)];
+  }
+  return GENERIC_PROGRESS_MESSAGES[Math.min(index, GENERIC_PROGRESS_MESSAGES.length - 1)];
+}
 
 function getDiscordBotToken(): string {
   const token = process.env[DISCORD_BOT_TOKEN_ENV];
@@ -596,8 +631,17 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
 
         const hasTools = Object.keys(resolvedTools).length > 0;
 
-        // Show typing indicator while generating
-        await sendDiscordTypingIndicator(botToken, channelId);
+        // Resolve typing mode from agent config (defaults to "instant")
+        const agentConfig = assembled.agent?.config;
+        const typingMode =
+          agentConfig && (agentConfig["typing_mode"] === "thinking" || agentConfig["typing_mode"] === "message")
+            ? agentConfig["typing_mode"]
+            : "instant";
+
+        // Show typing indicator while generating (instant mode only — thinking/message defer)
+        if (typingMode === "instant") {
+          await sendDiscordTypingIndicator(botToken, channelId);
+        }
 
         // Track chunks that were actually delivered to Discord (not just attempted)
         const deliveredIntermediateChunks: string[] = [];
@@ -607,6 +651,7 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
         let lastObligationHeartbeatAt = 0;
         let automatedProgressUpdatesSent = 0;
         let progressUpdatesSentCount = 0;
+        let lastToolPhase: string | null = null;
         let followUpScheduled = false;
         let obligation: RuntimeObligation | null = await getObligationByRunId(
           admin,
@@ -705,7 +750,7 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           }
 
           const silenceMs = Date.now() - lastUserVisibleActivityAt;
-          if (silenceMs > TYPING_REFRESH_INTERVAL_MS) {
+          if (typingMode !== "message" && silenceMs > TYPING_REFRESH_INTERVAL_MS) {
             sendDiscordTypingIndicator(botToken, channelId).catch(() => {});
           }
 
@@ -714,10 +759,7 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
             automatedProgressUpdatesSent < MAX_AUTOMATED_PROGRESS_UPDATES &&
             Date.now() - lastAutomatedProgressUpdateAt > LONG_TASK_PROGRESS_UPDATE_MS
           ) {
-            const nextMessage =
-              PROGRESS_HEARTBEAT_MESSAGES[
-                Math.min(automatedProgressUpdatesSent, PROGRESS_HEARTBEAT_MESSAGES.length - 1)
-              ];
+            const nextMessage = getContextualProgressMessage(lastToolPhase, automatedProgressUpdatesSent);
             lastAutomatedProgressUpdateAt = Date.now();
             automatedProgressUpdatesSent += 1;
             sendVisibleReply(nextMessage, {
@@ -728,6 +770,11 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           }
         }, PROGRESS_HEARTBEAT_INTERVAL_MS);
 
+        // Thinking mode: start typing only after context assembly is complete
+        if (typingMode === "thinking") {
+          await sendDiscordTypingIndicator(botToken, channelId);
+        }
+
         const result = await generateText({
           model: primaryModel,
           maxOutputTokens: AI_CONFIG.maxOutputTokens,
@@ -736,6 +783,11 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           messages: assembled.messages,
           ...(hasTools ? { tools: resolvedTools, maxSteps: 5 } : {}),
           onStepFinish: async (step) => {
+            // Track the last tool used for contextual progress messages
+            if (step.toolCalls.length > 0) {
+              lastToolPhase = step.toolCalls[step.toolCalls.length - 1].toolName;
+            }
+
             // Send intermediate text when: step has text AND more steps follow AND not a cron run
             if (
               isCron ||
@@ -824,8 +876,23 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           if (stripped.length > 0) {
             responseText = stripped;
           } else {
-            // Entire response was already delivered as intermediate messages
-            skipFinalSend = true;
+            // Entire response was already delivered as intermediate messages.
+            // However, if tools executed AFTER the last intermediate send
+            // (e.g. "Let me try..." followed by tool calls), the user still
+            // needs a follow-up with the outcome. Clear responseText so the
+            // fallback path below generates a tool-result summary.
+            const hasToolCallsAfterText = result.steps.some(
+              (s) =>
+                s.toolCalls.length > 0 &&
+                s.toolResults &&
+                s.toolResults.length > 0
+            );
+            if (hasToolCallsAfterText && executor.records.length > 0) {
+              responseText = "";
+              // Let the fallback path handle it — don't skip
+            } else {
+              skipFinalSend = true;
+            }
           }
         }
 
@@ -842,29 +909,18 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
             // Action-only fallback path
             const successfulRecords = executor.records.filter((r) => r.success);
             if (successfulRecords.length > 0) {
-              // Map tool names to friendly action descriptions
-              const friendlyActions = successfulRecords.map((r) => {
-                const name = r.toolName;
-                if (name.startsWith("memory_search")) return { text: "searched your memories", query: true };
-                if (name.startsWith("memory_create") || name.startsWith("memory_upsert")) return { text: "saved that to memory", query: false };
-                if (name.startsWith("memory_update")) return { text: "updated your memory", query: false };
-                if (name.startsWith("memory_delete")) return { text: "removed that from memory", query: false };
-                if (name === "schedule_list") return { text: "looked up your schedules", query: true };
-                if (name.startsWith("schedule_create")) return { text: "set up the schedule", query: false };
-                if (name.startsWith("schedule_delete")) return { text: "removed the schedule", query: false };
-                if (name.startsWith("schedule_toggle")) return { text: "toggled the schedule", query: false };
-                if (name.startsWith("schedule_")) return { text: "updated your schedules", query: false };
-                if (name.startsWith("conversation_")) return { text: "checked our conversation history", query: true };
-                if (name === "config_view_my_config") return { text: "checked my configuration", query: true };
-                if (name === "delegate_task" || name === "delegate_task_async") return { text: "handed that off to a teammate", query: false };
-                if (name === "task_follow_up") return { text: "scheduled a follow-up", query: false };
-                if (name === "file_create") return { text: "created a file", query: false };
-                if (name.startsWith("config_")) return { text: "updated the configuration", query: false };
-                return { text: name.replace(/_/g, " "), query: false };
+              const queryToolRecords = successfulRecords.filter((record) => {
+                const name = record.toolName;
+                return (
+                  name.startsWith("memory_search") ||
+                  name === "schedule_list" ||
+                  name.startsWith("conversation_") ||
+                  name === "config_view_my_config" ||
+                  name === "integration_list" ||
+                  name === "integration_templates"
+                );
               });
-              // Deduplicate and join naturally
-              const uniqueTexts = [...new Set(friendlyActions.map((a) => a.text))];
-              const allQuery = friendlyActions.every((a) => a.query);
+              const allQuery = queryToolRecords.length > 0 && queryToolRecords.length === successfulRecords.length;
 
               // For query-only invocations, try to surface the tool output directly
               if (allQuery && successfulRecords.length > 0) {
@@ -873,12 +929,11 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
                 if (formatted) {
                   responseText = formatted;
                 } else {
-                  responseText = `I ${uniqueTexts[0]} but couldn't put together a summary. Could you ask again?`;
+                  responseText = "I checked that, but I couldn't turn the result into a clean summary. Could you ask again?";
                 }
-              } else if (uniqueTexts.length === 1) {
-                responseText = `Done! I ${uniqueTexts[0]}.`;
               } else {
-                responseText = `All set! I ${uniqueTexts.slice(0, -1).join(", ")} and ${uniqueTexts[uniqueTexts.length - 1]}.`;
+                responseText = formatActionFallback(successfulRecords)
+                  ?? "I wrapped that up, but I couldn't put the outcome into a clean summary.";
               }
             } else {
               // Check if failure is due to approval gates

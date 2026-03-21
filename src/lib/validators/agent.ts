@@ -29,6 +29,7 @@ export const createAgentSchema = z.object({
   can_delegate: z.boolean().optional(),
   can_receive_delegation: z.boolean().optional(),
   tool_approval_overrides: z.record(z.string().max(80), z.enum(["auto", "confirm", "disabled"])).optional(),
+  typing_mode: z.enum(["instant", "thinking", "message"]).optional(),
 });
 
 export const agentPreviewSchema = z.object({
@@ -72,6 +73,7 @@ export const updateAgentSchema = z.object({
   can_delegate: z.boolean().optional(),
   can_receive_delegation: z.boolean().optional(),
   tool_approval_overrides: z.record(z.string().max(80), z.enum(["auto", "confirm", "disabled"])).optional(),
+  typing_mode: z.enum(["instant", "thinking", "message"]).optional(),
 });
 
 export type CreateAgentData = z.infer<typeof createAgentSchema>;

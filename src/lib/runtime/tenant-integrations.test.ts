@@ -260,6 +260,7 @@ describe("tenant-integrations", () => {
       basic: "basic",
       api_key: "header",
       header: "header",
+      multi_header: "multi_header",
     };
 
     it("maps bearer auth method to bearer scheme", () => {
@@ -276,6 +277,54 @@ describe("tenant-integrations", () => {
 
     it("maps header auth method to header scheme", () => {
       assert.equal(AUTH_METHOD_TO_INJECT_SCHEME["header"], "header");
+    });
+
+    it("maps multi_header auth method to multi_header scheme", () => {
+      assert.equal(AUTH_METHOD_TO_INJECT_SCHEME["multi_header"], "multi_header");
+    });
+  });
+
+  describe("effective scheme resolution", () => {
+    // Mirrors the logic in executeIntegrationApiCall: the integration's
+    // auth_method (mapped through AUTH_METHOD_TO_INJECT_SCHEME) takes
+    // precedence over the credential's stored inject_scheme.
+    const AUTH_METHOD_TO_INJECT_SCHEME: Record<string, string> = {
+      bearer: "bearer",
+      basic: "basic",
+      api_key: "header",
+      header: "header",
+      multi_header: "multi_header",
+    };
+
+    function resolveEffectiveScheme(
+      integrationAuthMethod: string | undefined,
+      credentialScheme: string
+    ): string {
+      if (integrationAuthMethod && AUTH_METHOD_TO_INJECT_SCHEME[integrationAuthMethod]) {
+        return AUTH_METHOD_TO_INJECT_SCHEME[integrationAuthMethod];
+      }
+      return credentialScheme;
+    }
+
+    it("uses integration auth_method over credential scheme when they differ", () => {
+      // Credential was stored as "header" but integration says "multi_header"
+      const effective = resolveEffectiveScheme("multi_header", "header");
+      assert.equal(effective, "multi_header");
+    });
+
+    it("falls back to credential scheme when integration auth_method is undefined", () => {
+      const effective = resolveEffectiveScheme(undefined, "bearer");
+      assert.equal(effective, "bearer");
+    });
+
+    it("falls back to credential scheme when integration auth_method is unrecognized", () => {
+      const effective = resolveEffectiveScheme("unknown_method", "header");
+      assert.equal(effective, "header");
+    });
+
+    it("agrees when both sources match", () => {
+      const effective = resolveEffectiveScheme("bearer", "bearer");
+      assert.equal(effective, "bearer");
     });
   });
 

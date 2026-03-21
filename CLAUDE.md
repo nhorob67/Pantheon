@@ -20,7 +20,7 @@ Pantheon is an industry-agnostic multi-agent AI platform. Users create a **team*
 npm run dev        # Start dev server (localhost:3000)
 npm run build      # Production build
 npm run lint       # ESLint
-npm run test       # Node native test runner (345 tests across 60+ test files)
+npm run test       # Node test runner via tsx (345 tests across 60+ test files)
 ```
 
 ## Tech Stack
@@ -70,7 +70,7 @@ npm run test       # Node native test runner (345 tests across 60+ test files)
   - `agent-soul.ts` — Generic system prompt renderer using role/goal/backstory + autonomy levels + delegation rules
   - `agent-templates.ts` — Starter agent templates (Support Bot, Research Agent, etc.)
   - `soul.ts` — Base SOUL.md template renderer
-- `ai/` — AI worker pipeline, system prompt assembly, context assembly, proactive suggestions, session summarization, memory management
+- `ai/` — AI worker pipeline, system prompt assembly, context assembly, proactive suggestions, session summarization, memory management, action-aware fallback formatter for tool-confirmation replies
 - `heartbeat/` — Proactive check-in system: schedule evaluation, cheap checks (unanswered emails, custom checks), signal processing, issue tracking, approval/deferral logic, guardrails
 - `runtime/` — Tenant runtime: agent config hydration, tool execution (memory, schedules, self-config), Discord gateway, query/mutation dispatching
 - `schedules/` — Schedule template management and predefined schedule sync
