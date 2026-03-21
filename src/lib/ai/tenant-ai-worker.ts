@@ -488,14 +488,21 @@ function buildCronPrompt(
  * When a run is resumed after approval, resolve which tool keys were approved
  * so the executor can bypass the approval gate for those tools.
  */
+interface PreApprovalResolution {
+  keys: Set<string>;
+  /** The tool key and sanitized args from the approved request, used to instruct
+   *  the model to re-execute the tool on the resumed run. */
+  approvedToolContext: { toolKey: string; argsSummary: string } | null;
+}
+
 async function resolvePreApprovedToolKeys(
   adminClient: SupabaseClient,
   run: TenantRuntimeRun
-): Promise<Set<string>> {
-  const keys = new Set<string>();
+): Promise<PreApprovalResolution> {
+  const result: PreApprovalResolution = { keys: new Set(), approvedToolContext: null };
   const meta = run.metadata;
   if (!meta?.resumed_after_approval || typeof meta.approval_id !== "string") {
-    return keys;
+    return result;
   }
 
   const { data } = await adminClient
@@ -511,11 +518,29 @@ async function resolvePreApprovedToolKeys(
         ? (data.request_payload as Record<string, unknown>)
         : {};
     if (typeof payload.tool_key === "string") {
-      keys.add(payload.tool_key);
+      result.keys.add(payload.tool_key);
+
+      // Build a sanitized summary of the args (strip secrets/long values)
+      const args = typeof payload.args === "object" && payload.args !== null
+        ? (payload.args as Record<string, unknown>)
+        : {};
+      const sanitizedArgs: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(args)) {
+        // Omit values that look like secrets
+        if (typeof v === "string" && (k.includes("key") || k.includes("secret") || k.includes("token") || k.includes("password"))) {
+          sanitizedArgs[k] = "[provided]";
+        } else {
+          sanitizedArgs[k] = v;
+        }
+      }
+      result.approvedToolContext = {
+        toolKey: payload.tool_key,
+        argsSummary: JSON.stringify(sanitizedArgs),
+      };
     }
   }
 
-  return keys;
+  return result;
 }
 
 interface ExecutorRecordLike {
@@ -809,7 +834,20 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
         const middlewarePipeline = createDefaultGuardrailPipeline(middlewareRateLimits);
 
         // Resolve pre-approved tool keys from run metadata (set when resuming after approval)
-        const preApprovedToolKeys = await resolvePreApprovedToolKeys(admin, context.run);
+        const preApproval = await resolvePreApprovedToolKeys(admin, context.run);
+        const preApprovedToolKeys = preApproval.keys;
+
+        // When resuming after approval, inject a system prompt instruction telling
+        // the model to re-execute the approved tool — the model won't reliably
+        // retry on its own from the conversation history alone.
+        if (preApproval.approvedToolContext) {
+          const { toolKey, argsSummary } = preApproval.approvedToolContext;
+          assembled.systemPrompt +=
+            `\n\n[APPROVAL GRANTED] The user has approved your previous "${toolKey}" tool call. ` +
+            `You MUST re-execute "${toolKey}" now with the same arguments (${argsSummary}). ` +
+            `The approval gate has been lifted for this tool — it will execute immediately this time. ` +
+            `After the tool succeeds, continue with the original task.`;
+        }
 
         const executor = createUnifiedToolExecutor({
           admin,
