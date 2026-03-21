@@ -152,19 +152,21 @@ test("shouldScheduleStructuralFollowUp triggers when progress was sent without a
       hasExplicitFollowUp: false,
       hasApprovalRequired: false,
       progressUpdatesSentCount: 2,
-      finalReplySent: false,
+      finalReplyWillBeSent: false,
+      terminalState: "completed",
     }),
     true
   );
 });
 
-test("shouldScheduleStructuralFollowUp does not trigger when a final reply was sent", () => {
+test("shouldScheduleStructuralFollowUp does not trigger when a final reply will be sent and state is completed", () => {
   assert.equal(
     shouldScheduleStructuralFollowUp({
       hasExplicitFollowUp: false,
       hasApprovalRequired: false,
       progressUpdatesSentCount: 2,
-      finalReplySent: true,
+      finalReplyWillBeSent: true,
+      terminalState: "completed",
     }),
     false
   );
@@ -176,7 +178,8 @@ test("shouldScheduleStructuralFollowUp does not trigger when approval is pending
       hasExplicitFollowUp: false,
       hasApprovalRequired: true,
       progressUpdatesSentCount: 2,
-      finalReplySent: false,
+      finalReplyWillBeSent: false,
+      terminalState: "continuing",
     }),
     false
   );
@@ -188,7 +191,8 @@ test("shouldScheduleStructuralFollowUp does not trigger when explicit follow-up 
       hasExplicitFollowUp: true,
       hasApprovalRequired: false,
       progressUpdatesSentCount: 2,
-      finalReplySent: false,
+      finalReplyWillBeSent: false,
+      terminalState: "continuing",
     }),
     false
   );
@@ -200,8 +204,22 @@ test("shouldScheduleStructuralFollowUp does not trigger without progress updates
       hasExplicitFollowUp: false,
       hasApprovalRequired: false,
       progressUpdatesSentCount: 0,
-      finalReplySent: false,
+      finalReplyWillBeSent: false,
+      terminalState: "completed",
     }),
     false
+  );
+});
+
+test("shouldScheduleStructuralFollowUp triggers when the structured state is continuing even if a final reply will be sent", () => {
+  assert.equal(
+    shouldScheduleStructuralFollowUp({
+      hasExplicitFollowUp: false,
+      hasApprovalRequired: false,
+      progressUpdatesSentCount: 0,
+      finalReplyWillBeSent: true,
+      terminalState: "continuing",
+    }),
+    true
   );
 });

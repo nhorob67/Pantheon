@@ -141,7 +141,7 @@ export async function createCredentialHandle(
 
 export interface ConsumedCredential {
   value: string;
-  scheme: "bearer" | "basic" | "header" | "query_param";
+  scheme: "bearer" | "basic" | "header" | "query_param" | "multi_header";
   headerName: string | null;
   paramName: string | null;
   allowedDomains: string[] | null;

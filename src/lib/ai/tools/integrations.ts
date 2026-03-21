@@ -35,15 +35,23 @@ export function createIntegrationTools(input: CreateIntegrationToolsInput) {
         api_key: z
           .string()
           .min(1)
-          .describe("The API key or token provided by the user"),
+          .describe(
+            "The API key or token provided by the user. " +
+            "For multi_header auth, pass a JSON object string of header name/value pairs " +
+            '(e.g., \'{"Api-Key":"abc123","Api-Username":"system"}\').'
+          ),
         auth_method: z
-          .enum(["api_key", "bearer", "basic", "header"])
+          .enum(["api_key", "bearer", "basic", "header", "multi_header"])
           .default("api_key")
-          .describe("How the credential is sent: 'api_key' (custom header), 'bearer' (Authorization: Bearer), 'basic' (Basic auth), 'header' (custom header name)"),
+          .describe(
+            "How the credential is sent: 'api_key' (custom header), 'bearer' (Authorization: Bearer), " +
+            "'basic' (Basic auth), 'header' (custom header name), " +
+            "'multi_header' (multiple headers from a JSON object — use for services like Discourse that require Api-Key + Api-Username together)"
+          ),
         auth_header: z
           .string()
           .optional()
-          .describe("Custom header name when auth_method is 'api_key' or 'header' (e.g., 'Api-Key', 'X-API-Token'). Defaults to 'Api-Key'."),
+          .describe("Custom header name when auth_method is 'api_key' or 'header' (e.g., 'Api-Key', 'X-API-Token'). Defaults to 'Api-Key'. Not used for multi_header."),
       }),
       execute: async ({ service_slug, api_key, auth_method, auth_header }) => {
         try {

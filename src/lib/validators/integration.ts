@@ -5,7 +5,7 @@ const slugFormat = z.string().min(1).max(64).regex(/^[a-z0-9][a-z0-9-]{0,63}$/);
 export const integrationStoreCredentialSchema = z.object({
   service_slug: slugFormat,
   api_key: z.string().min(1).max(10_000),
-  auth_method: z.enum(["api_key", "bearer", "basic", "header"]).default("api_key"),
+  auth_method: z.enum(["api_key", "bearer", "basic", "header", "multi_header"]).default("api_key"),
   auth_header: z.string().min(1).max(200).optional(),
   metadata: z.record(z.string(), z.string()).optional(),
 });
@@ -16,7 +16,7 @@ export const integrationRegisterSchema = z.object({
   service_type: z.string().min(1).max(100),
   base_url: z.string().url().optional(),
   connector_account_id: z.string().uuid().optional(),
-  auth_method: z.enum(["api_key", "bearer", "basic", "header"]).default("api_key"),
+  auth_method: z.enum(["api_key", "bearer", "basic", "header", "multi_header"]).default("api_key"),
   auth_header: z.string().min(1).max(200).optional(),
   api_docs_url: z.string().url().optional(),
   discovered_endpoints: z

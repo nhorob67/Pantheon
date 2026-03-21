@@ -3,7 +3,7 @@ export interface IntegrationTemplate {
   display_name: string;
   service_type: string;
   base_url: string;
-  auth_method: "api_key" | "bearer" | "basic" | "header";
+  auth_method: "api_key" | "bearer" | "basic" | "header" | "multi_header";
   auth_header?: string;
   additional_headers?: Record<string, string>;
   api_docs_url: string;
@@ -22,8 +22,7 @@ export const INTEGRATION_TEMPLATES: IntegrationTemplate[] = [
     display_name: "Discourse",
     service_type: "forum",
     base_url: "https://community.example.com",
-    auth_method: "header",
-    auth_header: "Api-Key",
+    auth_method: "multi_header",
     api_docs_url: "https://docs.discourse.org/",
     capabilities_summary:
       "Read and post to forum topics, manage categories, moderate users, and access admin dashboard data.",
@@ -41,7 +40,9 @@ export const INTEGRATION_TEMPLATES: IntegrationTemplate[] = [
       },
     ],
     setup_instructions:
-      "Ask for the Discourse API key and API username. Both are required — set the API key via integration_store_credential, and pass Api-Username as a default header.",
+      'Ask for both the Discourse API key AND API username. Both are required for every request. ' +
+      'Use auth_method "multi_header" and pass the credential as a JSON object: ' +
+      '{"Api-Key": "<key>", "Api-Username": "<username>"}.',
   },
   {
     slug: "github",

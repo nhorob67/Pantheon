@@ -1,4 +1,4 @@
-export type IntegrationAuthMethod = "api_key" | "bearer" | "basic" | "header";
+export type IntegrationAuthMethod = "api_key" | "bearer" | "basic" | "header" | "multi_header";
 export type IntegrationStatus = "active" | "inactive" | "error";
 
 export interface DiscoveredEndpoint {

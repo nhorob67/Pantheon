@@ -18,11 +18,12 @@ const MAX_INTEGRATIONS_PER_TENANT = 25;
 const MAX_RESPONSE_BODY_LENGTH = 8_000;
 const REQUEST_TIMEOUT_MS = 15_000;
 
-const AUTH_METHOD_TO_INJECT_SCHEME: Record<IntegrationAuthMethod, "bearer" | "basic" | "header" | "query_param"> = {
+const AUTH_METHOD_TO_INJECT_SCHEME: Record<IntegrationAuthMethod, "bearer" | "basic" | "header" | "query_param" | "multi_header"> = {
   bearer: "bearer",
   basic: "basic",
   api_key: "header",
   header: "header",
+  multi_header: "multi_header",
 };
 
 // ---------------------------------------------------------------------------
@@ -65,9 +66,11 @@ export async function storeIntegrationCredential(
     const { encrypt } = await import("@/lib/crypto");
     const encryptedValue = encrypt(input.apiKey);
     const valueHint =
-      input.apiKey.length <= 8
-        ? `${input.apiKey.slice(0, 2)}***`
-        : `${input.apiKey.slice(0, 4)}***${input.apiKey.slice(-3)}`;
+      input.authMethod === "multi_header"
+        ? "multi_header:{...}"
+        : input.apiKey.length <= 8
+          ? `${input.apiKey.slice(0, 2)}***`
+          : `${input.apiKey.slice(0, 4)}***${input.apiKey.slice(-3)}`;
 
     const { error: updateError } = await input.admin
       .from("tenant_secrets")
@@ -492,6 +495,25 @@ export async function executeIntegrationApiCall(
           case "header":
             requestHeaders[credential.headerName || integration.auth_header || "Api-Key"] = credential.value;
             break;
+          case "multi_header": {
+            // Value is a JSON object of { headerName: headerValue } pairs.
+            // Example for Discourse: { "Api-Key": "abc123", "Api-Username": "system" }
+            let headers: Record<string, string>;
+            try {
+              headers = JSON.parse(credential.value);
+            } catch {
+              return { error: `Invalid multi_header credential for "${input.integrationSlug}": value must be a JSON object of header name/value pairs.` };
+            }
+            if (typeof headers !== "object" || headers === null || Array.isArray(headers)) {
+              return { error: `Invalid multi_header credential for "${input.integrationSlug}": expected a JSON object.` };
+            }
+            for (const [name, val] of Object.entries(headers)) {
+              if (typeof val === "string") {
+                requestHeaders[name] = val;
+              }
+            }
+            break;
+          }
           case "query_param": {
             const paramName = credential.paramName || "api_key";
             fullUrl.searchParams.set(paramName, credential.value);
@@ -549,6 +571,19 @@ export async function executeIntegrationApiCall(
     // Redact secret values from response
     if (secretValue) {
       responseBody = redactValue(responseBody, secretValue);
+      // For multi_header, also redact each individual header value
+      try {
+        const parsed = JSON.parse(secretValue);
+        if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+          for (const val of Object.values(parsed)) {
+            if (typeof val === "string" && val.length >= 4) {
+              responseBody = redactValue(responseBody, val);
+            }
+          }
+        }
+      } catch {
+        // Not JSON — single-value secret, already redacted above
+      }
       responseBody = redactCommonPatterns(responseBody);
     }
 

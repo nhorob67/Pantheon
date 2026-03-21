@@ -1,5 +1,6 @@
-import { generateText } from "ai";
+import { generateObject, generateText } from "ai";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { z } from "zod";
 import { AI_CONFIG } from "./client";
 import { estimateTokenUsageCostCents, recordTokenUsage } from "./usage-tracker";
 import { assembleContext } from "./context-assembler";
@@ -298,17 +299,63 @@ export interface StructuralFollowUpDecisionInput {
   hasExplicitFollowUp: boolean;
   hasApprovalRequired: boolean;
   progressUpdatesSentCount: number;
-  finalReplySent: boolean;
+  finalReplyWillBeSent: boolean;
+  terminalState: RunTerminalState;
 }
 
 export function shouldScheduleStructuralFollowUp(
   input: StructuralFollowUpDecisionInput
 ): boolean {
-  if (input.hasExplicitFollowUp || input.hasApprovalRequired || input.finalReplySent) {
+  if (input.hasExplicitFollowUp || input.hasApprovalRequired) {
     return false;
   }
 
-  return input.progressUpdatesSentCount > 0;
+  if (input.terminalState === "continuing") {
+    return true;
+  }
+
+  return input.progressUpdatesSentCount > 0 && !input.finalReplyWillBeSent;
+}
+
+const runTerminalStateSchema = z.object({
+  state: z.enum(["completed", "continuing"]),
+  rationale: z.string().max(200).optional(),
+});
+
+type RunTerminalState = z.infer<typeof runTerminalStateSchema>["state"];
+
+async function resolveRunTerminalState(input: {
+  model: Parameters<typeof generateObject<typeof runTerminalStateSchema>>[0]["model"];
+  userRequest: string;
+  responseText: string;
+  progressUpdatesSentCount: number;
+  toolSummary: string;
+}): Promise<RunTerminalState> {
+  if (!input.responseText.trim()) {
+    return input.progressUpdatesSentCount > 0 ? "continuing" : "completed";
+  }
+
+  try {
+    const { object } = await generateObject({
+      model: input.model,
+      schema: runTerminalStateSchema,
+      temperature: 0,
+      system:
+        "Classify the assistant turn's execution state. " +
+        "Return `completed` only if the user's request was actually answered or fully executed in this run. " +
+        "Return `continuing` if the assistant is still researching, planning next steps, promising future work, monitoring something over time, or has not yet delivered the requested result. " +
+        "If unsure, choose `continuing`.",
+      prompt: [
+        `User request: ${input.userRequest || "[empty]"}`,
+        `Assistant reply draft: ${input.responseText}`,
+        `Progress updates already sent: ${input.progressUpdatesSentCount}`,
+        `Tool summary: ${input.toolSummary || "[none]"}`,
+      ].join("\n\n"),
+    });
+    return object.state;
+  } catch {
+    return input.progressUpdatesSentCount > 0 ? "continuing" : "completed";
+  }
 }
 
 export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker {
@@ -1007,6 +1054,80 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           console.error("[ai-worker] Failed to record usage:", safeErrorMessage(err));
         });
 
+        // Check if any tool was blocked by the approval gate — if so, the run
+        // should park in awaiting_approval so the approval decision route can
+        // resume it after the user approves.
+        const hasApprovalRequired = executor.records.some(
+          (r) => r.errorClass === "approval_required"
+        );
+        const approvalId = extractApprovalIdFromExecutorRecords(
+          executor.records as unknown as readonly ExecutorRecordLike[]
+        );
+        const hasExplicitFollowUp = executor.records.some(
+          (r) => r.toolName === "task_follow_up" && r.success
+        );
+        const toolSummary = executor.records
+          .slice(0, 8)
+          .map((r) => `${r.toolName}:${r.success ? "success" : r.errorClass ?? "error"}`)
+          .join(", ");
+        const terminalState: RunTerminalState = hasApprovalRequired
+          ? "continuing"
+          : hasExplicitFollowUp
+            ? "continuing"
+            : await resolveRunTerminalState({
+                model: fastModel ?? primaryModel,
+                userRequest: userContent,
+                responseText,
+                progressUpdatesSentCount,
+                toolSummary,
+              });
+
+        if (!isCron && followUpDepth < MAX_FOLLOW_UP_DEPTH) {
+          const shouldScheduleFollowUp = shouldScheduleStructuralFollowUp({
+            hasExplicitFollowUp,
+            hasApprovalRequired,
+            progressUpdatesSentCount,
+            finalReplyWillBeSent: !skipFinalSend && responseText.length > 0,
+            terminalState,
+          });
+
+          if (shouldScheduleFollowUp && assembled.agentId) {
+            const followUpTaskSummary =
+              responseText.slice(0, 300) ||
+              "Continue the unresolved task and report back with findings.";
+            const scheduled = await scheduleFollowUp({
+              admin,
+              tenantId: context.run.tenant_id,
+              customerId: context.run.customer_id,
+              agentId: assembled.agentId,
+              channelId,
+              runId: context.run.id,
+              followUpDepth,
+              taskSummary: followUpTaskSummary,
+              reason:
+                "The run sent progress updates but did not reach a terminal user-visible answer.",
+              delayMinutes: 2,
+              messageId: inboundMessageId,
+            }).catch(() => ({ success: false }));
+
+            if (scheduled.success) {
+              followUpScheduled = true;
+              if (responseText.length > 0) {
+                responseText += "\n\nI'll check back here in about 2 minutes.";
+              } else {
+                await sendVisibleReply(
+                  "I'm still on this - I'll check back here in about 2 minutes.",
+                  {
+                    dedupeKey: "status:auto-follow-up",
+                    visibility: "progress",
+                    source: "status",
+                  }
+                );
+              }
+            }
+          }
+        }
+
         // Send to Discord (skip if intermediate sends already covered the full response)
         let sent: { messageIds: string[]; partsSent: number } = { messageIds: [], partsSent: 0 };
         let finalReplySent = false;
@@ -1095,60 +1216,6 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           finalReplySent = sent.partsSent > 0;
         }
 
-        // Check if any tool was blocked by the approval gate — if so, the run
-        // should park in awaiting_approval so the approval decision route can
-        // resume it after the user approves.
-        const hasApprovalRequired = executor.records.some(
-          (r) => r.errorClass === "approval_required"
-        );
-        const approvalId = extractApprovalIdFromExecutorRecords(
-          executor.records as unknown as readonly ExecutorRecordLike[]
-        );
-
-        if (!isCron && followUpDepth < MAX_FOLLOW_UP_DEPTH) {
-          const hasExplicitFollowUp = executor.records.some(
-            (r) => r.toolName === "task_follow_up" && r.success
-          );
-          const shouldScheduleFollowUp = shouldScheduleStructuralFollowUp({
-            hasExplicitFollowUp,
-            hasApprovalRequired,
-            progressUpdatesSentCount,
-            finalReplySent,
-          });
-
-          if (shouldScheduleFollowUp && assembled.agentId) {
-            const followUpTaskSummary =
-              responseText.slice(0, 300) ||
-              "Continue the unresolved task and report back with findings.";
-            const scheduled = await scheduleFollowUp({
-              admin,
-              tenantId: context.run.tenant_id,
-              customerId: context.run.customer_id,
-              agentId: assembled.agentId,
-              channelId,
-              runId: context.run.id,
-              followUpDepth,
-              taskSummary: followUpTaskSummary,
-              reason:
-                "The run sent progress updates but did not reach a terminal user-visible answer.",
-              delayMinutes: 2,
-              messageId: inboundMessageId,
-            }).catch(() => ({ success: false }));
-
-            if (scheduled.success) {
-              followUpScheduled = true;
-              await sendVisibleReply(
-                "I'm still on this - I'll check back here in about 2 minutes.",
-                {
-                  dedupeKey: "status:auto-follow-up",
-                  visibility: "progress",
-                  source: "status",
-                }
-              );
-            }
-          }
-        }
-
         const runResult = {
           ack: "ai_response_dispatched",
           model: primaryModelId,
@@ -1163,6 +1230,7 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           response_preview: responseText.slice(0, 500),
           intermediate_progress_updates_sent: progressUpdatesSentCount,
           final_reply_sent: finalReplySent,
+          terminal_state: terminalState,
           follow_up_scheduled: followUpScheduled,
           approval_id: approvalId,
           request_trace_id: context.requestTraceId,

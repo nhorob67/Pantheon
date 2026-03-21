@@ -14,7 +14,7 @@ export interface TenantSecret {
   description: string | null;
   value_hint: string;
   usage_mode: "inject" | "break_glass";
-  inject_scheme: "bearer" | "basic" | "header" | "query_param";
+  inject_scheme: "bearer" | "basic" | "header" | "query_param" | "multi_header";
   inject_header_name: string | null;
   inject_param_name: string | null;
   allowed_agent_ids: string[] | null;
