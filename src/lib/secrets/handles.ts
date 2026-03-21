@@ -47,7 +47,8 @@ export interface CreateHandleInput {
   admin: SupabaseClient;
   tenantId: string;
   customerId: string;
-  label: string;
+  label?: string;
+  secretId?: string;
   agentId: string | null;
   purpose: "http" | "break_glass";
   runId?: string | null;
@@ -65,15 +66,27 @@ export async function createCredentialHandle(
 ): Promise<CreateHandleResult> {
   pruneExpiredHandles();
 
-  // Look up the secret by label
-  const { data: secret, error } = await input.admin
+  if (!input.secretId && !input.label) {
+    throw new Error("createCredentialHandle requires either secretId or label");
+  }
+
+  let query = input.admin
     .from("tenant_secrets")
     .select("id, label, inject_scheme, allowed_agent_ids, allowed_domains, usage_mode")
-    .eq("tenant_id", input.tenantId)
-    .eq("label", input.label)
-    .single();
+    .eq("tenant_id", input.tenantId);
+
+  if (input.secretId) {
+    query = query.eq("id", input.secretId);
+  } else if (input.label) {
+    query = query.eq("label", input.label);
+  }
+
+  const { data: secret, error } = await query.single();
 
   if (error || !secret) {
+    if (input.secretId) {
+      throw new Error(`Secret "${input.secretId}" not found`);
+    }
     throw new Error(`Secret "${input.label}" not found`);
   }
 

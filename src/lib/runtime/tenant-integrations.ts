@@ -154,12 +154,170 @@ async function backfillSecretToIntegrations(
     void admin
       .from("tenant_integrations")
       .update({
-        config: { ...config, _secret_id: secretId },
+        config: {
+          ...config,
+          _secret_id: secretId,
+          _credential_label: `integration-${serviceSlug}`,
+          _credential_service_slug: serviceSlug,
+        },
         updated_at: new Date().toISOString(),
       })
       .eq("id", (integration as { id: string }).id)
       .then(() => {});
   }
+}
+
+interface IntegrationCredentialReference {
+  slug: string;
+  serviceType?: string | null;
+  config?: Record<string, unknown> | null;
+}
+
+interface ResolvedIntegrationCredential {
+  secretId: string;
+  label: string;
+  serviceSlug: string;
+}
+
+function secretLabelToServiceSlug(label: string): string | null {
+  return label.startsWith("integration-") ? label.slice("integration-".length) : null;
+}
+
+function pushUniqueSlug(target: string[], value: unknown): void {
+  if (typeof value !== "string") return;
+  const normalized = value.trim();
+  if (!normalized || target.includes(normalized)) return;
+  target.push(normalized);
+}
+
+function buildCredentialSlugCandidates(
+  reference: IntegrationCredentialReference
+): string[] {
+  const candidates: string[] = [];
+  const config = reference.config ?? {};
+
+  pushUniqueSlug(candidates, config._credential_service_slug);
+
+  if (reference.serviceType && reference.serviceType !== "generic-rest") {
+    pushUniqueSlug(candidates, reference.serviceType);
+  }
+
+  pushUniqueSlug(candidates, reference.slug);
+
+  const slugParts = reference.slug.split("-");
+  for (let length = slugParts.length - 1; length >= 1; length -= 1) {
+    pushUniqueSlug(candidates, slugParts.slice(0, length).join("-"));
+  }
+
+  return candidates;
+}
+
+function buildIntegrationCredentialConfig(
+  config: Record<string, unknown> | null | undefined,
+  credential: ResolvedIntegrationCredential
+): Record<string, unknown> {
+  return {
+    ...(config ?? {}),
+    _secret_id: credential.secretId,
+    _credential_label: credential.label,
+    _credential_service_slug: credential.serviceSlug,
+  };
+}
+
+function getPreferredCredentialServiceSlug(
+  reference: IntegrationCredentialReference
+): string {
+  const config = reference.config ?? {};
+  if (typeof config._credential_service_slug === "string" && config._credential_service_slug.trim().length > 0) {
+    return config._credential_service_slug;
+  }
+
+  if (reference.serviceType && reference.serviceType !== "generic-rest") {
+    return reference.serviceType;
+  }
+
+  const slugCandidates = buildCredentialSlugCandidates(reference);
+  return slugCandidates[0] ?? reference.slug;
+}
+
+async function resolveIntegrationCredentialSecret(
+  admin: SupabaseClient,
+  tenantId: string,
+  reference: IntegrationCredentialReference
+): Promise<ResolvedIntegrationCredential | null> {
+  const config = reference.config ?? {};
+  const configuredSecretId =
+    typeof config._secret_id === "string" && config._secret_id.trim().length > 0
+      ? config._secret_id
+      : null;
+
+  if (configuredSecretId) {
+    const { data: configuredSecret } = await admin
+      .from("tenant_secrets")
+      .select("id, label")
+      .eq("tenant_id", tenantId)
+      .eq("id", configuredSecretId)
+      .maybeSingle();
+
+    if (configuredSecret?.label) {
+      const serviceSlug = secretLabelToServiceSlug(configuredSecret.label) ?? getPreferredCredentialServiceSlug(reference);
+      return {
+        secretId: configuredSecret.id,
+        label: configuredSecret.label,
+        serviceSlug,
+      };
+    }
+  }
+
+  const { data: secrets } = await admin
+    .from("tenant_secrets")
+    .select("id, label")
+    .eq("tenant_id", tenantId)
+    .like("label", "integration-%");
+
+  if (!secrets || secrets.length === 0) {
+    return null;
+  }
+
+  const secretsByLabel = new Map<string, { id: string; label: string }>();
+  for (const secret of secrets) {
+    const typedSecret = secret as { id: string; label: string };
+    secretsByLabel.set(typedSecret.label, typedSecret);
+  }
+
+  for (const candidateSlug of buildCredentialSlugCandidates(reference)) {
+    const exact = secretsByLabel.get(`integration-${candidateSlug}`);
+    if (exact) {
+      return {
+        secretId: exact.id,
+        label: exact.label,
+        serviceSlug: candidateSlug,
+      };
+    }
+  }
+
+  let bestPrefixMatch: { id: string; label: string; serviceSlug: string } | null = null;
+  for (const secret of secrets) {
+    const typedSecret = secret as { id: string; label: string };
+    const serviceSlug = secretLabelToServiceSlug(typedSecret.label);
+    if (!serviceSlug) continue;
+    if (reference.slug !== serviceSlug && !reference.slug.startsWith(`${serviceSlug}-`)) continue;
+    if (!bestPrefixMatch || serviceSlug.length > bestPrefixMatch.serviceSlug.length) {
+      bestPrefixMatch = {
+        id: typedSecret.id,
+        label: typedSecret.label,
+        serviceSlug,
+      };
+    }
+  }
+
+  return bestPrefixMatch
+    ? {
+        secretId: bestPrefixMatch.id,
+        label: bestPrefixMatch.label,
+        serviceSlug: bestPrefixMatch.serviceSlug,
+      }
+    : null;
 }
 
 // ---------------------------------------------------------------------------
@@ -213,17 +371,19 @@ export async function registerIntegration(
   // If no explicit connector_account_id, try to find the matching secret
   const connectorAccountId = input.connectorAccountId ?? null;
   if (!connectorAccountId) {
-    const secretLabel = `integration-${input.slug}`;
-    const { data: secret } = await input.admin
-      .from("tenant_secrets")
-      .select("id")
-      .eq("tenant_id", input.tenantId)
-      .eq("label", secretLabel)
-      .maybeSingle();
+    const resolvedCredential = await resolveIntegrationCredentialSecret(
+      input.admin,
+      input.tenantId,
+      {
+        slug: input.slug,
+        serviceType: input.serviceType,
+        config: input.config,
+      }
+    );
 
     // Store the secret ID in config so we can look it up later for API calls
-    if (secret) {
-      input.config = { ...input.config, _secret_id: secret.id };
+    if (resolvedCredential) {
+      input.config = buildIntegrationCredentialConfig(input.config, resolvedCredential);
 
       // Reconcile the secret's inject_scheme to match the integration's auth_method.
       // This fixes cases where the credential was stored before multi_header support
@@ -233,7 +393,7 @@ export async function registerIntegration(
         await input.admin
           .from("tenant_secrets")
           .update({ inject_scheme: expectedScheme, updated_at: new Date().toISOString() })
-          .eq("id", secret.id);
+          .eq("id", resolvedCredential.secretId);
       }
     }
   }
@@ -512,86 +672,49 @@ export async function executeIntegrationApiCall(
   }
 
   // Resolve credential
-  let secretId = (integration.config as Record<string, unknown>)?._secret_id as string | undefined;
+  const resolvedCredential = await resolveIntegrationCredentialSecret(
+    input.admin,
+    input.tenantId,
+    {
+      slug: integration.slug,
+      serviceType: integration.service_type,
+      config: integration.config as Record<string, unknown> | null | undefined,
+    }
+  );
   let secretValue: string | null = null;
   const requestHeaders: Record<string, string> = {
     "User-Agent": "Pantheon/1.0",
     ...(input.headers ?? {}),
   };
 
-  // Fallback: if _secret_id is missing from config, try to find the secret by
-  // label and backfill the config so future calls don't need this lookup.
-  if (!secretId) {
-    // Try exact match first: integration-discourse-updated
-    const exactLabel = `integration-${integration.slug}`;
-    const { data: exactSecret } = await input.admin
-      .from("tenant_secrets")
-      .select("id")
-      .eq("tenant_id", input.tenantId)
-      .eq("label", exactLabel)
-      .maybeSingle();
-
-    let foundSecret = exactSecret;
-
-    // If no exact match, try base slug: e.g., for "discourse-updated" try "integration-discourse"
-    if (!foundSecret && integration.slug.includes("-")) {
-      const baseSlug = integration.slug.replace(/-[^-]+$/, "");
-      const baseLabel = `integration-${baseSlug}`;
-      const { data: baseSecret } = await input.admin
-        .from("tenant_secrets")
-        .select("id")
-        .eq("tenant_id", input.tenantId)
-        .eq("label", baseLabel)
-        .maybeSingle();
-      foundSecret = baseSecret;
-    }
-
-    // Last resort: find any integration-* secret with a label that the slug starts with
-    if (!foundSecret) {
-      const { data: allSecrets } = await input.admin
-        .from("tenant_secrets")
-        .select("id, label")
-        .eq("tenant_id", input.tenantId)
-        .like("label", "integration-%");
-
-      if (allSecrets) {
-        for (const s of allSecrets) {
-          const secretSlug = (s as { label: string }).label.replace(/^integration-/, "");
-          if (integration.slug.startsWith(secretSlug)) {
-            foundSecret = s as { id: string };
-            break;
-          }
-        }
-      }
-    }
-
-    if (foundSecret) {
-      secretId = (foundSecret as { id: string }).id;
-      // Backfill _secret_id into integration config for future calls
+  if (resolvedCredential) {
+    const nextConfig = buildIntegrationCredentialConfig(
+      integration.config as Record<string, unknown> | null | undefined,
+      resolvedCredential
+    );
+    const currentConfig = (integration.config as Record<string, unknown> | null | undefined) ?? {};
+    if (
+      currentConfig._secret_id !== nextConfig._secret_id ||
+      currentConfig._credential_label !== nextConfig._credential_label ||
+      currentConfig._credential_service_slug !== nextConfig._credential_service_slug
+    ) {
       void input.admin
         .from("tenant_integrations")
         .update({
-          config: {
-            ...(integration.config as Record<string, unknown>),
-            _secret_id: secretId,
-          },
+          config: nextConfig,
           updated_at: new Date().toISOString(),
         })
         .eq("tenant_id", input.tenantId)
         .eq("slug", input.integrationSlug)
         .then(() => {});
     }
-  }
 
-  if (secretId) {
     try {
-      // Create a credential handle and immediately consume it
-      const secretLabel = `integration-${integration.slug}`;
       const handle = await createCredentialHandle({
         admin: input.admin,
         tenantId: input.tenantId,
         customerId: input.customerId,
-        label: secretLabel,
+        secretId: resolvedCredential.secretId,
         agentId: input.agentId,
         purpose: "http",
         runId: input.runId,
@@ -649,10 +772,15 @@ export async function executeIntegrationApiCall(
     }
   } else {
     // No credential found — warn that the request will be unauthenticated
+    const suggestedServiceSlug = getPreferredCredentialServiceSlug({
+      slug: integration.slug,
+      serviceType: integration.service_type,
+      config: integration.config as Record<string, unknown> | null | undefined,
+    });
     return {
       error:
         `No credential found for integration "${input.integrationSlug}". ` +
-        `Store a credential first with integration_store_credential using service_slug "${integration.slug}".`,
+        `Store a credential first with integration_store_credential using service_slug "${suggestedServiceSlug}".`,
     };
   }
 

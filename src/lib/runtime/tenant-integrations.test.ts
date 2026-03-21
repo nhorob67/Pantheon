@@ -74,6 +74,59 @@ function isDomainAllowed(hostname: string, allowedDomains: string[] | null): boo
   });
 }
 
+function secretLabelToServiceSlug(label: string): string | null {
+  return label.startsWith("integration-") ? label.slice("integration-".length) : null;
+}
+
+function pushUniqueSlug(target: string[], value: unknown): void {
+  if (typeof value !== "string") return;
+  const normalized = value.trim();
+  if (!normalized || target.includes(normalized)) return;
+  target.push(normalized);
+}
+
+function buildCredentialSlugCandidates(input: {
+  slug: string;
+  serviceType?: string | null;
+  config?: Record<string, unknown> | null;
+}): string[] {
+  const candidates: string[] = [];
+  const config = input.config ?? {};
+
+  pushUniqueSlug(candidates, config._credential_service_slug);
+
+  if (input.serviceType && input.serviceType !== "generic-rest") {
+    pushUniqueSlug(candidates, input.serviceType);
+  }
+
+  pushUniqueSlug(candidates, input.slug);
+
+  const slugParts = input.slug.split("-");
+  for (let length = slugParts.length - 1; length >= 1; length -= 1) {
+    pushUniqueSlug(candidates, slugParts.slice(0, length).join("-"));
+  }
+
+  return candidates;
+}
+
+function getPreferredCredentialServiceSlug(input: {
+  slug: string;
+  serviceType?: string | null;
+  config?: Record<string, unknown> | null;
+}): string {
+  const config = input.config ?? {};
+  if (typeof config._credential_service_slug === "string" && config._credential_service_slug.trim().length > 0) {
+    return config._credential_service_slug;
+  }
+
+  if (input.serviceType && input.serviceType !== "generic-rest") {
+    return input.serviceType;
+  }
+
+  const candidates = buildCredentialSlugCandidates(input);
+  return candidates[0] ?? input.slug;
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -348,6 +401,53 @@ describe("tenant-integrations", () => {
 
     it("blocks a different public hostname", () => {
       assert.equal(isDomainAllowed("attacker.example.net", ["api.example.com"]), false);
+    });
+  });
+
+  describe("credential slug resolution", () => {
+    it("derives service slug from the integration secret label", () => {
+      assert.equal(secretLabelToServiceSlug("integration-discourse"), "discourse");
+    });
+
+    it("builds exact and progressively broader slug candidates", () => {
+      assert.deepEqual(
+        buildCredentialSlugCandidates({
+          slug: "discourse-updated-v2",
+          serviceType: "discourse",
+        }),
+        ["discourse", "discourse-updated-v2", "discourse-updated"]
+      );
+    });
+
+    it("prefers an explicit stored credential service slug", () => {
+      assert.equal(
+        getPreferredCredentialServiceSlug({
+          slug: "discourse-updated",
+          serviceType: "discourse",
+          config: { _credential_service_slug: "forum-core" },
+        }),
+        "forum-core"
+      );
+    });
+
+    it("prefers service_type over a versioned integration slug for missing credentials", () => {
+      assert.equal(
+        getPreferredCredentialServiceSlug({
+          slug: "discourse-updated",
+          serviceType: "discourse",
+        }),
+        "discourse"
+      );
+    });
+
+    it("falls back to the integration slug for generic services", () => {
+      assert.equal(
+        getPreferredCredentialServiceSlug({
+          slug: "custom-api-v2",
+          serviceType: "generic-rest",
+        }),
+        "custom-api-v2"
+      );
     });
   });
 });
