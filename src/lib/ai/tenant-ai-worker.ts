@@ -493,15 +493,56 @@ interface PreApprovalResolution {
   /** The tool key and sanitized args from the approved request, used to instruct
    *  the model to re-execute the tool on the resumed run. */
   approvedToolContext: { toolKey: string; argsSummary: string } | null;
+  /** For sensitive tools, the approval executor may already run the tool server-side. */
+  executedToolContext: {
+    toolKey: string;
+    status: "completed" | "failed";
+    resultSummary?: string | null;
+    error?: string | null;
+  } | null;
 }
 
 async function resolvePreApprovedToolKeys(
   adminClient: SupabaseClient,
   run: TenantRuntimeRun
 ): Promise<PreApprovalResolution> {
-  const result: PreApprovalResolution = { keys: new Set(), approvedToolContext: null };
+  const result: PreApprovalResolution = {
+    keys: new Set(),
+    approvedToolContext: null,
+    executedToolContext: null,
+  };
   const meta = run.metadata;
   if (!meta?.resumed_after_approval || typeof meta.approval_id !== "string") {
+    return result;
+  }
+
+  const approvedToolExecution =
+    meta.approved_tool_execution &&
+    typeof meta.approved_tool_execution === "object" &&
+    !Array.isArray(meta.approved_tool_execution)
+      ? (meta.approved_tool_execution as Record<string, unknown>)
+      : null;
+
+  if (
+    approvedToolExecution &&
+    typeof approvedToolExecution.tool_key === "string" &&
+    (approvedToolExecution.status === "completed" || approvedToolExecution.status === "failed")
+  ) {
+    if (approvedToolExecution.status === "completed") {
+      result.keys.add(approvedToolExecution.tool_key);
+    }
+    result.executedToolContext = {
+      toolKey: approvedToolExecution.tool_key,
+      status: approvedToolExecution.status,
+      resultSummary:
+        typeof approvedToolExecution.result_summary === "string"
+          ? approvedToolExecution.result_summary
+          : null,
+      error:
+        typeof approvedToolExecution.error === "string"
+          ? approvedToolExecution.error
+          : null,
+    };
     return result;
   }
 
@@ -837,10 +878,24 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
         const preApproval = await resolvePreApprovedToolKeys(admin, context.run);
         const preApprovedToolKeys = preApproval.keys;
 
+        if (preApproval.executedToolContext) {
+          const { toolKey, status, resultSummary, error } = preApproval.executedToolContext;
+          assembled.systemPrompt +=
+            status === "completed"
+              ? `\n\n[APPROVAL GRANTED] The approved "${toolKey}" tool call was already executed successfully server-side. ` +
+                `Do not re-run "${toolKey}" unless it is genuinely needed again. ` +
+                `You can treat its result as: ${resultSummary ?? "{\"success\":true}"}. ` +
+                `Continue with the original task from that completed state.`
+              : `\n\n[APPROVAL GRANTED] The approved "${toolKey}" tool call was attempted server-side but failed. ` +
+                `Do not retry "${toolKey}" automatically because the original sensitive arguments are not available to you. ` +
+                `The failure was: ${JSON.stringify(error ?? "Approved tool execution failed")}. ` +
+                `Explain the failure and decide the next safe step.`;
+        }
+
         // When resuming after approval, inject a system prompt instruction telling
         // the model to re-execute the approved tool — the model won't reliably
         // retry on its own from the conversation history alone.
-        if (preApproval.approvedToolContext) {
+        if (preApproval.approvedToolContext && !preApproval.executedToolContext) {
           const { toolKey, argsSummary } = preApproval.approvedToolContext;
           assembled.systemPrompt +=
             `\n\n[APPROVAL GRANTED] The user has approved your previous "${toolKey}" tool call. ` +

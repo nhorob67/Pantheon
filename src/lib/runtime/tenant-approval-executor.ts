@@ -13,7 +13,10 @@ import { hasMinimumTenantRole } from "@/lib/runtime/tenant-auth";
 import { transitionTenantRuntimeRun } from "@/lib/runtime/tenant-runtime-queue";
 import { sendDiscordRuntimeCompletionNotification } from "@/lib/runtime/tenant-runtime-status-notifier";
 import { encodeToolContinuationToken } from "@/lib/runtime/tenant-runtime-tools";
+import { storeIntegrationCredential } from "@/lib/runtime/tenant-integrations";
 import { auditLog } from "@/lib/security/audit";
+import { safeErrorMessage } from "@/lib/security/safe-error";
+import { integrationStoreCredentialSchema } from "@/lib/validators/integration";
 import type { TenantRuntimeRun } from "@/types/tenant-runtime";
 import { processRuntimeRun } from "@/trigger/process-runtime-run";
 import { updateDiscordApprovalMessage } from "./tenant-approval-discord-notifier";
@@ -39,6 +42,96 @@ export interface ExecuteTenantApprovalDecisionInput {
 export type ExecuteTenantApprovalDecisionResult =
   | { ok: true; approval_id: string; status: string }
   | { ok: false; error: string; httpStatus: number };
+
+interface ApprovedToolExecutionOutcome {
+  completed: boolean;
+  toolKey: string;
+  resultSummary?: string;
+  error?: string;
+}
+
+async function executeApprovedToolIfNeeded(
+  admin: SupabaseClient,
+  input: {
+    tenantId: string;
+    requestPayload: Record<string, unknown>;
+  }
+): Promise<ApprovedToolExecutionOutcome | null> {
+  const toolKey =
+    typeof input.requestPayload.tool_key === "string"
+      ? input.requestPayload.tool_key
+      : null;
+
+  if (!toolKey) {
+    return null;
+  }
+
+  const args =
+    typeof input.requestPayload.args === "object" &&
+    input.requestPayload.args !== null &&
+    !Array.isArray(input.requestPayload.args)
+      ? (input.requestPayload.args as Record<string, unknown>)
+      : null;
+
+  if (toolKey !== "integration_store_credential" || !args) {
+    return null;
+  }
+
+  const parsedArgs = integrationStoreCredentialSchema.safeParse(args);
+  if (!parsedArgs.success) {
+    return {
+      completed: false,
+      toolKey,
+      error: "Saved credential approval payload was invalid.",
+    };
+  }
+
+  const customerId =
+    typeof input.requestPayload.customer_id === "string" && input.requestPayload.customer_id.length > 0
+      ? input.requestPayload.customer_id
+      : null;
+  if (!customerId) {
+    return {
+      completed: false,
+      toolKey,
+      error: "Saved credential approval payload was missing customer_id.",
+    };
+  }
+
+  try {
+    const result = await storeIntegrationCredential({
+      admin,
+      tenantId: input.tenantId,
+      customerId,
+      agentId:
+        typeof input.requestPayload.agent_id === "string"
+          ? input.requestPayload.agent_id
+          : null,
+      serviceSlug: parsedArgs.data.service_slug,
+      apiKey: parsedArgs.data.api_key,
+      authMethod: parsedArgs.data.auth_method,
+      authHeader: parsedArgs.data.auth_header,
+      metadata: parsedArgs.data.metadata,
+    });
+
+    return {
+      completed: true,
+      toolKey,
+      resultSummary: JSON.stringify({
+        success: true,
+        secret_id: result.secret_id,
+        label: result.label,
+        hint: result.value_hint,
+      }),
+    };
+  } catch (error) {
+    return {
+      completed: false,
+      toolKey,
+      error: safeErrorMessage(error, "Approved tool execution failed"),
+    };
+  }
+}
 
 export async function executeTenantApprovalDecision(
   admin: SupabaseClient,
@@ -112,6 +205,38 @@ export async function executeTenantApprovalDecision(
           token: rawContinuationToken,
         })
       : null;
+  const approvedToolExecution =
+    decision === "approved"
+      ? await executeApprovedToolIfNeeded(admin, {
+          tenantId: input.tenantId,
+          requestPayload,
+        })
+      : null;
+
+  if (approvedToolExecution) {
+    const decisionPayload = {
+      decision,
+      comment: input.comment || null,
+      decided_by: input.decidedByUserId,
+      decided_at: nowIso,
+      tool_execution: approvedToolExecution.completed
+        ? {
+            tool_key: approvedToolExecution.toolKey,
+            status: "completed",
+            result_summary: approvedToolExecution.resultSummary ?? null,
+          }
+        : {
+            tool_key: approvedToolExecution.toolKey,
+            status: "failed",
+            error: approvedToolExecution.error ?? "Approved tool execution failed",
+          },
+    };
+
+    await admin
+      .from("tenant_approvals")
+      .update({ decision_payload: decisionPayload })
+      .eq("id", input.approvalId);
+  }
 
   if (heartbeatPayload) {
     if (decision === "approved") {
@@ -290,6 +415,15 @@ export async function executeTenantApprovalDecision(
             approval_id: updatedApproval.id,
             tool_resume_token: encodedContinuationToken,
             tool_resume_invocation_id: invocationId,
+            approved_tool_execution: approvedToolExecution
+              ? {
+                  tool_key: approvedToolExecution.toolKey,
+                  status: approvedToolExecution.completed ? "completed" : "failed",
+                  execution_mode: "server",
+                  result_summary: approvedToolExecution.resultSummary ?? null,
+                  error: approvedToolExecution.error ?? null,
+                }
+              : null,
           },
         });
         if (obligationId) {

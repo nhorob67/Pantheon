@@ -35,6 +35,7 @@ const SCHEME_LABELS: Record<string, string> = {
   basic: "Basic Auth",
   header: "Custom Header",
   query_param: "Query Parameter",
+  multi_header: "Multi-Header (JSON)",
 };
 
 interface Props {
@@ -546,6 +547,7 @@ function AddSecretForm({
               <option value="basic">Basic Auth (Authorization: Basic ...)</option>
               <option value="header">Custom Header</option>
               <option value="query_param">Query Parameter</option>
+              <option value="multi_header">Multi-Header (JSON object of headers)</option>
             </select>
           </div>
 
@@ -570,6 +572,15 @@ function AddSecretForm({
                 onChange={(e) => setParamName(e.target.value)}
                 placeholder="api_key"
               />
+            </div>
+          )}
+
+          {scheme === "multi_header" && (
+            <div>
+              <p className="text-xs text-foreground/50 mt-1">
+                Secret value must be a JSON object of header name/value pairs, e.g.{" "}
+                <code className="text-accent/80">{`{"Api-Key":"...","Api-Username":"system"}`}</code>
+              </p>
             </div>
           )}
         </div>
