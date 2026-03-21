@@ -106,7 +106,7 @@ interface ScheduleRow {
   tools: string[] | null;
   created_by: string | null;
   notify_on_failure: boolean;
-  tenant_agents: { name: string } | { name: string }[] | null;
+  tenant_agents: { display_name: string } | { display_name: string }[] | null;
 }
 
 interface RunRow {
@@ -132,7 +132,7 @@ export async function fetchScheduleActivity(
     admin
       .from("tenant_scheduled_messages")
       .select(
-        "id, schedule_key, cron_expression, timezone, enabled, last_run_at, next_run_at, agent_id, channel_id, metadata, schedule_type, display_name, prompt, tools, created_by, notify_on_failure, tenant_agents(name)"
+        "id, schedule_key, cron_expression, timezone, enabled, last_run_at, next_run_at, agent_id, channel_id, metadata, schedule_type, display_name, prompt, tools, created_by, notify_on_failure, tenant_agents(display_name)"
       )
       .eq("tenant_id", tenantId)
       .order("enabled", { ascending: false })
@@ -184,8 +184,8 @@ export async function fetchScheduleActivity(
     const agentJoin = schedule.tenant_agents;
     const agentName = agentJoin
       ? Array.isArray(agentJoin)
-        ? agentJoin[0]?.name ?? null
-        : agentJoin.name
+        ? agentJoin[0]?.display_name ?? null
+        : agentJoin.display_name
       : null;
 
     // Recent runs (last 10)

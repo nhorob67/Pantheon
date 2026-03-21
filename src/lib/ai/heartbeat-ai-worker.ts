@@ -308,6 +308,9 @@ export function createHeartbeatAiWorker(admin: SupabaseClient): TenantRuntimeWor
           result: {
             failed: true,
             circuit_breaker_open: error instanceof CircuitBreakerOpenError,
+            discord_status: error instanceof DiscordApiError ? error.status : null,
+            discord_error_message:
+              error instanceof DiscordApiError ? error.message : null,
             discord_rate_limited: error instanceof DiscordApiError && error.status === 429,
             processed_at: new Date().toISOString(),
           },

@@ -168,9 +168,9 @@ export function AgentForm({
       if (editAgent && tenantId) {
         setSchedulesLoading(true);
         fetch(`/api/tenants/${tenantId}/schedules?agent_id=${editAgent.id}`)
-          .then((res) => res.ok ? res.json() : { data: { schedules: [] } })
+          .then((res) => res.ok ? res.json() : { schedules: [] })
           .then((payload) => {
-            const schedules = Array.isArray(payload?.data?.schedules) ? payload.data.schedules : [];
+            const schedules = Array.isArray(payload?.schedules) ? payload.schedules : [];
             setCustomSchedules(parseCustomSchedules(schedules));
           })
           .catch(() => setCustomSchedules([]))
@@ -278,9 +278,9 @@ export function AgentForm({
   const handleCustomScheduleCreated = () => {
     if (editAgent && tenantId) {
       fetch(`/api/tenants/${tenantId}/schedules?agent_id=${editAgent.id}`)
-        .then((res) => res.ok ? res.json() : { data: { schedules: [] } })
+        .then((res) => res.ok ? res.json() : { schedules: [] })
         .then((payload) => {
-          const schedules = Array.isArray(payload?.data?.schedules) ? payload.data.schedules : [];
+          const schedules = Array.isArray(payload?.schedules) ? payload.schedules : [];
           setCustomSchedules(parseCustomSchedules(schedules));
         })
         .catch(() => {});

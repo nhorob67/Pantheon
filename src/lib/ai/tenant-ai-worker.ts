@@ -1626,6 +1626,8 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
             circuit_breaker_retry_after_ms:
               error instanceof CircuitBreakerOpenError ? error.retryAfterMs : null,
             discord_status: error instanceof DiscordApiError ? error.status : null,
+            discord_error_message:
+              error instanceof DiscordApiError ? error.message : null,
             discord_rate_limited: rateLimitError,
             discord_retry_after_seconds: retryAfterSeconds,
             processed_at: new Date().toISOString(),

@@ -16,6 +16,40 @@ const NOTIFICATION_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour per schedule
 const recentNotifications = new Map<string, number>();
 
 /**
+ * Resolve the Discord bot token, preferring the DISCORD_BOT_TOKEN env var
+ * (same source the AI worker uses) and falling back to legacy instance config.
+ */
+async function resolveDiscordBotToken(
+  admin: SupabaseClient,
+  tenantId: string
+): Promise<string | null> {
+  const envToken = process.env.DISCORD_BOT_TOKEN;
+  if (envToken && envToken.trim().length > 0) {
+    return envToken;
+  }
+
+  // Fallback: legacy instance channel_config lookup
+  try {
+    const mapping = await resolveCanonicalLegacyInstanceForTenant(admin, tenantId);
+    if (!mapping.instanceId) return null;
+
+    const { data } = await admin
+      .from("instances")
+      .select("id, channel_config")
+      .eq("id", mapping.instanceId)
+      .maybeSingle();
+
+    if (!data) return null;
+
+    return getDiscordTokenFromChannelConfig(
+      (data as { channel_config: unknown }).channel_config
+    );
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Send a Discord failure notification for a cron schedule.
  * Rate-limited to max 1 notification per schedule per hour.
  */
@@ -30,28 +64,8 @@ export async function sendCronFailureNotification(
     return { sent: false, reason: "rate_limited" };
   }
 
-  // Resolve Discord bot token
-  let botToken: string;
-  try {
-    const mapping = await resolveCanonicalLegacyInstanceForTenant(admin, input.tenantId);
-    if (!mapping.instanceId) {
-      return { sent: false, reason: "no_instance_mapping" };
-    }
-
-    const { data } = await admin
-      .from("instances")
-      .select("id, channel_config")
-      .eq("id", mapping.instanceId)
-      .maybeSingle();
-
-    if (!data) {
-      return { sent: false, reason: "no_instance_config" };
-    }
-
-    botToken = getDiscordTokenFromChannelConfig(
-      (data as { channel_config: unknown }).channel_config
-    );
-  } catch {
+  const botToken = await resolveDiscordBotToken(admin, input.tenantId);
+  if (!botToken) {
     return { sent: false, reason: "token_resolution_failed" };
   }
 
