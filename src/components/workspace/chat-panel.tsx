@@ -38,7 +38,6 @@ export function ChatPanel({ agent, tenantId }: ChatPanelProps) {
   const abortRef = useRef<AbortController | null>(null);
   const streamingContentRef = useRef("");
   const rafIdRef = useRef<number | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const stickToBottomRef = useRef(true);
   const [showJumpToLatest, setShowJumpToLatest] = useState(false);
@@ -59,7 +58,9 @@ export function ChatPanel({ agent, tenantId }: ChatPanelProps) {
   }, []);
 
   const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, []);
 
   // Track scroll position for jump-to-latest
@@ -341,7 +342,6 @@ export function ChatPanel({ agent, tenantId }: ChatPanelProps) {
                 isError={!isStreaming && i === messages.length - 1 && msg.role === "assistant" && !!error}
               />
             ))}
-            <div ref={messagesEndRef} />
           </div>
 
           {/* Jump to latest */}
