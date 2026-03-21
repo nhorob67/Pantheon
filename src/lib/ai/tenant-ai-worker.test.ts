@@ -1,5 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import {
+  classifyUserVisibleReply,
+  isPromiseLikeUserVisibleReply,
+  shouldAutoScheduleFollowUp,
+} from "./progress-replies.ts";
 
 // ---------------------------------------------------------------------------
 // buildFollowUpPrompt — not exported, so we replicate its logic here and test
@@ -142,76 +147,159 @@ test("reconciliation only strips prefix matches, not arbitrary substrings", () =
 });
 
 // ---------------------------------------------------------------------------
-// Safety net promise detection pattern
+// Progress reply classification and follow-up safety net
 // ---------------------------------------------------------------------------
 
-const promisePattern =
-  /\b(?:let me (?:try|check|set up|look into|work on|handle)|i['\u2019]ll (?:try|check|set up|look into|work on|handle|get|do|take care))/i;
-
-test("promisePattern matches 'let me try'", () => {
-  assert.ok(promisePattern.test("Sure, let me try that for you."));
+test("isPromiseLikeUserVisibleReply matches 'let me try'", () => {
+  assert.ok(isPromiseLikeUserVisibleReply("Sure, let me try that for you."));
 });
 
-test("promisePattern matches 'let me check'", () => {
-  assert.ok(promisePattern.test("let me check on that"));
+test("isPromiseLikeUserVisibleReply matches 'let me check'", () => {
+  assert.ok(isPromiseLikeUserVisibleReply("let me check on that"));
 });
 
-test("promisePattern matches 'let me set up'", () => {
-  assert.ok(promisePattern.test("Let me set up the integration."));
+test("isPromiseLikeUserVisibleReply matches 'let me set up'", () => {
+  assert.ok(isPromiseLikeUserVisibleReply("Let me set up the integration."));
 });
 
-test("promisePattern matches 'let me look into'", () => {
-  assert.ok(promisePattern.test("Let me look into that issue."));
+test("isPromiseLikeUserVisibleReply matches 'let me look into'", () => {
+  assert.ok(isPromiseLikeUserVisibleReply("Let me look into that issue."));
 });
 
-test("promisePattern matches 'let me work on'", () => {
-  assert.ok(promisePattern.test("Let me work on the fix now."));
+test("isPromiseLikeUserVisibleReply matches 'let me work on'", () => {
+  assert.ok(isPromiseLikeUserVisibleReply("Let me work on the fix now."));
 });
 
-test("promisePattern matches 'let me handle'", () => {
-  assert.ok(promisePattern.test("Let me handle this for you."));
+test("isPromiseLikeUserVisibleReply matches 'let me handle'", () => {
+  assert.ok(isPromiseLikeUserVisibleReply("Let me handle this for you."));
 });
 
-test("promisePattern matches \"I'll try\"", () => {
-  assert.ok(promisePattern.test("I'll try to fix that."));
+test("isPromiseLikeUserVisibleReply matches \"I'll try\"", () => {
+  assert.ok(isPromiseLikeUserVisibleReply("I'll try to fix that."));
 });
 
-test("promisePattern matches \"I'll check\"", () => {
-  assert.ok(promisePattern.test("I'll check on the status."));
+test("isPromiseLikeUserVisibleReply matches \"I'll check\"", () => {
+  assert.ok(isPromiseLikeUserVisibleReply("I'll check on the status."));
 });
 
-test("promisePattern matches \"I'll get\"", () => {
-  assert.ok(promisePattern.test("I'll get that done right away."));
+test("isPromiseLikeUserVisibleReply matches \"I'll get\"", () => {
+  assert.ok(isPromiseLikeUserVisibleReply("I'll get that done right away."));
 });
 
-test("promisePattern matches \"I'll do\"", () => {
-  assert.ok(promisePattern.test("I'll do it now."));
+test("isPromiseLikeUserVisibleReply matches \"I'll do\"", () => {
+  assert.ok(isPromiseLikeUserVisibleReply("I'll do it now."));
 });
 
-test("promisePattern matches \"I'll take care\"", () => {
-  assert.ok(promisePattern.test("I'll take care of it."));
+test("isPromiseLikeUserVisibleReply matches \"I'll take care\"", () => {
+  assert.ok(isPromiseLikeUserVisibleReply("I'll take care of it."));
 });
 
-test("promisePattern matches with curly apostrophe", () => {
-  assert.ok(promisePattern.test("I\u2019ll try to resolve this."));
+test("isPromiseLikeUserVisibleReply matches 'keep you posted'", () => {
+  assert.ok(isPromiseLikeUserVisibleReply("I'll keep you posted here."));
 });
 
-test("promisePattern is case insensitive", () => {
-  assert.ok(promisePattern.test("LET ME TRY THAT"));
-  assert.ok(promisePattern.test("I'LL CHECK ON IT"));
+test("isPromiseLikeUserVisibleReply matches generic long-task heartbeat wording", () => {
+  assert.ok(isPromiseLikeUserVisibleReply("On it - I'm working through that now."));
 });
 
-test("promisePattern does not match unrelated text", () => {
-  assert.ok(!promisePattern.test("Here is the result of your query."));
+test("isPromiseLikeUserVisibleReply matches with curly apostrophe", () => {
+  assert.ok(isPromiseLikeUserVisibleReply("I\u2019ll try to resolve this."));
 });
 
-test("promisePattern does not match partial word boundaries", () => {
-  // "allet me try" — "let me" is preceded by non-word-boundary "al"
-  // but \b matches between 'l' and 'l' won't fire — actually "allet" has
-  // no boundary before "let". Let's test a clearer case.
-  assert.ok(!promisePattern.test("The wallet me try scenario"));
+test("isPromiseLikeUserVisibleReply is case insensitive", () => {
+  assert.ok(isPromiseLikeUserVisibleReply("LET ME TRY THAT"));
+  assert.ok(isPromiseLikeUserVisibleReply("I'LL CHECK ON IT"));
 });
 
-test("promisePattern does not match 'I will' without contraction", () => {
-  assert.ok(!promisePattern.test("I will check on that."));
+test("isPromiseLikeUserVisibleReply does not match unrelated text", () => {
+  assert.ok(!isPromiseLikeUserVisibleReply("Here is the result of your query."));
+});
+
+test("isPromiseLikeUserVisibleReply does not match partial word boundaries", () => {
+  assert.ok(!isPromiseLikeUserVisibleReply("The wallet me try scenario"));
+});
+
+test("isPromiseLikeUserVisibleReply does not match 'I will' without contraction", () => {
+  assert.ok(!isPromiseLikeUserVisibleReply("I will check on that."));
+});
+
+test("classifyUserVisibleReply marks promise-like progress as promise", () => {
+  assert.equal(
+    classifyUserVisibleReply("Let me try a different approach.", "progress"),
+    "promise"
+  );
+});
+
+test("classifyUserVisibleReply marks non-promise progress as progress", () => {
+  assert.equal(
+    classifyUserVisibleReply("I checked the docs and found the auth requirement.", "progress"),
+    "progress"
+  );
+});
+
+test("classifyUserVisibleReply marks final substantive replies as result", () => {
+  assert.equal(
+    classifyUserVisibleReply("The integration is now configured correctly.", "final"),
+    "result"
+  );
+});
+
+test("shouldAutoScheduleFollowUp triggers on final promise replies", () => {
+  assert.equal(
+    shouldAutoScheduleFollowUp({
+      finalReplyKind: "promise",
+      hasExplicitFollowUp: false,
+      allToolsFailed: false,
+      intermediatePromiseSent: false,
+      intermediateInformationalTextSent: true,
+      statusOnlyProgressSent: false,
+      skipFinalSend: false,
+    }),
+    true
+  );
+});
+
+test("shouldAutoScheduleFollowUp triggers when an intermediate promise was sent without a final result", () => {
+  assert.equal(
+    shouldAutoScheduleFollowUp({
+      finalReplyKind: "none",
+      hasExplicitFollowUp: false,
+      allToolsFailed: false,
+      intermediatePromiseSent: true,
+      intermediateInformationalTextSent: false,
+      statusOnlyProgressSent: true,
+      skipFinalSend: true,
+    }),
+    true
+  );
+});
+
+test("shouldAutoScheduleFollowUp triggers after status-only progress with no visible result", () => {
+  assert.equal(
+    shouldAutoScheduleFollowUp({
+      finalReplyKind: "none",
+      hasExplicitFollowUp: false,
+      allToolsFailed: false,
+      intermediatePromiseSent: false,
+      intermediateInformationalTextSent: false,
+      statusOnlyProgressSent: true,
+      skipFinalSend: true,
+    }),
+    true
+  );
+});
+
+test("shouldAutoScheduleFollowUp does not trigger when a real final result was sent", () => {
+  assert.equal(
+    shouldAutoScheduleFollowUp({
+      finalReplyKind: "result",
+      hasExplicitFollowUp: false,
+      allToolsFailed: false,
+      intermediatePromiseSent: true,
+      intermediateInformationalTextSent: true,
+      statusOnlyProgressSent: true,
+      skipFinalSend: false,
+    }),
+    false
+  );
 });

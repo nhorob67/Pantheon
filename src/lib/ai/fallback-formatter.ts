@@ -163,10 +163,13 @@ function friendlyAction(toolName: string): string | null {
   if (toolName.startsWith("memory_create") || toolName.startsWith("memory_upsert")) return "saved that to memory";
   if (toolName.startsWith("memory_update")) return "updated your memory";
   if (toolName.startsWith("memory_delete")) return "removed that from memory";
+  if (toolName === "schedule_list") return "looked up your schedules";
   if (toolName.startsWith("schedule_create")) return "set up the schedule";
   if (toolName.startsWith("schedule_delete")) return "removed the schedule";
+  if (toolName.startsWith("schedule_toggle")) return "toggled the schedule";
   if (toolName.startsWith("schedule_")) return "updated your schedules";
   if (toolName.startsWith("conversation_")) return "checked our conversation history";
+  if (toolName === "config_view_my_config") return "checked my configuration";
   if (toolName === "delegate_task" || toolName === "delegate_task_async") return "handed that off to a teammate";
   if (toolName === "task_follow_up") return "scheduled a follow-up";
   if (toolName === "file_create") return "created a file";

@@ -36,6 +36,11 @@ import {
 import { collectPendingFiles } from "./tools/file-create";
 import { scheduleFollowUp, MAX_FOLLOW_UP_DEPTH } from "./tools/follow-up";
 import {
+  classifyUserVisibleReply,
+  shouldAutoScheduleFollowUp,
+  type UserVisibleReplyKind,
+} from "./progress-replies";
+import {
   CircuitBreakerOpenError,
   runWithCircuitBreaker,
 } from "@/lib/runtime/tenant-runtime-circuit-breaker";
@@ -52,6 +57,15 @@ import type { TenantRole, TenantRuntimeRun } from "@/types/tenant-runtime";
 const CIRCUIT_FAILURE_THRESHOLD = 3;
 const CIRCUIT_COOLDOWN_MS = 30_000;
 const DISCORD_BOT_TOKEN_ENV = "DISCORD_BOT_TOKEN";
+const PROGRESS_HEARTBEAT_INTERVAL_MS = 5_000;
+const TYPING_REFRESH_INTERVAL_MS = 10_000;
+const LONG_TASK_PROGRESS_UPDATE_MS = 20_000;
+const MAX_AUTOMATED_PROGRESS_UPDATES = 3;
+const PROGRESS_HEARTBEAT_MESSAGES = [
+  "Still working through it now.",
+  "I'm checking the next piece now.",
+  "Still on it - I'll share the result as soon as I have it.",
+];
 
 function getDiscordBotToken(): string {
   const token = process.env[DISCORD_BOT_TOKEN_ENV];
@@ -94,6 +108,62 @@ interface BriefingSections {
   weather?: boolean;
   market_data?: boolean;
   ticket_summary?: boolean;
+}
+
+/**
+ * Format query tool output into a human-readable fallback when the model
+ * didn't produce final prose. Returns null if the output can't be formatted.
+ */
+function formatQueryToolOutput(toolName: string, outputSummary: string): string | null {
+  try {
+    const data = JSON.parse(outputSummary);
+
+    if (toolName === "schedule_list") {
+      const schedules = data.schedules ?? data;
+      if (Array.isArray(schedules) && schedules.length === 0) {
+        return "You don't have any schedules set up right now. Want me to create one?";
+      }
+      if (Array.isArray(schedules) && schedules.length > 0) {
+        const lines = schedules.map((s: Record<string, unknown>) => {
+          const name = s.name || s.display_name || s.schedule_key || "Unnamed";
+          const freq = s.frequency || s.cron_expression || "";
+          const status = s.enabled === false ? " (disabled)" : "";
+          return `• **${name}** — ${freq}${status}`;
+        });
+        return `Here are your current schedules:\n\n${lines.join("\n")}`;
+      }
+    }
+
+    if (toolName === "config_view_my_config") {
+      if (data && typeof data === "object") {
+        const role = data.role || data.agent_role;
+        const goal = data.goal;
+        if (role || goal) {
+          const parts: string[] = [];
+          if (role) parts.push(`**Role:** ${role}`);
+          if (goal) parts.push(`**Goal:** ${goal}`);
+          return `Here's my current configuration:\n\n${parts.join("\n")}`;
+        }
+      }
+    }
+
+    if (toolName === "memory_search") {
+      const memories = data.memories ?? data.results ?? data;
+      if (Array.isArray(memories) && memories.length === 0) {
+        return "I didn't find any matching memories.";
+      }
+      if (Array.isArray(memories) && memories.length > 0) {
+        const lines = memories.slice(0, 5).map((m: Record<string, unknown>) => {
+          const content = m.content || m.text || m.summary || JSON.stringify(m);
+          return `• ${typeof content === "string" ? content.slice(0, 200) : String(content)}`;
+        });
+        return `Here's what I found:\n\n${lines.join("\n")}`;
+      }
+    }
+  } catch {
+    // outputSummary wasn't valid JSON — fall through
+  }
+  return null;
 }
 
 function buildFollowUpPrompt(payload: Record<string, unknown>): string {
@@ -431,17 +501,30 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
         const deliveredIntermediateChunks: string[] = [];
         const sentStatusKeys = new Set<string>();
         let lastUserVisibleActivityAt = Date.now();
-        let genericStatusSent = false;
+        let lastAutomatedProgressUpdateAt = 0;
+        let automatedProgressUpdatesSent = 0;
+        let progressUpdatesSentCount = 0;
+        let statusOnlyProgressSent = false;
+        let intermediatePromiseSent = false;
+        let intermediateInformationalTextSent = false;
+        let lastPromiseLikeUpdate: string | null = null;
+        let finalUserVisibleReplyKind: UserVisibleReplyKind = "none";
+        let followUpScheduled = false;
 
         const sendVisibleReply = async (
           content: string,
-          dedupeKey?: string
+          options?: {
+            dedupeKey?: string;
+            visibility?: "progress" | "final";
+            source?: "heartbeat" | "status" | "step" | "final";
+          }
         ): Promise<boolean> => {
           const trimmed = content.trim();
           if (!trimmed) {
             return false;
           }
 
+          const dedupeKey = options?.dedupeKey;
           if (dedupeKey && sentStatusKeys.has(dedupeKey)) {
             return false;
           }
@@ -459,6 +542,31 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
             );
             deliveredIntermediateChunks.push(sentChunk);
             lastUserVisibleActivityAt = Date.now();
+            const visibility = options?.visibility ?? "progress";
+            const kind = classifyUserVisibleReply(sentChunk, visibility);
+            const source = options?.source ?? "status";
+
+            if (source !== "final") {
+              progressUpdatesSentCount += 1;
+            }
+
+            if (source === "step") {
+              if (kind === "promise") {
+                intermediatePromiseSent = true;
+                lastPromiseLikeUpdate = sentChunk;
+              } else if (kind === "progress") {
+                intermediateInformationalTextSent = true;
+              }
+            } else if (source === "heartbeat" || source === "status") {
+              statusOnlyProgressSent = true;
+              if (kind === "promise") {
+                intermediatePromiseSent = true;
+                lastPromiseLikeUpdate = sentChunk;
+              }
+            } else if (source === "final") {
+              finalUserVisibleReplyKind = kind;
+            }
+
             if (dedupeKey) {
               sentStatusKeys.add(dedupeKey);
             }
@@ -471,17 +579,28 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
 
         heartbeatInterval = setInterval(async () => {
           const silenceMs = Date.now() - lastUserVisibleActivityAt;
-          if (silenceMs > 10_000) {
+          if (silenceMs > TYPING_REFRESH_INTERVAL_MS) {
             sendDiscordTypingIndicator(botToken, channelId).catch(() => {});
           }
-          // Don't let long silent tool work feel like a dropped conversation.
-          if (silenceMs > 8_000 && !genericStatusSent && deliveredIntermediateChunks.length === 0) {
-            genericStatusSent = true;
-            sendVisibleReply("On it - I'm working through that now.", "status:generic").catch(
-              () => {}
-            );
+
+          if (
+            silenceMs > LONG_TASK_PROGRESS_UPDATE_MS &&
+            automatedProgressUpdatesSent < MAX_AUTOMATED_PROGRESS_UPDATES &&
+            Date.now() - lastAutomatedProgressUpdateAt > LONG_TASK_PROGRESS_UPDATE_MS
+          ) {
+            const nextMessage =
+              PROGRESS_HEARTBEAT_MESSAGES[
+                Math.min(automatedProgressUpdatesSent, PROGRESS_HEARTBEAT_MESSAGES.length - 1)
+              ];
+            lastAutomatedProgressUpdateAt = Date.now();
+            automatedProgressUpdatesSent += 1;
+            sendVisibleReply(nextMessage, {
+              dedupeKey: `status:progress:${automatedProgressUpdatesSent}`,
+              visibility: "progress",
+              source: "heartbeat",
+            }).catch(() => {});
           }
-        }, 8_000);
+        }, PROGRESS_HEARTBEAT_INTERVAL_MS);
 
         const result = await generateText({
           model: primaryModel,
@@ -511,7 +630,11 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
                   const statusMsg = getToolStatusMessage(statusToolName);
                   const statusKey = getToolStatusKey(statusToolName);
                   if (statusMsg && statusKey) {
-                    await sendVisibleReply(statusMsg, `tool:${statusKey}`);
+                    await sendVisibleReply(statusMsg, {
+                      dedupeKey: `tool:${statusKey}`,
+                      visibility: "progress",
+                      source: "status",
+                    });
                   }
                 }
               }
@@ -526,7 +649,10 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
               intermediateText = stepRedactor(intermediateText);
             }
 
-            await sendVisibleReply(intermediateText);
+            await sendVisibleReply(intermediateText, {
+              visibility: "progress",
+              source: "step",
+            });
 
             // Refresh typing indicator for next step
             sendDiscordTypingIndicator(botToken, channelId).catch(() => {});
@@ -593,26 +719,40 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
               // Map tool names to friendly action descriptions
               const friendlyActions = successfulRecords.map((r) => {
                 const name = r.toolName;
-                if (name.startsWith("memory_search")) return "searched your memories";
-                if (name.startsWith("memory_create") || name.startsWith("memory_upsert")) return "saved that to memory";
-                if (name.startsWith("memory_update")) return "updated your memory";
-                if (name.startsWith("memory_delete")) return "removed that from memory";
-                if (name.startsWith("schedule_create")) return "set up the schedule";
-                if (name.startsWith("schedule_delete")) return "removed the schedule";
-                if (name.startsWith("schedule_")) return "updated your schedules";
-                if (name.startsWith("conversation_")) return "checked our conversation history";
-                if (name === "delegate_task" || name === "delegate_task_async") return "handed that off to a teammate";
-                if (name === "task_follow_up") return "scheduled a follow-up";
-                if (name === "file_create") return "created a file";
-                if (name.startsWith("config_")) return "updated the configuration";
-                return name.replace(/_/g, " ");
+                if (name.startsWith("memory_search")) return { text: "searched your memories", query: true };
+                if (name.startsWith("memory_create") || name.startsWith("memory_upsert")) return { text: "saved that to memory", query: false };
+                if (name.startsWith("memory_update")) return { text: "updated your memory", query: false };
+                if (name.startsWith("memory_delete")) return { text: "removed that from memory", query: false };
+                if (name === "schedule_list") return { text: "looked up your schedules", query: true };
+                if (name.startsWith("schedule_create")) return { text: "set up the schedule", query: false };
+                if (name.startsWith("schedule_delete")) return { text: "removed the schedule", query: false };
+                if (name.startsWith("schedule_toggle")) return { text: "toggled the schedule", query: false };
+                if (name.startsWith("schedule_")) return { text: "updated your schedules", query: false };
+                if (name.startsWith("conversation_")) return { text: "checked our conversation history", query: true };
+                if (name === "config_view_my_config") return { text: "checked my configuration", query: true };
+                if (name === "delegate_task" || name === "delegate_task_async") return { text: "handed that off to a teammate", query: false };
+                if (name === "task_follow_up") return { text: "scheduled a follow-up", query: false };
+                if (name === "file_create") return { text: "created a file", query: false };
+                if (name.startsWith("config_")) return { text: "updated the configuration", query: false };
+                return { text: name.replace(/_/g, " "), query: false };
               });
               // Deduplicate and join naturally
-              const unique = [...new Set(friendlyActions)];
-              if (unique.length === 1) {
-                responseText = `Done! I ${unique[0]}.`;
+              const uniqueTexts = [...new Set(friendlyActions.map((a) => a.text))];
+              const allQuery = friendlyActions.every((a) => a.query);
+
+              // For query-only invocations, try to surface the tool output directly
+              if (allQuery && successfulRecords.length > 0) {
+                const output = successfulRecords[0].outputSummary;
+                const formatted = formatQueryToolOutput(successfulRecords[0].toolName, output);
+                if (formatted) {
+                  responseText = formatted;
+                } else {
+                  responseText = `I ${uniqueTexts[0]} but couldn't put together a summary. Could you ask again?`;
+                }
+              } else if (uniqueTexts.length === 1) {
+                responseText = `Done! I ${uniqueTexts[0]}.`;
               } else {
-                responseText = `All set! I ${unique.slice(0, -1).join(", ")} and ${unique[unique.length - 1]}.`;
+                responseText = `All set! I ${uniqueTexts.slice(0, -1).join(", ")} and ${uniqueTexts[uniqueTexts.length - 1]}.`;
               }
             } else {
               // Check if failure is due to approval gates
@@ -667,28 +807,35 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           }
         }
 
-        // Safety net: detect "promise without action" and auto-schedule follow-up.
-        // Only fires when the agent says it will do something but didn't call any tools
-        // or schedule an explicit follow-up.
         const followUpDepth = typeof payload.follow_up_depth === "number" ? payload.follow_up_depth : 0;
-        if (
-          !isCron &&
-          !skipFinalSend &&
-          responseText.length > 0 &&
-          followUpDepth < MAX_FOLLOW_UP_DEPTH
-        ) {
+        if (!isCron && followUpDepth < MAX_FOLLOW_UP_DEPTH) {
           const hasToolSuccess = executor.records.some((r) => r.success);
           const hasExplicitFollowUp = executor.records.some(
             (r) => r.toolName === "task_follow_up" && r.success
           );
-          const promisePattern = /\b(?:let me (?:try|check|set up|look into|work on|handle)|i['']ll (?:try|check|set up|look into|work on|handle|get|do|take care))/i;
-          const hasPromise = promisePattern.test(responseText);
           const allToolsFailed = executor.records.length > 0 && !hasToolSuccess;
-          const shouldAutoFollowUp =
-            (hasPromise && !hasToolSuccess && !hasExplicitFollowUp) ||
-            (allToolsFailed && !hasExplicitFollowUp);
+          const pendingFinalReplyKind = classifyUserVisibleReply(responseText, "final");
+          const shouldScheduleFollowUp = shouldAutoScheduleFollowUp({
+            finalReplyKind: pendingFinalReplyKind,
+            hasExplicitFollowUp,
+            allToolsFailed,
+            intermediatePromiseSent,
+            intermediateInformationalTextSent,
+            statusOnlyProgressSent,
+            skipFinalSend,
+          });
 
-          if (shouldAutoFollowUp && assembled.agentId) {
+          if (shouldScheduleFollowUp && assembled.agentId) {
+            const followUpTaskSummary =
+              responseText.slice(0, 300) ||
+              String(lastPromiseLikeUpdate || "").slice(0, 300) ||
+              "Continue the unresolved task and report back with findings.";
+            const followUpReason =
+              pendingFinalReplyKind === "promise" || intermediatePromiseSent
+                ? "A promise to continue or report back was sent before the task resolved."
+                : allToolsFailed
+                  ? "All tool calls failed and the task should be retried."
+                  : "Only progress updates were sent and the task still needs a proactive check-in.";
             const scheduled = await scheduleFollowUp({
               admin,
               tenantId: context.run.tenant_id,
@@ -697,16 +844,23 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
               channelId,
               runId: context.run.id,
               followUpDepth,
-              taskSummary: responseText.slice(0, 300),
-              reason: allToolsFailed
-                ? "All tool calls failed — scheduling follow-up to retry."
-                : "Auto-detected promise without action — scheduling follow-up to attempt the task.",
+              taskSummary: followUpTaskSummary,
+              reason: followUpReason,
               delayMinutes: 2,
               messageId: inboundMessageId,
             }).catch(() => ({ success: false }));
 
             if (scheduled.success) {
-              responseText += "\n\nI'll automatically retry this in about 2 minutes.";
+              followUpScheduled = true;
+              if (responseText.length > 0) {
+                responseText += "\n\nI'll check back here in about 2 minutes.";
+              } else if (skipFinalSend) {
+                await sendVisibleReply("I'm still on this - I'll check back here in about 2 minutes.", {
+                  dedupeKey: "status:auto-follow-up",
+                  visibility: "progress",
+                  source: "status",
+                });
+              }
             }
           }
         }
@@ -851,6 +1005,7 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
         }
 
         if (!skipFinalSend) {
+          const pendingFinalReplyKind = classifyUserVisibleReply(responseText, "final");
           const responseParts = buildDiscordRuntimeResponseParts(responseText);
           const timeoutFetch: typeof fetch = async (url, init) => {
             const controller = new AbortController();
@@ -915,6 +1070,8 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
               }
             );
           }
+
+          finalUserVisibleReplyKind = pendingFinalReplyKind;
         }
 
         // Check if any tool was blocked by the approval gate — if so, the run
@@ -936,6 +1093,10 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           dispatched_message_ids: sent.messageIds,
           dispatched_message_parts: sent.partsSent,
           response_preview: responseText.slice(0, 500),
+          intermediate_progress_updates_sent: progressUpdatesSentCount,
+          intermediate_promise_sent: intermediatePromiseSent,
+          final_user_visible_reply_kind: finalUserVisibleReplyKind,
+          follow_up_scheduled: followUpScheduled,
           request_trace_id: context.requestTraceId,
           processed_at: new Date().toISOString(),
         };
