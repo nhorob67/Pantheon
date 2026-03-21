@@ -467,12 +467,41 @@ export async function executeIntegrationApiCall(
   }
 
   // Resolve credential
-  const secretId = (integration.config as Record<string, unknown>)?._secret_id as string | undefined;
+  let secretId = (integration.config as Record<string, unknown>)?._secret_id as string | undefined;
   let secretValue: string | null = null;
   const requestHeaders: Record<string, string> = {
     "User-Agent": "Pantheon/1.0",
     ...(input.headers ?? {}),
   };
+
+  // Fallback: if _secret_id is missing from config, try to find the secret by
+  // label and backfill the config so future calls don't need this lookup.
+  if (!secretId) {
+    const secretLabel = `integration-${integration.slug}`;
+    const { data: secret } = await input.admin
+      .from("tenant_secrets")
+      .select("id")
+      .eq("tenant_id", input.tenantId)
+      .eq("label", secretLabel)
+      .maybeSingle();
+
+    if (secret) {
+      secretId = secret.id;
+      // Backfill _secret_id into integration config for future calls
+      void input.admin
+        .from("tenant_integrations")
+        .update({
+          config: {
+            ...(integration.config as Record<string, unknown>),
+            _secret_id: secret.id,
+          },
+          updated_at: new Date().toISOString(),
+        })
+        .eq("tenant_id", input.tenantId)
+        .eq("slug", input.integrationSlug)
+        .then(() => {});
+    }
+  }
 
   if (secretId) {
     try {
@@ -538,6 +567,13 @@ export async function executeIntegrationApiCall(
         error: `Failed to resolve credentials for "${input.integrationSlug}": ${err instanceof Error ? err.message : "unknown error"}`,
       };
     }
+  } else {
+    // No credential found — warn that the request will be unauthenticated
+    return {
+      error:
+        `No credential found for integration "${input.integrationSlug}". ` +
+        `Store a credential first with integration_store_credential using service_slug "${integration.slug}".`,
+    };
   }
 
   // Execute the request
