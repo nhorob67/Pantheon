@@ -1,6 +1,7 @@
 "use client";
 
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
 
 export interface WorkspaceChatMessage {
@@ -35,63 +36,79 @@ function ensureSession(sessions: Record<string, AgentChatSession>, agentId: stri
   return sessions[agentId] || { messages: [], draft: "" };
 }
 
-export const useWorkspace = create<WorkspaceState>()((set) => ({
-  selectedAgentId: null,
-  inspectorOpen: true,
-  chatSessions: {},
-  streamingAgentId: null,
-  activeInspectorSection: "identity",
+export const useWorkspace = create<WorkspaceState>()(
+  persist(
+    (set) => ({
+      selectedAgentId: null,
+      inspectorOpen: true,
+      chatSessions: {},
+      streamingAgentId: null,
+      activeInspectorSection: "identity",
 
-  selectAgent: (id) => set({ selectedAgentId: id }),
+      selectAgent: (id) => set({ selectedAgentId: id }),
 
-  toggleInspector: () => set((s) => ({ inspectorOpen: !s.inspectorOpen })),
-  setInspectorOpen: (open) => set({ inspectorOpen: open }),
+      toggleInspector: () => set((s) => ({ inspectorOpen: !s.inspectorOpen })),
+      setInspectorOpen: (open) => set({ inspectorOpen: open }),
 
-  setDraft: (agentId, value) =>
-    set((s) => ({
-      chatSessions: {
-        ...s.chatSessions,
-        [agentId]: { ...ensureSession(s.chatSessions, agentId), draft: value },
-      },
-    })),
+      setDraft: (agentId, value) =>
+        set((s) => ({
+          chatSessions: {
+            ...s.chatSessions,
+            [agentId]: { ...ensureSession(s.chatSessions, agentId), draft: value },
+          },
+        })),
 
-  addMessage: (agentId, msg) =>
-    set((s) => {
-      const session = ensureSession(s.chatSessions, agentId);
-      return {
-        chatSessions: {
-          ...s.chatSessions,
-          [agentId]: { ...session, messages: [...session.messages, msg] },
-        },
-      };
+      addMessage: (agentId, msg) =>
+        set((s) => {
+          const session = ensureSession(s.chatSessions, agentId);
+          return {
+            chatSessions: {
+              ...s.chatSessions,
+              [agentId]: { ...session, messages: [...session.messages, msg] },
+            },
+          };
+        }),
+
+      updateLastMessage: (agentId, content) =>
+        set((s) => {
+          const session = ensureSession(s.chatSessions, agentId);
+          const msgs = [...session.messages];
+          if (msgs.length > 0) {
+            msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], content };
+          }
+          return {
+            chatSessions: {
+              ...s.chatSessions,
+              [agentId]: { ...session, messages: msgs },
+            },
+          };
+        }),
+
+      clearChat: (agentId) =>
+        set((s) => ({
+          chatSessions: {
+            ...s.chatSessions,
+            [agentId]: { messages: [], draft: ensureSession(s.chatSessions, agentId).draft },
+          },
+        })),
+
+      setStreaming: (agentId) => set({ streamingAgentId: agentId }),
+      setActiveInspectorSection: (section) => set({ activeInspectorSection: section }),
     }),
-
-  updateLastMessage: (agentId, content) =>
-    set((s) => {
-      const session = ensureSession(s.chatSessions, agentId);
-      const msgs = [...session.messages];
-      if (msgs.length > 0) {
-        msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], content };
-      }
-      return {
-        chatSessions: {
-          ...s.chatSessions,
-          [agentId]: { ...session, messages: msgs },
-        },
-      };
-    }),
-
-  clearChat: (agentId) =>
-    set((s) => ({
-      chatSessions: {
-        ...s.chatSessions,
-        [agentId]: { messages: [], draft: ensureSession(s.chatSessions, agentId).draft },
-      },
-    })),
-
-  setStreaming: (agentId) => set({ streamingAgentId: agentId }),
-  setActiveInspectorSection: (section) => set({ activeInspectorSection: section }),
-}));
+    {
+      name: "pantheon-workspace-v1",
+      storage: createJSONStorage(() => sessionStorage),
+      version: 1,
+      partialize: (state) => ({
+        selectedAgentId: state.selectedAgentId,
+        inspectorOpen: state.inspectorOpen,
+        chatSessions: state.chatSessions,
+        activeInspectorSection: state.activeInspectorSection,
+        // streamingAgentId excluded — transient state
+      }),
+    }
+  )
+);
 
 // Granular selectors
 export const useSelectedAgentId = () => useWorkspace((s) => s.selectedAgentId);

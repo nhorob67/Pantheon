@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Agent } from "@/types/agent";
 import type { CustomSkill } from "@/types/custom-skill";
@@ -41,10 +41,13 @@ export function WorkspaceShell({
   const selectedAgentId = useSelectedAgentId();
   const selectAgent = useWorkspace((s) => s.selectAgent);
   const router = useRouter();
+  const shellRef = useRef<HTMLDivElement>(null);
+  const [shellHeight, setShellHeight] = useState<number | null>(null);
 
-  // Auto-select first agent if none selected
+  // Auto-select first agent if none selected or persisted agent no longer exists
   useEffect(() => {
-    if (!selectedAgentId && agents.length > 0) {
+    const agentExists = selectedAgentId && agents.some((a) => a.id === selectedAgentId);
+    if (!agentExists && agents.length > 0) {
       selectAgent(agents[0].id);
     }
   }, [selectedAgentId, agents, selectAgent]);
@@ -55,8 +58,34 @@ export function WorkspaceShell({
     router.refresh();
   }, [router]);
 
+  useEffect(() => {
+    const updateHeight = () => {
+      const shell = shellRef.current;
+      if (!shell) return;
+
+      const { top } = shell.getBoundingClientRect();
+      const nextHeight = Math.max(window.innerHeight - top, 520);
+      setShellHeight(nextHeight);
+    };
+
+    updateHeight();
+
+    const viewport = window.visualViewport;
+    window.addEventListener("resize", updateHeight);
+    viewport?.addEventListener("resize", updateHeight);
+
+    return () => {
+      window.removeEventListener("resize", updateHeight);
+      viewport?.removeEventListener("resize", updateHeight);
+    };
+  }, []);
+
   return (
-    <div className="-m-6 flex h-[calc(100vh-4rem)] overflow-hidden">
+    <div
+      ref={shellRef}
+      className="-mx-6 -mb-6 mt-4 flex min-h-[32rem] overflow-hidden border-y border-border bg-bg-deep"
+      style={shellHeight ? { height: `${shellHeight}px` } : undefined}
+    >
       {/* Left: Agent Panel — hidden on mobile */}
       <div className="hidden xl:block">
         <AgentPanel agents={agents} />
@@ -79,17 +108,15 @@ export function WorkspaceShell({
 
       {/* Right: Inspector Panel — hidden on tablet and below */}
       {selectedAgent && (
-        <div className="hidden xl:block">
-          <InspectorPanel
-            agent={selectedAgent}
-            tenantId={tenantId}
-            customSkills={customSkills}
-            skillConfigs={skillConfigs}
-            composioConfig={composioConfig}
-            knowledgeFiles={knowledgeFiles}
-            onAgentUpdated={handleAgentUpdated}
-          />
-        </div>
+        <InspectorPanel
+          agent={selectedAgent}
+          tenantId={tenantId}
+          customSkills={customSkills}
+          skillConfigs={skillConfigs}
+          composioConfig={composioConfig}
+          knowledgeFiles={knowledgeFiles}
+          onAgentUpdated={handleAgentUpdated}
+        />
       )}
 
       {/* Mobile agent switcher — visible below xl */}

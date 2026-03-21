@@ -302,14 +302,15 @@ export function ChatPanel({ agent, tenantId }: ChatPanelProps) {
           <button
             type="button"
             onClick={toggleInspector}
-            className="p-2 text-text-dim hover:text-text-secondary transition-colors rounded-lg hover:bg-bg-surface"
-            aria-label={inspectorOpen ? "Close inspector" : "Open inspector"}
+            className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-text-dim transition-colors hover:bg-bg-surface hover:text-text-secondary xl:hidden"
+            aria-label={inspectorOpen ? "Hide agent details" : "Show agent details"}
           >
             {inspectorOpen ? (
               <PanelRightClose className="w-4 h-4" />
             ) : (
               <PanelRightOpen className="w-4 h-4" />
             )}
+            <span>{inspectorOpen ? "Hide details" : "Agent details"}</span>
           </button>
         </div>
       </div>
