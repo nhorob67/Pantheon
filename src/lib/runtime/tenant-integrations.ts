@@ -87,6 +87,10 @@ export async function storeIntegrationCredential(
       throw new Error(`Failed to update integration credential: ${updateError.message}`);
     }
 
+    // Eagerly link this secret to any integration whose slug matches or contains
+    // the service_slug (e.g., credential "discourse" → integration "discourse-updated").
+    await backfillSecretToIntegrations(input.admin, input.tenantId, input.serviceSlug, existing.id);
+
     return {
       secret_id: existing.id,
       label,
@@ -110,11 +114,52 @@ export async function storeIntegrationCredential(
     allowed_domains: input.metadata?.base_url ? [new URL(input.metadata.base_url).hostname] : undefined,
   });
 
+  // Eagerly link this secret to any integration whose slug matches or contains
+  // the service_slug (e.g., credential "discourse" → integration "discourse-updated").
+  await backfillSecretToIntegrations(input.admin, input.tenantId, input.serviceSlug, secret.id);
+
   return {
     secret_id: secret.id,
     label: secret.label,
     value_hint: secret.value_hint,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Backfill _secret_id into integrations whose slug matches the service slug
+// ---------------------------------------------------------------------------
+
+async function backfillSecretToIntegrations(
+  admin: SupabaseClient,
+  tenantId: string,
+  serviceSlug: string,
+  secretId: string
+): Promise<void> {
+  // Find integrations whose slug exactly matches or starts with the service slug
+  // (e.g., service_slug "discourse" matches integration slugs "discourse", "discourse-updated")
+  const { data: integrations } = await admin
+    .from("tenant_integrations")
+    .select("id, slug, config")
+    .eq("tenant_id", tenantId);
+
+  if (!integrations) return;
+
+  for (const integration of integrations) {
+    const slug = (integration as { slug: string }).slug;
+    if (slug !== serviceSlug && !slug.startsWith(`${serviceSlug}-`)) continue;
+
+    const config = (integration as { config: Record<string, unknown> }).config ?? {};
+    if (config._secret_id === secretId) continue; // Already linked
+
+    void admin
+      .from("tenant_integrations")
+      .update({
+        config: { ...config, _secret_id: secretId },
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", (integration as { id: string }).id)
+      .then(() => {});
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -477,23 +522,58 @@ export async function executeIntegrationApiCall(
   // Fallback: if _secret_id is missing from config, try to find the secret by
   // label and backfill the config so future calls don't need this lookup.
   if (!secretId) {
-    const secretLabel = `integration-${integration.slug}`;
-    const { data: secret } = await input.admin
+    // Try exact match first: integration-discourse-updated
+    const exactLabel = `integration-${integration.slug}`;
+    const { data: exactSecret } = await input.admin
       .from("tenant_secrets")
       .select("id")
       .eq("tenant_id", input.tenantId)
-      .eq("label", secretLabel)
+      .eq("label", exactLabel)
       .maybeSingle();
 
-    if (secret) {
-      secretId = secret.id;
+    let foundSecret = exactSecret;
+
+    // If no exact match, try base slug: e.g., for "discourse-updated" try "integration-discourse"
+    if (!foundSecret && integration.slug.includes("-")) {
+      const baseSlug = integration.slug.replace(/-[^-]+$/, "");
+      const baseLabel = `integration-${baseSlug}`;
+      const { data: baseSecret } = await input.admin
+        .from("tenant_secrets")
+        .select("id")
+        .eq("tenant_id", input.tenantId)
+        .eq("label", baseLabel)
+        .maybeSingle();
+      foundSecret = baseSecret;
+    }
+
+    // Last resort: find any integration-* secret with a label that the slug starts with
+    if (!foundSecret) {
+      const { data: allSecrets } = await input.admin
+        .from("tenant_secrets")
+        .select("id, label")
+        .eq("tenant_id", input.tenantId)
+        .like("label", "integration-%");
+
+      if (allSecrets) {
+        for (const s of allSecrets) {
+          const secretSlug = (s as { label: string }).label.replace(/^integration-/, "");
+          if (integration.slug.startsWith(secretSlug)) {
+            foundSecret = s as { id: string };
+            break;
+          }
+        }
+      }
+    }
+
+    if (foundSecret) {
+      secretId = (foundSecret as { id: string }).id;
       // Backfill _secret_id into integration config for future calls
       void input.admin
         .from("tenant_integrations")
         .update({
           config: {
             ...(integration.config as Record<string, unknown>),
-            _secret_id: secret.id,
+            _secret_id: secretId,
           },
           updated_at: new Date().toISOString(),
         })
