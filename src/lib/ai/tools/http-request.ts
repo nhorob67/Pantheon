@@ -138,6 +138,25 @@ export function createHttpRequestTool(
               case "header":
                 requestHeaders[credential.headerName || "X-API-Key"] = credential.value;
                 break;
+              case "multi_header": {
+                // Value is a JSON object of { headerName: headerValue } pairs.
+                // Example for Discourse: { "Api-Key": "abc123", "Api-Username": "system" }
+                try {
+                  const parsed = JSON.parse(credential.value);
+                  if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+                    for (const [name, val] of Object.entries(parsed)) {
+                      if (typeof val === "string") {
+                        requestHeaders[name] = val;
+                      }
+                    }
+                  } else {
+                    return { error: "Invalid multi_header credential: expected a JSON object of header name/value pairs." };
+                  }
+                } catch {
+                  return { error: "Invalid multi_header credential: value must be valid JSON." };
+                }
+                break;
+              }
               case "query_param": {
                 const paramName = credential.paramName || "api_key";
                 parsedUrl.searchParams.set(paramName, credential.value);
@@ -180,6 +199,19 @@ export function createHttpRequestTool(
           // Redact: remove any echoed secret values from the response
           if (secretValue) {
             responseBody = redactValue(responseBody, secretValue);
+            // For multi_header, also redact each individual header value
+            try {
+              const parsed = JSON.parse(secretValue);
+              if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+                for (const val of Object.values(parsed)) {
+                  if (typeof val === "string" && val.length >= 4) {
+                    responseBody = redactValue(responseBody, val);
+                  }
+                }
+              }
+            } catch {
+              // Not JSON — single-value secret, already redacted above
+            }
             responseBody = redactCommonPatterns(responseBody);
           }
 

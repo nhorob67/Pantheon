@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { shouldScheduleStructuralFollowUp } from "./tenant-ai-worker.ts";
+import {
+  formatQueryToolOutput,
+  isQueryLikeToolRecord,
+  shouldScheduleStructuralFollowUp,
+  shouldSuppressIntermediateToolPreamble,
+} from "./tenant-ai-worker.ts";
 
 // ---------------------------------------------------------------------------
 // buildFollowUpPrompt — not exported, so we replicate its logic here and test
@@ -161,6 +166,63 @@ test("reconciliation only strips prefix matches, not arbitrary substrings", () =
   // "world" does not start the responseText, so nothing is stripped
   assert.equal(result.responseText, "Hello, world!");
   assert.equal(result.skipFinalSend, false);
+});
+
+test("suppresses low-value intermediate tool preambles", () => {
+  assert.equal(
+    shouldSuppressIntermediateToolPreamble("Let me check the visitor stats from your Discourse community:"),
+    true
+  );
+  assert.equal(
+    shouldSuppressIntermediateToolPreamble("There were 128 visitors in the last 24 hours."),
+    false
+  );
+});
+
+test("treats GET integration_api_call records as query-like", () => {
+  assert.equal(
+    isQueryLikeToolRecord({
+      toolName: "integration_api_call",
+      inputSummary: JSON.stringify({ method: "GET", path: "/admin/dashboard.json", integration_slug: "discourse" }),
+    }),
+    true
+  );
+  assert.equal(
+    isQueryLikeToolRecord({
+      toolName: "integration_api_call",
+      inputSummary: JSON.stringify({ method: "POST", path: "/posts.json", integration_slug: "discourse" }),
+    }),
+    false
+  );
+});
+
+test("formats discourse dashboard visitor counts from integration_api_call output", () => {
+  const result = formatQueryToolOutput(
+    "integration_api_call",
+    JSON.stringify({
+      status: 200,
+      status_text: "OK",
+      integration: "discourse",
+      body: {
+        reports: [
+          {
+            type: "visitors",
+            data: [
+              ["2026-03-20", 91],
+              ["2026-03-21", 128],
+            ],
+          },
+        ],
+      },
+    }),
+    JSON.stringify({
+      method: "GET",
+      path: "/admin/dashboard.json",
+      integration_slug: "discourse",
+    })
+  );
+
+  assert.equal(result, "There were 128 visitors in the last 24 hours.");
 });
 
 // ---------------------------------------------------------------------------

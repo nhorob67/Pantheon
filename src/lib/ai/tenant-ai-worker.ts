@@ -155,7 +155,188 @@ interface BriefingSections {
  * Format query tool output into a human-readable fallback when the model
  * didn't produce final prose. Returns null if the output can't be formatted.
  */
-function formatQueryToolOutput(toolName: string, outputSummary: string): string | null {
+function parseJsonObject(summary: string): Record<string, unknown> | null {
+  try {
+    const parsed = JSON.parse(summary);
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return parsed as Record<string, unknown>;
+    }
+  } catch {
+    // Ignore invalid JSON summaries.
+  }
+  return null;
+}
+
+function extractBodyPayload(body: unknown): unknown {
+  if (typeof body !== "string") return body;
+
+  const trimmed = body.trim();
+  if (!trimmed) return null;
+
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    return trimmed;
+  }
+}
+
+function extractNumericValue(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (/^-?\d+(\.\d+)?$/.test(trimmed)) {
+      return Number(trimmed);
+    }
+    return null;
+  }
+
+  if (Array.isArray(value)) {
+    for (let index = value.length - 1; index >= 0; index -= 1) {
+      const extracted = extractNumericValue(value[index]);
+      if (extracted !== null) return extracted;
+    }
+    return null;
+  }
+
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    for (const key of ["value", "count", "total", "y", "visitors", "visits"]) {
+      const extracted = extractNumericValue(record[key]);
+      if (extracted !== null) return extracted;
+    }
+    for (const nestedValue of Object.values(record).reverse()) {
+      const extracted = extractNumericValue(nestedValue);
+      if (extracted !== null) return extracted;
+    }
+  }
+
+  return null;
+}
+
+function matchTrafficLabel(value: string): "visitors" | "visits" | null {
+  const normalized = value.toLowerCase();
+  if (normalized.includes("visitor")) return "visitors";
+  if (/\bvisits?\b/.test(normalized)) return "visits";
+  return null;
+}
+
+function extractDiscourseTrafficMetric(body: unknown): { label: "visitors" | "visits"; value: number } | null {
+  const queue: unknown[] = [body];
+
+  while (queue.length > 0) {
+    const current = queue.shift();
+    if (!current) continue;
+
+    if (Array.isArray(current)) {
+      for (const item of current) queue.push(item);
+      continue;
+    }
+
+    if (typeof current !== "object") {
+      continue;
+    }
+
+    const record = current as Record<string, unknown>;
+
+    for (const [key, value] of Object.entries(record)) {
+      const label = matchTrafficLabel(key);
+      if (label) {
+        const numericValue = extractNumericValue(value);
+        if (numericValue !== null) {
+          return { label, value: numericValue };
+        }
+      }
+    }
+
+    const descriptor = [record.type, record.name, record.title, record.label, record.report_key]
+      .find((value) => typeof value === "string" && value.trim().length > 0);
+    if (typeof descriptor === "string") {
+      const label = matchTrafficLabel(descriptor);
+      if (label) {
+        const numericValue = extractNumericValue(
+          record.data ?? record.value ?? record.total ?? record.count ?? record.stats ?? record.points
+        );
+        if (numericValue !== null) {
+          return { label, value: numericValue };
+        }
+      }
+    }
+
+    for (const value of Object.values(record)) {
+      if (value && typeof value === "object") {
+        queue.push(value);
+      }
+    }
+  }
+
+  return null;
+}
+
+function formatBodyDetail(body: unknown): string | null {
+  if (typeof body === "string") {
+    const trimmed = body.trim();
+    if (!trimmed || trimmed === "{}" || trimmed === "[]") return null;
+    return trimmed.length <= 160 ? trimmed : `${trimmed.slice(0, 159).trimEnd()}…`;
+  }
+
+  if (body && typeof body === "object") {
+    const record = body as Record<string, unknown>;
+    const detail = [record.message, record.error, record.detail, record.reason, record.title]
+      .find((value) => typeof value === "string" && value.trim().length > 0);
+    if (typeof detail === "string") return detail;
+  }
+
+  return null;
+}
+
+function humanizeIntegrationName(value: unknown): string {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    return "the integration";
+  }
+
+  return value
+    .split(/[-_]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+export function shouldSuppressIntermediateToolPreamble(text: string): boolean {
+  const trimmed = text.trim();
+  if (!trimmed || trimmed.length > 160) return false;
+  if (/\d/.test(trimmed) || /https?:\/\//i.test(trimmed)) return false;
+
+  return /^(let me|i('| wi)?ll|i am|i'm)\s+(check|look|look up|pull|review|try|see|fetch|read)\b/i.test(trimmed);
+}
+
+interface QueryLikeRecord {
+  toolName: string;
+  inputSummary: string;
+}
+
+export function isQueryLikeToolRecord(record: QueryLikeRecord): boolean {
+  const name = record.toolName;
+  if (
+    name.startsWith("memory_search") ||
+    name === "schedule_list" ||
+    name.startsWith("conversation_") ||
+    name === "config_view_my_config" ||
+    name === "integration_list" ||
+    name === "integration_templates"
+  ) {
+    return true;
+  }
+
+  if (name !== "integration_api_call") {
+    return false;
+  }
+
+  const parsedInput = parseJsonObject(record.inputSummary);
+  const method = typeof parsedInput?.method === "string" ? parsedInput.method.toUpperCase() : "GET";
+  return method === "GET";
+}
+
+export function formatQueryToolOutput(toolName: string, outputSummary: string, inputSummary = ""): string | null {
   try {
     const data = JSON.parse(outputSummary);
 
@@ -199,6 +380,41 @@ function formatQueryToolOutput(toolName: string, outputSummary: string): string 
           return `• ${typeof content === "string" ? content.slice(0, 200) : String(content)}`;
         });
         return `Here's what I found:\n\n${lines.join("\n")}`;
+      }
+    }
+
+    if (toolName === "integration_api_call" && data && typeof data === "object") {
+      const status = typeof data.status === "number" ? data.status : null;
+      const statusText = typeof data.status_text === "string" ? ` ${data.status_text}` : "";
+      const integrationName = humanizeIntegrationName(data.integration);
+      const bodyPayload = extractBodyPayload(data.body);
+      const bodyDetail = formatBodyDetail(bodyPayload);
+      const parsedInput = parseJsonObject(inputSummary);
+      const path = typeof parsedInput?.path === "string" ? parsedInput.path : "";
+      const integrationSlug = typeof parsedInput?.integration_slug === "string" ? parsedInput.integration_slug : "";
+
+      if (status !== null && (status < 200 || status >= 300)) {
+        return bodyDetail
+          ? `I checked ${integrationName}, but it returned ${status}${statusText}. ${bodyDetail}`
+          : `I checked ${integrationName}, but it returned ${status}${statusText}.`;
+      }
+
+      if (
+        integrationSlug === "discourse" &&
+        path.includes("/admin/dashboard")
+      ) {
+        const metric = extractDiscourseTrafficMetric(bodyPayload);
+        if (metric) {
+          return metric.label === "visitors"
+            ? `There were ${metric.value.toLocaleString("en-US")} visitors in the last 24 hours.`
+            : `The latest Discourse visits count is ${metric.value.toLocaleString("en-US")}.`;
+        }
+      }
+
+      if (status !== null) {
+        return bodyDetail
+          ? `I checked ${integrationName}. It returned ${status}${statusText}. ${bodyDetail}`
+          : `I checked ${integrationName}. It returned ${status}${statusText}, but I couldn't find a cleaner answer in that response.`;
       }
     }
   } catch {
@@ -789,16 +1005,23 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
             }
 
             // Send intermediate text when: step has text AND more steps follow AND not a cron run
+            const suppressedPreamble =
+              !isCron &&
+              step.finishReason === "tool-calls" &&
+              !!step.text?.trim() &&
+              shouldSuppressIntermediateToolPreamble(step.text);
+
             if (
               isCron ||
               step.finishReason !== "tool-calls" ||
-              !step.text?.trim()
+              !step.text?.trim() ||
+              suppressedPreamble
             ) {
               // Layer 3: send contextual status message for silent tool calls
               if (
                 !isCron &&
                 step.finishReason === "tool-calls" &&
-                !step.text?.trim() &&
+                (!step.text?.trim() || suppressedPreamble) &&
                 step.toolCalls.length > 0
               ) {
                 const statusToolName = step.toolCalls
@@ -909,23 +1132,22 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
             // Action-only fallback path
             const successfulRecords = executor.records.filter((r) => r.success);
             if (successfulRecords.length > 0) {
-              const queryToolRecords = successfulRecords.filter((record) => {
-                const name = record.toolName;
-                return (
-                  name.startsWith("memory_search") ||
-                  name === "schedule_list" ||
-                  name.startsWith("conversation_") ||
-                  name === "config_view_my_config" ||
-                  name === "integration_list" ||
-                  name === "integration_templates"
-                );
-              });
+              const queryToolRecords = successfulRecords.filter((record) =>
+                isQueryLikeToolRecord(record)
+              );
               const allQuery = queryToolRecords.length > 0 && queryToolRecords.length === successfulRecords.length;
 
               // For query-only invocations, try to surface the tool output directly
               if (allQuery && successfulRecords.length > 0) {
-                const output = successfulRecords[0].outputSummary;
-                const formatted = formatQueryToolOutput(successfulRecords[0].toolName, output);
+                const primaryQueryRecord =
+                  queryToolRecords.find((record) => record.toolName === "integration_api_call")
+                  ?? successfulRecords[0];
+                const output = primaryQueryRecord.outputSummary;
+                const formatted = formatQueryToolOutput(
+                  primaryQueryRecord.toolName,
+                  output,
+                  primaryQueryRecord.inputSummary
+                );
                 if (formatted) {
                   responseText = formatted;
                 } else {

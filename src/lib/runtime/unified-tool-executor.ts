@@ -135,7 +135,127 @@ export interface UnifiedInvocationRecord {
 
 const SUMMARY_MAX_LEN = 500;
 
+function truncateString(value: string, maxLen: number): string {
+  if (value.length <= maxLen) return value;
+  return value.slice(0, Math.max(0, maxLen - 1)).trimEnd() + "…";
+}
+
+function summarizeJsonValue(
+  value: unknown,
+  options: { maxStringLen: number; maxArrayItems: number; maxObjectEntries: number; maxDepth: number }
+): unknown {
+  if (options.maxDepth <= 0) {
+    if (typeof value === "string") return truncateString(value, options.maxStringLen);
+    if (typeof value === "number" || typeof value === "boolean" || value === null) return value;
+    if (Array.isArray(value)) return `[${value.length} items]`;
+    if (value && typeof value === "object") return "[object]";
+    return value ?? null;
+  }
+
+  if (typeof value === "string") {
+    return truncateString(value, options.maxStringLen);
+  }
+
+  if (Array.isArray(value)) {
+    return value
+      .slice(0, options.maxArrayItems)
+      .map((item) =>
+        summarizeJsonValue(item, { ...options, maxDepth: options.maxDepth - 1 })
+      );
+  }
+
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>)
+        .slice(0, options.maxObjectEntries)
+        .map(([key, entryValue]) => [
+          key,
+          summarizeJsonValue(entryValue, { ...options, maxDepth: options.maxDepth - 1 }),
+        ])
+    );
+  }
+
+  return value ?? null;
+}
+
+function summarizeIntegrationApiCallResult(value: unknown, maxLen: number): string | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+
+  const result = value as Record<string, unknown>;
+  if (typeof result.status !== "number") return null;
+
+  const baseSummary: Record<string, unknown> = {
+    status: result.status,
+    status_text: result.status_text,
+    integration: result.integration,
+    rate_limit_warning: result.rate_limit_warning,
+  };
+
+  const body = result.body;
+  const bodyVariants: unknown[] = [];
+
+  if (typeof body === "string" && body.trim().length > 0) {
+    try {
+      const parsed = JSON.parse(body);
+      bodyVariants.push(
+        summarizeJsonValue(parsed, {
+          maxStringLen: 120,
+          maxArrayItems: 12,
+          maxObjectEntries: 20,
+          maxDepth: 4,
+        })
+      );
+      bodyVariants.push(
+        summarizeJsonValue(parsed, {
+          maxStringLen: 60,
+          maxArrayItems: 6,
+          maxObjectEntries: 10,
+          maxDepth: 3,
+        })
+      );
+    } catch {
+      bodyVariants.push(truncateString(body, 220));
+      bodyVariants.push(truncateString(body, 120));
+    }
+  } else if (body !== undefined) {
+    bodyVariants.push(
+      summarizeJsonValue(body, {
+        maxStringLen: 120,
+        maxArrayItems: 12,
+        maxObjectEntries: 20,
+        maxDepth: 4,
+      })
+    );
+    bodyVariants.push(
+      summarizeJsonValue(body, {
+        maxStringLen: 60,
+        maxArrayItems: 6,
+        maxObjectEntries: 10,
+        maxDepth: 3,
+      })
+    );
+  }
+
+  for (const bodyVariant of [...bodyVariants, undefined]) {
+    const candidate =
+      bodyVariant === undefined
+        ? baseSummary
+        : { ...baseSummary, body: bodyVariant };
+    const json = JSON.stringify(candidate);
+    if (json.length <= maxLen) {
+      return json;
+    }
+  }
+
+  return JSON.stringify(baseSummary);
+}
+
 function truncateJson(value: unknown, maxLen: number): string {
+  const specializedSummary = summarizeIntegrationApiCallResult(value, maxLen);
+  if (specializedSummary) {
+    return specializedSummary;
+  }
+
   try {
     const json = JSON.stringify(value ?? {});
     return json.length > maxLen ? json.slice(0, maxLen) : json;

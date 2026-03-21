@@ -200,6 +200,36 @@ describe("unified-tool-executor", () => {
     assert.ok(executor.records[0].outputSummary.length <= 500);
   });
 
+  it("keeps integration_api_call summaries parseable when the body is large", async () => {
+    const executor = createUnifiedToolExecutor(mockConfig());
+    const largeBody = JSON.stringify({
+      reports: [
+        {
+          type: "visitors",
+          data: Array.from({ length: 50 }, (_, index) => [`2026-03-${String(index + 1).padStart(2, "0")}`, index]),
+        },
+      ],
+      extra: "x".repeat(2000),
+    });
+    const mockTool = createMockTool(async () => ({
+      status: 200,
+      status_text: "OK",
+      integration: "discourse",
+      body: largeBody,
+    }));
+    const wrapped = executor.wrapTool("integration_api_call", mockTool);
+
+    await (wrapped as Tool & { execute: (args: unknown) => Promise<unknown> }).execute({
+      value: "ignored",
+    });
+
+    assert.ok(executor.records[0].outputSummary.length <= 500);
+    const parsed = JSON.parse(executor.records[0].outputSummary) as Record<string, unknown>;
+    assert.equal(parsed.status, 200);
+    assert.equal(parsed.integration, "discourse");
+    assert.ok("body" in parsed || "rate_limit_warning" in parsed);
+  });
+
   // -----------------------------------------------------------------------
   // Phase 1.3: Policy enforcement tests
   // -----------------------------------------------------------------------
