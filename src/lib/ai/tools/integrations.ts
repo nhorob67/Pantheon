@@ -95,9 +95,9 @@ export function createIntegrationTools(input: CreateIntegrationToolsInput) {
         service_type: z.string().describe("Service type (e.g., 'discourse', 'github', 'jira', 'generic-rest')"),
         base_url: z.string().url().optional().describe("Base URL for API calls (e.g., 'https://community.example.com')"),
         auth_method: z
-          .enum(["api_key", "bearer", "basic", "header"])
+          .enum(["api_key", "bearer", "basic", "header", "multi_header"])
           .default("api_key")
-          .describe("How the credential is sent"),
+          .describe("How the credential is sent. Use 'multi_header' for services like Discourse that need multiple auth headers."),
         auth_header: z.string().optional().describe("Custom auth header name if applicable"),
         api_docs_url: z.string().url().optional().describe("URL of the API documentation you found"),
         discovered_endpoints: z
