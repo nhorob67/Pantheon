@@ -3,6 +3,11 @@ import { tool, type Tool } from "ai";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { enqueueDiscordRuntimeRun } from "@/lib/runtime/tenant-runtime-queue";
 import { processRuntimeRun } from "@/trigger/process-runtime-run";
+import {
+  getObligationByRunId,
+  isRuntimeObligationsEnabled,
+  onFollowUpScheduledForRunId,
+} from "@/lib/runtime/obligation-coordinator";
 
 // ---------------------------------------------------------------------------
 // Constants (exported for shared use by safety net)
@@ -85,6 +90,13 @@ export function createFollowUpTool(
         const scheduledFor = new Date(
           Date.now() + delay_minutes * 60 * 1000
         ).toISOString();
+        const obligationsEnabled = await isRuntimeObligationsEnabled(
+          config.admin,
+          config.customerId
+        );
+        const parentObligation = obligationsEnabled
+          ? await getObligationByRunId(config.admin, config.runId).catch(() => null)
+          : null;
 
         const childRun = await enqueueDiscordRuntimeRun(config.admin, {
           tenantId: config.tenantId,
@@ -105,10 +117,20 @@ export function createFollowUpTool(
             follow_up_depth: config.followUpDepth + 1,
             scheduled_for: scheduledFor,
             originating_run_id: config.runId,
+            obligation_id: parentObligation?.id ?? null,
             lifecycle_channel_id: config.channelId,
             lifecycle_reply_to_message_id: config.messageId ?? null,
           },
         });
+
+        if (parentObligation) {
+          await onFollowUpScheduledForRunId(
+            config.admin,
+            config.customerId,
+            config.runId,
+            childRun.id
+          ).catch(() => {});
+        }
 
         await processRuntimeRun.trigger(
           { runId: childRun.id },
@@ -168,6 +190,13 @@ export async function scheduleFollowUp(
   const scheduledFor = new Date(
     Date.now() + delayMinutes * 60 * 1000
   ).toISOString();
+  const obligationsEnabled = await isRuntimeObligationsEnabled(
+    input.admin,
+    input.customerId
+  );
+  const parentObligation = obligationsEnabled
+    ? await getObligationByRunId(input.admin, input.runId).catch(() => null)
+    : null;
 
   const childRun = await enqueueDiscordRuntimeRun(input.admin, {
     tenantId: input.tenantId,
@@ -188,10 +217,20 @@ export async function scheduleFollowUp(
       follow_up_depth: input.followUpDepth + 1,
       scheduled_for: scheduledFor,
       originating_run_id: input.runId,
+      obligation_id: parentObligation?.id ?? null,
       lifecycle_channel_id: input.channelId,
       lifecycle_reply_to_message_id: input.messageId ?? null,
     },
   });
+
+  if (parentObligation) {
+    await onFollowUpScheduledForRunId(
+      input.admin,
+      input.customerId,
+      input.runId,
+      childRun.id
+    ).catch(() => {});
+  }
 
   await processRuntimeRun.trigger(
     { runId: childRun.id },

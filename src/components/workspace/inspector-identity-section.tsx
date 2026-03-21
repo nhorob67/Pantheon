@@ -31,7 +31,7 @@ export function InspectorIdentitySection({
     setGoal(agent.goal || "");
     setBackstory(agent.backstory || "");
     setAutonomyLevel(agent.autonomy_level);
-  }, [agent]);
+  }, [agent.id, agent.display_name, agent.role, agent.goal, agent.backstory, agent.autonomy_level]);
 
   // Track if anything changed
   const hasChanges =

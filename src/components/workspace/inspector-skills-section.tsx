@@ -48,7 +48,8 @@ export function InspectorSkillsSection({
     setSelectedToolkits(agent.composio_toolkits || []);
     setToolOverrides(normalizeToolOverrides(agent.tool_approval_overrides));
     setToolControlsExpanded(false);
-  }, [agent]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agent.id]);
 
   const isGloballyDisabled = useCallback(
     (skillName: string) => {

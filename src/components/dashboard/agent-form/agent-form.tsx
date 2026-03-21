@@ -8,6 +8,8 @@ import type { CustomSkill } from "@/types/custom-skill";
 import type { SkillConfig } from "@/types/database";
 import type { ComposioConfig } from "@/types/composio";
 import { AGENT_TEMPLATES, type AgentTemplateDraft } from "@/lib/templates/agent-templates";
+import { PERSONALITY_PRESETS, type PersonalityPreset } from "@/lib/templates/personality-presets";
+import { PersonalityPicker } from "./personality-picker";
 import { Dialog } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { useState, useEffect, useMemo } from "react";
@@ -74,6 +76,7 @@ export function AgentForm({
   const [customScheduleFormOpen, setCustomScheduleFormOpen] = useState(false);
   const [advancedExpanded, setAdvancedExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState<'identity' | 'skills' | 'advanced'>('identity');
+  const [selectedPersonalityId, setSelectedPersonalityId] = useState<string | null>(null);
 
   const isGloballyDisabled = (skillName: string) => {
     const config = globalSkillConfigs.find((s) => s.skill_name === skillName);
@@ -150,6 +153,12 @@ export function AgentForm({
       setError(null);
       setSelectedTemplateId("scratch");
       resetNl();
+
+      // Detect if current backstory matches a personality preset
+      const matchingPreset = editAgent
+        ? PERSONALITY_PRESETS.find((p) => p.backstory === editAgent.backstory)
+        : null;
+      setSelectedPersonalityId(matchingPreset?.id ?? null);
       setAdvancedExpanded(
         !!(editAgent?.tool_approval_overrides && Object.keys(editAgent.tool_approval_overrides).length > 0) ||
         !!(editAgent?.composio_toolkits && editAgent.composio_toolkits.length > 0)
@@ -177,6 +186,11 @@ export function AgentForm({
       return;
     }
 
+    // If a personality is selected, preserve it as the backstory after template reset
+    const personalityPreset = selectedPersonalityId
+      ? PERSONALITY_PRESETS.find((p) => p.id === selectedPersonalityId)
+      : null;
+
     setSelectedTemplateId(template?.id ?? "scratch");
     reset(
       template
@@ -185,7 +199,7 @@ export function AgentForm({
             display_name: template.suggested_name,
             role: template.role,
             goal: template.goal,
-            backstory: template.backstory,
+            backstory: personalityPreset?.backstory ?? template.backstory,
             autonomy_level: template.autonomy_level,
             can_delegate: template.can_delegate,
             can_receive_delegation: template.can_receive_delegation,
@@ -193,6 +207,16 @@ export function AgentForm({
           }
         : defaultValues
     );
+  };
+
+  const handlePersonalitySelect = (preset: PersonalityPreset | null) => {
+    if (preset) {
+      setSelectedPersonalityId(preset.id);
+      setValue("backstory", preset.backstory);
+    } else {
+      setSelectedPersonalityId(null);
+      setValue("backstory", "");
+    }
   };
 
   const toggleSkill = (skill: string) => {
@@ -486,6 +510,21 @@ export function AgentForm({
                 {errors.goal && (
                   <p className="text-destructive text-sm mt-1">{errors.goal.message}</p>
                 )}
+              </div>
+
+              {/* Personality Preset */}
+              <div>
+                <label className="block text-sm text-text-secondary mb-1.5">
+                  Personality
+                  <span className="ml-2 text-xs font-normal text-text-dim">
+                    Sets the agent&apos;s communication style
+                  </span>
+                </label>
+                <PersonalityPicker
+                  presets={PERSONALITY_PRESETS}
+                  selectedId={selectedPersonalityId}
+                  onSelect={handlePersonalitySelect}
+                />
               </div>
 
               {/* Backstory */}

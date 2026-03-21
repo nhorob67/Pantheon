@@ -12,6 +12,12 @@ import {
   ONBOARDING_AGENT_TEMPLATE_IDS,
   type AgentTemplateDraft,
 } from "@/lib/templates/agent-templates";
+import {
+  PERSONALITY_PRESETS,
+  ONBOARDING_PERSONALITY_IDS,
+  type PersonalityPreset,
+} from "@/lib/templates/personality-presets";
+import { PersonalityPicker } from "@/components/dashboard/agent-form/personality-picker";
 import { Textarea } from "@/components/ui/textarea";
 import { AUTONOMY_OPTIONS } from "@/types/agent";
 import { Bot, ArrowRight, ArrowLeft, ShieldCheck, Sparkles, Zap, Wand2, Loader2 } from "lucide-react";
@@ -30,10 +36,14 @@ export function Step2Agent() {
   const [nlDescription, setNlDescription] = useState("");
   const [nlGenerating, setNlGenerating] = useState(false);
   const [nlError, setNlError] = useState<string | null>(null);
+  const [selectedPersonalityId, setSelectedPersonalityId] = useState<string | null>(null);
   const curatedTemplates = AGENT_TEMPLATES.filter((template) =>
     ONBOARDING_AGENT_TEMPLATE_IDS.includes(
       template.id as (typeof ONBOARDING_AGENT_TEMPLATE_IDS)[number]
     )
+  );
+  const onboardingPersonalities = PERSONALITY_PRESETS.filter((p) =>
+    (ONBOARDING_PERSONALITY_IDS as readonly string[]).includes(p.id)
   );
 
   const {
@@ -41,6 +51,7 @@ export function Step2Agent() {
     handleSubmit,
     control,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<FirstAgentData>({
     resolver: zodResolver(firstAgentSchema),
@@ -84,13 +95,28 @@ export function Step2Agent() {
   };
 
   const applyTemplate = (template: AgentTemplateDraft | null) => {
+    // If a personality is selected, preserve it as the backstory after template reset
+    const personalityPreset = selectedPersonalityId
+      ? PERSONALITY_PRESETS.find((p) => p.id === selectedPersonalityId)
+      : null;
+
     reset({
       display_name: template?.suggested_name ?? "",
       role: template?.role ?? "",
       goal: template?.goal ?? "",
-      backstory: template?.backstory ?? "",
+      backstory: personalityPreset?.backstory ?? template?.backstory ?? "",
       autonomy_level: template?.autonomy_level ?? "copilot",
     });
+  };
+
+  const handlePersonalitySelect = (preset: PersonalityPreset | null) => {
+    if (preset) {
+      setSelectedPersonalityId(preset.id);
+      setValue("backstory", preset.backstory);
+    } else {
+      setSelectedPersonalityId(null);
+      setValue("backstory", "");
+    }
   };
 
   const onSubmit = (data: FirstAgentData) => {
@@ -271,6 +297,26 @@ export function Step2Agent() {
           placeholder="e.g. Resolve customer questions quickly and accurately using our knowledge base"
           className="w-full bg-bg-card rounded-xl resize-none"
           error={errors.goal?.message}
+        />
+      </m.div>
+
+      {/* Personality Preset */}
+      <m.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.28 }}
+      >
+        <label className="block text-sm font-medium text-text-secondary mb-1.5">
+          Personality
+          <span className="ml-2 text-xs font-normal text-text-dim">
+            Sets the agent&apos;s communication style
+          </span>
+        </label>
+        <PersonalityPicker
+          presets={onboardingPersonalities}
+          selectedId={selectedPersonalityId}
+          onSelect={handlePersonalitySelect}
+          compact
         />
       </m.div>
 

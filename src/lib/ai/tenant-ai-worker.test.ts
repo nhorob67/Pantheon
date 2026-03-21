@@ -1,10 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {
-  classifyUserVisibleReply,
-  isPromiseLikeUserVisibleReply,
-  shouldAutoScheduleFollowUp,
-} from "./progress-replies.ts";
+import { shouldScheduleStructuralFollowUp } from "./tenant-ai-worker.ts";
 
 // ---------------------------------------------------------------------------
 // buildFollowUpPrompt — not exported, so we replicate its logic here and test
@@ -147,158 +143,64 @@ test("reconciliation only strips prefix matches, not arbitrary substrings", () =
 });
 
 // ---------------------------------------------------------------------------
-// Progress reply classification and follow-up safety net
+// Structural follow-up safety net
 // ---------------------------------------------------------------------------
 
-test("isPromiseLikeUserVisibleReply matches 'let me try'", () => {
-  assert.ok(isPromiseLikeUserVisibleReply("Sure, let me try that for you."));
-});
-
-test("isPromiseLikeUserVisibleReply matches 'let me check'", () => {
-  assert.ok(isPromiseLikeUserVisibleReply("let me check on that"));
-});
-
-test("isPromiseLikeUserVisibleReply matches 'let me set up'", () => {
-  assert.ok(isPromiseLikeUserVisibleReply("Let me set up the integration."));
-});
-
-test("isPromiseLikeUserVisibleReply matches 'let me look into'", () => {
-  assert.ok(isPromiseLikeUserVisibleReply("Let me look into that issue."));
-});
-
-test("isPromiseLikeUserVisibleReply matches 'let me work on'", () => {
-  assert.ok(isPromiseLikeUserVisibleReply("Let me work on the fix now."));
-});
-
-test("isPromiseLikeUserVisibleReply matches 'let me handle'", () => {
-  assert.ok(isPromiseLikeUserVisibleReply("Let me handle this for you."));
-});
-
-test("isPromiseLikeUserVisibleReply matches \"I'll try\"", () => {
-  assert.ok(isPromiseLikeUserVisibleReply("I'll try to fix that."));
-});
-
-test("isPromiseLikeUserVisibleReply matches \"I'll check\"", () => {
-  assert.ok(isPromiseLikeUserVisibleReply("I'll check on the status."));
-});
-
-test("isPromiseLikeUserVisibleReply matches \"I'll get\"", () => {
-  assert.ok(isPromiseLikeUserVisibleReply("I'll get that done right away."));
-});
-
-test("isPromiseLikeUserVisibleReply matches \"I'll do\"", () => {
-  assert.ok(isPromiseLikeUserVisibleReply("I'll do it now."));
-});
-
-test("isPromiseLikeUserVisibleReply matches \"I'll take care\"", () => {
-  assert.ok(isPromiseLikeUserVisibleReply("I'll take care of it."));
-});
-
-test("isPromiseLikeUserVisibleReply matches 'keep you posted'", () => {
-  assert.ok(isPromiseLikeUserVisibleReply("I'll keep you posted here."));
-});
-
-test("isPromiseLikeUserVisibleReply matches generic long-task heartbeat wording", () => {
-  assert.ok(isPromiseLikeUserVisibleReply("On it - I'm working through that now."));
-});
-
-test("isPromiseLikeUserVisibleReply matches with curly apostrophe", () => {
-  assert.ok(isPromiseLikeUserVisibleReply("I\u2019ll try to resolve this."));
-});
-
-test("isPromiseLikeUserVisibleReply is case insensitive", () => {
-  assert.ok(isPromiseLikeUserVisibleReply("LET ME TRY THAT"));
-  assert.ok(isPromiseLikeUserVisibleReply("I'LL CHECK ON IT"));
-});
-
-test("isPromiseLikeUserVisibleReply does not match unrelated text", () => {
-  assert.ok(!isPromiseLikeUserVisibleReply("Here is the result of your query."));
-});
-
-test("isPromiseLikeUserVisibleReply does not match partial word boundaries", () => {
-  assert.ok(!isPromiseLikeUserVisibleReply("The wallet me try scenario"));
-});
-
-test("isPromiseLikeUserVisibleReply does not match 'I will' without contraction", () => {
-  assert.ok(!isPromiseLikeUserVisibleReply("I will check on that."));
-});
-
-test("classifyUserVisibleReply marks promise-like progress as promise", () => {
+test("shouldScheduleStructuralFollowUp triggers when progress was sent without a final reply", () => {
   assert.equal(
-    classifyUserVisibleReply("Let me try a different approach.", "progress"),
-    "promise"
-  );
-});
-
-test("classifyUserVisibleReply marks non-promise progress as progress", () => {
-  assert.equal(
-    classifyUserVisibleReply("I checked the docs and found the auth requirement.", "progress"),
-    "progress"
-  );
-});
-
-test("classifyUserVisibleReply marks final substantive replies as result", () => {
-  assert.equal(
-    classifyUserVisibleReply("The integration is now configured correctly.", "final"),
-    "result"
-  );
-});
-
-test("shouldAutoScheduleFollowUp triggers on final promise replies", () => {
-  assert.equal(
-    shouldAutoScheduleFollowUp({
-      finalReplyKind: "promise",
+    shouldScheduleStructuralFollowUp({
       hasExplicitFollowUp: false,
-      allToolsFailed: false,
-      intermediatePromiseSent: false,
-      intermediateInformationalTextSent: true,
-      statusOnlyProgressSent: false,
-      skipFinalSend: false,
+      hasApprovalRequired: false,
+      progressUpdatesSentCount: 2,
+      finalReplySent: false,
     }),
     true
   );
 });
 
-test("shouldAutoScheduleFollowUp triggers when an intermediate promise was sent without a final result", () => {
+test("shouldScheduleStructuralFollowUp does not trigger when a final reply was sent", () => {
   assert.equal(
-    shouldAutoScheduleFollowUp({
-      finalReplyKind: "none",
+    shouldScheduleStructuralFollowUp({
       hasExplicitFollowUp: false,
-      allToolsFailed: false,
-      intermediatePromiseSent: true,
-      intermediateInformationalTextSent: false,
-      statusOnlyProgressSent: true,
-      skipFinalSend: true,
+      hasApprovalRequired: false,
+      progressUpdatesSentCount: 2,
+      finalReplySent: true,
     }),
-    true
+    false
   );
 });
 
-test("shouldAutoScheduleFollowUp triggers after status-only progress with no visible result", () => {
+test("shouldScheduleStructuralFollowUp does not trigger when approval is pending", () => {
   assert.equal(
-    shouldAutoScheduleFollowUp({
-      finalReplyKind: "none",
+    shouldScheduleStructuralFollowUp({
       hasExplicitFollowUp: false,
-      allToolsFailed: false,
-      intermediatePromiseSent: false,
-      intermediateInformationalTextSent: false,
-      statusOnlyProgressSent: true,
-      skipFinalSend: true,
+      hasApprovalRequired: true,
+      progressUpdatesSentCount: 2,
+      finalReplySent: false,
     }),
-    true
+    false
   );
 });
 
-test("shouldAutoScheduleFollowUp does not trigger when a real final result was sent", () => {
+test("shouldScheduleStructuralFollowUp does not trigger when explicit follow-up already exists", () => {
   assert.equal(
-    shouldAutoScheduleFollowUp({
-      finalReplyKind: "result",
+    shouldScheduleStructuralFollowUp({
+      hasExplicitFollowUp: true,
+      hasApprovalRequired: false,
+      progressUpdatesSentCount: 2,
+      finalReplySent: false,
+    }),
+    false
+  );
+});
+
+test("shouldScheduleStructuralFollowUp does not trigger without progress updates", () => {
+  assert.equal(
+    shouldScheduleStructuralFollowUp({
       hasExplicitFollowUp: false,
-      allToolsFailed: false,
-      intermediatePromiseSent: true,
-      intermediateInformationalTextSent: true,
-      statusOnlyProgressSent: true,
-      skipFinalSend: false,
+      hasApprovalRequired: false,
+      progressUpdatesSentCount: 0,
+      finalReplySent: false,
     }),
     false
   );

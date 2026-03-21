@@ -36,10 +36,13 @@ import {
 import { collectPendingFiles } from "./tools/file-create";
 import { scheduleFollowUp, MAX_FOLLOW_UP_DEPTH } from "./tools/follow-up";
 import {
-  classifyUserVisibleReply,
-  shouldAutoScheduleFollowUp,
-  type UserVisibleReplyKind,
-} from "./progress-replies";
+  getObligationById,
+  getObligationByRunId,
+  recordObligationHeartbeat,
+  recordObligationToolPhase,
+  recordUserUpdate,
+  shouldSendStatusUpdate,
+} from "@/lib/runtime/obligation-coordinator";
 import {
   CircuitBreakerOpenError,
   runWithCircuitBreaker,
@@ -52,6 +55,7 @@ import type {
   TenantRuntimeWorkerContext,
   TenantRuntimeWorkerResult,
 } from "@/lib/runtime/tenant-runtime-worker";
+import type { RuntimeObligation } from "@/types/obligation";
 import type { TenantRole, TenantRuntimeRun } from "@/types/tenant-runtime";
 
 const CIRCUIT_FAILURE_THRESHOLD = 3;
@@ -60,6 +64,7 @@ const DISCORD_BOT_TOKEN_ENV = "DISCORD_BOT_TOKEN";
 const PROGRESS_HEARTBEAT_INTERVAL_MS = 5_000;
 const TYPING_REFRESH_INTERVAL_MS = 10_000;
 const LONG_TASK_PROGRESS_UPDATE_MS = 20_000;
+const OBLIGATION_HEARTBEAT_UPDATE_MS = 20_000;
 const MAX_AUTOMATED_PROGRESS_UPDATES = 3;
 const PROGRESS_HEARTBEAT_MESSAGES = [
   "Still working through it now.",
@@ -259,6 +264,51 @@ async function resolvePreApprovedToolKeys(
   }
 
   return keys;
+}
+
+interface ExecutorRecordLike {
+  toolName: string;
+  success: boolean;
+  errorClass?: string | null;
+  outputSummary: string;
+}
+
+function extractApprovalIdFromExecutorRecords(
+  records: readonly ExecutorRecordLike[]
+): string | null {
+  for (const record of records) {
+    if (record.errorClass !== "approval_required") {
+      continue;
+    }
+
+    try {
+      const parsed = JSON.parse(record.outputSummary) as Record<string, unknown>;
+      if (typeof parsed.approval_id === "string" && parsed.approval_id.length > 0) {
+        return parsed.approval_id;
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return null;
+}
+
+export interface StructuralFollowUpDecisionInput {
+  hasExplicitFollowUp: boolean;
+  hasApprovalRequired: boolean;
+  progressUpdatesSentCount: number;
+  finalReplySent: boolean;
+}
+
+export function shouldScheduleStructuralFollowUp(
+  input: StructuralFollowUpDecisionInput
+): boolean {
+  if (input.hasExplicitFollowUp || input.hasApprovalRequired || input.finalReplySent) {
+    return false;
+  }
+
+  return input.progressUpdatesSentCount > 0;
 }
 
 export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker {
@@ -507,14 +557,14 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
         const sentStatusKeys = new Set<string>();
         let lastUserVisibleActivityAt = Date.now();
         let lastAutomatedProgressUpdateAt = 0;
+        let lastObligationHeartbeatAt = 0;
         let automatedProgressUpdatesSent = 0;
         let progressUpdatesSentCount = 0;
-        let statusOnlyProgressSent = false;
-        let intermediatePromiseSent = false;
-        let intermediateInformationalTextSent = false;
-        let lastPromiseLikeUpdate: string | null = null;
-        let finalUserVisibleReplyKind: UserVisibleReplyKind = "none";
         let followUpScheduled = false;
+        let obligation: RuntimeObligation | null = await getObligationByRunId(
+          admin,
+          context.run.id
+        ).catch(() => null);
 
         const sendVisibleReply = async (
           content: string,
@@ -535,6 +585,32 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           }
 
           const sentChunk = trimmed.slice(0, 1900);
+          const source = options?.source ?? "status";
+          const visibility = options?.visibility ?? "progress";
+
+          if (obligation && visibility !== "final") {
+            const obligationEventType = source === "heartbeat" ? "heartbeat" : "tool_phase";
+            if (obligationEventType === "heartbeat") {
+              await recordObligationHeartbeat(admin, obligation.id, context.run.id, {
+                source,
+                content_preview: sentChunk.slice(0, 160),
+              }).catch(() => {});
+            } else {
+              await recordObligationToolPhase(admin, obligation.id, context.run.id, {
+                source,
+                content_preview: sentChunk.slice(0, 160),
+              }).catch(() => {});
+            }
+
+            obligation = await getObligationById(admin, obligation.id).catch(() => obligation);
+            if (obligation) {
+              const decision = shouldSendStatusUpdate(obligation, obligationEventType);
+              if (!decision.shouldUpdate) {
+                return false;
+              }
+            }
+          }
+
           try {
             await sendDiscordChannelMessage(
               {
@@ -547,29 +623,17 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
             );
             deliveredIntermediateChunks.push(sentChunk);
             lastUserVisibleActivityAt = Date.now();
-            const visibility = options?.visibility ?? "progress";
-            const kind = classifyUserVisibleReply(sentChunk, visibility);
-            const source = options?.source ?? "status";
 
             if (source !== "final") {
               progressUpdatesSentCount += 1;
             }
 
-            if (source === "step") {
-              if (kind === "promise") {
-                intermediatePromiseSent = true;
-                lastPromiseLikeUpdate = sentChunk;
-              } else if (kind === "progress") {
-                intermediateInformationalTextSent = true;
-              }
-            } else if (source === "heartbeat" || source === "status") {
-              statusOnlyProgressSent = true;
-              if (kind === "promise") {
-                intermediatePromiseSent = true;
-                lastPromiseLikeUpdate = sentChunk;
-              }
-            } else if (source === "final") {
-              finalUserVisibleReplyKind = kind;
+            if (obligation && visibility !== "final") {
+              await recordUserUpdate(admin, obligation.id, context.run.id, {
+                source,
+                content_preview: sentChunk.slice(0, 160),
+              }).catch(() => {});
+              obligation = await getObligationById(admin, obligation.id).catch(() => obligation);
             }
 
             if (dedupeKey) {
@@ -583,6 +647,16 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
         };
 
         heartbeatInterval = setInterval(async () => {
+          if (
+            obligation &&
+            Date.now() - lastObligationHeartbeatAt > OBLIGATION_HEARTBEAT_UPDATE_MS
+          ) {
+            lastObligationHeartbeatAt = Date.now();
+            recordObligationHeartbeat(admin, obligation.id, context.run.id, {
+              source: "worker_heartbeat",
+            }).catch(() => {});
+          }
+
           const silenceMs = Date.now() - lastUserVisibleActivityAt;
           if (silenceMs > TYPING_REFRESH_INTERVAL_MS) {
             sendDiscordTypingIndicator(botToken, channelId).catch(() => {});
@@ -813,63 +887,6 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
         }
 
         const followUpDepth = typeof payload.follow_up_depth === "number" ? payload.follow_up_depth : 0;
-        if (!isCron && followUpDepth < MAX_FOLLOW_UP_DEPTH) {
-          const hasToolSuccess = executor.records.some((r) => r.success);
-          const hasExplicitFollowUp = executor.records.some(
-            (r) => r.toolName === "task_follow_up" && r.success
-          );
-          const allToolsFailed = executor.records.length > 0 && !hasToolSuccess;
-          const pendingFinalReplyKind = classifyUserVisibleReply(responseText, "final");
-          const shouldScheduleFollowUp = shouldAutoScheduleFollowUp({
-            finalReplyKind: pendingFinalReplyKind,
-            hasExplicitFollowUp,
-            allToolsFailed,
-            intermediatePromiseSent,
-            intermediateInformationalTextSent,
-            statusOnlyProgressSent,
-            skipFinalSend,
-          });
-
-          if (shouldScheduleFollowUp && assembled.agentId) {
-            const followUpTaskSummary =
-              responseText.slice(0, 300) ||
-              String(lastPromiseLikeUpdate || "").slice(0, 300) ||
-              "Continue the unresolved task and report back with findings.";
-            const followUpReason =
-              pendingFinalReplyKind === "promise" || intermediatePromiseSent
-                ? "A promise to continue or report back was sent before the task resolved."
-                : allToolsFailed
-                  ? "All tool calls failed and the task should be retried."
-                  : "Only progress updates were sent and the task still needs a proactive check-in.";
-            const scheduled = await scheduleFollowUp({
-              admin,
-              tenantId: context.run.tenant_id,
-              customerId: context.run.customer_id,
-              agentId: assembled.agentId,
-              channelId,
-              runId: context.run.id,
-              followUpDepth,
-              taskSummary: followUpTaskSummary,
-              reason: followUpReason,
-              delayMinutes: 2,
-              messageId: inboundMessageId,
-            }).catch(() => ({ success: false }));
-
-            if (scheduled.success) {
-              followUpScheduled = true;
-              if (responseText.length > 0) {
-                responseText += "\n\nI'll check back here in about 2 minutes.";
-              } else if (skipFinalSend) {
-                await sendVisibleReply("I'm still on this - I'll check back here in about 2 minutes.", {
-                  dedupeKey: "status:auto-follow-up",
-                  visibility: "progress",
-                  source: "status",
-                });
-              }
-            }
-          }
-        }
-
         // Store outbound message
         await storeOutboundMessage(admin, {
           tenantId: context.run.tenant_id,
@@ -992,6 +1009,7 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
 
         // Send to Discord (skip if intermediate sends already covered the full response)
         let sent: { messageIds: string[]; partsSent: number } = { messageIds: [], partsSent: 0 };
+        let finalReplySent = false;
 
         if (!skipFinalSend) {
           // Opt-in dedup guard: skip if this exact final reply was already sent
@@ -1010,7 +1028,6 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
         }
 
         if (!skipFinalSend) {
-          const pendingFinalReplyKind = classifyUserVisibleReply(responseText, "final");
           const responseParts = buildDiscordRuntimeResponseParts(responseText);
           const timeoutFetch: typeof fetch = async (url, init) => {
             const controller = new AbortController();
@@ -1075,8 +1092,7 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
               }
             );
           }
-
-          finalUserVisibleReplyKind = pendingFinalReplyKind;
+          finalReplySent = sent.partsSent > 0;
         }
 
         // Check if any tool was blocked by the approval gate — if so, the run
@@ -1085,6 +1101,53 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
         const hasApprovalRequired = executor.records.some(
           (r) => r.errorClass === "approval_required"
         );
+        const approvalId = extractApprovalIdFromExecutorRecords(
+          executor.records as unknown as readonly ExecutorRecordLike[]
+        );
+
+        if (!isCron && followUpDepth < MAX_FOLLOW_UP_DEPTH) {
+          const hasExplicitFollowUp = executor.records.some(
+            (r) => r.toolName === "task_follow_up" && r.success
+          );
+          const shouldScheduleFollowUp = shouldScheduleStructuralFollowUp({
+            hasExplicitFollowUp,
+            hasApprovalRequired,
+            progressUpdatesSentCount,
+            finalReplySent,
+          });
+
+          if (shouldScheduleFollowUp && assembled.agentId) {
+            const followUpTaskSummary =
+              responseText.slice(0, 300) ||
+              "Continue the unresolved task and report back with findings.";
+            const scheduled = await scheduleFollowUp({
+              admin,
+              tenantId: context.run.tenant_id,
+              customerId: context.run.customer_id,
+              agentId: assembled.agentId,
+              channelId,
+              runId: context.run.id,
+              followUpDepth,
+              taskSummary: followUpTaskSummary,
+              reason:
+                "The run sent progress updates but did not reach a terminal user-visible answer.",
+              delayMinutes: 2,
+              messageId: inboundMessageId,
+            }).catch(() => ({ success: false }));
+
+            if (scheduled.success) {
+              followUpScheduled = true;
+              await sendVisibleReply(
+                "I'm still on this - I'll check back here in about 2 minutes.",
+                {
+                  dedupeKey: "status:auto-follow-up",
+                  visibility: "progress",
+                  source: "status",
+                }
+              );
+            }
+          }
+        }
 
         const runResult = {
           ack: "ai_response_dispatched",
@@ -1099,9 +1162,9 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           dispatched_message_parts: sent.partsSent,
           response_preview: responseText.slice(0, 500),
           intermediate_progress_updates_sent: progressUpdatesSentCount,
-          intermediate_promise_sent: intermediatePromiseSent,
-          final_user_visible_reply_kind: finalUserVisibleReplyKind,
+          final_reply_sent: finalReplySent,
           follow_up_scheduled: followUpScheduled,
+          approval_id: approvalId,
           request_trace_id: context.requestTraceId,
           processed_at: new Date().toISOString(),
         };

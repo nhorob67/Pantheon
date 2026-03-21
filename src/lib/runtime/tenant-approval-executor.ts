@@ -17,6 +17,14 @@ import { auditLog } from "@/lib/security/audit";
 import type { TenantRuntimeRun } from "@/types/tenant-runtime";
 import { processRuntimeRun } from "@/trigger/process-runtime-run";
 import { updateDiscordApprovalMessage } from "./tenant-approval-discord-notifier";
+import {
+  getObligationById,
+  onApprovalGranted,
+} from "./obligation-coordinator";
+import {
+  buildApprovalGrantedReply,
+  sendDiscordObligationStatusReply,
+} from "./obligation-discord-notifier";
 
 export interface ExecuteTenantApprovalDecisionInput {
   tenantId: string;
@@ -250,6 +258,20 @@ export async function executeTenantApprovalDecision(
   }
 
   if (runId) {
+    const approvalRequestPayload =
+      updatedApproval.request_payload &&
+      typeof updatedApproval.request_payload === "object" &&
+      !Array.isArray(updatedApproval.request_payload)
+        ? (updatedApproval.request_payload as Record<string, unknown>)
+        : {};
+    const obligationId =
+      typeof approvalRequestPayload.obligation_id === "string"
+        ? approvalRequestPayload.obligation_id
+        : null;
+    const obligationResumeToken =
+      typeof approvalRequestPayload.obligation_resume_token === "string"
+        ? approvalRequestPayload.obligation_resume_token
+        : null;
     const { data: runRow } = await admin
       .from("tenant_runtime_runs")
       .select("*")
@@ -260,7 +282,7 @@ export async function executeTenantApprovalDecision(
     if (runRow) {
       const run = runRow as unknown as TenantRuntimeRun;
       if (decision === "approved" && run.status === "awaiting_approval") {
-        await transitionTenantRuntimeRun(admin, run, "retry", {
+        const resumedRun = await transitionTenantRuntimeRun(admin, run, "retry", {
           workerId: null,
           lockExpiresAt: null,
           metadataPatch: {
@@ -270,6 +292,30 @@ export async function executeTenantApprovalDecision(
             tool_resume_invocation_id: invocationId,
           },
         });
+        if (obligationId) {
+          const obligation = await getObligationById(admin, obligationId).catch(() => null);
+          const tokenMatches =
+            !obligationResumeToken ||
+            (obligation?.resume_token !== null &&
+              obligation?.resume_token === obligationResumeToken);
+
+          if (obligation && tokenMatches) {
+            const updatedObligation = await onApprovalGranted(
+              admin,
+              obligation.id,
+              updatedApproval.id,
+              resumedRun.id
+            ).catch(() => null);
+
+            if (updatedObligation) {
+              await sendDiscordObligationStatusReply(admin, updatedObligation, {
+                content: buildApprovalGrantedReply(),
+                runId: resumedRun.id,
+                eventType: "approval_granted",
+              }).catch(() => false);
+            }
+          }
+        }
         await processRuntimeRun.trigger({ runId: run.id }).catch((err) => {
           console.error("[approval-executor] Failed to trigger runtime run after approval:", err instanceof Error ? err.message : "unknown");
         });

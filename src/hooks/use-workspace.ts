@@ -1,6 +1,7 @@
 "use client";
 
 import { create } from "zustand";
+import { useShallow } from "zustand/react/shallow";
 
 export interface WorkspaceChatMessage {
   role: "user" | "assistant";
@@ -98,8 +99,12 @@ export const useInspectorOpen = () => useWorkspace((s) => s.inspectorOpen);
 export const useStreamingAgentId = () => useWorkspace((s) => s.streamingAgentId);
 export const useActiveInspectorSection = () => useWorkspace((s) => s.activeInspectorSection);
 
+const EMPTY_SESSION: AgentChatSession = { messages: [], draft: "" };
+
 export function useAgentSession(agentId: string | null) {
-  return useWorkspace((s) =>
-    agentId ? s.chatSessions[agentId] || { messages: [], draft: "" } : { messages: [], draft: "" }
+  return useWorkspace(
+    useShallow((s) =>
+      agentId ? s.chatSessions[agentId] || EMPTY_SESSION : EMPTY_SESSION
+    )
   );
 }

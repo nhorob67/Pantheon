@@ -24,14 +24,12 @@ export function ChatPanel({ agent, tenantId }: ChatPanelProps) {
   const session = useAgentSession(agent.id);
   const streamingAgentId = useStreamingAgentId();
   const inspectorOpen = useInspectorOpen();
-  const {
-    addMessage,
-    updateLastMessage,
-    clearChat,
-    setStreaming,
-    setDraft,
-    toggleInspector,
-  } = useWorkspace();
+  const addMessage = useWorkspace((s) => s.addMessage);
+  const updateLastMessage = useWorkspace((s) => s.updateLastMessage);
+  const clearChat = useWorkspace((s) => s.clearChat);
+  const setStreaming = useWorkspace((s) => s.setStreaming);
+  const setDraft = useWorkspace((s) => s.setDraft);
+  const toggleInspector = useWorkspace((s) => s.toggleInspector);
 
   const isStreaming = streamingAgentId === agent.id;
   const [error, setError] = useState<string | null>(null);

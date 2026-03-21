@@ -26,6 +26,8 @@ import {
 } from "@/lib/ai/attachment-handler";
 import { resolveDiscordUserRole } from "@/lib/runtime/tenant-discord-role-resolver";
 import { sendDiscordRuntimeCompletionNotification } from "@/lib/runtime/tenant-runtime-status-notifier";
+import { executeTenantRuntimeRun } from "@/lib/runtime/tenant-runtime-orchestrator";
+import { onRunFailed } from "@/lib/runtime/obligation-coordinator";
 
 async function isAuthorized(request: Request): Promise<boolean> {
   const expectedTokens = [
@@ -192,24 +194,11 @@ export async function POST(request: Request) {
     try {
       const resolvedModels = await resolveModels(admin, match.tenantId);
       const worker = createTenantAiWorker(admin);
-      const result = await worker.execute({
-        run: claimedRun,
+      const outcome = await executeTenantRuntimeRun(admin, worker, claimedRun, {
         requestTraceId,
         resolvedModels,
       });
-
-      const event = result.outcome === "completed"
-        ? "complete"
-        : result.outcome === "awaiting_approval"
-          ? "request_approval"
-          : "fail";
-      const transitionedRun = await transitionTenantRuntimeRun(admin, claimedRun, event, {
-        result: result.result,
-        errorMessage: result.outcome === "failed"
-          ? (result.errorMessage ?? "AI worker execution failed")
-          : undefined,
-      });
-      await sendDiscordRuntimeCompletionNotification(admin, transitionedRun);
+      await sendDiscordRuntimeCompletionNotification(admin, outcome.run);
 
       return NextResponse.json(
         {
@@ -217,7 +206,7 @@ export async function POST(request: Request) {
           tenant_id: match.tenantId,
           customer_id: match.customerId,
           routing_source: match.source,
-          outcome: result.outcome,
+          outcome: outcome.workerOutcome,
           run_id: run.id,
         },
         { status: 200 }
@@ -225,8 +214,13 @@ export async function POST(request: Request) {
     } catch (workerError) {
       const failedRun = await transitionTenantRuntimeRun(admin, claimedRun, "fail", {
         errorMessage: safeErrorMessage(workerError, "Inline worker execution failed"),
-      }).catch(() => {}); // Best-effort status update
+      }).catch(() => null); // Best-effort status update
       if (failedRun) {
+        await onRunFailed(
+          admin,
+          failedRun,
+          failedRun.error_message ?? undefined
+        ).catch(() => null);
         await sendDiscordRuntimeCompletionNotification(admin, failedRun);
       }
 

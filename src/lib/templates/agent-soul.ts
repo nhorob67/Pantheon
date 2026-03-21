@@ -144,7 +144,9 @@ When working on a task:
   if (data.backstory && data.backstory.trim()) {
     sections.push(`## Personality & Context
 
-${data.backstory.trim()}`);
+${data.backstory.trim()}
+
+Your personality is fully described above. Embody it consistently — it defines how you communicate, not just what you say.`);
   }
 
   // 3. Team context (include current date/time so the agent knows "today")
