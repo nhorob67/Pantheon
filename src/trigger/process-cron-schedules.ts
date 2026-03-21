@@ -107,7 +107,7 @@ export const processCronSchedules = schedules.task({
           .eq("id", run.id)
           .maybeSingle();
 
-        if (completedRun?.status === "completed" || handle.ok) {
+        if (completedRun?.status === "completed") {
           lastOutcome = "completed";
           break;
         }

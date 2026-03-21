@@ -309,8 +309,13 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
         const channelId =
           typeof payload.channel_id === "string" ? payload.channel_id.trim() : "";
         const content = typeof payload.content === "string" ? payload.content : "";
-        const inboundMessageId =
+        const rawMessageId =
           typeof payload.message_id === "string" ? payload.message_id : null;
+        // Cron/system runs use synthetic message IDs (e.g. "cron-...") that are
+        // not valid Discord snowflakes.  Passing them as a message_reference
+        // causes "Invalid Form Body" from the Discord API, so strip them.
+        const inboundMessageId =
+          rawMessageId && /^\d+$/.test(rawMessageId) ? rawMessageId : null;
         const userId =
           typeof payload.user_id === "string" ? payload.user_id : "unknown";
         const guildId =
