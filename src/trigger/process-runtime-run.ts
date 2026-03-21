@@ -11,6 +11,7 @@ import {
   releaseAsyncDelegationBudgetReservation,
   transitionTenantRuntimeRun,
 } from "@/lib/runtime/tenant-runtime-queue";
+import { sendAsyncDelegationLifecycleUpdate } from "@/lib/runtime/tenant-runtime-discord-lifecycle";
 
 export const processRuntimeRun = task({
   id: "process-runtime-run",
@@ -62,16 +63,18 @@ export const processRuntimeRun = task({
       resolvedModels,
     });
 
+    let transitionedRun: Awaited<ReturnType<typeof transitionTenantRuntimeRun>> | null = null;
+
     if (result.outcome === "completed") {
-      await transitionTenantRuntimeRun(admin, claimed, "complete", {
+      transitionedRun = await transitionTenantRuntimeRun(admin, claimed, "complete", {
         result: result.result,
       });
     } else if (result.outcome === "awaiting_approval") {
-      await transitionTenantRuntimeRun(admin, claimed, "request_approval", {
+      transitionedRun = await transitionTenantRuntimeRun(admin, claimed, "request_approval", {
         result: result.result,
       });
     } else if (result.outcome === "failed") {
-      await transitionTenantRuntimeRun(admin, claimed, "fail", {
+      transitionedRun = await transitionTenantRuntimeRun(admin, claimed, "fail", {
         result: result.result,
         errorMessage: result.errorMessage ?? "AI worker execution failed",
       });
@@ -81,6 +84,10 @@ export const processRuntimeRun = task({
           childRunId: claimed.id,
         }).catch(() => {});
       }
+    }
+
+    if (transitionedRun && claimed.run_kind === "delegation_runtime") {
+      await sendAsyncDelegationLifecycleUpdate(admin, transitionedRun).catch(() => {});
     }
 
     return {

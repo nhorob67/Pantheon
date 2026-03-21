@@ -143,6 +143,7 @@ body {
   background: var(--bg-deep);
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
 }
 
 body::before {
@@ -1622,6 +1623,9 @@ body::before {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+  .animate-spin, .animate-pulse, .animate-bounce {
+    animation: none !important;
+  }
   .ticker-track { animation: none; }
   .terminal-window { transform: none; }
   .terminal-window:hover { transform: none; }
@@ -2377,4 +2381,22 @@ body::before {
 @keyframes empty-state-glow {
   0%, 100% { box-shadow: 0 0 30px rgba(196,136,63,0.08); }
   50% { box-shadow: 0 0 50px rgba(196,136,63,0.14); }
+}
+
+/* Workspace: typing indicator dots */
+@keyframes workspace-dot-bounce {
+  0%, 60%, 100% { transform: scale(0.8); opacity: 0.4; }
+  30% { transform: scale(1); opacity: 1; }
+}
+
+/* Workspace: streaming cursor blink */
+@keyframes workspace-cursor-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* Workspace: save success flash */
+@keyframes workspace-save-flash {
+  0% { box-shadow: 0 0 0 0 rgba(94, 140, 97, 0.3); }
+  100% { box-shadow: 0 0 0 0 rgba(94, 140, 97, 0); }
 }

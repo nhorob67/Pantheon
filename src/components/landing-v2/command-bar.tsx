@@ -1,13 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import Link from "next/link";
 import { m, AnimatePresence } from "motion/react";
 import { useCommandBarScroll } from "@/hooks/use-landing-v2-animations";
+import { useModalA11y } from "@/components/ui/use-modal-a11y";
 
 export function CommandBar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { progressRef, tickerRef } = useCommandBarScroll();
+  const mobileMenuId = useId();
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const firstLinkRef = useRef<HTMLAnchorElement>(null);
+  const { trapTabKey } = useModalA11y({
+    dialogRef: overlayRef,
+    initialFocusRef: firstLinkRef,
+    open: mobileOpen,
+  });
+
+  useEffect(() => {
+    if (!mobileOpen) {
+      return;
+    }
+
+    const handleKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMobileOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [mobileOpen]);
+
+  const handleOverlayKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    trapTabKey(event);
+  };
 
   return (
     <nav className="command-bar">
@@ -30,9 +58,12 @@ export function CommandBar() {
           Deploy Free for 14 Days
         </Link>
         <button
+          type="button"
           className="command-bar-hamburger"
           onClick={() => setMobileOpen(!mobileOpen)}
-          aria-label="Toggle menu"
+          aria-label={mobileOpen ? "Close menu" : "Open menu"}
+          aria-expanded={mobileOpen}
+          aria-controls={mobileMenuId}
         >
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
             {mobileOpen ? (
@@ -56,13 +87,22 @@ export function CommandBar() {
       <AnimatePresence>
         {mobileOpen && (
           <m.div
+            id={mobileMenuId}
+            ref={overlayRef}
             className="v2-mobile-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={`${mobileMenuId}-title`}
+            onKeyDown={handleOverlayKeyDown}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
           >
-            <Link href="#skills" onClick={() => setMobileOpen(false)}>Operations</Link>
+            <h2 id={`${mobileMenuId}-title`} className="sr-only">
+              Site navigation
+            </h2>
+            <Link ref={firstLinkRef} href="#skills" onClick={() => setMobileOpen(false)}>Operations</Link>
             <Link href="#team" onClick={() => setMobileOpen(false)}>Registry</Link>
             <Link href="#how" onClick={() => setMobileOpen(false)}>Deployment</Link>
             <Link href="#pricing" onClick={() => setMobileOpen(false)}>Pricing</Link>

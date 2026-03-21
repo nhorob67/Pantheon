@@ -167,7 +167,9 @@ export async function executeTenantApprovalDecision(
             true
           );
 
-          await processRuntimeRun.trigger({ runId: runtimeRunId });
+          await processRuntimeRun.trigger({ runId: runtimeRunId }).catch((err) => {
+            console.error("[approval-executor] Failed to trigger heartbeat runtime run:", err instanceof Error ? err.message : "unknown");
+          });
         } else {
           await markHeartbeatRunDeliveryStatus(
             admin,
@@ -268,7 +270,9 @@ export async function executeTenantApprovalDecision(
             tool_resume_invocation_id: invocationId,
           },
         });
-        await processRuntimeRun.trigger({ runId: run.id });
+        await processRuntimeRun.trigger({ runId: run.id }).catch((err) => {
+          console.error("[approval-executor] Failed to trigger runtime run after approval:", err instanceof Error ? err.message : "unknown");
+        });
       }
 
       if (decision === "rejected" && run.status === "awaiting_approval") {
@@ -280,7 +284,9 @@ export async function executeTenantApprovalDecision(
             approval_id: updatedApproval.id,
           },
         });
-        await sendDiscordRuntimeCompletionNotification(admin, failedRun);
+        await sendDiscordRuntimeCompletionNotification(admin, failedRun).catch((err) => {
+          console.error("[approval-executor] Failed to send rejection notification:", err instanceof Error ? err.message : "unknown");
+        });
       }
     }
   }

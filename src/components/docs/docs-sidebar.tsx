@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronRight, Menu, X } from "lucide-react";
 import type { NavSection } from "@/lib/docs/schema";
+import { Sheet } from "@/components/ui/sheet";
 
 interface DocsSidebarProps {
   navigation: NavSection[];
@@ -25,11 +26,15 @@ function SidebarContent({
     <nav className="py-6 px-4 space-y-1">
       {navigation.map((section) => {
         const isCollapsed = collapsed[section.title] ?? false;
+        const sectionId = section.title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 
         return (
           <div key={section.title} className="mb-2">
             <button
+              type="button"
               onClick={() => toggleSection(section.title)}
+              aria-expanded={!isCollapsed}
+              aria-controls={`docs-nav-section-${sectionId}`}
               className="flex items-center gap-2 w-full px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-text-dim hover:text-text-secondary transition-colors cursor-pointer"
             >
               <ChevronRight
@@ -40,8 +45,11 @@ function SidebarContent({
               {section.title}
             </button>
 
-            {!isCollapsed && (
-              <div className="ml-3 border-l border-border-light space-y-0.5">
+            <div
+              id={`docs-nav-section-${sectionId}`}
+              hidden={isCollapsed}
+              className="ml-3 border-l border-border-light space-y-0.5"
+            >
                 {section.items.map((item) => {
                   const href = `/docs/${item.slug}`;
                   const isActive = pathname === href;
@@ -61,8 +69,7 @@ function SidebarContent({
                     </Link>
                   );
                 })}
-              </div>
-            )}
+            </div>
           </div>
         );
       })}
@@ -72,6 +79,7 @@ function SidebarContent({
 
 export function DocsSidebar({ navigation }: DocsSidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   return (
     <>
@@ -82,40 +90,46 @@ export function DocsSidebar({ navigation }: DocsSidebarProps) {
 
       {/* Mobile FAB */}
       <button
+        type="button"
         onClick={() => setMobileOpen(true)}
+        aria-label="Open documentation navigation"
+        aria-expanded={mobileOpen}
+        aria-controls="docs-mobile-navigation"
         className="md:hidden fixed bottom-6 right-6 z-40 w-12 h-12 bg-accent rounded-full flex items-center justify-center shadow-lg shadow-[rgba(196,136,63,0.2)] cursor-pointer"
       >
         <Menu className="w-5 h-5 text-bg-deep" />
       </button>
 
       {/* Mobile drawer */}
-      {mobileOpen && (
-        <>
-          <div
-            className="md:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
-            onClick={() => setMobileOpen(false)}
+      <Sheet
+        open={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        side="left"
+        ariaLabel="Documentation navigation"
+        panelClassName="md:hidden bg-bg-dark"
+        initialFocusRef={closeButtonRef}
+      >
+        <div id="docs-mobile-navigation" className="px-4 py-4">
+          <div className="flex items-center justify-between border-b border-border pb-4">
+            <span className="text-sm font-semibold font-headline">
+              Navigation
+            </span>
+            <button
+              ref={closeButtonRef}
+              type="button"
+              onClick={() => setMobileOpen(false)}
+              aria-label="Close documentation navigation"
+              className="p-1 text-text-dim hover:text-text-primary cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <SidebarContent
+            navigation={navigation}
+            onNavigate={() => setMobileOpen(false)}
           />
-          <aside className="md:hidden fixed inset-y-0 left-0 z-50 w-72 bg-bg-dark border-r border-border overflow-y-auto">
-            <div className="flex items-center justify-between px-4 py-4 border-b border-border">
-              <span
-                className="text-sm font-semibold font-headline"
-              >
-                Navigation
-              </span>
-              <button
-                onClick={() => setMobileOpen(false)}
-                className="p-1 text-text-dim hover:text-text-primary cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <SidebarContent
-              navigation={navigation}
-              onNavigate={() => setMobileOpen(false)}
-            />
-          </aside>
-        </>
-      )}
+        </div>
+      </Sheet>
     </>
   );
 }

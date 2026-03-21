@@ -11,6 +11,11 @@ export function HeroCommand() {
   const [phase, setPhase] = useState(0);
 
   useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      const frameId = requestAnimationFrame(() => setPhase(4));
+      return () => cancelAnimationFrame(frameId);
+    }
+
     // Boot sequence: 0=dark, 1=network appears, 2=status, 3=headline, 4=full
     const timers = [
       setTimeout(() => setPhase(1), 300),

@@ -26,6 +26,15 @@ export function DocsNav() {
 
       <div className="flex items-center gap-6">
         <button
+          type="button"
+          onClick={openSearch}
+          aria-label="Search documentation"
+          className="inline-flex sm:hidden items-center justify-center rounded-xl border border-border bg-bg-card p-2.5 text-text-dim hover:border-border-light hover:text-text-primary transition-colors cursor-pointer"
+        >
+          <Search className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
           onClick={openSearch}
           className="hidden sm:flex items-center gap-3 bg-bg-card border border-border rounded-xl w-64 px-3.5 py-2 text-sm text-text-dim hover:border-border-light transition-colors cursor-pointer"
         >

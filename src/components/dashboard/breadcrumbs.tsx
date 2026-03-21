@@ -8,6 +8,7 @@ const LABEL_MAP: Record<string, string> = {
   dashboard: "Dashboard",
   settings: "Settings",
   agents: "Agents",
+  workspace: "Workspace",
   conversations: "Conversations",
   usage: "Usage",
   onboarding: "Onboarding",

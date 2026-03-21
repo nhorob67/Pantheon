@@ -84,6 +84,7 @@ export default function LoginPage() {
             We sent a password reset link to <strong>{email}</strong>.
           </p>
           <button
+            type="button"
             onClick={() => setResetSent(false)}
             className="mt-4 text-accent hover:text-accent-light text-sm font-medium cursor-pointer"
           >
@@ -142,8 +143,9 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-pressed={showPassword}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-text-dim hover:text-text-secondary cursor-pointer"
-                tabIndex={-1}
               >
                 {showPassword ? (
                   <EyeOff className="w-4 h-4" />
@@ -154,7 +156,11 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {error && <p className="text-destructive text-sm">{error}</p>}
+          {error && (
+            <p role="alert" className="text-destructive text-sm">
+              {error}
+            </p>
+          )}
 
           <button
             type="submit"
@@ -162,7 +168,7 @@ export default function LoginPage() {
             className="w-full bg-accent hover:bg-accent-light text-bg-deep font-semibold rounded-full px-6 py-3 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
           >
             {loading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
+              <Loader2 className="w-5 h-5 motion-safe:animate-spin" />
             ) : (
               <>
                 Sign In

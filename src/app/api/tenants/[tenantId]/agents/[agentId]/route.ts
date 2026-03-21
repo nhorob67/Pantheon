@@ -23,6 +23,20 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ tenantId: string; agentId: string }> }
 ) {
+  return updateAgent(request, { params });
+}
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ tenantId: string; agentId: string }> }
+) {
+  return updateAgent(request, { params });
+}
+
+async function updateAgent(
+  request: Request,
+  { params }: { params: Promise<{ tenantId: string; agentId: string }> }
+) {
   const parsedParams = await parseTenantRouteParams({
     request,
     params,

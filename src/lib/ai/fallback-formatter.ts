@@ -60,12 +60,12 @@ const INFORMATIONAL_TOOLS = new Set(["web_search", "web_fetch"]);
 // ---------------------------------------------------------------------------
 
 const STATUS_MESSAGES: Record<string, string> = {
-  web_search: "Searching the web...",
-  web_fetch: "Reading that page...",
-  memory_search: "Checking my memory...",
-  conversation_search: "Looking through our conversations...",
-  delegate_task: "Handing that off to a teammate...",
-  delegate_task_async: "Handing that off to a teammate...",
+  web_search: "I'm checking a few sources now.",
+  web_fetch: "I'm reading through that now.",
+  memory_search: "I'm checking what I already know about that.",
+  conversation_search: "I'm looking back through our earlier messages.",
+  delegate_task: "I'm looping in a teammate on that part.",
+  delegate_task_async: "I'm looping in a teammate on that part.",
 };
 
 /**
@@ -74,7 +74,13 @@ const STATUS_MESSAGES: Record<string, string> = {
  */
 export function getToolStatusMessage(toolName: string): string | null {
   if (STATUS_MESSAGES[toolName]) return STATUS_MESSAGES[toolName];
-  if (toolName.startsWith("browser_")) return "Opening a browser...";
+  if (toolName.startsWith("browser_")) return "I'm opening it directly so I can check it myself.";
+  return null;
+}
+
+export function getToolStatusKey(toolName: string): string | null {
+  if (STATUS_MESSAGES[toolName]) return toolName;
+  if (toolName.startsWith("browser_")) return "browser";
   return null;
 }
 
@@ -162,6 +168,7 @@ function friendlyAction(toolName: string): string | null {
   if (toolName.startsWith("schedule_")) return "updated your schedules";
   if (toolName.startsWith("conversation_")) return "checked our conversation history";
   if (toolName === "delegate_task" || toolName === "delegate_task_async") return "handed that off to a teammate";
+  if (toolName === "task_follow_up") return "scheduled a follow-up";
   if (toolName === "file_create") return "created a file";
   if (toolName.startsWith("config_")) return "updated the configuration";
   return null;

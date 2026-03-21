@@ -35,6 +35,18 @@ export const agentPreviewSchema = z.object({
   message: z.string().min(1).max(2000),
 });
 
+export const agentPreviewChatSchema = z.object({
+  messages: z
+    .array(
+      z.object({
+        role: z.enum(["user", "assistant"]),
+        content: z.string().min(1).max(8000),
+      })
+    )
+    .min(1)
+    .max(50),
+});
+
 export const updateAgentSchema = z.object({
   display_name: z
     .string()

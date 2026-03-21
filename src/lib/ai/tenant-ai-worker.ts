@@ -9,7 +9,12 @@ import { maybeGenerateSummary } from "./session-summarizer";
 import { parseAttachmentsFromPayload, isImageAttachment } from "./attachment-handler";
 import { extractBehavioralPatterns } from "./procedural-memory";
 import { recordConversationTrace, extractWebCitations, extractDelegationEvents } from "./trace-recorder";
-import { formatInformationalFallback, getToolStatusMessage, isGenericInformationalResponse } from "./fallback-formatter";
+import {
+  formatInformationalFallback,
+  getToolStatusKey,
+  getToolStatusMessage,
+  isGenericInformationalResponse,
+} from "./fallback-formatter";
 import { flushBrowserSessionsForRun } from "./tools/browser";
 import { resolveWorkerModels } from "./model-resolver";
 import {
@@ -207,13 +212,20 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
         });
 
         if (trialCheck.blocked) {
-          const payload = context.run.payload;
-          const channelId =
-            typeof payload.channel_id === "string" ? payload.channel_id.trim() : "";
-          if (channelId && trialCheck.message) {
-            const botToken = getDiscordBotToken();
-            await sendDiscordChannelMessageSequence(
-              { botToken, channelId, contents: [trialCheck.message] },
+        const payload = context.run.payload;
+        const channelId =
+          typeof payload.channel_id === "string" ? payload.channel_id.trim() : "";
+        const runtimeReplyToMessageId =
+          typeof payload.message_id === "string" ? payload.message_id : null;
+        if (channelId && trialCheck.message) {
+          const botToken = getDiscordBotToken();
+          await sendDiscordChannelMessageSequence(
+              {
+                botToken,
+                channelId,
+                contents: [trialCheck.message],
+                replyToMessageId: runtimeReplyToMessageId,
+              },
               fetch
             ).catch(() => {});
           }
@@ -415,30 +427,61 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
         // Show typing indicator while generating
         await sendDiscordTypingIndicator(botToken, channelId);
 
-        // Run-scoped activity heartbeat: keep typing indicator alive during long operations.
-        // Discord typing expires after ~10s, so refresh every 8s while the worker is active.
+        // Track chunks that were actually delivered to Discord (not just attempted)
+        const deliveredIntermediateChunks: string[] = [];
+        const sentStatusKeys = new Set<string>();
         let lastUserVisibleActivityAt = Date.now();
-        let statusMessageSent = false;
+        let genericStatusSent = false;
+
+        const sendVisibleReply = async (
+          content: string,
+          dedupeKey?: string
+        ): Promise<boolean> => {
+          const trimmed = content.trim();
+          if (!trimmed) {
+            return false;
+          }
+
+          if (dedupeKey && sentStatusKeys.has(dedupeKey)) {
+            return false;
+          }
+
+          const sentChunk = trimmed.slice(0, 1900);
+          try {
+            await sendDiscordChannelMessage(
+              {
+                botToken,
+                channelId,
+                content: sentChunk,
+                replyToMessageId: inboundMessageId,
+              },
+              fetch
+            );
+            deliveredIntermediateChunks.push(sentChunk);
+            lastUserVisibleActivityAt = Date.now();
+            if (dedupeKey) {
+              sentStatusKeys.add(dedupeKey);
+            }
+            return true;
+          } catch (err) {
+            console.error("[ai-worker] Intermediate Discord send failed:", safeErrorMessage(err));
+            return false;
+          }
+        };
+
         heartbeatInterval = setInterval(async () => {
           const silenceMs = Date.now() - lastUserVisibleActivityAt;
           if (silenceMs > 10_000) {
             sendDiscordTypingIndicator(botToken, channelId).catch(() => {});
           }
-          // After 25s of silence with no user-visible text, send one status message
-          if (silenceMs > 25_000 && !statusMessageSent && deliveredIntermediateChunks.length === 0) {
-            statusMessageSent = true;
-            sendDiscordChannelMessage(
-              { botToken, channelId, content: "Still working on this..." },
-              fetch
-            ).then(() => {
-              lastUserVisibleActivityAt = Date.now();
-              deliveredIntermediateChunks.push("Still working on this...");
-            }).catch(() => {});
+          // Don't let long silent tool work feel like a dropped conversation.
+          if (silenceMs > 8_000 && !genericStatusSent && deliveredIntermediateChunks.length === 0) {
+            genericStatusSent = true;
+            sendVisibleReply("On it - I'm working through that now.", "status:generic").catch(
+              () => {}
+            );
           }
         }, 8_000);
-
-        // Track chunks that were actually delivered to Discord (not just attempted)
-        const deliveredIntermediateChunks: string[] = [];
 
         const result = await generateText({
           model: primaryModel,
@@ -459,14 +502,17 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
                 !isCron &&
                 step.finishReason === "tool-calls" &&
                 !step.text?.trim() &&
-                step.toolCalls.length > 0 &&
-                deliveredIntermediateChunks.length === 0
+                step.toolCalls.length > 0
               ) {
-                const statusMsg = getToolStatusMessage(step.toolCalls[0].toolName);
-                if (statusMsg) {
-                  sendDiscordChannelMessage({ botToken, channelId, content: statusMsg }, fetch)
-                    .then(() => { deliveredIntermediateChunks.push(statusMsg); lastUserVisibleActivityAt = Date.now(); })
-                    .catch(() => {});
+                const statusToolName = step.toolCalls
+                  .map((toolCall) => toolCall.toolName)
+                  .find((toolName) => getToolStatusKey(toolName) !== null);
+                if (statusToolName) {
+                  const statusMsg = getToolStatusMessage(statusToolName);
+                  const statusKey = getToolStatusKey(statusToolName);
+                  if (statusMsg && statusKey) {
+                    await sendVisibleReply(statusMsg, `tool:${statusKey}`);
+                  }
                 }
               }
               return;
@@ -480,21 +526,7 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
               intermediateText = stepRedactor(intermediateText);
             }
 
-            const sentChunk = intermediateText.slice(0, 1900);
-            try {
-              await sendDiscordChannelMessage(
-                {
-                  botToken,
-                  channelId,
-                  content: sentChunk,
-                },
-                fetch
-              );
-              deliveredIntermediateChunks.push(sentChunk);
-              lastUserVisibleActivityAt = Date.now();
-            } catch (err) {
-              console.error("[ai-worker] Intermediate Discord send failed:", safeErrorMessage(err));
-            }
+            await sendVisibleReply(intermediateText);
 
             // Refresh typing indicator for next step
             sendDiscordTypingIndicator(botToken, channelId).catch(() => {});
@@ -570,6 +602,7 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
                 if (name.startsWith("schedule_")) return "updated your schedules";
                 if (name.startsWith("conversation_")) return "checked our conversation history";
                 if (name === "delegate_task" || name === "delegate_task_async") return "handed that off to a teammate";
+                if (name === "task_follow_up") return "scheduled a follow-up";
                 if (name === "file_create") return "created a file";
                 if (name.startsWith("config_")) return "updated the configuration";
                 return name.replace(/_/g, " ");
@@ -669,6 +702,7 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
                 ? "All tool calls failed — scheduling follow-up to retry."
                 : "Auto-detected promise without action — scheduling follow-up to attempt the task.",
               delayMinutes: 2,
+              messageId: inboundMessageId,
             }).catch(() => ({ success: false }));
 
             if (scheduled.success) {

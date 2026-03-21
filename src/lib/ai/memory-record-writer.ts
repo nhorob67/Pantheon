@@ -124,3 +124,117 @@ export async function writeMemoryRecord(
     supersededId: row.superseded_id ?? undefined,
   };
 }
+
+/* ------------------------------------------------------------------ */
+/*  Update an existing memory (tombstone old → insert replacement)    */
+/* ------------------------------------------------------------------ */
+
+export interface UpdateMemoryRecordInput {
+  admin: SupabaseClient;
+  tenantId: string;
+  customerId: string;
+  existingId: string;
+  content: string;
+  memoryType: MemoryType;
+  confidence: number;
+  source: "runtime" | "system";
+  captureLevel?: MemoryCaptureLevel;
+  excludeCategories?: string[];
+  agentId?: string | null;
+}
+
+export async function updateMemoryRecord(
+  input: UpdateMemoryRecordInput
+): Promise<WriteMemoryRecordResult> {
+  const {
+    admin,
+    tenantId,
+    customerId,
+    existingId,
+    content,
+    memoryType,
+    confidence,
+    source,
+    captureLevel = "standard",
+    excludeCategories = [],
+    agentId = null,
+  } = input;
+
+  // 1. Validate content (same rules as write)
+  const validation = validateContent({
+    content,
+    memoryType,
+    confidence,
+    captureLevel,
+    excludeCategories,
+  });
+  if (!validation.valid) {
+    return { ok: false, reason: validation.reason };
+  }
+
+  // 2. Verify the existing record belongs to this tenant and is active
+  const { data: existing, error: fetchErr } = await admin
+    .from("tenant_memory_records")
+    .select("id, memory_type")
+    .eq("id", existingId)
+    .eq("tenant_id", tenantId)
+    .eq("is_tombstoned", false)
+    .maybeSingle();
+
+  if (fetchErr) {
+    return { ok: false, reason: `Lookup failed: ${fetchErr.message}` };
+  }
+  if (!existing) {
+    return { ok: false, reason: "Memory not found or already deleted" };
+  }
+
+  // 3. Generate embedding (best-effort)
+  let embedding: number[] = [];
+  try {
+    embedding = await generateEmbedding(content);
+  } catch {
+    // proceed without embedding
+  }
+
+  // 4. Classify tier
+  const tier = classifyMemoryTier(memoryType, confidence, content);
+  const contentHash = computeContentHash(content);
+
+  // 5. Insert new record
+  const { data: inserted, error: insertErr } = await admin
+    .from("tenant_memory_records")
+    .insert({
+      tenant_id: tenantId,
+      customer_id: customerId,
+      session_id: null,
+      memory_tier: tier,
+      memory_type: memoryType,
+      content_text: content,
+      content_json: {},
+      confidence,
+      source,
+      is_tombstoned: false,
+      content_hash: contentHash,
+      ...(embedding.length > 0 ? { embedding: JSON.stringify(embedding) } : {}),
+      ...(agentId ? { agent_id: agentId } : {}),
+    })
+    .select("id")
+    .single();
+
+  if (insertErr) {
+    return { ok: false, reason: `Update insert failed: ${insertErr.message}` };
+  }
+
+  // 6. Tombstone the old record, linking to the new one
+  await admin
+    .from("tenant_memory_records")
+    .update({ is_tombstoned: true, superseded_by: inserted.id })
+    .eq("id", existingId);
+
+  return {
+    ok: true,
+    id: inserted.id,
+    tier,
+    supersededId: existingId,
+  };
+}

@@ -23,6 +23,7 @@ import { createFileCreateTool } from "./file-create";
 import { createFollowUpTool } from "./follow-up";
 import { createIntegrationTools } from "./integrations";
 import { ensureNativeToolCatalog } from "@/lib/runtime/tool-catalog";
+import { resolveDiscordLifecycleReplyContext } from "@/lib/runtime/tenant-runtime-discord-lifecycle";
 import {
   isKillSwitchEnabled,
   resolveCustomerFeatureFlag,
@@ -304,7 +305,12 @@ export async function resolveToolsForAgent(input: ToolRegistryInput): Promise<To
   }
 
   // Follow-up tool — available for runtime runs with a channel (not cron)
-  if (channelId && input.runtimeRun?.id) {
+  const runtimeReplyContext = input.runtimeRun
+    ? resolveDiscordLifecycleReplyContext(input.runtimeRun)
+    : null;
+  const followUpChannelId = runtimeReplyContext?.channelId ?? channelId;
+
+  if (followUpChannelId && input.runtimeRun?.id) {
     const followUpDepth =
       typeof input.runtimeRun.metadata?.follow_up_depth === "number"
         ? input.runtimeRun.metadata.follow_up_depth
@@ -316,7 +322,8 @@ export async function resolveToolsForAgent(input: ToolRegistryInput): Promise<To
         tenantId: input.tenantId,
         customerId: input.customerId,
         agentId: input.agent.id,
-        channelId,
+        channelId: followUpChannelId,
+        messageId: runtimeReplyContext?.replyToMessageId ?? null,
         runId: input.runtimeRun.id,
         followUpDepth,
       })

@@ -19,30 +19,47 @@ function getFocusableElements(container: HTMLElement): HTMLElement[] {
 
 interface UseModalA11yOptions {
   dialogRef: RefObject<HTMLElement | null>;
-  initialFocusRef: RefObject<HTMLElement | null>;
+  initialFocusRef?: RefObject<HTMLElement | null>;
+  open?: boolean;
 }
 
 export function useModalA11y({
   dialogRef,
   initialFocusRef,
+  open = true,
 }: UseModalA11yOptions) {
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
+    if (!open) {
+      return;
+    }
+
     previousFocusRef.current =
       document.activeElement instanceof HTMLElement
         ? document.activeElement
         : null;
 
     const frameId = requestAnimationFrame(() => {
-      initialFocusRef.current?.focus();
+      if (initialFocusRef?.current) {
+        initialFocusRef.current.focus();
+        return;
+      }
+
+      const dialog = dialogRef.current;
+      if (!dialog) {
+        return;
+      }
+
+      const [firstFocusable] = getFocusableElements(dialog);
+      firstFocusable?.focus();
     });
 
     return () => {
       cancelAnimationFrame(frameId);
       previousFocusRef.current?.focus();
     };
-  }, [initialFocusRef]);
+  }, [dialogRef, initialFocusRef, open]);
 
   const trapTabKey = (event: KeyboardEvent) => {
     if (event.key !== "Tab") return false;

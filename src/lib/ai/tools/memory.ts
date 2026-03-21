@@ -2,7 +2,7 @@ import { tool } from "ai";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { MemoryType } from "../memory-tier-classifier";
-import { writeMemoryRecord } from "../memory-record-writer";
+import { writeMemoryRecord, updateMemoryRecord } from "../memory-record-writer";
 import { hybridMemorySearch } from "../memory-retrieval";
 import { searchConversations } from "../conversation-search";
 import { loadSummaryDAG, formatTimeRange } from "../summary-dag";
@@ -81,6 +81,53 @@ export function createMemoryTools(
         }
 
         return { saved: true, memory: { id: result.id, content_text: content, memory_type: memoryType, memory_tier: result.tier }, tier: result.tier };
+      },
+    }),
+
+    memory_update: tool({
+      description:
+        "Update an existing memory record with new content. Use this when the user wants to modify, append to, or replace information in an existing memory (e.g. adding items to a to-do list, updating a status, correcting a fact). Search for the memory first with memory_search, then pass its ID here.",
+      inputSchema: z.object({
+        id: z.string().uuid().describe("The ID of the existing memory to update (from memory_search or memory_read)"),
+        content: z.string().describe("The full updated content to replace the old memory with"),
+        memory_type: z
+          .enum(["fact", "preference", "commitment", "outcome", "daily_log"])
+          .describe("Type of memory: fact (data), preference (likes/dislikes), commitment (plans), outcome (result), daily_log (activity summary)"),
+        confidence: z
+          .number()
+          .min(0)
+          .max(1)
+          .optional()
+          .describe("Confidence level 0-1 (default 0.8)"),
+      }),
+      execute: async ({ id, content, memory_type, confidence: rawConfidence }) => {
+        const confidence = rawConfidence ?? 0.8;
+        const memoryType = memory_type as import("../memory-tier-classifier").MemoryType;
+
+        const result = await updateMemoryRecord({
+          admin,
+          tenantId,
+          customerId,
+          existingId: id,
+          content,
+          memoryType,
+          confidence,
+          source: "runtime",
+          captureLevel,
+          excludeCategories,
+          agentId,
+        });
+
+        if (!result.ok) {
+          return { error: result.reason };
+        }
+
+        return {
+          updated: true,
+          memory: { id: result.id, content_text: content, memory_type: memoryType, memory_tier: result.tier },
+          replaced_id: result.supersededId,
+          tier: result.tier,
+        };
       },
     }),
 

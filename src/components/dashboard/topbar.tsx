@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
@@ -13,6 +13,7 @@ import {
   LayoutDashboard,
   Bot,
   MessageCircle,
+  Columns3,
   Zap,
   Brain,
   Wrench,
@@ -37,6 +38,7 @@ const EMPTY_SETTINGS_ITEMS: SettingsNavItem[] = [];
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/agents", label: "Agents", icon: Bot },
+  { href: "/workspace", label: "Workspace", icon: Columns3 },
   { href: "/conversations", label: "Conversations", icon: MessageCircle },
 ];
 
@@ -78,6 +80,7 @@ export function Topbar({
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [switchingTenant, setSwitchingTenant] = useState(false);
+  const mobileNavCloseButtonRef = useRef<HTMLButtonElement>(null);
   const router = useRouter();
   const pathname = usePathname();
   const {
@@ -121,9 +124,12 @@ export function Topbar({
       <header className="h-16 border-b border-border bg-card flex items-center justify-between px-6">
         <div className="flex items-center gap-4">
           <button
+            type="button"
             className="md:hidden text-foreground/60 hover:text-foreground transition-colors"
             onClick={() => setMobileNavOpen(true)}
             aria-label="Open navigation"
+            aria-expanded={mobileNavOpen}
+            aria-controls="dashboard-mobile-nav"
           >
             <Menu className="w-5 h-5" />
           </button>
@@ -161,6 +167,7 @@ export function Topbar({
             )
           )}
           <button
+            type="button"
             onClick={openHelp}
             className="md:hidden text-foreground/60 hover:text-foreground transition-colors"
             aria-label="Help"
@@ -170,7 +177,12 @@ export function Topbar({
           <AlertBell />
           <div className="relative">
           <button
+            type="button"
             onClick={() => setMenuOpen(!menuOpen)}
+            aria-label={email ? `Account menu for ${email}` : "Account menu"}
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            aria-controls="dashboard-account-menu"
             className="flex items-center gap-2 text-foreground/60 hover:text-foreground transition-colors"
           >
             <User className="w-4 h-4" />
@@ -185,10 +197,12 @@ export function Topbar({
                 aria-hidden="true"
               />
               <div
+                id="dashboard-account-menu"
                 className="absolute right-0 top-10 bg-card border border-border rounded-xl shadow-lg py-2 w-48 z-50"
                 role="menu"
               >
                 <button
+                  type="button"
                   onClick={handleSignOut}
                   className="flex items-center gap-2 px-4 py-2 text-sm text-foreground/60 hover:text-foreground hover:bg-muted w-full text-left"
                   role="menuitem"
@@ -204,8 +218,14 @@ export function Topbar({
       </header>
 
       {/* Mobile navigation drawer */}
-      <Sheet open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} side="left">
-        <div className="px-4 py-6 flex flex-col h-full">
+      <Sheet
+        open={mobileNavOpen}
+        onClose={() => setMobileNavOpen(false)}
+        side="left"
+        ariaLabel="Primary navigation"
+        initialFocusRef={mobileNavCloseButtonRef}
+      >
+        <div id="dashboard-mobile-nav" className="px-4 py-6 flex flex-col h-full">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2.5">
               <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -214,6 +234,8 @@ export function Topbar({
               <span className="font-display text-xl text-foreground">Pantheon</span>
             </div>
             <button
+              ref={mobileNavCloseButtonRef}
+              type="button"
               onClick={() => setMobileNavOpen(false)}
               className="text-foreground/60 hover:text-foreground transition-colors"
               aria-label="Close navigation"

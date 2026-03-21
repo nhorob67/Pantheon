@@ -21,6 +21,7 @@ import {
   MessageSquare,
   Settings,
   Shield,
+  Columns3,
   type LucideIcon,
 } from "lucide-react";
 import { useHelp } from "./help-provider";
@@ -38,6 +39,7 @@ const navGroups: NavGroup[] = [
     items: [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { href: "/agents", label: "Agents", icon: Bot },
+      { href: "/workspace", label: "Workspace", icon: Columns3 },
       { href: "/conversations", label: "Conversations", icon: MessageCircle },
     ],
   },

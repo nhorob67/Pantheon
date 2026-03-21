@@ -3,9 +3,9 @@
 import { useRef, type KeyboardEvent, type ReactNode } from "react";
 import { Search, FileText, Hash, ArrowRight, Sparkles } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
+import { useModalA11y } from "@/components/ui/use-modal-a11y";
 import { AiAnswerPanel } from "./ai-answer-panel";
 import { useDocsSearchAi, type DocsAiStatus, type SearchResult } from "./use-docs-search-ai";
-import { useModalA11y } from "./use-modal-a11y";
 
 export type { SearchResult };
 

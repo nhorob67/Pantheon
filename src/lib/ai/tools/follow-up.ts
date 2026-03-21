@@ -23,6 +23,7 @@ export interface FollowUpToolConfig {
   customerId: string;
   agentId: string;
   channelId: string;
+  messageId?: string | null;
   runId: string;
   followUpDepth: number;
 }
@@ -93,6 +94,7 @@ export function createFollowUpTool(
           runKind: "discord_follow_up",
           payload: {
             channel_id: config.channelId,
+            message_id: config.messageId ?? null,
             agent_id: config.agentId,
             task_summary,
             reason,
@@ -103,6 +105,8 @@ export function createFollowUpTool(
             follow_up_depth: config.followUpDepth + 1,
             scheduled_for: scheduledFor,
             originating_run_id: config.runId,
+            lifecycle_channel_id: config.channelId,
+            lifecycle_reply_to_message_id: config.messageId ?? null,
           },
         });
 
@@ -131,6 +135,7 @@ export interface ScheduleFollowUpInput {
   customerId: string;
   agentId: string;
   channelId: string;
+  messageId?: string | null;
   runId: string;
   followUpDepth: number;
   taskSummary: string;
@@ -172,6 +177,7 @@ export async function scheduleFollowUp(
     runKind: "discord_follow_up",
     payload: {
       channel_id: input.channelId,
+      message_id: input.messageId ?? null,
       agent_id: input.agentId,
       task_summary: input.taskSummary,
       reason: input.reason,
@@ -182,6 +188,8 @@ export async function scheduleFollowUp(
       follow_up_depth: input.followUpDepth + 1,
       scheduled_for: scheduledFor,
       originating_run_id: input.runId,
+      lifecycle_channel_id: input.channelId,
+      lifecycle_reply_to_message_id: input.messageId ?? null,
     },
   });
 

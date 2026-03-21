@@ -17,6 +17,12 @@ import {
 } from "@/lib/runtime/tenant-runtime-queue";
 import { processRuntimeRun } from "@/trigger/process-runtime-run";
 import { isChildBudgetAccountedToParent } from "@/lib/runtime/async-delegation-utils";
+import {
+  buildAsyncDelegationQueuedContent,
+  resolveDiscordBotToken,
+  resolveDiscordLifecycleReplyContext,
+} from "@/lib/runtime/tenant-runtime-discord-lifecycle";
+import { sendDiscordChannelMessage } from "@/lib/runtime/tenant-runtime-discord";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -125,6 +131,7 @@ async function executeAsyncDelegation(
   input: AsyncDelegationInput
 ) {
   const { admin, tenantId, customerId, parentAgent, currentDepth, parentRun } = config;
+  const replyContext = parentRun ? resolveDiscordLifecycleReplyContext(parentRun) : null;
 
   // Validate depth
   if (currentDepth >= MAX_DELEGATION_DEPTH) {
@@ -203,6 +210,8 @@ async function executeAsyncDelegation(
       delegated_by_name: parentAgent.display_name,
       target_agent_id: targetAgent.id,
       target_agent_name: targetAgent.display_name,
+      channel_id: replyContext?.channelId ?? null,
+      message_id: replyContext?.replyToMessageId ?? null,
       task: input.task,
       context: input.context ?? null,
       parent_tool_keys: parentToolKeys,
@@ -221,6 +230,8 @@ async function executeAsyncDelegation(
       actor_id: config.actorId ?? null,
       actor_discord_id: config.actorDiscordId ?? null,
       worker_kind: config.workerKind,
+      lifecycle_channel_id: replyContext?.channelId ?? null,
+      lifecycle_reply_to_message_id: replyContext?.replyToMessageId ?? null,
     },
   });
 
@@ -252,6 +263,20 @@ async function executeAsyncDelegation(
   } catch (err) {
     console.error("[async-delegation] Failed to trigger child run:", err instanceof Error ? err.message : "unknown");
     // Run is queued — it will be picked up by normal queue processing
+  }
+
+  if (replyContext?.channelId) {
+    const botToken = await resolveDiscordBotToken(admin, tenantId).catch(() => null);
+    if (botToken) {
+      await sendDiscordChannelMessage(
+        {
+          botToken,
+          channelId: replyContext.channelId,
+          replyToMessageId: replyContext.replyToMessageId,
+          content: buildAsyncDelegationQueuedContent(targetAgent.display_name),
+        }
+      ).catch(() => {});
+    }
   }
 
   return {
