@@ -357,7 +357,7 @@ export class DiscordRuntimeReplyOrchestrator {
     }
 
     return this.emitVisibleText({
-      text: `I've prepared ${filename}. I'll attach it with the result.`,
+      text: `I've got ${filename} ready. I'll attach it with the result.`,
       kind: "milestone",
       sentKey: `file_ready:${filename}`,
       nextState: "active",
@@ -416,8 +416,8 @@ export class DiscordRuntimeReplyOrchestrator {
 
     const roleText = pickString(input.requiredRole);
     const message = roleText
-      ? `I need ${roleText} approval before I can continue. Once it's approved, I'll continue here.`
-      : "I need approval before I can continue. Once it's approved, I'll continue here.";
+      ? `I need ${roleText} approval before I can make that change. Once it's approved, I'll pick it up here.`
+      : "I need approval before I can make that change. Once it's approved, I'll pick it up here.";
 
     const sent = await this.emitVisibleText({
       text: message,
@@ -442,7 +442,7 @@ export class DiscordRuntimeReplyOrchestrator {
     }
 
     return this.emitVisibleText({
-      text: "Approval received. I'm retrying that now.",
+      text: "Approval came through. I'm picking it back up now.",
       kind: "resumed",
       sentKey: `approval_resumed:${input.approvalId}`,
       nextState: "resumed_after_approval",

@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  buildKeepaliveMessage,
+  buildMilestoneMessage,
   buildTerminalSummary,
   classifyIntermediateText,
   getDiscordReplyOrchestratorMode,
@@ -62,6 +64,7 @@ test("classifyIntermediateText promotes substantive updates", () => {
 
 test("resolvePhaseKey maps custom tool sources safely", () => {
   assert.equal(resolvePhaseKey("integration_api_call"), "api_call");
+  assert.equal(resolvePhaseKey("schedule_create"), "schedule_change");
   assert.equal(resolvePhaseKey("mcp.github.list_issues", "mcp"), "mcp_tool");
   assert.equal(resolvePhaseKey("skill_run", "skill"), "skill_execution");
   assert.equal(resolvePhaseKey("totally_unknown_tool"), "generic_tool");
@@ -91,10 +94,42 @@ test("buildTerminalSummary prefers explicit completion and failure summaries", (
     }),
     "Task failed. The Discourse API returned 403."
   );
+
+  assert.equal(
+    buildTerminalSummary({
+      toolSummary: "schedule_create:success",
+      status: "completed",
+    }),
+    "Task complete. I set up the schedule."
+  );
 });
 
 test("getDiscordReplyOrchestratorMode is always active", () => {
   assert.equal(getDiscordReplyOrchestratorMode(), "active");
+});
+
+test("buildMilestoneMessage keeps schedule and sentence-like labels natural", () => {
+  assert.equal(
+    buildMilestoneMessage({
+      phaseKey: "schedule_create",
+    }),
+    "I'm updating that schedule now."
+  );
+
+  assert.equal(
+    buildMilestoneMessage({
+      phaseKey: "generic_tool",
+      label: "I'm setting up that schedule now.",
+    }),
+    "I'm setting up that schedule now."
+  );
+});
+
+test("buildKeepaliveMessage stays conversational for schedule changes", () => {
+  assert.equal(
+    buildKeepaliveMessage("schedule_update"),
+    "I'm still getting that schedule change into place."
+  );
 });
 
 // --- Bug fix proof: blocked_on_approval suppression ---
@@ -256,7 +291,7 @@ test("buildTerminalSummary uses toolSummary when no text or preview", () => {
     toolSummary: "integration_api_call:success",
     status: "completed",
   });
-  assert.equal(result, "Task complete. integration_api_call:success");
+  assert.equal(result, "Task complete. I finished checking that through the API.");
 });
 
 test("buildTerminalSummary returns generic when all empty", () => {

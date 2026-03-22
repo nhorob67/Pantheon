@@ -19,22 +19,28 @@ function pickObligationRunKind(obligation: RuntimeObligation): string | null {
   return pickString(obligation.metadata.run_kind);
 }
 
+function isDiscordConversationObligation(obligation: RuntimeObligation): boolean {
+  const runKind = pickObligationRunKind(obligation)?.toLowerCase();
+  if (runKind?.startsWith("discord_")) {
+    return true;
+  }
+
+  const source = pickString(obligation.metadata.source)?.toLowerCase();
+  return source?.startsWith("discord") === true;
+}
+
 export function shouldSendLegacyDiscordObligationStatusReply(
   obligation: RuntimeObligation,
   eventType?: string
 ): boolean {
   const normalizedEventType = pickString(eventType) as ObligationEventType | null;
-  if (pickObligationRunKind(obligation) !== "discord_runtime") {
+  if (!isDiscordConversationObligation(obligation)) {
     return true;
   }
 
-  // discord_runtime visibility should flow through the reply orchestrator or
-  // worker-owned lifecycle path, not through obligation-side non-terminal prose.
-  return (
-    normalizedEventType === "failed" ||
-    normalizedEventType === "completed" ||
-    normalizedEventType === "approval_rejected"
-  );
+  // Discord conversation visibility should flow through the reply orchestrator
+  // or the shared terminal safety-net path, not obligation-side canned prose.
+  return normalizedEventType === "approval_rejected";
 }
 
 export async function sendDiscordObligationStatusReply(

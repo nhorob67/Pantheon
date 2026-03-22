@@ -48,6 +48,8 @@ Latest progress in this pass:
 - removed shadow/disabled rollout branching from the reply orchestrator path so deployment is now always-on active for all tenants
 - wired the early trial-expired and spending-cap-paused worker reply path into the shared terminal-failure dispatcher so it now participates in reply lifecycle ownership and terminal visibility persistence
 - reduced the remaining worker reply duplication further by collapsing `tenant-ai-worker.ts` onto a single orchestrator-owned visible-send path and shared chunking helper
+- hardened obligation-side legacy Discord suppression so stalled/progress chatter is now blocked for Discord follow-up or older Discord obligations whose metadata may not say exactly `discord_runtime`
+- improved milestone, keepalive, approval, file-ready, and terminal-summary copy so schedule/configuration flows no longer fall back to raw `tool:status` wording as often
 - removed `shouldSendStatusUpdate()` from the active `discord_runtime` worker visibility path so obligation cadence no longer gates progress sends
 - demoted legacy obligation-side non-terminal Discord replies for `discord_runtime` so approval-granted and stalled chatter no longer bypasses the reply orchestrator lifecycle
 - demoted `tenant-runtime-status-notifier.ts` further into a shared terminal safety-net helper used by process, ingress, approval-rejection, and stale-run paths instead of open-coded completion/failure fallback branching
@@ -98,6 +100,8 @@ Implemented behavior in this slice:
 - legacy obligation notifier fallback for `discord_runtime` is now limited to terminal-style fallbacks instead of non-terminal progress/resume chatter
 - process/ingress/reaper/approval/sweeper terminal fallback paths now use a shared terminal safety-net helper instead of repeating ad hoc dispatcher/notifier branching
 - worker and terminal attachment sends now derive outbound text from shared chunking helpers instead of ad hoc per-call slicing
+- obligation-side fallback suppression now keys off broader Discord obligation identity (`run_kind`/`source`) instead of only exact `discord_runtime` metadata matches
+- terminal summary synthesis now maps common successful tool outcomes to friendlier user-facing completion prose
 
 Validated:
 

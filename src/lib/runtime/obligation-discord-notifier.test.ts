@@ -49,17 +49,47 @@ test("shouldSendLegacyDiscordObligationStatusReply suppresses non-terminal disco
   );
 });
 
-test("shouldSendLegacyDiscordObligationStatusReply allows terminal discord_runtime fallbacks", () => {
+test("shouldSendLegacyDiscordObligationStatusReply suppresses non-terminal discord follow-up updates", () => {
+  const obligation = makeObligation({
+    metadata: {
+      run_kind: "discord_follow_up",
+    },
+  });
+
+  assert.equal(
+    shouldSendLegacyDiscordObligationStatusReply(obligation, "stalled"),
+    false
+  );
+});
+
+test("shouldSendLegacyDiscordObligationStatusReply suppresses non-terminal updates when source is discord even if run_kind is missing", () => {
+  const obligation = makeObligation({
+    metadata: {
+      source: "discord_ingress",
+    },
+  });
+
+  assert.equal(
+    shouldSendLegacyDiscordObligationStatusReply(obligation, "stalled"),
+    false
+  );
+});
+
+test("shouldSendLegacyDiscordObligationStatusReply suppresses generic terminal discord_runtime fallbacks", () => {
   const obligation = makeObligation({
     status: "failed",
   });
 
   assert.equal(
     shouldSendLegacyDiscordObligationStatusReply(obligation, "failed"),
-    true
+    false
   );
   assert.equal(
     shouldSendLegacyDiscordObligationStatusReply(obligation, "completed"),
+    false
+  );
+  assert.equal(
+    shouldSendLegacyDiscordObligationStatusReply(obligation, "approval_rejected"),
     true
   );
 });

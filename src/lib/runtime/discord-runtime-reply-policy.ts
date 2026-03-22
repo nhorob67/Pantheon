@@ -15,6 +15,16 @@ const MILESTONE_MIN_SPACING_MS = 1_000;
 const KEEPALIVE_SILENCE_MS = 20_000;
 const KEEPALIVE_MIN_SPACING_MS = 30_000;
 const MAX_KEEPALIVES_PER_RUN = 3;
+const FRIENDLY_TOOL_SUMMARY_MESSAGES: Record<string, string> = {
+  schedule_create: "I set up the schedule.",
+  schedule_update: "I updated the schedule.",
+  schedule_delete: "I removed the schedule.",
+  task_follow_up: "I scheduled the follow-up.",
+  integration_register: "I set up the integration.",
+  integration_store_credential: "I saved the credential securely.",
+  config_create_agent: "I created the agent.",
+  config_archive_agent: "I archived the agent.",
+};
 
 function normalizeWhitespace(value: string): string {
   return value.replace(/\s+/g, " ").trim();
@@ -35,6 +45,73 @@ function clampPreview(value: string, maxLength = 160): string {
   }
 
   return `${value.slice(0, Math.max(1, maxLength - 3)).trimEnd()}...`;
+}
+
+function ensureSentence(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return trimmed;
+  }
+
+  return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
+}
+
+function looksLikeSentence(value: string): boolean {
+  return /^(i\b|i'm\b|i’ve\b|still\b|approval\b|quick update\b|working\b|checking\b|reading\b|setting\b|updating\b|removing\b|creating\b|saving\b)/i.test(
+    value.trim()
+  );
+}
+
+function buildFriendlyToolSummary(toolSummary: string): string | null {
+  const steps = toolSummary
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry) => {
+      const [toolNameRaw, statusRaw] = entry.split(":");
+      const toolName = pickString(toolNameRaw)?.toLowerCase();
+      const status = pickString(statusRaw)?.toLowerCase();
+      return { toolName, status };
+    })
+    .filter(
+      (entry): entry is { toolName: string; status: string | null } => entry.toolName !== null
+    );
+
+  const friendly = steps
+    .filter((entry) => entry.status === "success")
+    .map((entry) => {
+      const direct = FRIENDLY_TOOL_SUMMARY_MESSAGES[entry.toolName];
+      if (direct) {
+        return direct;
+      }
+
+      if (entry.toolName.startsWith("schedule_")) {
+        return "I updated the schedule.";
+      }
+      if (entry.toolName.startsWith("config_") || entry.toolName.startsWith("self_config_")) {
+        return "I updated the configuration.";
+      }
+      if (entry.toolName === "integration_api_call") {
+        return "I finished checking that through the API.";
+      }
+      if (entry.toolName === "web_search" || entry.toolName === "web_fetch") {
+        return "I checked the relevant sources.";
+      }
+
+      return null;
+    })
+    .filter((entry): entry is string => typeof entry === "string");
+
+  const unique = [...new Set(friendly)];
+  if (unique.length === 0) {
+    return null;
+  }
+
+  if (unique.length === 1) {
+    return unique[0];
+  }
+
+  return `${unique[0].replace(/[.!?]$/, "")} and ${unique[1].replace(/[.!?]$/, "")}.`;
 }
 
 function stripKnownControlTokens(text: string): { text: string; skipReason?: "silent" | "heartbeat" } {
@@ -221,6 +298,9 @@ export function resolvePhaseKey(toolName: string, toolSource?: string): string {
   ) {
     return "integration_setup";
   }
+  if (normalizedToolName.startsWith("schedule_")) {
+    return "schedule_change";
+  }
   if (normalizedToolName.startsWith("config_") || normalizedToolName.startsWith("self_config_")) {
     return "config_update";
   }
@@ -244,7 +324,7 @@ export function buildMilestoneMessage(input: {
     case "api_call":
       return "I'm making that API call now.";
     case "web_research":
-      return "I'm checking a few sources now.";
+      return "I'm checking a couple of sources so I can answer this cleanly.";
     case "web_read":
       return "I'm reading through that now.";
     case "memory_lookup":
@@ -256,32 +336,41 @@ export function buildMilestoneMessage(input: {
         ? `I've asked ${input.targetAgentName} to help with that part.`
         : "I've asked another agent to help with that part.";
     case "integration_setup":
-      return "I'm setting up the integration.";
+      return "I'm getting the integration set up now.";
+    case "schedule_change":
+      return "I'm updating that schedule now.";
     case "config_update":
-      return "I'm updating the configuration now.";
+      return "I'm making that configuration change now.";
     case "mcp_tool":
       return "I'm checking that connected system now.";
     case "skill_execution":
       return "I'm running that workflow now.";
     default:
-      return input.label ? `I'm ${input.label}.` : "I'm working through that now.";
+      if (input.label && looksLikeSentence(input.label)) {
+        return ensureSentence(input.label);
+      }
+      return input.label
+        ? ensureSentence(`I'm ${input.label}`)
+        : "I'm working through that now.";
   }
 }
 
 export function buildKeepaliveMessage(phaseKey: string | null): string {
   switch (resolvePhaseKey(phaseKey ?? "generic_tool")) {
     case "api_call":
-      return "Still waiting on the API response. I'll post the result here.";
+      return "Still waiting on the API response. I'll post the result here as soon as it comes back.";
     case "web_research":
-      return "I'm still comparing the sources so I can give you the right answer.";
+      return "I'm still cross-checking the sources so I can give you the right answer.";
     case "web_read":
-      return "I'm still reading through that now.";
+      return "I'm still reading through the details.";
     case "browser_check":
       return "I'm still checking it directly.";
     case "delegation_wait":
       return "I'm still waiting on that other agent's result.";
+    case "schedule_change":
+      return "I'm still getting that schedule change into place.";
     default:
-      return "Still working through it. I'll post the result here.";
+      return "Still on it. I'll report back here with the result.";
   }
 }
 
@@ -387,7 +476,12 @@ export function buildTerminalSummary(input: {
 
   const toolSummary = pickString(input.toolSummary);
   if (toolSummary) {
-    return `Task complete. ${toolSummary}`;
+    const friendlyToolSummary = buildFriendlyToolSummary(toolSummary);
+    if (friendlyToolSummary) {
+      return /^task complete\b/i.test(friendlyToolSummary)
+        ? friendlyToolSummary
+        : `Task complete. ${friendlyToolSummary}`;
+    }
   }
 
   return "Task complete.";

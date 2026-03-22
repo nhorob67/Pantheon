@@ -263,8 +263,8 @@ test("approval lifecycle sends blocked then resumed messages once", async () => 
   assert.equal(duplicateBlocked, false);
   assert.equal(resumedSent, true);
   assert.deepEqual(sends, [
-    "I need owner approval before I can continue. Once it's approved, I'll continue here.",
-    "Approval received. I'm retrying that now.",
+    "I need owner approval before I can make that change. Once it's approved, I'll pick it up here.",
+    "Approval came through. I'm picking it back up now.",
   ]);
 });
 
@@ -300,7 +300,7 @@ test("file-ready lifecycle tracks pending files and emits once per file", async 
 
   assert.equal(first, true);
   assert.equal(duplicate, false);
-  assert.deepEqual(sends, ["I've prepared report.csv. I'll attach it with the result."]);
+  assert.deepEqual(sends, ["I've got report.csv ready. I'll attach it with the result."]);
   assert.deepEqual(
     persistedRun.metadata.reply_lifecycle &&
       typeof persistedRun.metadata.reply_lifecycle === "object" &&
@@ -426,7 +426,7 @@ test("channel visibility arbitration prefers direct runs over follow-ups", async
   assert.equal(await followUp.emitToolPhase({ phaseKey: "web_search" }), true);
   assert.equal(await direct.emitToolPhase({ phaseKey: "integration_api_call" }), true);
   assert.equal(await followUp.refreshTyping(), false);
-  assert.deepEqual(followUpMessages, ["I'm checking a few sources now."]);
+  assert.deepEqual(followUpMessages, ["I'm checking a couple of sources so I can answer this cleanly."]);
   assert.deepEqual(directMessages, ["I'm making that API call now."]);
   assert.equal(followUpTypingCalls, 0);
 });
@@ -507,9 +507,9 @@ test("approval-blocked replies release channel ownership for the next run", asyn
 
   assert.deepEqual(directMessages, [
     "I'm making that API call now.",
-    "I need owner approval before I can continue. Once it's approved, I'll continue here.",
+    "I need owner approval before I can make that change. Once it's approved, I'll pick it up here.",
   ]);
-  assert.deepEqual(followUpMessages, ["I'm checking a few sources now."]);
+  assert.deepEqual(followUpMessages, ["I'm checking a couple of sources so I can answer this cleanly."]);
 });
 
 test("emitDiscordRuntimeTerminalFailure owns terminal failure dispatch", async () => {
