@@ -44,12 +44,13 @@ interface Props {
 }
 
 export function SecretsVaultPanel({ tenantId, agents }: Props) {
-  const { data, isLoading: loading, mutate } = useSWR(
+  const { data, error, isLoading: loading, mutate } = useSWR(
     `/api/tenants/${tenantId}/secrets`,
     jsonFetcher
   );
   const secrets: TenantSecret[] = data?.secrets ?? [];
   const revealStatusFromServer: string | null = data?.reveal_secret_status ?? null;
+  const loadError = error instanceof Error ? error.message : null;
 
   const [showForm, setShowForm] = useState(false);
   const [togglingReveal, setTogglingReveal] = useState(false);
@@ -157,12 +158,24 @@ export function SecretsVaultPanel({ tenantId, agents }: Props) {
               ))}
             </div>
           </div>
+        ) : loadError ? (
+          <div className="p-8 text-center text-sm">
+            <AlertTriangle className="w-8 h-8 mx-auto mb-2 text-destructive/70" />
+            <p className="text-destructive">Failed to load secrets.</p>
+            <p className="mt-1 text-foreground/50">
+              {loadError}
+            </p>
+          </div>
         ) : secrets.length === 0 ? (
           <div className="p-8 text-center text-foreground/50 text-sm">
             <KeyRound className="w-8 h-8 mx-auto mb-2 opacity-30" />
             <p>No secrets stored yet.</p>
             <p className="mt-1">
               Add API keys or passwords that your agents can use for external API calls.
+            </p>
+            <p className="mt-2 text-xs">
+              Secrets are workspace-scoped. If you expected a stored secret here,
+              confirm you are viewing the correct workspace in the top bar.
             </p>
           </div>
         ) : (

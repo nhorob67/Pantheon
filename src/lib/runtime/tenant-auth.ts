@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { safeErrorMessage } from "@/lib/security/safe-error";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { TenantRole, TenantStatus } from "@/types/tenant-runtime";
 export {
   canAdministerTenant,
@@ -21,6 +22,11 @@ interface TenantMembershipRow {
   role: TenantRole;
   status: string;
   tenants: TenantJoinRow | TenantJoinRow[] | null;
+}
+
+interface ExistingTenantMembershipRow {
+  role: TenantRole;
+  status: string;
 }
 
 export interface AuthorizedTenantContext {
@@ -67,7 +73,7 @@ export async function resolveAuthorizedTenantContext(
   }
 
   if (!data) {
-    return null;
+    return resolveLegacyOwnerTenantContext(userId, tenantId);
   }
 
   const membership = data as TenantMembershipRow;
@@ -85,5 +91,95 @@ export async function resolveAuthorizedTenantContext(
     tenantStatus: tenant.status,
     memberRole: membership.role,
     memberStatus: membership.status,
+  };
+}
+
+async function resolveLegacyOwnerTenantContext(
+  userId: string,
+  tenantId: string
+): Promise<AuthorizedTenantContext | null> {
+  const admin = createAdminClient();
+
+  const { data: tenant, error: tenantError } = await admin
+    .from("tenants")
+    .select("id, customer_id, slug, name, status")
+    .eq("id", tenantId)
+    .maybeSingle();
+
+  if (tenantError) {
+    throw new Error(
+      safeErrorMessage(tenantError, "Failed to resolve legacy tenant ownership")
+    );
+  }
+
+  if (!tenant) {
+    return null;
+  }
+
+  const [{ data: customer }, { data: existingMembership, error: membershipError }] = await Promise.all([
+    admin
+      .from("customers")
+      .select("id")
+      .eq("id", tenant.customer_id)
+      .eq("user_id", userId)
+      .maybeSingle(),
+    admin
+      .from("tenant_members")
+      .select("role, status")
+      .eq("tenant_id", tenantId)
+      .eq("user_id", userId)
+      .maybeSingle(),
+  ]);
+
+  if (membershipError) {
+    throw new Error(
+      safeErrorMessage(membershipError, "Failed to resolve tenant membership state")
+    );
+  }
+
+  if (!customer) {
+    return null;
+  }
+
+  const membership = existingMembership as ExistingTenantMembershipRow | null;
+
+  if (membership) {
+    return membership.status === "active"
+      ? {
+          tenantId: tenant.id,
+          customerId: tenant.customer_id,
+          tenantSlug: tenant.slug,
+          tenantName: tenant.name,
+          tenantStatus: tenant.status,
+          memberRole: membership.role,
+          memberStatus: membership.status,
+        }
+      : null;
+  }
+
+  const { error: insertError } = await admin
+    .from("tenant_members")
+    .insert({
+      tenant_id: tenant.id,
+      user_id: userId,
+      role: "owner",
+      status: "active",
+      invited_by: userId,
+    });
+
+  if (insertError && insertError.code !== "23505") {
+    throw new Error(
+      safeErrorMessage(insertError, "Failed to backfill tenant owner membership")
+    );
+  }
+
+  return {
+    tenantId: tenant.id,
+    customerId: tenant.customer_id,
+    tenantSlug: tenant.slug,
+    tenantName: tenant.name,
+    tenantStatus: tenant.status,
+    memberRole: "owner",
+    memberStatus: "active",
   };
 }
