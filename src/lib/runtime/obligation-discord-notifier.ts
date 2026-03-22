@@ -19,6 +19,10 @@ function pickObligationRunKind(obligation: RuntimeObligation): string | null {
   return pickString(obligation.metadata.run_kind);
 }
 
+function hasDiscordDeliveryContext(obligation: RuntimeObligation): boolean {
+  return pickString(obligation.channel_id) !== null || pickString(obligation.reply_to_message_id) !== null;
+}
+
 function isDiscordConversationObligation(obligation: RuntimeObligation): boolean {
   const runKind = pickObligationRunKind(obligation)?.toLowerCase();
   if (runKind?.startsWith("discord_")) {
@@ -26,7 +30,11 @@ function isDiscordConversationObligation(obligation: RuntimeObligation): boolean
   }
 
   const source = pickString(obligation.metadata.source)?.toLowerCase();
-  return source?.startsWith("discord") === true;
+  if (source?.startsWith("discord") === true) {
+    return true;
+  }
+
+  return hasDiscordDeliveryContext(obligation);
 }
 
 export function shouldSendLegacyDiscordObligationStatusReply(

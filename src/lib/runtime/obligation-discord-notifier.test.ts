@@ -75,6 +75,17 @@ test("shouldSendLegacyDiscordObligationStatusReply suppresses non-terminal updat
   );
 });
 
+test("shouldSendLegacyDiscordObligationStatusReply suppresses non-terminal updates when discord delivery context exists even if metadata is sparse", () => {
+  const obligation = makeObligation({
+    metadata: {},
+  });
+
+  assert.equal(
+    shouldSendLegacyDiscordObligationStatusReply(obligation, "stalled"),
+    false
+  );
+});
+
 test("shouldSendLegacyDiscordObligationStatusReply suppresses generic terminal discord_runtime fallbacks", () => {
   const obligation = makeObligation({
     status: "failed",
@@ -96,6 +107,8 @@ test("shouldSendLegacyDiscordObligationStatusReply suppresses generic terminal d
 
 test("shouldSendLegacyDiscordObligationStatusReply preserves legacy behavior for non-discord runtimes", () => {
   const obligation = makeObligation({
+    channel_id: null,
+    reply_to_message_id: null,
     metadata: {
       run_kind: "email_runtime",
     },
