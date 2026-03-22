@@ -10,6 +10,8 @@ The target behavior is conversational but controlled:
 
 - milestone updates should feel human and specific
 - keepalives should appear only after real silence
+- reply content should be normalized before any Discord delivery
+- typing indicators should follow the same lifecycle owner as visible replies
 - approval and resume messaging must be authoritative
 - every visible progress update must eventually resolve into a blocked state, a terminal answer, or a terminal failure
 
@@ -78,13 +80,20 @@ Responsibilities:
   - serializes outbound lifecycle messages
   - applies dedupe and terminal closure rules
   - persists reply lifecycle metadata to the run
+  - owns delivery timing, typing lifecycle signals, and delivery confirmation bookkeeping
+  - arbitrates visible reply ownership at the channel level when multiple runs overlap
 
 - `discord-runtime-reply-policy.ts`
   - message policy
+  - reply normalization
   - silence thresholds
+  - cadence spacing
   - phase-to-template mapping
+  - `phaseKey` normalization
   - terminal answer qualification
   - terminal summary and failure synthesis
+  - file and attachment terminal delivery policy
+  - chunking interface
 
 - `discord-runtime-reply-types.ts`
   - lifecycle state
@@ -104,10 +113,11 @@ Existing layers keep their current domain responsibilities:
 
 - `tenant-runtime-discord.ts`
   - Discord transport only
+  - chunked text send and attachment send primitives
 
 - `obligation-coordinator.ts`
   - durable obligation state
-  - no longer the place where `discord_runtime` reply wording is composed
+  - no longer the place where `discord_runtime` visibility decisions are composed
 
 - `tenant-approval-executor.ts`
   - approval decision execution
@@ -115,6 +125,20 @@ Existing layers keep their current domain responsibilities:
 
 - `tenant-runtime-status-notifier.ts`
   - reduced to safety-net notification behavior where needed
+  - suppressed whenever the orchestrator already emitted terminal visibility for the run
+
+### New reply pipeline
+
+For `discord_runtime`, visible delivery should follow this order:
+
+1. structured event received
+2. event classified into candidate reply kind
+3. candidate content normalized
+4. cadence and suppression rules applied
+5. channel visibility arbitration applied
+6. content chunked if needed
+7. Discord delivery attempted through orchestrator-owned circuit breaker
+8. sent keys and lifecycle metadata recorded only after confirmed delivery
 
 ## User-Facing Contract
 
@@ -255,6 +279,27 @@ Suggested normalized `phaseKey` values:
 - `browser_check`
 - `config_update`
 - `integration_setup`
+- `mcp_tool`
+- `skill_execution`
+- `generic_tool`
+
+### Phase key normalization
+
+The orchestrator should not assume the current tool catalog is exhaustive. Add:
+
+```ts
+function resolvePhaseKey(toolName: string, toolSource?: string): string;
+```
+
+Rules:
+
+- known built-in tools map to predefined keys
+- MCP tool calls map to `mcp_tool` unless server/category-specific mapping upgrades them to a more specific phase
+- custom skill execution maps to `skill_execution`
+- known integration setup/configuration flows may map to `integration_setup`
+- unknown tools fall back to `generic_tool`
+
+The phase system must never silently drop visibility decisions because a tool name is unfamiliar.
 
 Event producers:
 
@@ -272,6 +317,24 @@ Event producers:
 - runtime and reaper paths
   - `run_reaped`
 
+Additional events:
+
+- `file_ready`
+- `delegation_started`
+
+Suggested shapes:
+
+```ts
+| { type: "file_ready"; fileId: string; filename: string; mimeType: string }
+| { type: "delegation_started"; targetAgentId: string; targetAgentName?: string }
+```
+
+`file_ready` lets the orchestrator hold attachments until terminal delivery.
+
+`delegation_started` allows a specific milestone template such as:
+
+- `I've asked another agent to help with that part.`
+
 ## Message Policy
 
 ### Core policy
@@ -283,6 +346,8 @@ Event producers:
 - final completion uses hybrid behavior:
   - substantive answer when strong enough
   - short lifecycle summary otherwise
+- all visible content is normalized before delivery
+- visible reply cadence is controlled to avoid robotic bursts
 
 ### Milestones
 
@@ -295,6 +360,33 @@ Examples:
 - `I'm retrying the integration after approval.`
 
 Milestones are deduped by phase family and should not repeat for the same phase unless the run actually changed course.
+
+### Intermediate text classification
+
+`intermediate_text` should be classified explicitly before it is allowed to become a visible milestone.
+
+Promote to milestone candidate only if one of the following is true:
+
+- contains a concrete action statement tied to a recognized tool or phase
+- contains substantive findings that are safe to show before terminal resolution
+- materially differs from previously sent milestone text for the run
+
+Suppress when one or more of the following is true:
+
+- starts with hedging or filler phrasing such as:
+  - `Let me...`
+  - `I'll try...`
+  - `I'm going to...`
+- shorter than a configured minimum length and contains no substantive content
+- primarily announces future work rather than present action or findings
+- substantially overlaps with an already-sent milestone for the same phase family
+
+Suggested helpers in `discord-runtime-reply-policy.ts`:
+
+- `classifyIntermediateText()`
+- `isWeakProcessText()`
+- `isMilestoneCandidate()`
+- `overlapsExistingMilestone()`
 
 ### Keepalives
 
@@ -311,6 +403,19 @@ Examples:
 - `Still waiting on the API response. I'll post the result here.`
 - `I'm still comparing the docs so I can give you the right answer.`
 - `I'm still checking it directly.`
+
+### Human-like cadence
+
+Suppression alone is not enough. The orchestrator should also control when visible messages are sent.
+
+Default cadence rules:
+
+- minimum 1 second between visible messages for the same run
+- do not send a milestone immediately on `run_started`; wait for the first meaningful phase
+- after `approval_blocked`, wait briefly before any resumed active milestone unless the resumed message itself is the only visible update
+- keepalives use silence thresholds and never bunch immediately after a milestone
+
+The goal is natural rhythm, not artificial delay everywhere. This is lighter than OpenClaw's block-reply human delay, but it brings the same principle into `discord_runtime`.
 
 ### Approval Blocked
 
@@ -330,6 +435,52 @@ Examples:
 Short and authoritative:
 
 - `Approval received. I'm retrying that now.`
+
+### Reply normalization
+
+Before any candidate reply reaches Discord, normalize it.
+
+Add:
+
+```ts
+function normalizeReplyContent(input: {
+  text?: string;
+  kind: string;
+  responsePrefix?: string;
+}): { text?: string; skip: boolean; skipReason?: "empty" | "silent" | "heartbeat" };
+```
+
+Normalization responsibilities:
+
+- strip silent tokens and heartbeat tokens
+- sanitize user-facing text
+- collapse empty payloads with explicit skip reasons
+- apply response prefixes when configured
+- prevent raw model control tokens or malformed cleanup artifacts from leaking into Discord
+
+This should be modeled directly on the role OpenClaw's `normalize-reply.ts` plays in its dispatcher pipeline.
+
+### Message chunking
+
+The orchestrator should delegate long-message splitting through a dedicated interface rather than hard-coding today's naive character slicing.
+
+Add:
+
+```ts
+function chunkReplyContent(text: string): string[];
+```
+
+Phase 1:
+
+- preserve existing Discord length constraints
+- keep part numbering support
+- centralize splitting under the orchestrator pipeline
+
+Phase 3:
+
+- upgrade `chunkReplyContent()` to become code-fence-aware
+- reopen and close markdown fences across chunk boundaries when needed
+- avoid mangling formatted terminal answers
 
 ### Suppression rules
 
@@ -404,6 +555,17 @@ Examples:
 - later retry/re-entry paths must suppress additional terminal replies
 - if earlier progress exists but no terminal emission exists, the next execution must reconcile and emit one
 
+### Files and attachments
+
+Attachments are part of terminal delivery, not an afterthought.
+
+Rules:
+
+- files collected during the run should be held by the orchestrator until terminal delivery
+- if the terminal outcome is a substantive `terminal_answer`, attach files to that message when possible
+- if the terminal outcome is a synthesized `terminal_summary`, attach files to the summary if those files are the real work product of the run
+- if attachment send fails, fall back to text-only terminal delivery and record the attachment failure in run metadata
+
 ## Approval and Resume Semantics
 
 Approval flow becomes a first-class reply lifecycle path.
@@ -444,6 +606,53 @@ Suggested metadata fields inside `reply_lifecycle`:
 - `approval_resume_sent_at`
 - `approval_last_resolution`
 
+## Typing Lifecycle
+
+Typing indicators should be governed by the same lifecycle owner as visible replies.
+
+The orchestrator should define a typing contract:
+
+- emit `typing_start` or `typing_refresh` when visible conversational work is active
+- emit `typing_stop` when:
+  - the run reaches terminal state
+  - the run becomes sealed after failure or reap
+  - delivery is fully idle
+
+Key behavior requirements:
+
+- terminal state seals typing so late callbacks cannot restart it
+- typing should have a TTL safety net
+- dispatch idle should participate in typing shutdown
+
+This can initially integrate with the existing worker typing hooks, but the lifecycle contract belongs to the orchestrator.
+
+## Circuit Breaker and Delivery Ownership
+
+Because the orchestrator owns visible Discord delivery, it should also own the delivery circuit breaker behavior for lifecycle messages and terminal replies.
+
+Rules:
+
+- lifecycle and terminal delivery should go through orchestrator-owned or orchestrator-wrapped circuit breaker logic
+- the circuit breaker should remain compatible with the current Discord send failure threshold and cooldown model
+- delivery failures should be recorded in reply lifecycle metadata
+- failed sends must not mark dedupe keys as sent
+
+## Obligation Integration
+
+Obligations remain the durable state machine for long-lived user-facing commitments, but visibility decisions should move out of the obligation coordinator and into the reply orchestrator.
+
+Explicit event mapping:
+
+- obligation heartbeat -> `keepalive_tick`
+- obligation tool phase -> `tool_phase`
+- obligation stall -> failure-classified event with stall reason
+
+Design consequence:
+
+- `recordUserUpdate()` remains durable bookkeeping
+- `shouldSendStatusUpdate()` should be removed or demoted from the obligation coordinator for `discord_runtime`
+- the orchestrator becomes the sole owner of "should this be visible now?"
+
 ## Durability and Recovery
 
 The orchestrator must be retry-safe and restart-safe.
@@ -477,6 +686,17 @@ type DiscordReplyLifecycleMetadata = {
 };
 ```
 
+Important delivery rule:
+
+- `sent_keys` must only be recorded after Discord confirms delivery
+- failed send attempts must not poison dedupe state
+
+Suggested supporting metadata:
+
+- `pending_send_key`
+- `last_send_attempt_at`
+- `last_send_error`
+
 ### Recovery rules
 
 - duplicate ingress for same run
@@ -495,6 +715,19 @@ type DiscordReplyLifecycleMetadata = {
 - conflicting terminal paths
   - once terminal is emitted, later failure paths must not send another visible terminal reply
 
+### Channel visibility arbitration
+
+Multiple runs can target the same Discord channel. The design should not assume single-run exclusivity forever, but it must avoid overlapping conversational lifecycles that confuse the user.
+
+Add channel-level visibility arbitration:
+
+- at most one run may own non-terminal conversational visibility in a channel at a time
+- user-initiated runs take priority over scheduled follow-up runs
+- lower-priority overlapping runs suppress milestones and keepalives until visibility ownership is released
+- blocked and terminal messages may still be allowed through under controlled rules
+
+This is intentionally lighter than a hard channel lock. It prevents cross-talk without deadlocking all visible delivery.
+
 ## Integration Plan
 
 ### New files
@@ -509,6 +742,7 @@ type DiscordReplyLifecycleMetadata = {
   - instantiate orchestrator for `discord_runtime`
   - emit structured lifecycle events
   - remove direct ownership of most progress/approval/final Discord sends
+  - integrate existing typing hooks with orchestrator typing contract
 
 - `src/lib/runtime/tenant-approval-executor.ts`
   - replace direct resume reply send with orchestrator event emission
@@ -527,15 +761,24 @@ type DiscordReplyLifecycleMetadata = {
 - `src/trigger/sweep-stale-obligations.ts`
   - use shared terminal emission rules and dedupe checks
 
+- `src/lib/runtime/tenant-runtime-discord.ts`
+  - expose transport helpers the orchestrator can call for:
+    - single-message send
+    - chunked send
+    - attachment send
+    - typing signal integration
+
 ### End-to-end execution path
 
 1. ingress creates and claims `discord_runtime` run
 2. worker instantiates reply orchestrator
 3. worker emits structured lifecycle events
-4. orchestrator decides what is user-visible
-5. orchestrator records visible lifecycle state and sent keys
-6. orchestrator emits exactly one terminal visible outcome
-7. reapers and approval paths reuse the same terminal rules
+4. orchestrator classifies and normalizes candidate replies
+5. orchestrator applies cadence, arbitration, and chunking
+6. orchestrator attempts delivery through its circuit breaker
+7. orchestrator records visible lifecycle state and sent keys only after confirmed delivery
+8. orchestrator emits exactly one terminal visible outcome
+9. reapers and approval paths reuse the same terminal rules
 
 ## Testing Strategy
 
@@ -553,6 +796,11 @@ Cover:
 - milestone dedupe by phase family
 - keepalive silence threshold behavior
 - max keepalive count
+- normalization skip reasons and token stripping
+- typing seal behavior after terminal state
+- channel visibility arbitration for overlapping runs
+- sent key persistence only after confirmed delivery
+- file-ready accumulation and terminal attachment policy
 - approval block dedupe
 - single resume per approval cycle
 - strong terminal answer classification
@@ -578,6 +826,9 @@ Scenarios:
 - duplicate approval signal for same approval id
 - stale run reaped after progress but before final answer
 - worker retry after partial visible progress
+- attachment present on terminal answer
+- attachment fallback to text-only when file send fails
+- overlapping follow-up run suppressed while user-initiated run owns channel visibility
 
 ### Behavioral regression scenarios
 
@@ -592,12 +843,20 @@ Must explicitly test the failure patterns from the Discourse example:
 
 Roll out in three phases.
 
-### Phase 1: Shadow metadata, current transport
+### Phase 1: Shadow mode
 
 - add orchestrator and metadata model
-- let orchestrator decide lifecycle state and sent keys
-- keep most current transport logic in place
-- compare orchestrator decisions vs current behavior in logs
+- let orchestrator classify replies, normalization results, cadence decisions, and terminal decisions
+- current code still owns live delivery
+- compare orchestrator decisions vs current behavior in logs and metadata
+
+Add explicit mode control:
+
+- `disabled`
+- `shadow`
+- `active`
+
+This should be controlled by a per-tenant flag with optional env fallback such as `DISCORD_REPLY_ORCHESTRATOR_MODE`.
 
 ### Phase 2: Orchestrator-owned lifecycle messages
 
@@ -609,6 +868,8 @@ Roll out in three phases.
 - reduce duplicate logic in `tenant-ai-worker.ts`
 - demote `tenant-runtime-status-notifier.ts` for `discord_runtime`
 - unify reaper/sweeper terminal behavior under shared policy
+- upgrade chunking to fence-aware behavior
+- finalize orchestrator ownership of typing lifecycle and channel arbitration edge cases
 
 ## Risks
 
