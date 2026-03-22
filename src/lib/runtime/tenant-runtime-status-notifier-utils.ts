@@ -1,4 +1,5 @@
 import type { TenantRuntimeRun } from "../../types/tenant-runtime.ts";
+import { discordRuntimeReplyHasTerminalVisibility } from "./discord-runtime-reply-orchestrator";
 
 const COMPLETION_NOTIFICATION_MAX_LENGTH = 300;
 
@@ -133,10 +134,22 @@ export function shouldSendDiscordRuntimeCompletionNotification(
     return false;
   }
 
+  if (discordRuntimeReplyHasTerminalVisibility(run)) {
+    return false;
+  }
+
   // The AI worker already sends the response directly to Discord — skip the
   // duplicate completion notification so the user doesn't see the same message twice.
   const ack = pickString(run.result.ack);
-  if (ack === "ai_response_dispatched" && run.status === "completed") {
+  if (
+    ack === "ai_response_dispatched" &&
+    run.status === "completed" &&
+    run.result.final_reply_sent === true
+  ) {
+    return false;
+  }
+
+  if (ack === "runtime_dispatched" && run.status === "completed") {
     return false;
   }
 

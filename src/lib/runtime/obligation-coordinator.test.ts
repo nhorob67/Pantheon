@@ -253,7 +253,7 @@ test("obligation requires explicit closure regardless of model output", () => {
   assert.equal(transitionObligationState("open", "retry"), null);
 
   // All valid events require coordinator to explicitly fire them
-  for (const event of validEvents) {
+  for (const event of validEvents as import("./obligation-state.ts").ObligationTransitionEvent[]) {
     const result = transitionObligationState("open", event);
     assert.notEqual(result, undefined, `open + ${event} should be defined`);
   }

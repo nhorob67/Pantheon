@@ -27,15 +27,9 @@ import {
 import { loadGuardrailConfig, loadMiddlewareRateLimits } from "@/lib/runtime/guardrail-config-loader";
 import { createDefaultGuardrailPipeline } from "@/lib/runtime/guardrail-middleware";
 import {
-  sendDiscordChannelMessage,
-  sendDiscordChannelMessageSequence,
-  sendDiscordChannelMessageWithFiles,
-  sendDiscordTypingIndicator,
-  buildDiscordRuntimeResponseParts,
   DiscordApiError,
-  checkAndMarkFinalReply,
 } from "@/lib/runtime/tenant-runtime-discord";
-import { collectPendingFiles } from "./tools/file-create";
+import { clearPendingFiles, peekPendingFiles } from "./tools/file-create";
 import { scheduleFollowUp, MAX_FOLLOW_UP_DEPTH } from "./tools/follow-up";
 import {
   getObligationById,
@@ -43,12 +37,17 @@ import {
   recordObligationHeartbeat,
   recordObligationToolPhase,
   recordUserUpdate,
-  shouldSendStatusUpdate,
 } from "@/lib/runtime/obligation-coordinator";
 import {
   CircuitBreakerOpenError,
-  runWithCircuitBreaker,
 } from "@/lib/runtime/tenant-runtime-circuit-breaker";
+import {
+  dispatchDiscordRuntimeTerminalSuccess,
+  dispatchDiscordRuntimeTerminalFailure,
+  DiscordRuntimeReplyOrchestrator,
+} from "@/lib/runtime/discord-runtime-reply-orchestrator";
+import { chunkReplyContent } from "@/lib/runtime/discord-runtime-reply-policy";
+import { resolveDiscordBotToken } from "@/lib/runtime/tenant-runtime-discord-lifecycle";
 import { checkTrialAndSpendingBlock } from "./trial-guard";
 import { buildRedactor } from "@/lib/secrets/redaction";
 import { resolveTenantRuntimeGovernancePolicy } from "@/lib/runtime/tenant-runtime-governance";
@@ -60,9 +59,6 @@ import type {
 import type { RuntimeObligation } from "@/types/obligation";
 import type { TenantRole, TenantRuntimeRun } from "@/types/tenant-runtime";
 
-const CIRCUIT_FAILURE_THRESHOLD = 3;
-const CIRCUIT_COOLDOWN_MS = 30_000;
-const DISCORD_BOT_TOKEN_ENV = "DISCORD_BOT_TOKEN";
 const PROGRESS_HEARTBEAT_INTERVAL_MS = 5_000;
 const TYPING_REFRESH_INTERVAL_MS = 10_000;
 const LONG_TASK_PROGRESS_UPDATE_MS = 20_000;
@@ -106,14 +102,6 @@ function getContextualProgressMessage(toolPhase: string | null, index: number): 
     return msgs[Math.min(index, msgs.length - 1)];
   }
   return GENERIC_PROGRESS_MESSAGES[Math.min(index, GENERIC_PROGRESS_MESSAGES.length - 1)];
-}
-
-function getDiscordBotToken(): string {
-  const token = process.env[DISCORD_BOT_TOKEN_ENV];
-  if (!token) {
-    throw new Error("DISCORD_BOT_TOKEN environment variable is not set");
-  }
-  return token;
 }
 
 function resolveActorRole(payload: Record<string, unknown>): TenantRole {
@@ -307,6 +295,91 @@ export function shouldSuppressIntermediateToolPreamble(text: string): boolean {
   if (/\d/.test(trimmed) || /https?:\/\//i.test(trimmed)) return false;
 
   return /^(let me|i('| wi)?ll|i am|i'm)\s+(check|look|look up|pull|review|try|see|fetch|read)\b/i.test(trimmed);
+}
+
+function pickLifecycleString(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const normalized = value.trim().replace(/\s+/g, " ");
+  return normalized.length > 0 ? normalized : null;
+}
+
+type WorkerLifecycleToolEvent =
+  | {
+      type: "delegation_started";
+      dedupeKey: string;
+      message: string;
+      targetAgentName?: string;
+    }
+  | {
+      type: "file_ready";
+      dedupeKey: string;
+      message: string;
+      fileName: string;
+    };
+
+function extractWorkerLifecycleToolEvents(step: {
+  toolResults?: Array<{
+    toolName?: string;
+    result?: unknown;
+  }>;
+}): WorkerLifecycleToolEvent[] {
+  const events: WorkerLifecycleToolEvent[] = [];
+  const seen = new Set<string>();
+
+  for (const toolResult of step.toolResults ?? []) {
+    const toolName =
+      toolResult && typeof toolResult.toolName === "string" ? toolResult.toolName : null;
+    const result =
+      toolResult?.result && typeof toolResult.result === "object" && !Array.isArray(toolResult.result)
+        ? (toolResult.result as Record<string, unknown>)
+        : null;
+
+    if (!toolName || !result || result.success !== true) {
+      continue;
+    }
+
+    if (toolName === "delegate_task" || toolName === "delegate_task_async") {
+      const targetAgentName = pickLifecycleString(result.agent_name ?? result.target_agent);
+      const dedupeKey = `delegation_started:${targetAgentName ?? toolName}`;
+      if (seen.has(dedupeKey)) {
+        continue;
+      }
+      seen.add(dedupeKey);
+      events.push({
+        type: "delegation_started",
+        dedupeKey,
+        message: targetAgentName
+          ? `I've asked ${targetAgentName} to help with that part.`
+          : "I've asked another agent to help with that part.",
+        targetAgentName: targetAgentName ?? undefined,
+      });
+      continue;
+    }
+
+    if (toolName === "file_create") {
+      const fileName = pickLifecycleString(result.file_name);
+      if (!fileName) {
+        continue;
+      }
+
+      const dedupeKey = `file_ready:${fileName}`;
+      if (seen.has(dedupeKey)) {
+        continue;
+      }
+      seen.add(dedupeKey);
+      events.push({
+        type: "file_ready",
+        dedupeKey,
+        message: `I've prepared ${fileName}. I'll attach it with the result.`,
+        fileName,
+      });
+    }
+  }
+
+  return events;
 }
 
 interface QueryLikeRecord {
@@ -681,7 +754,20 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
     async execute(context: TenantRuntimeWorkerContext): Promise<TenantRuntimeWorkerResult> {
       const { model: primaryModel, modelId: primaryModelId, inputCost: primaryInputCost, outputCost: primaryOutputCost, contextWindowTokens, fastModel } = resolveWorkerModels(context.resolvedModels);
       let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
+      let replyOrchestrator: DiscordRuntimeReplyOrchestrator | null = null;
       try {
+        const payload = context.run.payload;
+        const channelId =
+          typeof payload.channel_id === "string" ? payload.channel_id.trim() : "";
+        const content = typeof payload.content === "string" ? payload.content : "";
+        const rawMessageId =
+          typeof payload.message_id === "string" ? payload.message_id : null;
+        // Cron/system runs use synthetic message IDs (e.g. "cron-...") that are
+        // not valid Discord snowflakes. Passing them as a message_reference
+        // causes "Invalid Form Body" from the Discord API, so strip them.
+        const inboundMessageId =
+          rawMessageId && /^\d+$/.test(rawMessageId) ? rawMessageId : null;
+
         // Spending cap + trial expiration circuit breaker
         const { data: custRow } = await admin
           .from("customers")
@@ -696,40 +782,20 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
         });
 
         if (trialCheck.blocked) {
-        const payload = context.run.payload;
-        const channelId =
-          typeof payload.channel_id === "string" ? payload.channel_id.trim() : "";
-        const runtimeReplyToMessageId =
-          typeof payload.message_id === "string" ? payload.message_id : null;
-        if (channelId && trialCheck.message) {
-          const botToken = getDiscordBotToken();
-          await sendDiscordChannelMessageSequence(
-              {
-                botToken,
-                channelId,
-                contents: [trialCheck.message],
-                replyToMessageId: runtimeReplyToMessageId,
-              },
-              fetch
-            ).catch(() => {});
+          if (channelId && trialCheck.message) {
+            await dispatchDiscordRuntimeTerminalFailure(admin, context.run, {
+              channelId,
+              replyToMessageId: inboundMessageId,
+              errorMessage: trialCheck.message,
+            }).catch(() => {});
           }
+
           return {
             outcome: "completed",
             result: { paused: true, reason: trialCheck.reason },
           };
         }
 
-        const payload = context.run.payload;
-        const channelId =
-          typeof payload.channel_id === "string" ? payload.channel_id.trim() : "";
-        const content = typeof payload.content === "string" ? payload.content : "";
-        const rawMessageId =
-          typeof payload.message_id === "string" ? payload.message_id : null;
-        // Cron/system runs use synthetic message IDs (e.g. "cron-...") that are
-        // not valid Discord snowflakes.  Passing them as a message_reference
-        // causes "Invalid Form Body" from the Discord API, so strip them.
-        const inboundMessageId =
-          rawMessageId && /^\d+$/.test(rawMessageId) ? rawMessageId : null;
         const userId =
           typeof payload.user_id === "string" ? payload.user_id : "unknown";
         const guildId =
@@ -782,7 +848,14 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
         // Shared array for break-glass secret reveals — populated by reveal_secret tool
         const revealedSecretValues: string[] = [];
 
-        const botToken = getDiscordBotToken();
+        const botToken = await resolveDiscordBotToken(admin, context.run.tenant_id);
+        if (!botToken) {
+          return {
+            outcome: "failed",
+            errorMessage: "Missing Discord bot token for tenant runtime dispatch",
+            result: { failed: true, reason: "missing_bot_token" },
+          };
+        }
         const governance = await resolveTenantRuntimeGovernancePolicy(
           admin,
           context.run.tenant_id
@@ -946,10 +1019,21 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           agentConfig && (agentConfig["typing_mode"] === "thinking" || agentConfig["typing_mode"] === "message")
             ? agentConfig["typing_mode"]
             : "instant";
+        replyOrchestrator = new DiscordRuntimeReplyOrchestrator({
+          admin,
+          run: context.run,
+          botToken,
+          channelId,
+          replyToMessageId: inboundMessageId,
+        });
+        const runtimeReplyOrchestrator = replyOrchestrator;
+        const triggerTypingIndicator = async (): Promise<void> => {
+          await runtimeReplyOrchestrator.refreshTyping();
+        };
 
         // Show typing indicator while generating (instant mode only — thinking/message defer)
         if (typingMode === "instant") {
-          await sendDiscordTypingIndicator(botToken, channelId);
+          await triggerTypingIndicator();
         }
 
         // Track chunks that were actually delivered to Discord (not just attempted)
@@ -967,12 +1051,52 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           context.run.id
         ).catch(() => null);
 
+        const recordVisibleProgress = async (
+          source: "heartbeat" | "status" | "step" | "final" | "delegation" | "file_ready",
+          visibility: "progress" | "final",
+          sentChunk: string
+        ): Promise<void> => {
+          deliveredIntermediateChunks.push(sentChunk);
+          lastUserVisibleActivityAt = Date.now();
+
+          if (source !== "final") {
+            progressUpdatesSentCount += 1;
+          }
+
+          if (obligation && visibility !== "final") {
+            if (source === "heartbeat") {
+              await recordObligationHeartbeat(admin, obligation.id, context.run.id, {
+                source,
+                content_preview: sentChunk.slice(0, 160),
+              }).catch(() => {});
+            } else {
+              await recordObligationToolPhase(admin, obligation.id, context.run.id, {
+                source,
+                content_preview: sentChunk.slice(0, 160),
+              }).catch(() => {});
+            }
+            await recordUserUpdate(admin, obligation.id, context.run.id, {
+              source,
+              content_preview: sentChunk.slice(0, 160),
+            }).catch(() => {});
+            obligation = await getObligationById(admin, obligation.id).catch(() => obligation);
+          }
+        };
+
         const sendVisibleReply = async (
           content: string,
           options?: {
             dedupeKey?: string;
             visibility?: "progress" | "final";
-            source?: "heartbeat" | "status" | "step" | "final";
+            source?:
+              | "heartbeat"
+              | "status"
+              | "step"
+              | "final"
+              | "delegation"
+              | "file_ready";
+            delegationTargetName?: string;
+            fileName?: string;
           }
         ): Promise<boolean> => {
           const trimmed = content.trim();
@@ -985,66 +1109,46 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
             return false;
           }
 
-          const sentChunk = trimmed.slice(0, 1900);
+          const sentChunk = chunkReplyContent(trimmed)[0]?.trim();
+          if (!sentChunk) {
+            return false;
+          }
           const source = options?.source ?? "status";
           const visibility = options?.visibility ?? "progress";
 
-          if (obligation && visibility !== "final") {
-            const obligationEventType = source === "heartbeat" ? "heartbeat" : "tool_phase";
-            if (obligationEventType === "heartbeat") {
-              await recordObligationHeartbeat(admin, obligation.id, context.run.id, {
-                source,
-                content_preview: sentChunk.slice(0, 160),
-              }).catch(() => {});
-            } else {
-              await recordObligationToolPhase(admin, obligation.id, context.run.id, {
-                source,
-                content_preview: sentChunk.slice(0, 160),
-              }).catch(() => {});
-            }
-
-            obligation = await getObligationById(admin, obligation.id).catch(() => obligation);
-            if (obligation) {
-              const decision = shouldSendStatusUpdate(obligation, obligationEventType);
-              if (!decision.shouldUpdate) {
-                return false;
-              }
-            }
+          let sent = false;
+          if (source === "heartbeat") {
+            sent = await runtimeReplyOrchestrator.emitKeepalive();
+          } else if (source === "delegation") {
+            sent = await runtimeReplyOrchestrator.emitDelegationStarted(
+              options?.delegationTargetName
+            );
+          } else if (source === "file_ready") {
+            sent = options?.fileName
+              ? await runtimeReplyOrchestrator.emitFileReady({
+                  filename: options.fileName,
+                })
+              : false;
+          } else if (source === "status") {
+            sent = await runtimeReplyOrchestrator.emitToolPhase({
+              phaseKey: lastToolPhase ?? "generic_tool",
+              label: sentChunk,
+              sentKey: dedupeKey ?? `tool:${lastToolPhase ?? "generic_tool"}`,
+            });
+          } else if (source === "step") {
+            sent = await runtimeReplyOrchestrator.emitIntermediateText(sentChunk);
           }
 
-          try {
-            await sendDiscordChannelMessage(
-              {
-                botToken,
-                channelId,
-                content: sentChunk,
-                replyToMessageId: inboundMessageId,
-              },
-              fetch
-            );
-            deliveredIntermediateChunks.push(sentChunk);
-            lastUserVisibleActivityAt = Date.now();
-
-            if (source !== "final") {
-              progressUpdatesSentCount += 1;
-            }
-
-            if (obligation && visibility !== "final") {
-              await recordUserUpdate(admin, obligation.id, context.run.id, {
-                source,
-                content_preview: sentChunk.slice(0, 160),
-              }).catch(() => {});
-              obligation = await getObligationById(admin, obligation.id).catch(() => obligation);
-            }
-
-            if (dedupeKey) {
-              sentStatusKeys.add(dedupeKey);
-            }
-            return true;
-          } catch (err) {
-            console.error("[ai-worker] Intermediate Discord send failed:", safeErrorMessage(err));
+          if (!sent) {
             return false;
           }
+
+          await recordVisibleProgress(source, visibility, sentChunk);
+
+          if (dedupeKey) {
+            sentStatusKeys.add(dedupeKey);
+          }
+          return true;
         };
 
         heartbeatInterval = setInterval(async () => {
@@ -1060,7 +1164,7 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
 
           const silenceMs = Date.now() - lastUserVisibleActivityAt;
           if (typingMode !== "message" && silenceMs > TYPING_REFRESH_INTERVAL_MS) {
-            sendDiscordTypingIndicator(botToken, channelId).catch(() => {});
+            triggerTypingIndicator().catch(() => {});
           }
 
           if (
@@ -1081,7 +1185,7 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
 
         // Thinking mode: start typing only after context assembly is complete
         if (typingMode === "thinking") {
-          await sendDiscordTypingIndicator(botToken, channelId);
+          await triggerTypingIndicator();
         }
 
         const result = await generateText({
@@ -1095,6 +1199,26 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
             // Track the last tool used for contextual progress messages
             if (step.toolCalls.length > 0) {
               lastToolPhase = step.toolCalls[step.toolCalls.length - 1].toolName;
+            }
+
+            const lifecycleEvents = extractWorkerLifecycleToolEvents(step);
+            for (const event of lifecycleEvents) {
+              if (event.type === "delegation_started") {
+                await sendVisibleReply(event.message, {
+                  dedupeKey: event.dedupeKey,
+                  visibility: "progress",
+                  source: "delegation",
+                  delegationTargetName: event.targetAgentName,
+                });
+                continue;
+              }
+
+              await sendVisibleReply(event.message, {
+                dedupeKey: event.dedupeKey,
+                visibility: "progress",
+                source: "file_ready",
+                fileName: event.fileName,
+              });
             }
 
             // Send intermediate text when: step has text AND more steps follow AND not a cron run
@@ -1149,7 +1273,7 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
             });
 
             // Refresh typing indicator for next step
-            sendDiscordTypingIndicator(botToken, channelId).catch(() => {});
+            triggerTypingIndicator().catch(() => {});
           },
         });
 
@@ -1501,25 +1625,15 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
         // Send to Discord (skip if intermediate sends already covered the full response)
         let sent: { messageIds: string[]; partsSent: number } = { messageIds: [], partsSent: 0 };
         let finalReplySent = false;
+        const pendingFiles = context.run?.id ? peekPendingFiles(context.run.id) : [];
 
-        if (!skipFinalSend) {
-          // Opt-in dedup guard: skip if this exact final reply was already sent
-          // (protects against re-entrant execution of the same run)
-          const isDuplicate = checkAndMarkFinalReply({
-            runId: context.run.id,
-            channelId,
-            replyToMessageId: inboundMessageId,
-            partIndex: 0,
-            content: responseText,
+        if (hasApprovalRequired) {
+          finalReplySent = await runtimeReplyOrchestrator.emitApprovalRequested({
+            approvalId: approvalId ?? "approval_required",
           });
-          if (isDuplicate) {
-            skipFinalSend = true;
-            console.log(`[ai-worker] Skipping duplicate final reply for run ${context.run.id}`);
-          }
-        }
-
-        if (!skipFinalSend) {
-          const responseParts = buildDiscordRuntimeResponseParts(responseText);
+          skipFinalSend = true;
+          responseText = "";
+        } else {
           const timeoutFetch: typeof fetch = async (url, init) => {
             const controller = new AbortController();
             const timeout = setTimeout(() => controller.abort(), governance.dispatch_timeout_ms);
@@ -1530,60 +1644,32 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
             }
           };
 
-          // Collect any files created by file_create tool during this run
-          const pendingFiles = context.run?.id ? collectPendingFiles(context.run.id) : [];
+          const terminalDispatch = await dispatchDiscordRuntimeTerminalSuccess(
+            admin,
+            context.run,
+            {
+              channelId,
+              replyToMessageId: inboundMessageId,
+              responseText,
+              skipFinalSend,
+              terminalState,
+              toolSummary,
+              progressUpdatesSentCount,
+              pendingFiles,
+              fetchImpl: timeoutFetch,
+            }
+          );
 
-          if (pendingFiles.length > 0) {
-            // Send text + file attachments together via multipart
-            const attachmentText = responseParts.join("\n\n");
-            sent = await runWithCircuitBreaker(
-              `discord_dispatch:${context.run.tenant_id}`,
-              async () => {
-                const result = await sendDiscordChannelMessageWithFiles(
-                  {
-                    botToken,
-                    channelId,
-                    content: attachmentText.slice(0, 1900),
-                    files: pendingFiles.map((f) => ({
-                      name: f.fileName,
-                      data: f.data,
-                      contentType: f.contentType,
-                    })),
-                    replyToMessageId: inboundMessageId,
-                  },
-                  timeoutFetch
-                );
-                return {
-                  messageIds: result.messageId ? [result.messageId] : [],
-                  partsSent: 1,
-                };
-              },
-              {
-                failureThreshold: CIRCUIT_FAILURE_THRESHOLD,
-                cooldownMs: CIRCUIT_COOLDOWN_MS,
-              }
-            );
-          } else {
-            // Standard text-only send
-            sent = await runWithCircuitBreaker(
-              `discord_dispatch:${context.run.tenant_id}`,
-              () =>
-                sendDiscordChannelMessageSequence(
-                  {
-                    botToken,
-                    channelId,
-                    contents: responseParts,
-                    replyToMessageId: inboundMessageId,
-                  },
-                  timeoutFetch
-                ),
-              {
-                failureThreshold: CIRCUIT_FAILURE_THRESHOLD,
-                cooldownMs: CIRCUIT_COOLDOWN_MS,
-              }
-            );
+          finalReplySent = terminalDispatch.sent;
+          responseText = terminalDispatch.text;
+          sent = {
+            messageIds: terminalDispatch.messageIds,
+            partsSent: terminalDispatch.partsSent,
+          };
+          skipFinalSend = true;
+          if (finalReplySent && context.run?.id && pendingFiles.length > 0) {
+            clearPendingFiles(context.run.id);
           }
-          finalReplySent = sent.partsSent > 0;
         }
 
         const runResult = {
@@ -1614,6 +1700,11 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
       } catch (error) {
         if (heartbeatInterval) clearInterval(heartbeatInterval);
         await flushBrowserSessionsForRun(context.run.id).catch(() => []);
+        if (replyOrchestrator) {
+          await replyOrchestrator.finalizeFailure(
+            safeErrorMessage(error, "AI worker dispatch failed")
+          ).catch(() => {});
+        }
         const rateLimitError = error instanceof DiscordApiError && error.status === 429;
         const retryAfterSeconds =
           error instanceof DiscordApiError ? error.retryAfterSeconds : null;

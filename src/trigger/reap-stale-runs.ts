@@ -1,7 +1,7 @@
 import { schedules } from "@trigger.dev/sdk";
 import { createTriggerAdminClient } from "./lib/supabase";
 import { transitionTenantRuntimeRun } from "@/lib/runtime/tenant-runtime-queue";
-import { sendDiscordRuntimeCompletionNotification } from "@/lib/runtime/tenant-runtime-status-notifier";
+import { sendDiscordRuntimeTerminalSafetyNet } from "@/lib/runtime/tenant-runtime-status-notifier";
 import type { TenantRuntimeRun } from "@/types/tenant-runtime";
 
 const STALE_LOCK_THRESHOLD_MINUTES = 5;
@@ -108,7 +108,7 @@ export const reapStaleRuns = schedules.task({
 
         // Notify Discord for reaped discord_runtime runs via shared notifier
         if (event === "fail" && run.run_kind === "discord_runtime") {
-          await sendDiscordRuntimeCompletionNotification(admin, transitioned).catch((err) => {
+          await sendDiscordRuntimeTerminalSafetyNet(admin, transitioned).catch((err) => {
             console.error(`[reap-stale-runs] Failed to notify Discord for run ${run.id}:`, err);
           });
         }

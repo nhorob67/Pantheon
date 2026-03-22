@@ -28,7 +28,6 @@ import {
   isKillSwitchEnabled,
   resolveCustomerFeatureFlag,
 } from "@/lib/queries/extensibility";
-import { isWebToolAvailable } from "./web-tool-gating";
 import { createBrowserTools } from "./browser";
 import { isBrowserToolAvailable } from "./browser-tool-gating";
 import { isDelegationToolAvailable } from "./delegation-tool-gating";
@@ -195,52 +194,32 @@ export async function resolveToolsForAgent(input: ToolRegistryInput): Promise<To
     })
   );
 
-  // Web + browser tools — gated by rollout flags, kill switches, and tenant tool status.
-  // Consolidated into a single Promise.all to reduce sequential DB round-trips.
-  const ALL_GATED_TOOL_KEYS = [
-    "web_search", "web_fetch",
+  // Web search tools — always available
+  Object.assign(tools, createWebSearchTool());
+  Object.assign(tools, createWebFetchTool());
+
+  // Browser tools — gated by rollout flags, kill switches, and tenant tool status.
+  const BROWSER_GATED_TOOL_KEYS = [
     "browser_navigate", "browser_extract", "browser_click", "browser_fill", "browser_screenshot",
   ];
 
   const [
-    webSearchRolloutEnabled,
-    webFetchRolloutEnabled,
-    webResearchPaused,
     browserRolloutEnabled,
     browserPaused,
     { data: allGatedToolStatuses },
   ] = await Promise.all([
-    resolveCustomerFeatureFlag(input.admin, input.customerId, "tools.web_search"),
-    resolveCustomerFeatureFlag(input.admin, input.customerId, "tools.web_fetch"),
-    isKillSwitchEnabled(input.admin, "tools.web_research_pause"),
     resolveCustomerFeatureFlag(input.admin, input.customerId, "tools.browser_automation"),
     isKillSwitchEnabled(input.admin, "tools.browser_automation_pause"),
     input.admin
       .from("tenant_tools")
       .select("tool_key, status")
       .eq("tenant_id", input.tenantId)
-      .in("tool_key", ALL_GATED_TOOL_KEYS),
+      .in("tool_key", BROWSER_GATED_TOOL_KEYS),
   ]);
 
   const gatedToolStatus = new Map(
     (allGatedToolStatuses ?? []).map((r: { tool_key: string; status: string }) => [r.tool_key, r.status])
   );
-
-  // Web research tools
-  if (isWebToolAvailable({
-    tenantStatus: gatedToolStatus.get("web_search"),
-    rolloutEnabled: webSearchRolloutEnabled,
-    webResearchPaused,
-  })) {
-    Object.assign(tools, createWebSearchTool());
-  }
-  if (isWebToolAvailable({
-    tenantStatus: gatedToolStatus.get("web_fetch"),
-    rolloutEnabled: webFetchRolloutEnabled,
-    webResearchPaused,
-  })) {
-    Object.assign(tools, createWebFetchTool());
-  }
 
   // Browser automation tools
   if (
@@ -425,8 +404,8 @@ export async function resolveToolsForAgent(input: ToolRegistryInput): Promise<To
   // for violations. This is a guardrail that prevents inconsistent states
   // (e.g., browser_automation enabled without web_search).
   const enabledFlags = new Set<string>();
-  if (webSearchRolloutEnabled) enabledFlags.add("tools.web_search");
-  if (webFetchRolloutEnabled) enabledFlags.add("tools.web_fetch");
+  enabledFlags.add("tools.web_search");
+  enabledFlags.add("tools.web_fetch");
   if (browserRolloutEnabled) enabledFlags.add("tools.browser_automation");
   // Delegation flag is only resolved when delegationConfig is provided;
   // infer from whether delegation tools were actually added to the tool map.

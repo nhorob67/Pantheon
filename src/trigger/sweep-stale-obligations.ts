@@ -1,17 +1,58 @@
 import { schedules } from "@trigger.dev/sdk";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createTriggerAdminClient } from "./lib/supabase";
 import {
   listStaleObligations,
   listOverdueObligations,
   transitionObligation,
 } from "@/lib/runtime/obligation-coordinator";
+import { sendDiscordRuntimeTerminalSafetyNet } from "@/lib/runtime/tenant-runtime-status-notifier";
 import {
   buildStalledFailureReply,
   buildStalledReply,
   sendDiscordObligationStatusReply,
 } from "@/lib/runtime/obligation-discord-notifier";
+import { getTenantRuntimeRunById } from "@/lib/runtime/tenant-runtime-queue";
+import type { RuntimeObligation } from "@/types/obligation";
 
 const BATCH_LIMIT = 50;
+
+async function sendTerminalObligationFailureReply(
+  admin: SupabaseClient,
+  obligation: RuntimeObligation,
+  eventType: "failed",
+  content: string
+): Promise<boolean> {
+  const candidateRunIds = [
+    obligation.current_run_id,
+    obligation.completion_run_id,
+    obligation.originating_run_id,
+  ].filter((value, index, array): value is string => {
+    return typeof value === "string" && value.length > 0 && array.indexOf(value) === index;
+  });
+
+  for (const runId of candidateRunIds) {
+    const run = await getTenantRuntimeRunById(admin, runId).catch(() => null);
+    if (!run) {
+      continue;
+    }
+
+    const dispatch = await sendDiscordRuntimeTerminalSafetyNet(admin, {
+      ...run,
+      error_message: run.error_message ?? content.replace(/^Task failed\.\s*/i, ""),
+    }).catch(() => ({ owned: false, sent: false, mode: "none" as const, run }));
+
+    if (dispatch.owned || dispatch.sent) {
+      return true;
+    }
+  }
+
+  return sendDiscordObligationStatusReply(admin, obligation, {
+    content,
+    runId: obligation.current_run_id,
+    eventType,
+  }).catch(() => false);
+}
 
 export const sweepStaleObligations = schedules.task({
   id: "sweep-stale-obligations",
@@ -40,11 +81,12 @@ export const sweepStaleObligations = schedules.task({
             idempotencyKey: `sweep_fail:${obligation.id}:${obligation.updated_at}`,
             payload: { reason: "stalled_twice", sweeper: true },
           });
-          await sendDiscordObligationStatusReply(admin, failed, {
-            content: buildStalledFailureReply(),
-            runId: failed.current_run_id,
-            eventType: "failed",
-          }).catch(() => false);
+          await sendTerminalObligationFailureReply(
+            admin,
+            failed,
+            "failed",
+            buildStalledFailureReply()
+          ).catch(() => false);
           staleResults.push({
             obligationId: obligation.id,
             tenantId: obligation.tenant_id,
@@ -105,11 +147,12 @@ export const sweepStaleObligations = schedules.task({
             sweeper: true,
           },
         });
-        await sendDiscordObligationStatusReply(admin, failed, {
-          content: buildStalledFailureReply(),
-          runId: failed.current_run_id,
-          eventType: "failed",
-        }).catch(() => false);
+        await sendTerminalObligationFailureReply(
+          admin,
+          failed,
+          "failed",
+          buildStalledFailureReply()
+        ).catch(() => false);
         overdueResults.push({
           obligationId: obligation.id,
           tenantId: obligation.tenant_id,

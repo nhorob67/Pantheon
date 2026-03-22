@@ -81,7 +81,7 @@ export function TenantApprovalsPanel({
 }: TenantApprovalsPanelProps) {
   const [approvals, setApprovals] = useState<ApprovalRecord[]>(initialApprovals);
   const [status, setStatus] = useState<ApprovalStatus>(initialStatus);
-  const [pendingId, setPendingId] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<{ id: string; decision: "approved" | "rejected" } | null>(null);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
@@ -122,7 +122,7 @@ export function TenantApprovalsPanel({
   }
 
   async function decide(approvalId: string, decision: "approved" | "rejected") {
-    setPendingId(approvalId);
+    setPendingAction({ id: approvalId, decision });
     try {
       const res = await fetch(`/api/tenants/${tenantId}/approvals/${approvalId}/decision`, {
         method: "POST",
@@ -154,7 +154,7 @@ export function TenantApprovalsPanel({
         "error"
       );
     } finally {
-      setPendingId(null);
+      setPendingAction(null);
     }
   }
 
@@ -223,23 +223,37 @@ export function TenantApprovalsPanel({
                   <div className="mt-3 flex gap-2">
                     <button
                       type="button"
-                      className="rounded-md border border-emerald-500/40 px-3 py-1 text-xs text-emerald-300"
+                      className="rounded-md border border-emerald-500/40 px-3 py-1 text-xs text-emerald-300 transition-opacity disabled:opacity-50"
                       onClick={() => {
                         void decide(approval.id, "approved");
                       }}
-                      disabled={pendingId === approval.id}
+                      disabled={pendingAction?.id === approval.id}
                     >
-                      Approve
+                      {pendingAction?.id === approval.id && pendingAction.decision === "approved" ? (
+                        <span className="flex items-center gap-1.5">
+                          <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-emerald-300 border-t-transparent" />
+                          Approving…
+                        </span>
+                      ) : (
+                        "Approve"
+                      )}
                     </button>
                     <button
                       type="button"
-                      className="rounded-md border border-destructive/40 px-3 py-1 text-xs text-red-300"
+                      className="rounded-md border border-destructive/40 px-3 py-1 text-xs text-red-300 transition-opacity disabled:opacity-50"
                       onClick={() => {
                         void decide(approval.id, "rejected");
                       }}
-                      disabled={pendingId === approval.id}
+                      disabled={pendingAction?.id === approval.id}
                     >
-                      Reject
+                      {pendingAction?.id === approval.id && pendingAction.decision === "rejected" ? (
+                        <span className="flex items-center gap-1.5">
+                          <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-red-300 border-t-transparent" />
+                          Rejecting…
+                        </span>
+                      ) : (
+                        "Reject"
+                      )}
                     </button>
                   </div>
                 )}

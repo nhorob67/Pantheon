@@ -15,6 +15,109 @@ The target behavior is conversational but controlled:
 - approval and resume messaging must be authoritative
 - every visible progress update must eventually resolve into a blocked state, a terminal answer, or a terminal failure
 
+## Implementation Status
+
+Status as of 2026-03-22:
+
+- implemented:
+  - `src/lib/runtime/discord-runtime-reply-orchestrator.ts`
+  - `src/lib/runtime/discord-runtime-reply-policy.ts`
+  - `src/lib/runtime/discord-runtime-reply-types.ts`
+- integrated into:
+  - `src/lib/ai/tenant-ai-worker.ts`
+  - `src/lib/ai/tools/file-create.ts`
+  - `src/app/api/admin/tenants/runtime/process/route.ts`
+  - `src/app/api/admin/tenants/runtime/discord/approval-decision/route.ts`
+  - `src/app/api/admin/tenants/runtime/discord/ingress/route.ts`
+  - `src/lib/runtime/tenant-approval-executor.ts`
+  - `src/lib/runtime/tenant-runtime-discord.ts`
+  - `src/lib/runtime/tenant-runtime-status-notifier.ts`
+  - `src/lib/runtime/tenant-runtime-status-notifier-utils.ts`
+  - `src/trigger/reap-stale-runs.ts`
+  - `src/trigger/sweep-stale-obligations.ts`
+- tests added:
+  - `src/lib/runtime/discord-runtime-reply-policy.test.ts`
+  - `src/lib/runtime/discord-runtime-reply-orchestrator.test.ts`
+  - expanded `src/lib/runtime/tenant-runtime-discord.test.ts`
+  - expanded `src/lib/runtime/tenant-runtime-status-notifier.test.ts`
+
+Latest progress in this pass:
+
+- reconciled this design doc against the current in-flight orchestrator implementation in the working tree
+- hardened approval-path Discord transport resolution so approval button sends, button updates, and approval resume/reject lifecycle replies now use the shared per-tenant bot-token resolver instead of an env-only assumption
+- removed shadow/disabled rollout branching from the reply orchestrator path so deployment is now always-on active for all tenants
+- wired the early trial-expired and spending-cap-paused worker reply path into the shared terminal-failure dispatcher so it now participates in reply lifecycle ownership and terminal visibility persistence
+- reduced the remaining worker reply duplication further by collapsing `tenant-ai-worker.ts` onto a single orchestrator-owned visible-send path and shared chunking helper
+- removed `shouldSendStatusUpdate()` from the active `discord_runtime` worker visibility path so obligation cadence no longer gates progress sends
+- demoted legacy obligation-side non-terminal Discord replies for `discord_runtime` so approval-granted and stalled chatter no longer bypasses the reply orchestrator lifecycle
+- demoted `tenant-runtime-status-notifier.ts` further into a shared terminal safety-net helper used by process, ingress, approval-rejection, and stale-run paths instead of open-coded completion/failure fallback branching
+- unified stale-run, stale-obligation, inline-ingress, approval-rejection, and process-route terminal fallback call sites further under shared terminal dispatch/safety-net policy
+- finalized the remaining chunking cleanup so worker/orchestrator reply paths reuse shared chunking helpers instead of ad hoc terminal/progress slicing
+
+Progress completed across this thread:
+
+- plan doc reconciled repeatedly against the live working tree rather than an older `HEAD` snapshot
+- approval-path Discord transport now resolves via the same shared tenant bot-token helper used by the orchestrator/safety-net stack
+- reply orchestrator deployment posture is now always-on active rather than metadata/env-controlled shadow rollout
+- early trial/spending-block terminal replies moved under shared terminal-failure policy
+- obligation-side cadence gating removed from the `discord_runtime` worker visibility path
+- obligation-side non-terminal Discord replies demoted for `discord_runtime`
+- completion notifier demoted further so it behaves as a pure terminal safety net, including suppression for `runtime_dispatched` success runs
+- shared terminal safety-net helper adopted by process route, inline ingress, stale-run reaper, stale-obligation sweeper, and approval rejection flows
+- targeted tests added/expanded for terminal-success fallback behavior, obligation notifier demotion behavior, and completion-notifier suppression behavior
+
+Implemented behavior in this slice:
+
+- always-on active reply orchestrator behavior for deployed `discord_runtime` runs
+- reply lifecycle metadata persisted on the run
+- reply normalization before orchestrator-owned delivery
+- milestone, keepalive, approval-blocked, resumed, and terminal reply handling
+- terminal answer vs synthesized terminal summary/failure selection
+- attachment-aware terminal delivery
+- text-only terminal fallback when attachment upload fails, with attachment-fallback metadata recorded on the run
+- delivery circuit-breaker wrapping for orchestrator-owned sends
+- duplicate completion-notification suppression when terminal visibility was already emitted
+- approval grant/reject flow routed through orchestrator first for `discord_runtime`
+- approval button send/update paths and approval lifecycle replies now share tenant-scoped Discord token resolution instead of relying on `DISCORD_BOT_TOKEN` alone
+- stale-run reaper terminal failures routed through orchestrator first for `discord_runtime`
+- terminal stale-obligation and overdue-obligation failure replies routed through orchestrator first for linked `discord_runtime` runs
+- shared terminal-success and terminal-failure dispatch now flow directly through the orchestrator-owned terminal path
+- orchestrator-owned typing refresh cadence and terminal typing seal behavior in the active worker path
+- stronger in-memory channel visibility arbitration with priority and lease expiry
+- fence-aware Discord reply chunking for long terminal sends
+- completion notifier demoted further to safety-net behavior by checking `final_reply_sent`
+- completion notifier now also suppresses direct `runtime_dispatched` completions so it does not duplicate the dispatch worker's own Discord reply
+- generic completion-notifier fallback removed from several `discord_runtime` failure paths in favor of the shared terminal-failure dispatcher
+- dead-letter/process-route and inline-ingress failure paths now try the shared terminal-failure dispatcher before falling back to the generic completion notifier
+- early trial-expired and spending-cap-paused Discord replies now use the shared terminal-failure dispatcher instead of a raw worker-owned send
+- explicit `delegation_started` lifecycle emission from worker tool results
+- explicit `file_ready` lifecycle emission and pending filename tracking beyond terminal attachment send
+- pending Discord attachments kept in memory until an actual terminal send succeeds instead of being cleared prematurely
+- worker lifecycle send paths refactored further so progress, typing, and approval-blocked sends all flow through one orchestrator-owned path
+- obligation-side cadence gating no longer decides `discord_runtime` progress visibility in the worker path
+- legacy obligation notifier fallback for `discord_runtime` is now limited to terminal-style fallbacks instead of non-terminal progress/resume chatter
+- process/ingress/reaper/approval/sweeper terminal fallback paths now use a shared terminal safety-net helper instead of repeating ad hoc dispatcher/notifier branching
+- worker and terminal attachment sends now derive outbound text from shared chunking helpers instead of ad hoc per-call slicing
+
+Validated:
+
+- `npx eslint` on touched runtime and AI worker files
+- `npx eslint src/lib/ai/tenant-ai-worker.ts src/lib/runtime/discord-runtime-reply-orchestrator.ts src/lib/runtime/tenant-runtime-status-notifier-utils.ts`
+- `npx eslint src/lib/ai/tenant-ai-worker.ts src/lib/runtime/discord-runtime-reply-orchestrator.ts src/lib/runtime/discord-runtime-reply-orchestrator.test.ts`
+- `npx eslint src/lib/ai/tenant-ai-worker.ts src/lib/runtime/obligation-discord-notifier.ts src/lib/runtime/obligation-discord-notifier.test.ts src/lib/runtime/obligation-coordinator.ts`
+- `npx eslint src/lib/ai/tenant-ai-worker.ts src/lib/runtime/tenant-runtime-status-notifier.ts src/lib/runtime/tenant-runtime-status-notifier-utils.ts src/lib/runtime/tenant-runtime-status-notifier.test.ts src/lib/runtime/obligation-discord-notifier.ts src/trigger/reap-stale-runs.ts src/trigger/sweep-stale-obligations.ts src/app/api/admin/tenants/runtime/process/route.ts src/app/api/admin/tenants/runtime/discord/ingress/route.ts src/lib/runtime/tenant-approval-executor.ts`
+- `npm run test:discord-reply-orchestrator`
+- `node --import tsx --test src/lib/ai/tenant-ai-worker.test.ts`
+- `node --import tsx --test src/lib/runtime/discord-runtime-reply-orchestrator.test.ts src/lib/runtime/tenant-runtime-status-notifier.test.ts`
+- `node --import tsx --test src/lib/ai/tenant-ai-worker.test.ts src/lib/runtime/discord-runtime-reply-orchestrator.test.ts src/lib/runtime/tenant-runtime-status-notifier.test.ts`
+- `node --import tsx --test --test-force-exit src/lib/runtime/discord-runtime-reply-orchestrator.test.ts src/lib/runtime/tenant-runtime-status-notifier.test.ts`
+- `node --import tsx --test src/lib/ai/tenant-ai-worker.test.ts src/lib/runtime/obligation-coordinator.test.ts src/lib/runtime/obligation-discord-notifier.test.ts`
+- `node --import tsx --test src/lib/ai/tenant-ai-worker.test.ts src/lib/runtime/tenant-runtime-status-notifier.test.ts src/lib/runtime/obligation-discord-notifier.test.ts src/lib/runtime/obligation-coordinator.test.ts`
+- `node --import tsx --test --test-force-exit src/lib/runtime/tenant-runtime-discord.test.ts`
+- `node --import tsx --test src/lib/runtime/tenant-runtime-discord-lifecycle.test.ts`
+- `node --import tsx --test src/lib/runtime/discord-runtime-reply-policy.test.ts src/lib/runtime/discord-runtime-reply-orchestrator.test.ts`
+- `npm run build`
+
 ## Goals
 
 - Scope changes to `discord_runtime` only
@@ -385,8 +488,8 @@ Suggested helpers in `discord-runtime-reply-policy.ts`:
 
 - `classifyIntermediateText()`
 - `isWeakProcessText()`
-- `isMilestoneCandidate()`
-- `overlapsExistingMilestone()`
+
+> **Note (2026-03-22):** The originally suggested `isMilestoneCandidate()` and `overlapsExistingMilestone()` helpers were not implemented as separate functions. Their logic is folded into `classifyIntermediateText()`, which uses `similarEnough()` internally for overlap detection.
 
 ### Keepalives
 
@@ -462,7 +565,7 @@ This should be modeled directly on the role OpenClaw's `normalize-reply.ts` play
 
 ### Message chunking
 
-The orchestrator should delegate long-message splitting through a dedicated interface rather than hard-coding today's naive character slicing.
+The orchestrator should delegate long-message splitting through a dedicated interface rather than hard-coding per-call character slicing.
 
 Add:
 
@@ -470,17 +573,13 @@ Add:
 function chunkReplyContent(text: string): string[];
 ```
 
-Phase 1:
+Current state as of 2026-03-22:
 
-- preserve existing Discord length constraints
-- keep part numbering support
-- centralize splitting under the orchestrator pipeline
-
-Phase 3:
-
-- upgrade `chunkReplyContent()` to become code-fence-aware
-- reopen and close markdown fences across chunk boundaries when needed
-- avoid mangling formatted terminal answers
+- Discord length constraints are preserved
+- part numbering is supported
+- chunking is centralized through `buildDiscordRuntimeResponseParts()`
+- long replies are already code-fence-aware across chunk boundaries
+- worker visible-progress sends and terminal attachment captions now also derive from the shared chunking path
 
 ### Suppression rules
 
@@ -602,9 +701,8 @@ Suggested metadata fields inside `reply_lifecycle`:
 
 - `approval_cycle_sequence`
 - `current_approval_id`
-- `approval_block_sent_at`
-- `approval_resume_sent_at`
-- `approval_last_resolution`
+
+> **Note (2026-03-22):** The originally suggested `approval_block_sent_at`, `approval_resume_sent_at`, and `approval_last_resolution` fields were superseded by `approval_cycle_sequence` + `current_approval_id` in the implementation. The cycle sequence increments on each new approval block, and `current_approval_id` gates resume deduplication.
 
 ## Typing Lifecycle
 
@@ -841,35 +939,13 @@ Must explicitly test the failure patterns from the Discourse example:
 
 ## Rollout Plan
 
-Roll out in three phases.
+The historical phased rollout notes above are now complete enough to retire.
 
-### Phase 1: Shadow mode
+Current deployment posture:
 
-- add orchestrator and metadata model
-- let orchestrator classify replies, normalization results, cadence decisions, and terminal decisions
-- current code still owns live delivery
-- compare orchestrator decisions vs current behavior in logs and metadata
-
-Add explicit mode control:
-
-- `disabled`
-- `shadow`
-- `active`
-
-This should be controlled by a per-tenant flag with optional env fallback such as `DISCORD_REPLY_ORCHESTRATOR_MODE`.
-
-### Phase 2: Orchestrator-owned lifecycle messages
-
-- move milestone, keepalive, approval-blocked, resumed, and terminal summary/failure messaging to orchestrator
-- keep substantive answer path working through worker integration
-
-### Phase 3: Cleanup and hardening
-
-- reduce duplicate logic in `tenant-ai-worker.ts`
-- demote `tenant-runtime-status-notifier.ts` for `discord_runtime`
-- unify reaper/sweeper terminal behavior under shared policy
-- upgrade chunking to fence-aware behavior
-- finalize orchestrator ownership of typing lifecycle and channel arbitration edge cases
+- the reply orchestrator is live for all `discord_runtime` tenants when deployed
+- worker progress, approval lifecycle, and terminal dispatch paths now route through the orchestrator-owned reply lifecycle
+- the remaining work is ordinary hardening/regression coverage, not a staged rollout
 
 ## Risks
 

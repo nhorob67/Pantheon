@@ -153,11 +153,36 @@ test("shouldSendDiscordRuntimeCompletionNotification skips when AI worker alread
   const run = buildRun({
     result: {
       ack: "ai_response_dispatched",
+      final_reply_sent: true,
       response_preview: "Done — here's what I did:\n- **memory write**: completed",
     },
   });
 
   assert.equal(shouldSendDiscordRuntimeCompletionNotification(run), false);
+});
+
+test("shouldSendDiscordRuntimeCompletionNotification skips when runtime dispatch worker already sent response", () => {
+  const run = buildRun({
+    result: {
+      ack: "runtime_dispatched",
+      dispatched_message_parts: 1,
+      response_preview: "Task complete. Response sent to Discord.",
+    },
+  });
+
+  assert.equal(shouldSendDiscordRuntimeCompletionNotification(run), false);
+});
+
+test("shouldSendDiscordRuntimeCompletionNotification remains a safety net when final reply was not sent", () => {
+  const run = buildRun({
+    result: {
+      ack: "ai_response_dispatched",
+      final_reply_sent: false,
+      response_preview: "Done — here's what I did:\n- **memory write**: completed",
+    },
+  });
+
+  assert.equal(shouldSendDiscordRuntimeCompletionNotification(run), true);
 });
 
 test("shouldSendDiscordRuntimeCompletionNotification still sends for failed AI worker runs", () => {
@@ -170,4 +195,39 @@ test("shouldSendDiscordRuntimeCompletionNotification still sends for failed AI w
   });
 
   assert.equal(shouldSendDiscordRuntimeCompletionNotification(run), true);
+});
+
+test("shouldSendDiscordRuntimeCompletionNotification skips when orchestrator already sent terminal visibility", () => {
+  const run = buildRun({
+    metadata: {
+      notify_on_completion: true,
+      completion_notification_source: "team_default",
+      reply_lifecycle: {
+        state: "terminal",
+        terminal_sent_at: new Date().toISOString(),
+        terminal_kind: "answer",
+        sent_keys: ["terminal"],
+      },
+    },
+  });
+
+  assert.equal(shouldSendDiscordRuntimeCompletionNotification(run), false);
+});
+
+test("shouldSendDiscordRuntimeCompletionNotification skips failed runs when terminal visibility was already recorded", () => {
+  const run = buildRun({
+    status: "failed",
+    error_message: "Rejected via tenant approval queue.",
+    metadata: {
+      notify_on_completion: false,
+      reply_lifecycle: {
+        state: "terminal",
+        terminal_sent_at: new Date().toISOString(),
+        terminal_kind: "failure",
+        sent_keys: ["terminal"],
+      },
+    },
+  });
+
+  assert.equal(shouldSendDiscordRuntimeCompletionNotification(run), false);
 });

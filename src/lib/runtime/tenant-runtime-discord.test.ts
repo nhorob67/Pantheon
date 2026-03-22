@@ -4,6 +4,7 @@ import {
   buildDiscordRuntimeResponseParts,
   buildDiscordCanaryResponseContent,
   checkAndMarkFinalReply,
+  dispatchDiscordRuntimeVisibleReply,
   DiscordApiError,
   DISCORD_CANARY_PREFIX,
   isDiscordCanaryLoopContent,
@@ -122,6 +123,22 @@ test("buildDiscordRuntimeResponseParts truncates when max part budget is exceede
   assert.ok(parts.every((part) => part.length <= 1900));
 });
 
+test("buildDiscordRuntimeResponseParts keeps fenced code blocks balanced across parts", () => {
+  const content = [
+    "Here is the query:",
+    "```sql",
+    "select * from tenant_runtime_runs where status = 'running';".repeat(50),
+    "```",
+    "And here is the summary after it.",
+  ].join("\n");
+
+  const parts = buildDiscordRuntimeResponseParts(content);
+
+  assert.ok(parts.length >= 2);
+  assert.ok(parts.every((part) => part.length <= 1900));
+  assert.ok(parts.every((part) => (part.match(/```/g) ?? []).length % 2 === 0));
+});
+
 test("sendDiscordChannelMessageSequence sends all parts and only first part replies", async () => {
   const calls: Array<{ body: Record<string, unknown> }> = [];
 
@@ -154,6 +171,34 @@ test("sendDiscordChannelMessageSequence sends all parts and only first part repl
   assert.ok(typeof calls[0].body.message_reference === "object");
   assert.equal(calls[1].body.message_reference, undefined);
   assert.equal(calls[2].body.message_reference, undefined);
+});
+
+test("dispatchDiscordRuntimeVisibleReply uses shared runtime dispatch transport", async () => {
+  const calls: Array<{ url: string; init: RequestInit | undefined }> = [];
+
+  const fakeFetch: typeof fetch = async (url, init) => {
+    calls.push({ url: String(url), init });
+    return new Response(JSON.stringify({ id: "msg-runtime-1" }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  };
+
+  const result = await dispatchDiscordRuntimeVisibleReply(
+    {
+      tenantId: "tenant-1",
+      botToken: "token",
+      channelId: "123",
+      content: "progress update",
+      replyToMessageId: "origin-msg",
+    },
+    fakeFetch
+  );
+
+  assert.equal(result.messageId, "msg-runtime-1");
+  assert.equal(result.status, 200);
+  assert.equal(calls.length, 1);
+  assert.match(calls[0].url, /\/channels\/123\/messages$/);
 });
 
 // --- checkAndMarkFinalReply tests ---

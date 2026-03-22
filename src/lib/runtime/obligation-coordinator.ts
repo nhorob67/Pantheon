@@ -486,7 +486,9 @@ export async function listOverdueObligations(
 }
 
 // ---------------------------------------------------------------------------
-// Status update decision: should we notify the user?
+// Status update decision: legacy helper for non-discord_runtime paths.
+// discord_runtime visibility is now owned by the reply orchestrator / worker
+// lifecycle flow rather than obligation-side cadence gating.
 // ---------------------------------------------------------------------------
 
 export interface StatusUpdateDecision {

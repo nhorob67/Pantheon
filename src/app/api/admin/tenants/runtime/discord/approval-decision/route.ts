@@ -6,6 +6,7 @@ import { safeErrorMessage } from "@/lib/security/safe-error";
 import { resolveDiscordUserRole } from "@/lib/runtime/tenant-discord-role-resolver";
 import { executeTenantApprovalDecision } from "@/lib/runtime/tenant-approval-executor";
 import { updateDiscordApprovalMessage } from "@/lib/runtime/tenant-approval-discord-notifier";
+import { resolveDiscordBotToken } from "@/lib/runtime/tenant-runtime-discord-lifecycle";
 
 const requestSchema = z.object({
   tenant_id: z.uuid(),
@@ -81,7 +82,7 @@ export async function POST(request: Request) {
     if (!result.ok) {
       // For already-decided approvals, also try to update the Discord message
       if (result.httpStatus === 409) {
-        const botToken = process.env.DISCORD_BOT_TOKEN;
+        const botToken = await resolveDiscordBotToken(admin, tenant_id);
         if (botToken) {
           const { data: approvalRow } = await admin
             .from("tenant_approvals")

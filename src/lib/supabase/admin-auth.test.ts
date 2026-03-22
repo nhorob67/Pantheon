@@ -1,6 +1,17 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import type { User } from "@supabase/supabase-js";
 import { findAuthUserByEmail } from "./admin-auth.ts";
+
+function fakeUser(overrides: { id: string; email: string }): User {
+  return {
+    ...overrides,
+    app_metadata: {},
+    user_metadata: {},
+    aud: "authenticated",
+    created_at: new Date().toISOString(),
+  } as User;
+}
 
 test("findAuthUserByEmail returns a user from the first page", async () => {
   const user = await findAuthUserByEmail(
@@ -10,7 +21,7 @@ test("findAuthUserByEmail returns a user from the first page", async () => {
           listUsers: async () => ({
             data: {
               users: [
-                { id: "user-1", email: "person@example.com" },
+                fakeUser({ id: "user-1", email: "person@example.com" }),
               ],
               nextPage: null,
               lastPage: 1,
@@ -33,12 +44,13 @@ test("findAuthUserByEmail walks additional pages", async () => {
     {
       auth: {
         admin: {
-          listUsers: async ({ page }) => {
-            visitedPages.push(page ?? 1);
-            if ((page ?? 1) === 1) {
+          listUsers: async (params) => {
+            const page = params?.page ?? 1;
+            visitedPages.push(page);
+            if (page === 1) {
               return {
                 data: {
-                  users: [{ id: "user-1", email: "first@example.com" }],
+                  users: [fakeUser({ id: "user-1", email: "first@example.com" })],
                   nextPage: 2,
                   lastPage: 2,
                 },
@@ -48,7 +60,7 @@ test("findAuthUserByEmail walks additional pages", async () => {
 
             return {
               data: {
-                users: [{ id: "user-2", email: "second@example.com" }],
+                users: [fakeUser({ id: "user-2", email: "second@example.com" })],
                 nextPage: null,
                 lastPage: 2,
               },
@@ -72,7 +84,7 @@ test("findAuthUserByEmail returns null when the email is absent", async () => {
         admin: {
           listUsers: async () => ({
             data: {
-              users: [{ id: "user-1", email: "person@example.com" }],
+              users: [fakeUser({ id: "user-1", email: "person@example.com" })],
               nextPage: null,
               lastPage: 1,
             },

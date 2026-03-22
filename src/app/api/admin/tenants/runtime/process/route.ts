@@ -17,7 +17,7 @@ import {
   noOpDiscordRuntimeWorker,
 } from "@/lib/runtime/tenant-runtime-worker";
 import { createTenantAiWorker } from "@/lib/ai/tenant-ai-worker";
-import { sendDiscordRuntimeCompletionNotification } from "@/lib/runtime/tenant-runtime-status-notifier";
+import { sendDiscordRuntimeTerminalSafetyNet } from "@/lib/runtime/tenant-runtime-status-notifier";
 import {
   TENANT_DISCORD_CANARY_DISPATCH_FLAG_KEY,
   TENANT_AI_WORKER_FLAG_KEY,
@@ -147,7 +147,7 @@ export async function POST(request: Request) {
         const outcome = await executeTenantRuntimeRun(admin, worker, claim.run);
 
         if (outcome.finalStatus === "completed") {
-          await sendDiscordRuntimeCompletionNotification(admin, outcome.run);
+          await sendDiscordRuntimeTerminalSafetyNet(admin, outcome.run);
           completed += 1;
         } else if (outcome.finalStatus === "awaiting_approval") {
           awaitingApproval += 1;
@@ -182,7 +182,7 @@ export async function POST(request: Request) {
               dead_lettered_at: new Date().toISOString(),
               dead_letter_reason: "max_attempts_exhausted",
             });
-            await sendDiscordRuntimeCompletionNotification(admin, deadLetterRun);
+            await sendDiscordRuntimeTerminalSafetyNet(admin, deadLetterRun);
             failed += 1;
             deadLettered += 1;
           }
@@ -219,7 +219,7 @@ export async function POST(request: Request) {
               dead_lettered_at: new Date().toISOString(),
               dead_letter_reason: "max_attempts_exhausted",
             });
-            await sendDiscordRuntimeCompletionNotification(admin, deadLetterRun);
+            await sendDiscordRuntimeTerminalSafetyNet(admin, deadLetterRun);
             failed += 1;
             deadLettered += 1;
           }

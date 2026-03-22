@@ -25,7 +25,7 @@ import {
   isAudioAttachment,
 } from "@/lib/ai/attachment-handler";
 import { resolveDiscordUserRole } from "@/lib/runtime/tenant-discord-role-resolver";
-import { sendDiscordRuntimeCompletionNotification } from "@/lib/runtime/tenant-runtime-status-notifier";
+import { sendDiscordRuntimeTerminalSafetyNet } from "@/lib/runtime/tenant-runtime-status-notifier";
 import { executeTenantRuntimeRun } from "@/lib/runtime/tenant-runtime-orchestrator";
 import { onRunFailed } from "@/lib/runtime/obligation-coordinator";
 
@@ -198,7 +198,7 @@ export async function POST(request: Request) {
         requestTraceId,
         resolvedModels,
       });
-      await sendDiscordRuntimeCompletionNotification(admin, outcome.run);
+      await sendDiscordRuntimeTerminalSafetyNet(admin, outcome.run);
 
       return NextResponse.json(
         {
@@ -221,7 +221,7 @@ export async function POST(request: Request) {
           failedRun,
           failedRun.error_message ?? undefined
         ).catch(() => null);
-        await sendDiscordRuntimeCompletionNotification(admin, failedRun);
+        await sendDiscordRuntimeTerminalSafetyNet(admin, failedRun).catch(() => null);
       }
 
       return NextResponse.json(

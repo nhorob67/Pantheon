@@ -11,7 +11,7 @@ import {
 } from "@/lib/heartbeat/processor";
 import { hasMinimumTenantRole } from "@/lib/runtime/tenant-auth";
 import { transitionTenantRuntimeRun } from "@/lib/runtime/tenant-runtime-queue";
-import { sendDiscordRuntimeCompletionNotification } from "@/lib/runtime/tenant-runtime-status-notifier";
+import { sendDiscordRuntimeTerminalSafetyNet } from "@/lib/runtime/tenant-runtime-status-notifier";
 import { encodeToolContinuationToken } from "@/lib/runtime/tenant-runtime-tools";
 import { storeIntegrationCredential } from "@/lib/runtime/tenant-integrations";
 import { auditLog } from "@/lib/security/audit";
@@ -20,6 +20,10 @@ import { integrationStoreCredentialSchema } from "@/lib/validators/integration";
 import type { TenantRuntimeRun } from "@/types/tenant-runtime";
 import { processRuntimeRun } from "@/trigger/process-runtime-run";
 import { updateDiscordApprovalMessage } from "./tenant-approval-discord-notifier";
+import {
+  DiscordRuntimeReplyOrchestrator,
+} from "./discord-runtime-reply-orchestrator";
+import { resolveDiscordBotToken } from "./tenant-runtime-discord-lifecycle";
 import {
   getObligationById,
   onApprovalGranted,
@@ -48,6 +52,41 @@ interface ApprovedToolExecutionOutcome {
   toolKey: string;
   resultSummary?: string;
   error?: string;
+}
+
+async function emitDiscordApprovalLifecycle(
+  admin: SupabaseClient,
+  run: TenantRuntimeRun,
+  input:
+    | { kind: "granted"; approvalId: string }
+    | { kind: "rejected"; reason?: string | null }
+): Promise<boolean> {
+  const channelId =
+    typeof run.payload.channel_id === "string" ? run.payload.channel_id.trim() : "";
+  const replyToMessageId =
+    typeof run.payload.message_id === "string" ? run.payload.message_id : null;
+  const botToken = await resolveDiscordBotToken(admin, run.tenant_id);
+
+  if (!channelId || !botToken) {
+    return false;
+  }
+
+  const orchestrator = new DiscordRuntimeReplyOrchestrator({
+    admin,
+    run,
+    botToken,
+    channelId,
+    replyToMessageId,
+  });
+
+  if (input.kind === "granted") {
+    return orchestrator.emitApprovalGranted({
+      approvalId: input.approvalId,
+    });
+  }
+
+  const result = await orchestrator.finalizeFailure(input.reason ?? run.error_message);
+  return result.finalReplySent;
 }
 
 async function executeApprovedToolIfNeeded(
@@ -442,11 +481,21 @@ export async function executeTenantApprovalDecision(
             ).catch(() => null);
 
             if (updatedObligation) {
-              await sendDiscordObligationStatusReply(admin, updatedObligation, {
-                content: buildApprovalGrantedReply(),
-                runId: resumedRun.id,
-                eventType: "approval_granted",
-              }).catch(() => false);
+              const sentViaOrchestrator = await emitDiscordApprovalLifecycle(
+                admin,
+                resumedRun,
+                {
+                  kind: "granted",
+                  approvalId: updatedApproval.id,
+                }
+              ).catch(() => false);
+              if (!sentViaOrchestrator) {
+                await sendDiscordObligationStatusReply(admin, updatedObligation, {
+                  content: buildApprovalGrantedReply(),
+                  runId: resumedRun.id,
+                  eventType: "approval_granted",
+                }).catch(() => false);
+              }
             }
           }
         }
@@ -464,7 +513,7 @@ export async function executeTenantApprovalDecision(
             approval_id: updatedApproval.id,
           },
         });
-        await sendDiscordRuntimeCompletionNotification(admin, failedRun).catch((err) => {
+        await sendDiscordRuntimeTerminalSafetyNet(admin, failedRun).catch((err) => {
           console.error("[approval-executor] Failed to send rejection notification:", err instanceof Error ? err.message : "unknown");
         });
       }
@@ -473,10 +522,10 @@ export async function executeTenantApprovalDecision(
 
   // Edit the Discord button message if one was sent
   if (approval.discord_message_id && approval.discord_channel_id) {
-    const envToken = process.env.DISCORD_BOT_TOKEN;
-    if (envToken) {
+    const botToken = await resolveDiscordBotToken(admin, input.tenantId);
+    if (botToken) {
       updateDiscordApprovalMessage({
-        botToken: envToken,
+        botToken,
         channelId: approval.discord_channel_id,
         messageId: approval.discord_message_id,
         decision,

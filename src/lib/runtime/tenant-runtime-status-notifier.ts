@@ -1,16 +1,14 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { TenantRuntimeRun } from "@/types/tenant-runtime";
 import { safeErrorMessage } from "@/lib/security/safe-error";
-import { getDiscordTokenFromChannelConfig } from "@/lib/channel-token";
 import { sendDiscordChannelMessage } from "./tenant-runtime-discord";
-import { resolveCanonicalLegacyInstanceForTenant } from "./tenant-agents";
 import { patchTenantRuntimeRunMetadata } from "./tenant-runtime-queue";
+import { dispatchDiscordRuntimeTerminalFailure } from "./discord-runtime-reply-orchestrator";
 import {
   buildDiscordRuntimeCompletionNotificationContent,
   shouldSendDiscordRuntimeCompletionNotification,
 } from "./tenant-runtime-status-notifier-utils";
-
-const DISCORD_BOT_TOKEN_ENV = "DISCORD_BOT_TOKEN";
+import { resolveDiscordBotToken } from "./tenant-runtime-discord-lifecycle";
 
 function pickString(value: unknown): string | null {
   if (typeof value !== "string") {
@@ -21,38 +19,11 @@ function pickString(value: unknown): string | null {
   return normalized.length > 0 ? normalized : null;
 }
 
-async function resolveDiscordBotToken(
-  admin: SupabaseClient,
-  tenantId: string
-): Promise<string | null> {
-  const envToken = process.env[DISCORD_BOT_TOKEN_ENV];
-  if (envToken && envToken.trim().length > 0) {
-    return envToken;
-  }
-
-  const mapping = await resolveCanonicalLegacyInstanceForTenant(admin, tenantId).catch(
-    () => ({ instanceId: null, ambiguous: false })
-  );
-
-  if (!mapping.instanceId) {
-    return null;
-  }
-
-  const { data: instance } = await admin
-    .from("instances")
-    .select("channel_config")
-    .eq("id", mapping.instanceId)
-    .maybeSingle();
-
-  if (!instance) {
-    return null;
-  }
-
-  try {
-    return getDiscordTokenFromChannelConfig(instance.channel_config);
-  } catch {
-    return null;
-  }
+export interface DiscordRuntimeTerminalSafetyNetResult {
+  owned: boolean;
+  sent: boolean;
+  mode: "terminal_failure" | "completion_notification" | "none";
+  run: TenantRuntimeRun;
 }
 
 export async function sendDiscordRuntimeCompletionNotification(
@@ -97,4 +68,51 @@ export async function sendDiscordRuntimeCompletionNotification(
     console.error("[runtime-status-notifier] Failed to send Discord completion notification:", safeErrorMessage(error));
     return run;
   }
+}
+
+export async function sendDiscordRuntimeTerminalSafetyNet(
+  admin: SupabaseClient,
+  run: TenantRuntimeRun
+): Promise<DiscordRuntimeTerminalSafetyNetResult> {
+  if (run.run_kind !== "discord_runtime") {
+    return {
+      owned: false,
+      sent: false,
+      mode: "none",
+      run,
+    };
+  }
+
+  if (run.status === "failed") {
+    const dispatch = await dispatchDiscordRuntimeTerminalFailure(admin, run, {
+      errorMessage: run.error_message,
+    }).catch((error) => {
+      console.error(
+        "[runtime-status-notifier] Failed to dispatch Discord terminal failure:",
+        safeErrorMessage(error)
+      );
+      return { owned: false, sent: false };
+    });
+
+    if (dispatch.owned) {
+      return {
+        owned: true,
+        sent: dispatch.sent,
+        mode: dispatch.sent ? "terminal_failure" : "none",
+        run,
+      };
+    }
+  }
+
+  const previousSentAt = pickString(run.metadata.completion_notification_sent_at);
+  const nextRun = await sendDiscordRuntimeCompletionNotification(admin, run);
+  const nextSentAt = pickString(nextRun.metadata.completion_notification_sent_at);
+  const sent = previousSentAt !== nextSentAt && nextSentAt !== null;
+
+  return {
+    owned: false,
+    sent,
+    mode: sent ? "completion_notification" : "none",
+    run: nextRun,
+  };
 }

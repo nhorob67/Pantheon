@@ -1,7 +1,11 @@
+import { runWithCircuitBreaker } from "./tenant-runtime-circuit-breaker";
+
 const DISCORD_API_BASE_URL = "https://discord.com/api/v10";
 const DISCORD_CANARY_MAX_CONTENT_LENGTH = 1900;
 const DISCORD_RUNTIME_MAX_CONTENT_LENGTH = 1900;
 const DISCORD_RUNTIME_MAX_MESSAGE_PARTS = 4;
+const DISCORD_DISPATCH_CIRCUIT_FAILURE_THRESHOLD = 3;
+const DISCORD_DISPATCH_CIRCUIT_COOLDOWN_MS = 30_000;
 export const DISCORD_CANARY_PREFIX = "[Pantheon Canary]";
 
 export interface DiscordSendMessageInput {
@@ -27,6 +31,14 @@ export interface DiscordSendMessageSequenceResult {
   messageIds: string[];
   status: number;
   partsSent: number;
+}
+
+export interface DiscordRuntimeVisibleReplyInput {
+  tenantId: string;
+  botToken: string;
+  channelId: string;
+  content: string;
+  replyToMessageId?: string | null;
 }
 
 export class DiscordApiError extends Error {
@@ -63,56 +75,158 @@ function buildRuntimePartPrefix(index: number, total: number): string {
   return `[${index}/${total}] `;
 }
 
-function resolveRuntimeMessagePartsTotal(contentLength: number): number {
-  if (contentLength <= DISCORD_RUNTIME_MAX_CONTENT_LENGTH) {
-    return 1;
+function clampWithEllipsis(content: string, maxLength: number): string {
+  if (content.length <= maxLength) {
+    return content;
   }
 
-  for (let total = 2; total <= DISCORD_RUNTIME_MAX_MESSAGE_PARTS; total += 1) {
-    const prefixLength = buildRuntimePartPrefix(total, total).length;
-    const bodyLimit = DISCORD_RUNTIME_MAX_CONTENT_LENGTH - prefixLength;
-    if (bodyLimit <= 0) {
-      continue;
-    }
-    if (Math.ceil(contentLength / bodyLimit) <= total) {
-      return total;
-    }
-  }
-
-  return DISCORD_RUNTIME_MAX_MESSAGE_PARTS;
+  const keep = Math.max(1, maxLength - 3);
+  return `${content.slice(0, keep).trimEnd()}...`;
 }
 
-function splitRuntimePartsWithLimit(content: string, total: number): string[] {
-  if (total <= 1) {
-    return [content];
+function resolveRuntimeChunkBodyLimit(): number {
+  return (
+    DISCORD_RUNTIME_MAX_CONTENT_LENGTH -
+    buildRuntimePartPrefix(
+      DISCORD_RUNTIME_MAX_MESSAGE_PARTS,
+      DISCORD_RUNTIME_MAX_MESSAGE_PARTS
+    ).length
+  );
+}
+
+function splitOversizedSegment(segment: string, bodyLimit: number): string[] {
+  const parts: string[] = [];
+  let remaining = segment;
+
+  while (remaining.length > bodyLimit) {
+    let take = bodyLimit;
+    const whitespaceIndex = remaining.lastIndexOf(" ", bodyLimit);
+    if (whitespaceIndex > Math.floor(bodyLimit * 0.6)) {
+      take = whitespaceIndex;
+    }
+    parts.push(remaining.slice(0, take).trimEnd());
+    remaining = remaining.slice(take).trimStart();
   }
 
-  const prefixLength = buildRuntimePartPrefix(total, total).length;
-  const bodyLimit = Math.max(1, DISCORD_RUNTIME_MAX_CONTENT_LENGTH - prefixLength);
-  const parts: string[] = [];
-  let cursor = 0;
-
-  for (let index = 1; index <= total; index += 1) {
-    const remaining = content.length - cursor;
-    if (remaining <= 0) {
-      break;
-    }
-
-    const isLastPart = index === total;
-    const take = Math.min(bodyLimit, remaining);
-    let body = content.slice(cursor, cursor + take);
-    cursor += take;
-
-    if (isLastPart && remaining > bodyLimit) {
-      const trimmed = Math.max(1, bodyLimit - 3);
-      body = `${content.slice(cursor - take, cursor - take + trimmed)}...`;
-      cursor = content.length;
-    }
-
-    parts.push(`${buildRuntimePartPrefix(index, total)}${body}`);
+  if (remaining.length > 0) {
+    parts.push(remaining);
   }
 
   return parts;
+}
+
+function splitRuntimeBodies(content: string, bodyLimit: number): string[] {
+  const lines = content.split("\n");
+  const bodies: string[] = [];
+  let current = "";
+
+  const flushCurrent = (): void => {
+    if (current.trim().length === 0) {
+      current = "";
+      return;
+    }
+    bodies.push(current);
+    current = "";
+  };
+
+  for (const line of lines) {
+    const candidate = current.length > 0 ? `${current}\n${line}` : line;
+    if (candidate.length <= bodyLimit) {
+      current = candidate;
+      continue;
+    }
+
+    if (current.length > 0) {
+      flushCurrent();
+    }
+
+    if (line.length <= bodyLimit) {
+      current = line;
+      continue;
+    }
+
+    const segments = splitOversizedSegment(line, bodyLimit);
+    if (segments.length === 0) {
+      continue;
+    }
+
+    for (let index = 0; index < segments.length - 1; index += 1) {
+      bodies.push(segments[index]);
+    }
+
+    current = segments[segments.length - 1];
+  }
+
+  flushCurrent();
+  return bodies.length > 0 ? bodies : [clampWithEllipsis(content, bodyLimit)];
+}
+
+function resolveOpenFence(body: string): string | null {
+  let openFence: string | null = null;
+
+  for (const line of body.split("\n")) {
+    const trimmed = line.trimStart();
+    if (!trimmed.startsWith("```")) {
+      continue;
+    }
+
+    if (openFence) {
+      openFence = null;
+      continue;
+    }
+
+    openFence = trimmed.trim();
+  }
+
+  return openFence;
+}
+
+function appendFenceCloser(body: string, bodyLimit: number): string {
+  const closer = "\n```";
+  if (body.length + closer.length <= bodyLimit) {
+    return `${body}${closer}`;
+  }
+
+  return `${clampWithEllipsis(body, Math.max(1, bodyLimit - closer.length))}${closer}`;
+}
+
+function prependFenceOpener(body: string, opener: string, bodyLimit: number): string {
+  const prefix = `${opener}\n`;
+  if ((prefix + body).length <= bodyLimit) {
+    return `${prefix}${body}`;
+  }
+
+  return `${prefix}${clampWithEllipsis(body, Math.max(1, bodyLimit - prefix.length))}`;
+}
+
+function rebalanceFenceAwareBodies(bodies: string[], bodyLimit: number): string[] {
+  const balanced: string[] = [];
+  let carryOpenFence: string | null = null;
+
+  for (const rawBody of bodies) {
+    let body = rawBody;
+    if (carryOpenFence) {
+      body = prependFenceOpener(body, carryOpenFence, bodyLimit);
+    }
+
+    const openFence = resolveOpenFence(body);
+    if (openFence) {
+      body = appendFenceCloser(body, bodyLimit);
+    }
+
+    balanced.push(body);
+    carryOpenFence = openFence;
+  }
+
+  return balanced.filter((body) => body.trim().length > 0);
+}
+
+function ensureTruncatedWithEllipsis(body: string, bodyLimit: number): string {
+  if (body.length >= bodyLimit - 3) {
+    return `${body.slice(0, Math.max(1, bodyLimit - 3)).trimEnd()}...`;
+  }
+
+  return `${body.trimEnd()}...`;
 }
 
 export function buildDiscordRuntimeResponseParts(content: string): string[] {
@@ -121,8 +235,28 @@ export function buildDiscordRuntimeResponseParts(content: string): string[] {
     return ["[Pantheon] Received empty runtime content."];
   }
 
-  const total = resolveRuntimeMessagePartsTotal(normalized.length);
-  return splitRuntimePartsWithLimit(normalized, total);
+  if (normalized.length <= DISCORD_RUNTIME_MAX_CONTENT_LENGTH) {
+    return [normalized];
+  }
+
+  const bodyLimit = resolveRuntimeChunkBodyLimit();
+  let bodies = rebalanceFenceAwareBodies(
+    splitRuntimeBodies(normalized, bodyLimit),
+    bodyLimit
+  );
+
+  if (bodies.length > DISCORD_RUNTIME_MAX_MESSAGE_PARTS) {
+    bodies = bodies.slice(0, DISCORD_RUNTIME_MAX_MESSAGE_PARTS);
+    const truncatedLastBody = ensureTruncatedWithEllipsis(
+      bodies[bodies.length - 1],
+      bodyLimit
+    );
+    bodies[bodies.length - 1] = resolveOpenFence(truncatedLastBody)
+      ? appendFenceCloser(truncatedLastBody, bodyLimit)
+      : truncatedLastBody;
+  }
+
+  return bodies.map((body, index) => `${buildRuntimePartPrefix(index + 1, bodies.length)}${body}`);
 }
 
 function parseRetryAfterSeconds(
@@ -345,6 +479,29 @@ export async function sendDiscordChannelMessageSequence(
     status,
     partsSent: input.contents.length,
   };
+}
+
+export async function dispatchDiscordRuntimeVisibleReply(
+  input: DiscordRuntimeVisibleReplyInput,
+  fetchImpl: typeof fetch = fetch
+): Promise<DiscordSendMessageResult> {
+  return runWithCircuitBreaker(
+    `discord_dispatch:${input.tenantId}`,
+    () =>
+      sendDiscordChannelMessage(
+        {
+          botToken: input.botToken,
+          channelId: input.channelId,
+          content: input.content,
+          replyToMessageId: input.replyToMessageId,
+        },
+        fetchImpl
+      ),
+    {
+      failureThreshold: DISCORD_DISPATCH_CIRCUIT_FAILURE_THRESHOLD,
+      cooldownMs: DISCORD_DISPATCH_CIRCUIT_COOLDOWN_MS,
+    }
+  );
 }
 
 // ---------------------------------------------------------------------------

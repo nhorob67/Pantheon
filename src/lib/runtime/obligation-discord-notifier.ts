@@ -4,6 +4,7 @@ import { safeErrorMessage } from "@/lib/security/safe-error";
 import { sendDiscordChannelMessage } from "./tenant-runtime-discord";
 import { recordUserUpdate } from "./obligation-coordinator";
 import { resolveDiscordBotToken } from "./tenant-runtime-discord-lifecycle";
+import type { ObligationEventType } from "@/types/obligation";
 
 function pickString(value: unknown): string | null {
   if (typeof value !== "string") {
@@ -12,6 +13,28 @@ function pickString(value: unknown): string | null {
 
   const normalized = value.trim().replace(/\s+/g, " ");
   return normalized.length > 0 ? normalized : null;
+}
+
+function pickObligationRunKind(obligation: RuntimeObligation): string | null {
+  return pickString(obligation.metadata.run_kind);
+}
+
+export function shouldSendLegacyDiscordObligationStatusReply(
+  obligation: RuntimeObligation,
+  eventType?: string
+): boolean {
+  const normalizedEventType = pickString(eventType) as ObligationEventType | null;
+  if (pickObligationRunKind(obligation) !== "discord_runtime") {
+    return true;
+  }
+
+  // discord_runtime visibility should flow through the reply orchestrator or
+  // worker-owned lifecycle path, not through obligation-side non-terminal prose.
+  return (
+    normalizedEventType === "failed" ||
+    normalizedEventType === "completed" ||
+    normalizedEventType === "approval_rejected"
+  );
 }
 
 export async function sendDiscordObligationStatusReply(
@@ -27,6 +50,10 @@ export async function sendDiscordObligationStatusReply(
   const content = pickString(input.content);
 
   if (!channelId || !content) {
+    return false;
+  }
+
+  if (!shouldSendLegacyDiscordObligationStatusReply(obligation, input.eventType)) {
     return false;
   }
 

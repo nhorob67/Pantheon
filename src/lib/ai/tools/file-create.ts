@@ -39,9 +39,17 @@ export interface FileCreateResult {
 // In-memory store keyed by run ID — the AI worker reads and clears after generation
 const pendingFiles = new Map<string, FileCreateResult[]>();
 
-export function collectPendingFiles(runId: string): FileCreateResult[] {
-  const files = pendingFiles.get(runId) ?? [];
+export function peekPendingFiles(runId: string): FileCreateResult[] {
+  return [...(pendingFiles.get(runId) ?? [])];
+}
+
+export function clearPendingFiles(runId: string): void {
   pendingFiles.delete(runId);
+}
+
+export function collectPendingFiles(runId: string): FileCreateResult[] {
+  const files = peekPendingFiles(runId);
+  clearPendingFiles(runId);
   return files;
 }
 

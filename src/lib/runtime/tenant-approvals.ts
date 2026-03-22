@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { TenantRole } from "@/types/tenant-runtime";
+import { resolveDiscordBotToken } from "./tenant-runtime-discord-lifecycle";
 export interface EnqueueTenantApprovalInput {
   tenantId: string;
   customerId: string;
@@ -102,7 +103,7 @@ export async function enqueueTenantApproval(
   const approvalId = String((data as { id: string }).id);
 
   // Send Discord button notification (non-blocking, dynamic import to avoid breaking tests)
-  const botToken = process.env.DISCORD_BOT_TOKEN;
+  const botToken = await resolveDiscordBotToken(admin, input.tenantId).catch(() => null);
   if (botToken) {
     import("./tenant-approval-discord-notifier").then(({ sendDiscordApprovalButtonMessage }) =>
       sendDiscordApprovalButtonMessage(admin, botToken, {
