@@ -69,8 +69,8 @@ function buildFriendlyToolSummary(toolSummary: string): string | null {
     .filter(Boolean)
     .map((entry) => {
       const [toolNameRaw, statusRaw] = entry.split(":");
-      const toolName = pickString(toolNameRaw)?.toLowerCase();
-      const status = pickString(statusRaw)?.toLowerCase();
+      const toolName = pickString(toolNameRaw)?.toLowerCase() ?? null;
+      const status = pickString(statusRaw)?.toLowerCase() ?? null;
       return { toolName, status };
     })
     .filter(
