@@ -1005,6 +1005,64 @@ test("emitApprovalGranted with wrong approvalId returns false", async () => {
   assert.equal(orchestrator.getLifecycle().state, "blocked_on_approval");
 });
 
+test("emitApprovalGranted can fall back when lifecycle approval id is missing", async () => {
+  const sends: string[] = [];
+  let persistedRun = buildRun({
+    metadata: {
+      reply_lifecycle: {
+        state: "blocked_on_approval",
+        phase_key: "schedule_write",
+        pending_file_names: [],
+        last_visible_kind: "approval_blocked",
+        last_visible_event_at: new Date().toISOString(),
+        progress_count: 1,
+        keepalive_count: 0,
+        approval_cycle_sequence: 1,
+        current_approval_id: null,
+        terminal_kind: null,
+        terminal_sent_at: null,
+        sent_keys: [],
+        last_message_preview: null,
+        pending_send_key: null,
+        last_send_attempt_at: null,
+        last_send_error: null,
+        last_attachment_error: null,
+        last_attachment_fallback_at: null,
+      },
+    },
+  });
+
+  const orchestrator = new DiscordRuntimeReplyOrchestrator({
+    admin: {} as SupabaseClient,
+    run: persistedRun,
+    botToken: "token",
+    channelId: "channel-blocked-fallback",
+    persistRunMetadata: async (_admin, run, patch) => {
+      persistedRun = { ...run, metadata: { ...run.metadata, ...patch } };
+      return persistedRun;
+    },
+    transport: {
+      sendMessage: async ({ content }) => {
+        sends.push(content);
+        return { messageId: `msg-${sends.length}`, status: 200 };
+      },
+    },
+  });
+
+  const granted = await orchestrator.emitApprovalGranted({
+    approvalId: "approval-fallback",
+    allowFallback: true,
+  });
+  const duplicate = await orchestrator.emitApprovalGranted({
+    approvalId: "approval-fallback",
+    allowFallback: true,
+  });
+
+  assert.equal(granted, true);
+  assert.equal(duplicate, false);
+  assert.deepEqual(sends, ["Approval came through. I'm picking it back up now."]);
+});
+
 test("emitIntermediateText suppressed during blocked_on_approval", async () => {
   const sends: string[] = [];
   let persistedRun = buildRun();

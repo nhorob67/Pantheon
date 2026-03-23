@@ -436,15 +436,24 @@ export class DiscordRuntimeReplyOrchestrator {
 
   async emitApprovalGranted(input: {
     approvalId: string;
+    allowFallback?: boolean;
   }): Promise<boolean> {
-    if (this.lifecycle.current_approval_id !== input.approvalId) {
+    const sentKey = `approval_resumed:${input.approvalId}`;
+    if (
+      this.lifecycle.current_approval_id !== input.approvalId &&
+      input.allowFallback !== true
+    ) {
+      return false;
+    }
+
+    if (this.lifecycle.terminal_sent_at || this.lifecycle.sent_keys.includes(sentKey)) {
       return false;
     }
 
     return this.emitVisibleText({
       text: "Approval came through. I'm picking it back up now.",
       kind: "resumed",
-      sentKey: `approval_resumed:${input.approvalId}`,
+      sentKey,
       nextState: "resumed_after_approval",
       nextPhaseKey: this.lifecycle.phase_key,
       acquireChannelVisibility: true,

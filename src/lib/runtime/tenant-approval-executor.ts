@@ -82,6 +82,7 @@ async function emitDiscordApprovalLifecycle(
   if (input.kind === "granted") {
     return orchestrator.emitApprovalGranted({
       approvalId: input.approvalId,
+      allowFallback: true,
     });
   }
 

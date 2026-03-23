@@ -28,6 +28,10 @@ import { resolveDiscordUserRole } from "@/lib/runtime/tenant-discord-role-resolv
 import { sendDiscordRuntimeTerminalSafetyNet } from "@/lib/runtime/tenant-runtime-status-notifier";
 import { executeTenantRuntimeRun } from "@/lib/runtime/tenant-runtime-orchestrator";
 import { onRunFailed } from "@/lib/runtime/obligation-coordinator";
+import {
+  findRecentApprovedChannelApproval,
+  isApprovalAckOnlyMessage,
+} from "@/lib/runtime/discord-approval-ack";
 
 async function isAuthorized(request: Request): Promise<boolean> {
   const expectedTokens = [
@@ -148,6 +152,28 @@ export async function POST(request: Request) {
     }
 
     const roleResolution = await resolveDiscordUserRole(admin, match.tenantId, parsed.data.user_id);
+
+    if (isApprovalAckOnlyMessage(parsed.data.content)) {
+      const recentApproval = await findRecentApprovedChannelApproval(admin, {
+        tenantId: match.tenantId,
+        decidedByUserId: roleResolution.userId,
+        channelId: parsed.data.channel_id,
+      });
+
+      if (recentApproval) {
+        return NextResponse.json(
+          {
+            accepted: true,
+            tenant_id: match.tenantId,
+            customer_id: match.customerId,
+            routing_source: match.source,
+            mode: "approval_ack_suppressed",
+            approval_id: recentApproval.approvalId,
+          },
+          { status: 202 }
+        );
+      }
+    }
 
     const run = await enqueueDiscordRuntimeRun(admin, {
       runKind: "discord_runtime",
