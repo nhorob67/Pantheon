@@ -225,6 +225,25 @@ test("formats discourse dashboard visitor counts from integration_api_call outpu
   assert.equal(result, "There were 128 visitors in the last 24 hours.");
 });
 
+test("formats generic integration_api_call success without robotic status wrapping", () => {
+  const result = formatQueryToolOutput(
+    "integration_api_call",
+    JSON.stringify({
+      status: 200,
+      status_text: "OK",
+      integration: "discourse",
+      body: "{\"success\":true}",
+    }),
+    JSON.stringify({
+      method: "GET",
+      path: "/site.json",
+      integration_slug: "discourse",
+    })
+  );
+
+  assert.equal(result, "I checked Discourse and it responded normally.");
+});
+
 // ---------------------------------------------------------------------------
 // Structural follow-up safety net
 // ---------------------------------------------------------------------------

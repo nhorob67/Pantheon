@@ -255,7 +255,18 @@ function formatBodyDetail(body: unknown): string | null {
   if (typeof body === "string") {
     const trimmed = body.trim();
     if (!trimmed || trimmed === "{}" || trimmed === "[]") return null;
-    return trimmed.length <= 160 ? trimmed : `${trimmed.slice(0, 159).trimEnd()}…`;
+
+    try {
+      const parsed = JSON.parse(trimmed) as Record<string, unknown>;
+      const detail = [parsed.message, parsed.error, parsed.detail, parsed.reason, parsed.title]
+        .find((value) => typeof value === "string" && value.trim().length > 0);
+      if (typeof detail === "string") {
+        return detail;
+      }
+      return null;
+    } catch {
+      return trimmed.length <= 160 ? trimmed : `${trimmed.slice(0, 159).trimEnd()}…`;
+    }
   }
 
   if (body && typeof body === "object") {
@@ -459,8 +470,8 @@ export function formatQueryToolOutput(toolName: string, outputSummary: string, i
 
       if (status !== null && (status < 200 || status >= 300)) {
         return bodyDetail
-          ? `I checked ${integrationName}, but it returned ${status}${statusText}. ${bodyDetail}`
-          : `I checked ${integrationName}, but it returned ${status}${statusText}.`;
+          ? `I checked ${integrationName}, but it came back ${status}${statusText}. ${bodyDetail}`
+          : `I checked ${integrationName}, but it came back ${status}${statusText}.`;
       }
 
       if (
@@ -477,8 +488,8 @@ export function formatQueryToolOutput(toolName: string, outputSummary: string, i
 
       if (status !== null) {
         return bodyDetail
-          ? `I checked ${integrationName}. It returned ${status}${statusText}. ${bodyDetail}`
-          : `I checked ${integrationName}. It returned ${status}${statusText}, but I couldn't find a cleaner answer in that response.`;
+          ? `I checked ${integrationName}. ${bodyDetail}`
+          : `I checked ${integrationName} and it responded normally.`;
       }
     }
   } catch {

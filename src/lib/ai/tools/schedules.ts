@@ -174,6 +174,133 @@ export function createScheduleTools(
       },
     }),
 
+    schedule_update: tool({
+      description:
+        "Update an existing custom schedule. You can change its name, prompt, cron expression, timezone, tools, or enabled status. Use schedule_list first to get the schedule ID.",
+      inputSchema: z.object({
+        schedule_id: z.string().describe("The schedule ID to update"),
+        display_name: z
+          .string()
+          .describe("New name for the schedule")
+          .optional(),
+        prompt: z
+          .string()
+          .describe("New instruction the agent follows when the schedule fires")
+          .optional(),
+        cron_expression: z
+          .string()
+          .describe(
+            "New 5-field cron expression (minute hour day-of-month month day-of-week)"
+          )
+          .optional(),
+        timezone: z
+          .string()
+          .describe("New timezone, e.g. 'America/Chicago'")
+          .optional(),
+        tools: z
+          .array(z.string())
+          .describe("New list of skill slugs to scope this job")
+          .optional(),
+        enabled: z
+          .boolean()
+          .describe("Whether to enable or disable the schedule")
+          .optional(),
+      }),
+      execute: async ({
+        schedule_id,
+        display_name,
+        prompt,
+        cron_expression,
+        timezone: tz,
+        tools,
+        enabled,
+      }) => {
+        // Fetch existing schedule
+        const { data: existing, error: fetchError } = await admin
+          .from("tenant_scheduled_messages")
+          .select(
+            "id, schedule_type, cron_expression, timezone, enabled"
+          )
+          .eq("id", schedule_id)
+          .eq("tenant_id", tenantId)
+          .maybeSingle();
+
+        if (fetchError || !existing) {
+          return { error: "Schedule not found" };
+        }
+
+        if (existing.schedule_type !== "custom") {
+          return {
+            error:
+              "Only custom schedules can be edited. Use schedule_toggle to enable/disable predefined schedules.",
+          };
+        }
+
+        // Validate new cron expression if provided
+        if (cron_expression) {
+          try {
+            CronExpressionParser.parse(cron_expression);
+          } catch {
+            return { error: `Invalid cron expression: ${cron_expression}` };
+          }
+        }
+
+        // Build update payload with only provided fields
+        const update: Record<string, unknown> = {
+          updated_at: new Date().toISOString(),
+        };
+        if (display_name !== undefined) update.display_name = display_name;
+        if (prompt !== undefined) update.prompt = prompt;
+        if (cron_expression !== undefined)
+          update.cron_expression = cron_expression;
+        if (tz !== undefined) update.timezone = tz;
+        if (tools !== undefined) update.tools = tools;
+        if (enabled !== undefined) update.enabled = enabled;
+
+        // Recompute next_run_at if scheduling parameters changed
+        const effectiveCron = cron_expression ?? existing.cron_expression;
+        const effectiveTz = tz ?? existing.timezone;
+        const effectiveEnabled = enabled ?? existing.enabled;
+
+        if (
+          cron_expression !== undefined ||
+          tz !== undefined ||
+          enabled !== undefined
+        ) {
+          update.next_run_at = effectiveEnabled
+            ? computeNextRun(effectiveCron, effectiveTz)
+            : null;
+        }
+
+        const { data: updated, error: updateError } = await admin
+          .from("tenant_scheduled_messages")
+          .update(update)
+          .eq("id", schedule_id)
+          .select(
+            "id, display_name, cron_expression, timezone, enabled, next_run_at"
+          )
+          .single();
+
+        if (updateError) {
+          return {
+            error: `Failed to update schedule: ${updateError.message}`,
+          };
+        }
+
+        return {
+          updated: true,
+          schedule: {
+            id: updated.id,
+            name: updated.display_name,
+            frequency: describeCron(updated.cron_expression),
+            timezone: updated.timezone,
+            enabled: updated.enabled,
+            next_run: updated.next_run_at,
+          },
+        };
+      },
+    }),
+
     schedule_delete: tool({
       description:
         "Delete a custom schedule by its ID. Predefined schedules cannot be deleted — use schedule_toggle to disable them instead.",

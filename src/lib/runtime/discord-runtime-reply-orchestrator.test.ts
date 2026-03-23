@@ -89,7 +89,7 @@ test("active orchestrator sends milestones and terminal answers with files", asy
     phaseKey: "integration_api_call",
   });
   assert.equal(milestoneSent, true);
-  assert.equal(sends[0]?.content, "I'm making that API call now.");
+  assert.equal(sends[0]?.content, "Checking the API now.");
 
   const pendingFiles: FileCreateResult[] = [
     {
@@ -426,8 +426,8 @@ test("channel visibility arbitration prefers direct runs over follow-ups", async
   assert.equal(await followUp.emitToolPhase({ phaseKey: "web_search" }), true);
   assert.equal(await direct.emitToolPhase({ phaseKey: "integration_api_call" }), true);
   assert.equal(await followUp.refreshTyping(), false);
-  assert.deepEqual(followUpMessages, ["I'm checking a couple of sources so I can answer this cleanly."]);
-  assert.deepEqual(directMessages, ["I'm making that API call now."]);
+  assert.deepEqual(followUpMessages, ["Checking a couple of sources now."]);
+  assert.deepEqual(directMessages, ["Checking the API now."]);
   assert.equal(followUpTypingCalls, 0);
 });
 
@@ -506,10 +506,10 @@ test("approval-blocked replies release channel ownership for the next run", asyn
   assert.equal(await followUp.emitToolPhase({ phaseKey: "web_search" }), true);
 
   assert.deepEqual(directMessages, [
-    "I'm making that API call now.",
+    "Checking the API now.",
     "I need owner approval before I can make that change. Once it's approved, I'll pick it up here.",
   ]);
-  assert.deepEqual(followUpMessages, ["I'm checking a couple of sources so I can answer this cleanly."]);
+  assert.deepEqual(followUpMessages, ["Checking a couple of sources now."]);
 });
 
 test("emitDiscordRuntimeTerminalFailure owns terminal failure dispatch", async () => {
@@ -546,7 +546,7 @@ test("emitDiscordRuntimeTerminalFailure owns terminal failure dispatch", async (
     );
 
     assert.deepEqual(result, { owned: true, sent: true });
-    assert.equal(sends[0], "Task failed. Reaped by stale-lock reaper.");
+    assert.equal(sends[0], "I couldn't finish this run. Reaped by stale-lock reaper.");
     assert.equal(
       persistedRun.metadata.reply_lifecycle &&
         typeof persistedRun.metadata.reply_lifecycle === "object" &&
@@ -757,7 +757,7 @@ test("dispatchDiscordRuntimeTerminalFailure sends through the active orchestrato
     );
 
     assert.deepEqual(result, { owned: true, sent: true });
-    assert.equal(sends[0], "Task failed. Rejected via tenant approval queue.");
+    assert.equal(sends[0], "I couldn't finish this run. Rejected via tenant approval queue.");
     assert.equal(
       persistedRun.metadata.reply_lifecycle &&
         typeof persistedRun.metadata.reply_lifecycle === "object" &&
@@ -1162,7 +1162,7 @@ test("second milestone immediately after first is suppressed by cadence window",
 
 // --- Behavioral regressions ---
 
-test("weak candidate produces terminal summary starting with Task complete", async () => {
+test("weak candidate produces a natural terminal summary without a wrapper", async () => {
   let persistedRun = buildRun();
 
   const orchestrator = new DiscordRuntimeReplyOrchestrator({
@@ -1190,7 +1190,7 @@ test("weak candidate produces terminal summary starting with Task complete", asy
   });
 
   assert.equal(result.terminalKind, "summary");
-  assert.ok(result.text.startsWith("Task complete."));
+  assert.equal(result.text, "I checked a couple of sources.");
 });
 
 test("strong answer with numbers and length >= 60 produces terminal_answer", async () => {

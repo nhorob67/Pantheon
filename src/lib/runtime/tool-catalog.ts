@@ -113,6 +113,14 @@ const NATIVE_TOOLS: NativeToolEntry[] = [
     { writesState: true }
   ),
   native(
+    "schedule_update",
+    "Schedule Update",
+    "Update a custom schedule's name, prompt, cron expression, or timezone",
+    "schedule",
+    "medium",
+    { writesState: true }
+  ),
+  native(
     "schedule_delete",
     "Schedule Delete",
     "Delete a custom schedule by its ID",

@@ -176,16 +176,17 @@ function resolveSuccessfulTerminalReply(input: {
     responsePrefix: input.responsePrefix,
   });
   const responseText = normalized.skip ? "" : normalized.text ?? "";
+  const cleanedResponseText = responseText.replace(/^task complete\.?\s*/i, "").trim();
   const shouldUseAnswer =
     !input.skipFinalSend &&
     input.terminalState === "completed" &&
-    isStrongTerminalAnswer(responseText);
+    isStrongTerminalAnswer(cleanedResponseText);
 
   const terminalKind = shouldUseAnswer ? "answer" : "summary";
   const text = shouldUseAnswer
-    ? responseText
+    ? cleanedResponseText
     : buildTerminalSummary({
-        responseText,
+        responseText: cleanedResponseText,
         toolSummary: input.toolSummary,
         responsePreview: input.responsePreview,
         status: "completed",

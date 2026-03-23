@@ -26,6 +26,19 @@ test("normalizeReplyContent strips control tokens and applies response prefix", 
   assert.equal(normalized.text, "[Pantheon] Found 128 visitors in the last 24 hours.");
 });
 
+test("normalizeReplyContent preserves line breaks and markdown structure", () => {
+  const normalized = normalizeReplyContent({
+    text: "## Nick's To-Do List\n\n- Pay water rights\n- Get dad's gravestone ordered",
+    kind: "terminal_answer",
+  });
+
+  assert.equal(normalized.skip, false);
+  assert.equal(
+    normalized.text,
+    "## Nick's To-Do List\n\n- Pay water rights\n- Get dad's gravestone ordered"
+  );
+});
+
 test("normalizeReplyContent skips heartbeat-only payloads", () => {
   const normalized = normalizeReplyContent({
     text: "HEARTBEAT_OK",
@@ -84,7 +97,7 @@ test("buildTerminalSummary prefers explicit completion and failure summaries", (
       responseText: "There were 128 visitors in the last 24 hours.",
       status: "completed",
     }),
-    "Task complete. There were 128 visitors in the last 24 hours."
+    "There were 128 visitors in the last 24 hours."
   );
 
   assert.equal(
@@ -92,7 +105,7 @@ test("buildTerminalSummary prefers explicit completion and failure summaries", (
       errorMessage: "The Discourse API returned 403.",
       status: "failed",
     }),
-    "Task failed. The Discourse API returned 403."
+    "I couldn't finish this run. The Discourse API returned 403."
   );
 
   assert.equal(
@@ -100,7 +113,7 @@ test("buildTerminalSummary prefers explicit completion and failure summaries", (
       toolSummary: "schedule_create:success",
       status: "completed",
     }),
-    "Task complete. I set up the schedule."
+    "I set up the schedule."
   );
 });
 
@@ -113,7 +126,7 @@ test("buildMilestoneMessage keeps schedule and sentence-like labels natural", ()
     buildMilestoneMessage({
       phaseKey: "schedule_create",
     }),
-    "I'm updating that schedule now."
+    "Updating the schedule now."
   );
 
   assert.equal(
@@ -128,7 +141,7 @@ test("buildMilestoneMessage keeps schedule and sentence-like labels natural", ()
 test("buildKeepaliveMessage stays conversational for schedule changes", () => {
   assert.equal(
     buildKeepaliveMessage("schedule_update"),
-    "I'm still getting that schedule change into place."
+    "Still getting the schedule updated."
   );
 });
 
@@ -204,7 +217,7 @@ test("shouldEmitKeepalive returns false when silence is below threshold", () => 
   const lifecycle = {
     ...buildDefaultDiscordReplyLifecycleMetadata(),
     state: "active" as const,
-    last_visible_event_at: new Date(now.getTime() - 20_000).toISOString(),
+    last_visible_event_at: new Date(now.getTime() - 30_000).toISOString(),
   };
   assert.equal(shouldEmitKeepalive({ lifecycle, now }), false);
 });
@@ -214,7 +227,7 @@ test("shouldEmitKeepalive returns true at exactly spacing threshold", () => {
   const lifecycle = {
     ...buildDefaultDiscordReplyLifecycleMetadata(),
     state: "active" as const,
-    last_visible_event_at: new Date(now.getTime() - 30_000).toISOString(),
+    last_visible_event_at: new Date(now.getTime() - 45_000).toISOString(),
   };
   assert.equal(shouldEmitKeepalive({ lifecycle, now }), true);
 });
@@ -251,6 +264,18 @@ test("normalizeReplyContent strips multiple control tokens mixed with real conte
   assert.equal(result.text, "some real content more content");
 });
 
+test("normalizeReplyContent strips control tokens without flattening multiline replies", () => {
+  const result = normalizeReplyContent({
+    text: "NO_REPLY\n## Nick's To-Do List\n\n- Pay water rights\nHEARTBEAT_OK\n- Get dad's gravestone ordered",
+    kind: "terminal_answer",
+  });
+  assert.equal(result.skip, false);
+  assert.equal(
+    result.text,
+    "## Nick's To-Do List\n\n- Pay water rights\n- Get dad's gravestone ordered"
+  );
+});
+
 test("normalizeReplyContent returns skip when whitespace-only after stripping", () => {
   const result = normalizeReplyContent({
     text: "NO_REPLY   HEARTBEAT_OK",
@@ -282,7 +307,7 @@ test("buildTerminalSummary uses responsePreview when responseText is weak", () =
     responsePreview: "Found 128 visitors in the last 24 hours.",
     status: "completed",
   });
-  assert.equal(result, "Task complete. Found 128 visitors in the last 24 hours.");
+  assert.equal(result, "Found 128 visitors in the last 24 hours.");
 });
 
 test("buildTerminalSummary uses toolSummary when no text or preview", () => {
@@ -291,7 +316,7 @@ test("buildTerminalSummary uses toolSummary when no text or preview", () => {
     toolSummary: "integration_api_call:success",
     status: "completed",
   });
-  assert.equal(result, "Task complete. I finished checking that through the API.");
+  assert.equal(result, "I checked that through the API.");
 });
 
 test("buildTerminalSummary returns generic when all empty", () => {
@@ -299,5 +324,5 @@ test("buildTerminalSummary returns generic when all empty", () => {
     responseText: "",
     status: "completed",
   });
-  assert.equal(result, "Task complete.");
+  assert.equal(result, "I finished that.");
 });

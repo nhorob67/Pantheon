@@ -60,22 +60,22 @@ const INFORMATIONAL_TOOLS = new Set(["web_search", "web_fetch"]);
 // ---------------------------------------------------------------------------
 
 const STATUS_MESSAGES: Record<string, string> = {
-  web_search: "I'm checking a few sources now.",
-  web_fetch: "I'm reading through that now.",
-  memory_search: "I'm checking what I already know about that.",
-  memory_store: "I'm saving that for later.",
-  conversation_search: "I'm looking back through our earlier messages.",
-  knowledge_search: "I'm checking the knowledge base.",
-  delegate_task: "I'm looping in a teammate on that part.",
-  delegate_task_async: "I'm looping in a teammate on that part.",
-  integration_api_call: "I'm making that API call now.",
-  integration_register: "I'm setting up the integration.",
-  integration_store_credential: "I'm storing the credential securely.",
-  schedule_create: "I'm setting up that schedule now.",
-  schedule_update: "I'm updating the schedule.",
-  schedule_delete: "I'm removing that schedule.",
-  self_config_update: "I'm adjusting my settings.",
-  task_follow_up: "I'm scheduling a follow-up on that.",
+  web_search: "Checking a couple of sources now.",
+  web_fetch: "Reading through that now.",
+  memory_search: "Checking what I already know about that.",
+  memory_store: "Saving that for later.",
+  conversation_search: "Looking back through our earlier messages.",
+  knowledge_search: "Checking the knowledge base.",
+  delegate_task: "I pulled in another agent for that part.",
+  delegate_task_async: "I pulled in another agent for that part.",
+  integration_api_call: "Checking the API now.",
+  integration_register: "Setting up the integration now.",
+  integration_store_credential: "Saving the credential securely.",
+  schedule_create: "Setting up the schedule now.",
+  schedule_update: "Updating the schedule now.",
+  schedule_delete: "Removing the schedule now.",
+  self_config_update: "Adjusting my settings.",
+  task_follow_up: "Scheduling a follow-up on that.",
 };
 
 /**
@@ -84,7 +84,7 @@ const STATUS_MESSAGES: Record<string, string> = {
  */
 export function getToolStatusMessage(toolName: string): string | null {
   if (STATUS_MESSAGES[toolName]) return STATUS_MESSAGES[toolName];
-  if (toolName.startsWith("browser_")) return "I'm opening it directly so I can check it myself.";
+  if (toolName.startsWith("browser_")) return "Opening it directly so I can check.";
   return null;
 }
 
@@ -237,15 +237,17 @@ function extractApiBodyDetail(body: unknown): string | null {
     ].find((value) => typeof value === "string" && value.trim().length > 0);
 
     if (typeof detail === "string") {
-      return `The response says: ${truncateSentence(detail, 140)}`;
+      return truncateSentence(detail, 140);
     }
+
+    return null;
   } catch {
     // Plain text response body.
   }
 
   const compact = truncateSentence(bodyText, 140);
   if (!compact || compact === "{}" || compact === "[]") return null;
-  return `The response says: ${compact}`;
+  return compact;
 }
 
 function formatIntegrationApiCallOutcome(outputSummary: string): string | null {
@@ -269,10 +271,14 @@ function formatIntegrationApiCallOutcome(outputSummary: string): string | null {
 
   const lead =
     status >= 200 && status < 300
-      ? `Tried it again. ${integrationName} responded with ${status}${statusText}.`
-      : `Tried it again. ${integrationName} responded with ${status}${statusText}, so the request still did not go through cleanly.`;
+      ? bodyDetail
+        ? `I checked ${integrationName}. ${bodyDetail}`
+        : `I checked ${integrationName} and it responded normally.`
+      : bodyDetail
+        ? `I checked ${integrationName}, but it came back ${status}${statusText}. ${bodyDetail}`
+        : `I checked ${integrationName}, but it came back ${status}${statusText}.`;
 
-  return [lead, bodyDetail, rateLimitWarning].filter(Boolean).join(" ");
+  return [lead, rateLimitWarning].filter(Boolean).join(" ");
 }
 
 function formatSpecializedActionOutcome(record: ExecutorRecord): string | null {
@@ -321,10 +327,10 @@ export function formatActionFallback(records: ReadonlyArray<ExecutorRecord>): st
   }
 
   if (genericActions.length === 1) {
-    return `Done! I ${genericActions[0]}.`;
+    return `I ${genericActions[0]}.`;
   }
 
-  return `All set! I ${joinActionTexts(genericActions)}.`;
+  return `I ${joinActionTexts(genericActions)}.`;
 }
 
 // ---------------------------------------------------------------------------

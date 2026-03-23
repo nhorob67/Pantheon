@@ -246,7 +246,7 @@ describe("formatActionFallback", () => {
       },
     ]);
 
-    assert.equal(result, "Tried it again. Discourse responded with 200 OK. The response says: {\"success\":true}");
+    assert.equal(result, "I checked Discourse and it responded normally.");
   });
 
   it("formats integration_api_call failures with API detail", () => {
@@ -265,7 +265,7 @@ describe("formatActionFallback", () => {
 
     assert.equal(
       result,
-      "Tried it again. Discourse responded with 401 Unauthorized, so the request still did not go through cleanly. The response says: Invalid API key"
+      "I checked Discourse, but it came back 401 Unauthorized. Invalid API key"
     );
   });
 
@@ -288,7 +288,7 @@ describe("formatActionFallback", () => {
       },
     ]);
 
-    assert.equal(result, "Tried it again. Fullstack Ag responded with 200 OK. I also registered the integration.");
+    assert.equal(result, "I checked Fullstack Ag and it responded normally. I also registered the integration.");
   });
 
   it("falls back to generic action copy when no specialized formatter exists", () => {
@@ -296,7 +296,7 @@ describe("formatActionFallback", () => {
       { toolName: "memory_create", success: true, outputSummary: "{}" },
     ]);
 
-    assert.equal(result, "Done! I saved that to memory.");
+    assert.equal(result, "I saved that to memory.");
   });
 });
 
@@ -306,29 +306,29 @@ describe("formatActionFallback", () => {
 
 describe("getToolStatusMessage", () => {
   it("returns status for web_search", () => {
-    assert.equal(getToolStatusMessage("web_search"), "I'm checking a few sources now.");
+    assert.equal(getToolStatusMessage("web_search"), "Checking a couple of sources now.");
   });
 
   it("returns status for web_fetch", () => {
-    assert.equal(getToolStatusMessage("web_fetch"), "I'm reading through that now.");
+    assert.equal(getToolStatusMessage("web_fetch"), "Reading through that now.");
   });
 
   it("returns status for memory_search", () => {
-    assert.equal(getToolStatusMessage("memory_search"), "I'm checking what I already know about that.");
+    assert.equal(getToolStatusMessage("memory_search"), "Checking what I already know about that.");
   });
 
   it("returns status for conversation_search", () => {
-    assert.equal(getToolStatusMessage("conversation_search"), "I'm looking back through our earlier messages.");
+    assert.equal(getToolStatusMessage("conversation_search"), "Looking back through our earlier messages.");
   });
 
   it("returns status for delegation tools", () => {
-    assert.equal(getToolStatusMessage("delegate_task"), "I'm looping in a teammate on that part.");
-    assert.equal(getToolStatusMessage("delegate_task_async"), "I'm looping in a teammate on that part.");
+    assert.equal(getToolStatusMessage("delegate_task"), "I pulled in another agent for that part.");
+    assert.equal(getToolStatusMessage("delegate_task_async"), "I pulled in another agent for that part.");
   });
 
   it("returns status for browser_ tools", () => {
-    assert.equal(getToolStatusMessage("browser_navigate"), "I'm opening it directly so I can check it myself.");
-    assert.equal(getToolStatusMessage("browser_click"), "I'm opening it directly so I can check it myself.");
+    assert.equal(getToolStatusMessage("browser_navigate"), "Opening it directly so I can check.");
+    assert.equal(getToolStatusMessage("browser_click"), "Opening it directly so I can check.");
   });
 
   it("returns null for unknown/action tools", () => {

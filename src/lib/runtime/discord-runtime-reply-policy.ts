@@ -11,9 +11,9 @@ import {
 const SILENT_REPLY_TOKEN = "NO_REPLY";
 const HEARTBEAT_TOKEN = "HEARTBEAT_OK";
 const MIN_INTERMEDIATE_SUBSTANCE_LENGTH = 36;
-const MILESTONE_MIN_SPACING_MS = 1_000;
-const KEEPALIVE_SILENCE_MS = 20_000;
-const KEEPALIVE_MIN_SPACING_MS = 30_000;
+const MILESTONE_MIN_SPACING_MS = 2_500;
+const KEEPALIVE_SILENCE_MS = 30_000;
+const KEEPALIVE_MIN_SPACING_MS = 45_000;
 const MAX_KEEPALIVES_PER_RUN = 3;
 const FRIENDLY_TOOL_SUMMARY_MESSAGES: Record<string, string> = {
   schedule_create: "I set up the schedule.",
@@ -28,6 +28,15 @@ const FRIENDLY_TOOL_SUMMARY_MESSAGES: Record<string, string> = {
 
 function normalizeWhitespace(value: string): string {
   return value.replace(/\s+/g, " ").trim();
+}
+
+function pickMultilineString(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
 }
 
 function pickString(value: unknown): string | null {
@@ -54,6 +63,10 @@ function ensureSentence(value: string): string {
   }
 
   return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
+}
+
+function stripTerminalPrefix(value: string): string {
+  return value.replace(/^task (?:complete|failed)\.?\s*/i, "").trim();
 }
 
 function looksLikeSentence(value: string): boolean {
@@ -92,10 +105,10 @@ function buildFriendlyToolSummary(toolSummary: string): string | null {
         return "I updated the configuration.";
       }
       if (entry.toolName === "integration_api_call") {
-        return "I finished checking that through the API.";
+        return "I checked that through the API.";
       }
       if (entry.toolName === "web_search" || entry.toolName === "web_fetch") {
-        return "I checked the relevant sources.";
+        return "I checked a couple of sources.";
       }
 
       return null;
@@ -128,10 +141,17 @@ function stripKnownControlTokens(text: string): { text: string; skipReason?: "si
     return { text: "", skipReason: "heartbeat" };
   }
 
-  let next = text.replace(new RegExp(`\\b${SILENT_REPLY_TOKEN}\\b`, "g"), " ");
-  next = next.replace(new RegExp(`\\b${HEARTBEAT_TOKEN}\\b`, "g"), " ");
+  let next = text.replace(
+    new RegExp(`^[ \\t]*(?:${SILENT_REPLY_TOKEN}|${HEARTBEAT_TOKEN})[ \\t]*\\n?`, "gm"),
+    ""
+  );
+  next = next.replace(new RegExp(`\\b${SILENT_REPLY_TOKEN}\\b`, "g"), "");
+  next = next.replace(new RegExp(`\\b${HEARTBEAT_TOKEN}\\b`, "g"), "");
+  next = next.replace(/[ \t]{2,}/g, " ");
+  next = next.replace(/[ \t]+\n/g, "\n");
+  next = next.replace(/\n[ \t]+/g, "\n");
   return {
-    text: normalizeWhitespace(next),
+    text: next.trim(),
   };
 }
 
@@ -238,7 +258,7 @@ export function normalizeReplyContent(input: {
   kind: string;
   responsePrefix?: string;
 }): DiscordReplyNormalizedContent {
-  const raw = pickString(input.text);
+  const raw = pickMultilineString(input.text);
   if (!raw) {
     return { skip: true, skipReason: "empty" };
   }
@@ -322,55 +342,55 @@ export function buildMilestoneMessage(input: {
   const phaseKey = resolvePhaseKey(input.phaseKey);
   switch (phaseKey) {
     case "api_call":
-      return "I'm making that API call now.";
+      return "Checking the API now.";
     case "web_research":
-      return "I'm checking a couple of sources so I can answer this cleanly.";
+      return "Checking a couple of sources now.";
     case "web_read":
-      return "I'm reading through that now.";
+      return "Reading through that now.";
     case "memory_lookup":
-      return "I'm checking what I already know about that.";
+      return "Checking what I already know about that.";
     case "browser_check":
-      return "I'm opening it directly so I can check it myself.";
+      return "Opening it directly so I can check.";
     case "delegation_wait":
       return input.targetAgentName
         ? `I've asked ${input.targetAgentName} to help with that part.`
         : "I've asked another agent to help with that part.";
     case "integration_setup":
-      return "I'm getting the integration set up now.";
+      return "Setting up the integration now.";
     case "schedule_change":
-      return "I'm updating that schedule now.";
+      return "Updating the schedule now.";
     case "config_update":
-      return "I'm making that configuration change now.";
+      return "Making that change now.";
     case "mcp_tool":
-      return "I'm checking that connected system now.";
+      return "Checking that connected system now.";
     case "skill_execution":
-      return "I'm running that workflow now.";
+      return "Running that workflow now.";
     default:
       if (input.label && looksLikeSentence(input.label)) {
         return ensureSentence(input.label);
       }
       return input.label
-        ? ensureSentence(`I'm ${input.label}`)
-        : "I'm working through that now.";
+        ? ensureSentence(input.label)
+        : "Working through that now.";
   }
 }
 
 export function buildKeepaliveMessage(phaseKey: string | null): string {
   switch (resolvePhaseKey(phaseKey ?? "generic_tool")) {
     case "api_call":
-      return "Still waiting on the API response. I'll post the result here as soon as it comes back.";
+      return "Still waiting on the API to come back.";
     case "web_research":
-      return "I'm still cross-checking the sources so I can give you the right answer.";
+      return "Still cross-checking a couple of sources.";
     case "web_read":
-      return "I'm still reading through the details.";
+      return "Still reading through the details.";
     case "browser_check":
-      return "I'm still checking it directly.";
+      return "Still checking it directly.";
     case "delegation_wait":
-      return "I'm still waiting on that other agent's result.";
+      return "Still waiting on the other agent's result.";
     case "schedule_change":
-      return "I'm still getting that schedule change into place.";
+      return "Still getting the schedule updated.";
     default:
-      return "Still on it. I'll report back here with the result.";
+      return "Still on it. I'll post the result here once it's ready.";
   }
 }
 
@@ -458,33 +478,41 @@ export function buildTerminalSummary(input: {
   status: "completed" | "failed";
 }): string {
   if (input.status === "failed") {
-    const detail = pickString(input.errorMessage) ?? pickString(input.responsePreview);
-    return detail ? `Task failed. ${detail}` : "Task failed. I couldn't finish this run.";
+    const detail = stripTerminalPrefix(
+      pickString(input.errorMessage) ?? pickString(input.responsePreview) ?? ""
+    );
+    if (!detail) {
+      return "I couldn't finish this run.";
+    }
+
+    if (/^i (?:couldn't|could not|wasn't able|ran into)\b/i.test(detail)) {
+      return detail;
+    }
+
+    return `I couldn't finish this run. ${detail}`;
   }
 
-  const responseText = pickString(input.responseText);
+  const responseTextRaw = pickString(input.responseText);
+  const responseText = responseTextRaw ? stripTerminalPrefix(responseTextRaw) : null;
   if (responseText && !isWeakProcessText(responseText)) {
-    return /^task complete\b/i.test(responseText)
-      ? responseText
-      : `Task complete. ${responseText}`;
+    return responseText;
   }
 
-  const preview = pickString(input.responsePreview);
+  const previewRaw = pickString(input.responsePreview);
+  const preview = previewRaw ? stripTerminalPrefix(previewRaw) : null;
   if (preview) {
-    return /^task complete\b/i.test(preview) ? preview : `Task complete. ${preview}`;
+    return preview;
   }
 
   const toolSummary = pickString(input.toolSummary);
   if (toolSummary) {
     const friendlyToolSummary = buildFriendlyToolSummary(toolSummary);
     if (friendlyToolSummary) {
-      return /^task complete\b/i.test(friendlyToolSummary)
-        ? friendlyToolSummary
-        : `Task complete. ${friendlyToolSummary}`;
+      return friendlyToolSummary;
     }
   }
 
-  return "Task complete.";
+  return "I finished that.";
 }
 
 export function shouldEmitKeepalive(input: {

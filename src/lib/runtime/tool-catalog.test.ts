@@ -111,7 +111,7 @@ describe("tool-catalog", () => {
   it("covers all expected native tools", () => {
     const expected = [
       "memory_write", "memory_search", "memory_read", "conversation_search",
-      "schedule_create", "schedule_list", "schedule_toggle", "schedule_delete",
+      "schedule_create", "schedule_list", "schedule_toggle", "schedule_update", "schedule_delete",
       "config_view_my_config", "config_list_agents",
       "config_set_my_goal", "config_set_my_role", "config_set_my_backstory",
       "config_set_display_name", "config_set_my_autonomy", "config_toggle_skill",
