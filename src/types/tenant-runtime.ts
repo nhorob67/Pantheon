@@ -291,10 +291,45 @@ export const TENANT_RUNTIME_RUN_STATUS_VALUES = [
 ] as const;
 export type TenantRuntimeRunStatus = (typeof TENANT_RUNTIME_RUN_STATUS_VALUES)[number];
 
+export interface TenantRuntimeNextActionBase {
+  kind: string;
+  state: "queued" | "consumed";
+  created_at: string;
+  consumed_at?: string | null;
+}
+
+export interface TenantRuntimeApprovedToolNextAction
+  extends TenantRuntimeNextActionBase {
+  kind: "approved_tool_continuation";
+  approval_id: string;
+  tool_key: string;
+  invocation_id?: string | null;
+  args_summary?: string | null;
+  execution:
+    | {
+        mode: "resume_invocation";
+        continuation_token: string;
+      }
+    | {
+        mode: "server_executed";
+        status: "completed" | "failed";
+        result_summary?: string | null;
+        error?: string | null;
+      };
+  result?: {
+    status: "completed" | "failed";
+    result_summary?: string | null;
+    error?: string | null;
+  } | null;
+}
+
+export type TenantRuntimeNextAction = TenantRuntimeApprovedToolNextAction;
+
 export interface TenantRuntimeRun {
   id: string;
   tenant_id: string;
   customer_id: string;
+  session_id?: string | null;
   run_kind: TenantRuntimeRunKind;
   source: "discord_ingress" | "api" | "system" | "email_ingress";
   status: TenantRuntimeRunStatus;

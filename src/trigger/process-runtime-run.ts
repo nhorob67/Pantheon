@@ -1,4 +1,4 @@
-import { task } from "@trigger.dev/sdk";
+import { task, tasks } from "@trigger.dev/sdk";
 import { createTriggerAdminClient } from "./lib/supabase";
 import { createTenantAiWorker } from "@/lib/ai/tenant-ai-worker";
 import { createEmailAiWorker } from "@/lib/ai/email-ai-worker";
@@ -7,12 +7,27 @@ import { createDelegationAiWorker } from "@/lib/ai/delegation-ai-worker";
 import { resolveModels } from "@/lib/ai/model-resolver";
 import {
   getTenantRuntimeRunById,
-  claimTenantRuntimeRunById,
+  claimQueuedTenantRuntimeRun,
+  getNextQueuedSessionLaneRun,
   releaseAsyncDelegationBudgetReservation,
 } from "@/lib/runtime/tenant-runtime-queue";
 import { sendAsyncDelegationLifecycleUpdate } from "@/lib/runtime/tenant-runtime-discord-lifecycle";
 import { executeTenantRuntimeRun } from "@/lib/runtime/tenant-runtime-orchestrator";
 import type { TenantRuntimeWorker } from "@/lib/runtime/tenant-runtime-worker";
+
+async function triggerNextSessionLaneRun(run: Awaited<ReturnType<typeof getTenantRuntimeRunById>>) {
+  if (!run) {
+    return;
+  }
+
+  const admin = createTriggerAdminClient();
+  const next = await getNextQueuedSessionLaneRun(admin, run).catch(() => null);
+  if (!next) {
+    return;
+  }
+
+  await tasks.trigger("process-runtime-run", { runId: next.id }).catch(() => {});
+}
 
 export const processRuntimeRun = task({
   id: "process-runtime-run",
@@ -38,12 +53,7 @@ export const processRuntimeRun = task({
       return { skipped: true, reason: "not_claimable", status: run.status };
     }
 
-    const claimedById = await claimTenantRuntimeRunById(
-      admin,
-      payload.runId,
-      "trigger-dev",
-      120
-    );
+    const claimedById = await claimQueuedTenantRuntimeRun(admin, run, "trigger-dev", 120);
     if (!claimedById) {
       return { skipped: true, reason: "claim_lost", runId: payload.runId };
     }
@@ -73,6 +83,10 @@ export const processRuntimeRun = task({
 
     if (transitionedRun && claimed.run_kind === "delegation_runtime") {
       await sendAsyncDelegationLifecycleUpdate(admin, transitionedRun).catch(() => {});
+    }
+
+    if (transitionedRun && (outcome.finalStatus === "completed" || outcome.finalStatus === "failed")) {
+      await triggerNextSessionLaneRun(transitionedRun);
     }
 
     return {

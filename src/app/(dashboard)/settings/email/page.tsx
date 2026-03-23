@@ -45,43 +45,46 @@ interface AgentIdentityRow {
 
 async function EmailContent({ customerId }: { customerId: string }) {
   const admin = createAdminClient();
-  const tenant = await getCustomerTenant(customerId);
 
-  const { data: identity } = await admin
-    .from("email_identities")
-    .select("slug, address, sender_alias, provider_mailbox_id")
-    .eq("customer_id", customerId)
-    .eq("is_active", true)
-    .eq("identity_type", "team")
-    .is("agent_id", null)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
+  // Tenant and team identity don't depend on each other — fetch in parallel
+  const [tenant, { data: identity }] = await Promise.all([
+    getCustomerTenant(customerId),
+    admin
+      .from("email_identities")
+      .select("slug, address, sender_alias, provider_mailbox_id")
+      .eq("customer_id", customerId)
+      .eq("is_active", true)
+      .eq("identity_type", "team")
+      .is("agent_id", null)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle(),
+  ]);
 
   // Load non-default agents and their email identities
   let agents: AgentRow[] = [];
   let agentIdentities: AgentIdentityRow[] = [];
 
   if (tenant) {
-    const { data: agentRows } = await admin
-      .from("tenant_agents")
-      .select("id, display_name, role, is_default")
-      .eq("tenant_id", tenant.id)
-      .eq("status", "active")
-      .order("sort_order", { ascending: true });
+    const [{ data: agentRows }, { data: identRows }] = await Promise.all([
+      admin
+        .from("tenant_agents")
+        .select("id, display_name, role, is_default")
+        .eq("tenant_id", tenant.id)
+        .eq("status", "active")
+        .order("sort_order", { ascending: true }),
+      admin
+        .from("email_identities")
+        .select("id, agent_id, slug, address, sender_alias, provider_mailbox_id, is_active, updated_at, created_at")
+        .eq("tenant_id", tenant.id)
+        .eq("identity_type", "agent")
+        .order("updated_at", { ascending: false })
+        .order("created_at", { ascending: false }),
+    ]);
 
     if (agentRows) {
       agents = agentRows as AgentRow[];
     }
-
-    const { data: identRows } = await admin
-      .from("email_identities")
-      .select("id, agent_id, slug, address, sender_alias, provider_mailbox_id, is_active, updated_at, created_at")
-      .eq("tenant_id", tenant.id)
-      .eq("identity_type", "agent")
-      .order("updated_at", { ascending: false })
-      .order("created_at", { ascending: false });
-
     if (identRows) {
       agentIdentities = identRows as AgentIdentityRow[];
     }

@@ -263,6 +263,7 @@ async function processOneEmail(
   const run = await enqueueEmailRuntimeRun(admin, {
     tenantId,
     customerId: inbound.customer_id,
+    sessionId: session.id,
     requestTraceId: `email:${inbound.id}`,
     idempotencyKey: `email:${inbound.id}:${randomUUID().slice(0, 8)}`,
     payload: {

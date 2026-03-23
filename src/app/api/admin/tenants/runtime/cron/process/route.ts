@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { constantTimeTokenInSet } from "@/lib/security/constant-time";
 import { safeErrorMessage } from "@/lib/security/safe-error";
+import { resolveSession } from "@/lib/ai/session-resolver";
 import { enqueueDiscordRuntimeRun } from "@/lib/runtime/tenant-runtime-queue";
 import { computeNextRun } from "@/lib/schedules/compute-next-run";
 
@@ -50,11 +51,20 @@ export async function POST(request: Request) {
 
     for (const msg of dueMessages) {
       try {
+        const session = await resolveSession(admin, {
+          tenantId: msg.tenant_id,
+          customerId: msg.customer_id,
+          channelId: msg.channel_id,
+          agentId: msg.agent_id,
+          sessionKind: "channel",
+        });
+
         // Enqueue as a cron run
         await enqueueDiscordRuntimeRun(admin, {
           tenantId: msg.tenant_id,
           customerId: msg.customer_id,
           runKind: "discord_runtime",
+          sessionId: session.id,
           requestTraceId: `cron-${msg.id}-${Date.now()}`,
           idempotencyKey: `cron-${msg.id}-${now.slice(0, 13)}`, // Hourly dedup
           payload: {

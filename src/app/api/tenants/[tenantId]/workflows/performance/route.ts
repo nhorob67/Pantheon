@@ -41,10 +41,16 @@ export async function POST(
       fallbackErrorMessage: "Failed to store workflow performance metric",
     },
     async (state) => {
-      const mapping = await resolveCanonicalLegacyInstanceForTenant(
-        state.admin,
-        state.tenantContext.tenantId
-      );
+      const [mapping, workflowBuilderEnabled] = await Promise.all([
+        resolveCanonicalLegacyInstanceForTenant(
+          state.admin,
+          state.tenantContext.tenantId
+        ),
+        isWorkflowBuilderEnabledForCustomer(
+          state.admin,
+          state.tenantContext.customerId
+        ),
+      ]);
       const instanceId = mapping.instanceId;
 
       if (!instanceId) {
@@ -53,11 +59,6 @@ export async function POST(
           { status: 404 }
         );
       }
-
-      const workflowBuilderEnabled = await isWorkflowBuilderEnabledForCustomer(
-        state.admin,
-        state.tenantContext.customerId
-      );
 
       if (!workflowBuilderEnabled) {
         return NextResponse.json(

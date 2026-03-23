@@ -11,6 +11,7 @@ const TENANT_RUNTIME_RUN_SELECT = [
   "id",
   "tenant_id",
   "customer_id",
+  "session_id",
   "run_kind",
   "source",
   "status",
@@ -42,6 +43,7 @@ export interface EnqueueDiscordCanaryRunInput {
   customerId: string;
   requestTraceId: string;
   idempotencyKey: string;
+  sessionId?: string | null;
   payload: Record<string, unknown>;
   metadata?: Record<string, unknown>;
 }
@@ -137,6 +139,7 @@ function mapRuntimeRunRow(row: Record<string, unknown>): TenantRuntimeRun {
     id: String(row.id || ""),
     tenant_id: String(row.tenant_id || ""),
     customer_id: String(row.customer_id || ""),
+    session_id: typeof row.session_id === "string" ? row.session_id : null,
     run_kind: row.run_kind as TenantRuntimeRun["run_kind"],
     source: row.source as TenantRuntimeRun["source"],
     status: row.status as TenantRuntimeRunStatus,
@@ -167,6 +170,101 @@ function mapRuntimeRunRow(row: Record<string, unknown>): TenantRuntimeRun {
   };
 }
 
+const SESSION_LANE_RUN_KINDS = new Set<TenantRuntimeRunKind>([
+  "discord_runtime",
+  "email_runtime",
+]);
+
+function isSessionLaneBoundRun(
+  run: Pick<TenantRuntimeRun, "run_kind" | "session_id">
+): boolean {
+  return SESSION_LANE_RUN_KINDS.has(run.run_kind) && typeof run.session_id === "string";
+}
+
+function compareRuntimeRunOrder(
+  left: Pick<TenantRuntimeRun, "id" | "queued_at" | "created_at">,
+  right: Pick<TenantRuntimeRun, "id" | "queued_at" | "created_at">
+): number {
+  const queuedAtDiff = left.queued_at.localeCompare(right.queued_at);
+  if (queuedAtDiff !== 0) {
+    return queuedAtDiff;
+  }
+
+  const createdAtDiff = left.created_at.localeCompare(right.created_at);
+  if (createdAtDiff !== 0) {
+    return createdAtDiff;
+  }
+
+  return left.id.localeCompare(right.id);
+}
+
+export function sessionLaneBlocksRun(
+  candidate: Pick<
+    TenantRuntimeRun,
+    "id" | "session_id" | "run_kind" | "status" | "queued_at" | "created_at"
+  >,
+  blocker: Pick<
+    TenantRuntimeRun,
+    "id" | "session_id" | "run_kind" | "status" | "queued_at" | "created_at"
+  >
+): boolean {
+  if (!isSessionLaneBoundRun(candidate) || !isSessionLaneBoundRun(blocker)) {
+    return false;
+  }
+
+  if (candidate.id === blocker.id || candidate.session_id !== blocker.session_id) {
+    return false;
+  }
+
+  if (blocker.status === "running" || blocker.status === "awaiting_approval") {
+    return true;
+  }
+
+  if (blocker.status !== "queued") {
+    return false;
+  }
+
+  return compareRuntimeRunOrder(blocker, candidate) < 0;
+}
+
+function runLockAvailable(
+  run: Pick<TenantRuntimeRun, "lock_expires_at">,
+  nowIso: string
+): boolean {
+  return !run.lock_expires_at || run.lock_expires_at < nowIso;
+}
+
+async function findSessionLaneBlocker(
+  admin: SupabaseClient,
+  run: TenantRuntimeRun
+): Promise<TenantRuntimeRun | null> {
+  if (!isSessionLaneBoundRun(run)) {
+    return null;
+  }
+
+  const { data, error } = await admin
+    .from("tenant_runtime_runs")
+    .select(TENANT_RUNTIME_RUN_SELECT)
+    .eq("tenant_id", run.tenant_id)
+    .eq("session_id", run.session_id)
+    .in("status", ["queued", "running", "awaiting_approval"])
+    .limit(50);
+
+  if (error) {
+    throw new TenantRuntimeQueueError(
+      500,
+      safeErrorMessage(error, "Failed to resolve session lane blockers")
+    );
+  }
+
+  const blockers = ((data || []) as unknown as Record<string, unknown>[])
+    .map(mapRuntimeRunRow)
+    .filter((candidate) => sessionLaneBlocksRun(run, candidate))
+    .sort(compareRuntimeRunOrder);
+
+  return blockers[0] ?? null;
+}
+
 export async function enqueueDiscordRuntimeRun(
   admin: SupabaseClient,
   input: EnqueueDiscordRuntimeRunInput
@@ -177,6 +275,7 @@ export async function enqueueDiscordRuntimeRun(
     .insert({
       tenant_id: input.tenantId,
       customer_id: input.customerId,
+      session_id: input.sessionId ?? null,
       run_kind: input.runKind,
       source: "discord_ingress",
       status: "queued",
@@ -232,6 +331,7 @@ export async function enqueueDiscordCanaryRun(
 export interface EnqueueEmailRuntimeRunInput {
   tenantId: string;
   customerId: string;
+  sessionId: string;
   requestTraceId: string;
   idempotencyKey: string;
   payload: Record<string, unknown>;
@@ -247,6 +347,7 @@ export async function enqueueEmailRuntimeRun(
     .insert({
       tenant_id: input.tenantId,
       customer_id: input.customerId,
+      session_id: input.sessionId,
       run_kind: "email_runtime",
       source: "email_ingress",
       status: "queued",
@@ -289,13 +390,59 @@ export async function enqueueEmailRuntimeRun(
   return mapRuntimeRunRow(data as unknown as Record<string, unknown>);
 }
 
+export async function claimQueuedTenantRuntimeRun(
+  admin: SupabaseClient,
+  run: TenantRuntimeRun,
+  workerId: string,
+  leaseSeconds = 120
+): Promise<TenantRuntimeRun | null> {
+  if (run.status !== "queued") {
+    return null;
+  }
+
+  const nowIso = new Date().toISOString();
+  if (!runLockAvailable(run, nowIso)) {
+    return null;
+  }
+
+  const blocker = await findSessionLaneBlocker(admin, run);
+  if (blocker) {
+    return null;
+  }
+
+  const lockExpiresAt = new Date(Date.now() + leaseSeconds * 1000).toISOString();
+  const next = assertTenantRuntimeRunTransition("queued", "start");
+
+  const { data, error } = await admin
+    .from("tenant_runtime_runs")
+    .update({
+      status: next,
+      started_at: new Date().toISOString(),
+      worker_id: workerId,
+      lock_expires_at: lockExpiresAt,
+      attempt_count: run.attempt_count + 1,
+    })
+    .eq("id", run.id)
+    .eq("status", "queued")
+    .select(TENANT_RUNTIME_RUN_SELECT)
+    .maybeSingle();
+
+  if (error) {
+    throw new TenantRuntimeQueueError(
+      500,
+      safeErrorMessage(error, "Failed to claim tenant runtime run")
+    );
+  }
+
+  return data ? mapRuntimeRunRow(data as unknown as Record<string, unknown>) : null;
+}
+
 export async function claimTenantRuntimeRuns(
   admin: SupabaseClient,
   input: ClaimTenantRuntimeRunsInput
 ): Promise<TenantRuntimeQueueClaim[]> {
   const leaseSeconds = input.leaseSeconds ?? 90;
   const nowIso = new Date().toISOString();
-  const lockExpiresAt = new Date(Date.now() + leaseSeconds * 1000).toISOString();
 
   let query = admin
     .from("tenant_runtime_runs")
@@ -325,34 +472,18 @@ export async function claimTenantRuntimeRuns(
   const claims: TenantRuntimeQueueClaim[] = [];
 
   for (const row of rows) {
-    const next = assertTenantRuntimeRunTransition(row.status, "start");
-    const { data: claimed, error: claimError } = await admin
-      .from("tenant_runtime_runs")
-      .update({
-        status: next,
-        started_at: new Date().toISOString(),
-        worker_id: input.workerId,
-        lock_expires_at: lockExpiresAt,
-        attempt_count: row.attempt_count + 1,
-      })
-      .eq("id", row.id)
-      .eq("status", row.status)
-      .select(TENANT_RUNTIME_RUN_SELECT)
-      .maybeSingle();
-
-    if (claimError) {
-      throw new TenantRuntimeQueueError(
-        500,
-        safeErrorMessage(claimError, "Failed to claim tenant runtime run")
-      );
-    }
-
+    const claimed = await claimQueuedTenantRuntimeRun(
+      admin,
+      row,
+      input.workerId,
+      leaseSeconds
+    );
     if (!claimed) {
       continue;
     }
 
     claims.push({
-      run: mapRuntimeRunRow(claimed as unknown as Record<string, unknown>),
+      run: claimed,
       previousStatus: row.status,
     });
   }
@@ -366,31 +497,45 @@ export async function claimTenantRuntimeRunById(
   workerId: string,
   leaseSeconds = 120
 ): Promise<TenantRuntimeRun | null> {
-  const lockExpiresAt = new Date(Date.now() + leaseSeconds * 1000).toISOString();
-  const next = assertTenantRuntimeRunTransition("queued", "start"); // "running"
+  const run = await getTenantRuntimeRunById(admin, runId);
+  if (!run) {
+    return null;
+  }
+
+  return claimQueuedTenantRuntimeRun(admin, run, workerId, leaseSeconds);
+}
+
+export async function getNextQueuedSessionLaneRun(
+  admin: SupabaseClient,
+  run: Pick<TenantRuntimeRun, "tenant_id" | "session_id" | "run_kind">
+): Promise<TenantRuntimeRun | null> {
+  if (!isSessionLaneBoundRun(run)) {
+    return null;
+  }
 
   const { data, error } = await admin
     .from("tenant_runtime_runs")
-    .update({
-      status: next,
-      started_at: new Date().toISOString(),
-      worker_id: workerId,
-      lock_expires_at: lockExpiresAt,
-      attempt_count: 1,
-    })
-    .eq("id", runId)
-    .eq("status", "queued")
     .select(TENANT_RUNTIME_RUN_SELECT)
-    .maybeSingle();
+    .eq("tenant_id", run.tenant_id)
+    .eq("session_id", run.session_id)
+    .eq("status", "queued")
+    .in("run_kind", ["discord_runtime", "email_runtime"])
+    .limit(50);
 
   if (error) {
     throw new TenantRuntimeQueueError(
       500,
-      safeErrorMessage(error, "Failed to claim tenant runtime run by ID")
+      safeErrorMessage(error, "Failed to resolve next queued session lane run")
     );
   }
 
-  return data ? mapRuntimeRunRow(data as unknown as Record<string, unknown>) : null;
+  const nowIso = new Date().toISOString();
+  const next = ((data || []) as unknown as Record<string, unknown>[])
+    .map(mapRuntimeRunRow)
+    .sort(compareRuntimeRunOrder)
+    .find((candidate) => runLockAvailable(candidate, nowIso));
+
+  return next ?? null;
 }
 
 export async function getTenantRuntimeRunById(

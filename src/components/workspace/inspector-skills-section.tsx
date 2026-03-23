@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Loader2, Save } from "lucide-react";
 import type { Agent, ToolApprovalLevel } from "@/types/agent";
 import type { CustomSkill } from "@/types/custom-skill";
@@ -43,13 +43,15 @@ export function InspectorSkillsSection({
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
+  // Reset local state when agent changes using key-derived check
+  const [prevAgentId, setPrevAgentId] = useState(agent.id);
+  if (agent.id !== prevAgentId) {
+    setPrevAgentId(agent.id);
     setSelectedSkills(agent.skills || []);
     setSelectedToolkits(agent.composio_toolkits || []);
     setToolOverrides(normalizeToolOverrides(agent.tool_approval_overrides));
     setToolControlsExpanded(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [agent.id]);
+  }
 
   const isGloballyDisabled = useCallback(
     (skillName: string) => {

@@ -6,94 +6,71 @@ export async function MemoryDiagnosticsData({ tenantId }: { tenantId: string }) 
   const now = new Date();
   const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
 
-  const [
-    totalCountQuery,
-    activeCountQuery,
-    tombstonedCountQuery,
-    recent24hCountQuery,
-    workingCountQuery,
-    episodicCountQuery,
-    knowledgeCountQuery,
-    recentConfidenceQuery,
-    latestRecordQuery,
-  ] = await Promise.all([
-    admin
-      .from("tenant_memory_records")
-      .select("id", { count: "exact", head: true })
-      .eq("tenant_id", tenantId),
-    admin
-      .from("tenant_memory_records")
-      .select("id", { count: "exact", head: true })
-      .eq("tenant_id", tenantId)
-      .eq("is_tombstoned", false),
-    admin
-      .from("tenant_memory_records")
-      .select("id", { count: "exact", head: true })
-      .eq("tenant_id", tenantId)
-      .eq("is_tombstoned", true),
-    admin
-      .from("tenant_memory_records")
-      .select("id", { count: "exact", head: true })
-      .eq("tenant_id", tenantId)
-      .gte("created_at", oneDayAgo),
-    admin
-      .from("tenant_memory_records")
-      .select("id", { count: "exact", head: true })
-      .eq("tenant_id", tenantId)
-      .eq("memory_tier", "working"),
-    admin
-      .from("tenant_memory_records")
-      .select("id", { count: "exact", head: true })
-      .eq("tenant_id", tenantId)
-      .eq("memory_tier", "episodic"),
-    admin
-      .from("tenant_memory_records")
-      .select("id", { count: "exact", head: true })
-      .eq("tenant_id", tenantId)
-      .eq("memory_tier", "knowledge"),
-    admin
-      .from("tenant_memory_records")
-      .select("confidence")
-      .eq("tenant_id", tenantId)
-      .order("created_at", { ascending: false })
-      .limit(200),
-    admin
-      .from("tenant_memory_records")
-      .select("created_at")
-      .eq("tenant_id", tenantId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-  ]);
+  // Single query fetches all fields needed to compute counts in JS
+  const { data: rows } = await admin
+    .from("tenant_memory_records")
+    .select("is_tombstoned, memory_tier, created_at, confidence")
+    .eq("tenant_id", tenantId);
 
-  const recentConfidenceRows = Array.isArray(recentConfidenceQuery.data)
-    ? recentConfidenceQuery.data
-    : [];
-  const confidenceValues = recentConfidenceRows
-    .map((row) => (typeof row.confidence === "number" ? row.confidence : null))
-    .filter((value): value is number => value !== null && Number.isFinite(value));
+  const records = Array.isArray(rows) ? rows : [];
+
+  let totalRecords = 0;
+  let activeRecords = 0;
+  let tombstonedRecords = 0;
+  let recent24hRecords = 0;
+  let workingCount = 0;
+  let episodicCount = 0;
+  let knowledgeCount = 0;
+  let latestCreatedAt: string | null = null;
+  const recentConfidenceValues: number[] = [];
+
+  for (const row of records) {
+    totalRecords++;
+    if (row.is_tombstoned) {
+      tombstonedRecords++;
+    } else {
+      activeRecords++;
+    }
+    if (row.created_at >= oneDayAgo) {
+      recent24hRecords++;
+    }
+    if (row.memory_tier === "working") workingCount++;
+    else if (row.memory_tier === "episodic") episodicCount++;
+    else if (row.memory_tier === "knowledge") knowledgeCount++;
+
+    if (!latestCreatedAt || row.created_at > latestCreatedAt) {
+      latestCreatedAt = row.created_at;
+    }
+  }
+
+  // Compute average confidence from most recent 200 records
+  const sorted = records
+    .slice()
+    .sort((a, b) => (b.created_at > a.created_at ? 1 : -1))
+    .slice(0, 200);
+  for (const row of sorted) {
+    if (typeof row.confidence === "number" && Number.isFinite(row.confidence)) {
+      recentConfidenceValues.push(row.confidence);
+    }
+  }
   const averageConfidence =
-    confidenceValues.length > 0
-      ? confidenceValues.reduce((sum, value) => sum + value, 0) / confidenceValues.length
+    recentConfidenceValues.length > 0
+      ? recentConfidenceValues.reduce((sum, v) => sum + v, 0) / recentConfidenceValues.length
       : null;
 
   return (
     <MemoryRetrievalDiagnosticsPanel
-      totalRecords={totalCountQuery.count || 0}
-      activeRecords={activeCountQuery.count || 0}
-      tombstonedRecords={tombstonedCountQuery.count || 0}
-      recent24hRecords={recent24hCountQuery.count || 0}
+      totalRecords={totalRecords}
+      activeRecords={activeRecords}
+      tombstonedRecords={tombstonedRecords}
+      recent24hRecords={recent24hRecords}
       averageConfidence={averageConfidence}
       tierCounts={{
-        working: workingCountQuery.count || 0,
-        episodic: episodicCountQuery.count || 0,
-        knowledge: knowledgeCountQuery.count || 0,
+        working: workingCount,
+        episodic: episodicCount,
+        knowledge: knowledgeCount,
       }}
-      latestRecordAt={
-        latestRecordQuery.data && typeof latestRecordQuery.data.created_at === "string"
-          ? latestRecordQuery.data.created_at
-          : null
-      }
+      latestRecordAt={latestCreatedAt}
     />
   );
 }

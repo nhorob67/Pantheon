@@ -47,36 +47,37 @@ async function ToolsContent({ customerId }: { customerId: string }) {
     );
   }
 
-  const mappingResult = await admin
-    .from("instance_tenant_mappings")
-    .select("instance_id")
-    .eq("tenant_id", tenant.id)
-    .eq("mapping_status", "active")
-    .order("updated_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  // Agents don't depend on mapping — fetch mapping + agents in parallel
+  const [mappingResult, agentResult] = await Promise.all([
+    admin
+      .from("instance_tenant_mappings")
+      .select("instance_id")
+      .eq("tenant_id", tenant.id)
+      .eq("mapping_status", "active")
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    admin
+      .from("tenant_agents")
+      .select("id, name")
+      .eq("tenant_id", tenant.id)
+      .eq("status", "active")
+      .order("name"),
+  ]);
+
+  const agents = (agentResult.data || []).map((a) => ({
+    id: a.id,
+    name: a.name,
+  }));
 
   let mcpServers: McpServerConfig[] = [];
-  let agents: { id: string; name: string }[] = [];
   if (mappingResult.data?.instance_id) {
-    const [mcpResult, agentResult] = await Promise.all([
-      admin
-        .from("mcp_server_configs")
-        .select("*")
-        .eq("instance_id", mappingResult.data.instance_id)
-        .order("created_at", { ascending: true }),
-      admin
-        .from("tenant_agents")
-        .select("id, name")
-        .eq("tenant_id", tenant.id)
-        .eq("status", "active")
-        .order("name"),
-    ]);
+    const mcpResult = await admin
+      .from("mcp_server_configs")
+      .select("*")
+      .eq("instance_id", mappingResult.data.instance_id)
+      .order("created_at", { ascending: true });
     mcpServers = mcpResult.data || [];
-    agents = (agentResult.data || []).map((a) => ({
-      id: a.id,
-      name: a.name,
-    }));
   }
 
   const composioConfig: ComposioConfig | null = composioResult.data

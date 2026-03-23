@@ -6,6 +6,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { HelpModal } from "./help-modal";
@@ -43,6 +44,9 @@ export function HelpProvider({ children }: { children: React.ReactNode }) {
   const closeHelp = useCallback(() => setIsOpen(false), []);
   const toggleHelp = useCallback(() => setIsOpen((previous) => !previous), []);
 
+  const toggleHelpRef = useRef(toggleHelp);
+  toggleHelpRef.current = toggleHelp;
+
   useEffect(() => {
     const isEditableTarget = (target: EventTarget | null) => {
       if (!(target instanceof HTMLElement)) return false;
@@ -59,13 +63,13 @@ export function HelpProvider({ children }: { children: React.ReactNode }) {
 
       if ((e.metaKey || e.ctrlKey) && e.key === "/") {
         e.preventDefault();
-        toggleHelp();
+        toggleHelpRef.current();
       }
     }
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [toggleHelp]);
+  }, []);
 
   const actions = useMemo(
     () => ({ openHelp, closeHelp, toggleHelp }),

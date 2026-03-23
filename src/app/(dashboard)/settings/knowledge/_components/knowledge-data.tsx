@@ -72,18 +72,6 @@ export async function KnowledgeData({
     })
     : [];
 
-  let files = mappedTenantFiles;
-  if (files.length === 0 && instance) {
-    const { data: legacyFiles } = await supabase
-      .from("knowledge_files")
-      .select(KNOWLEDGE_META_COLUMNS)
-      .eq("customer_id", customerId)
-      .eq("instance_id", instance.id)
-      .neq("status", "archived")
-      .order("created_at", { ascending: false });
-    files = (legacyFiles || []) as KnowledgeFileMeta[];
-  }
-
   const mappedTenantAgents = Array.isArray(tenantAgents)
     ? tenantAgents.map((row) => {
       return {
@@ -97,14 +85,34 @@ export async function KnowledgeData({
     })
     : [];
 
+  // Fetch legacy tables in parallel if needed (avoids sequential fallback)
+  let files = mappedTenantFiles;
   let agents = mappedTenantAgents;
-  if (agents.length === 0 && instance) {
-    const { data: legacyAgents } = await supabase
-      .from("agents")
-      .select("id, agent_key, display_name")
-      .eq("instance_id", instance.id)
-      .order("sort_order", { ascending: true });
-    agents = legacyAgents || [];
+  if (instance && (files.length === 0 || agents.length === 0)) {
+    const [legacyFilesResult, legacyAgentsResult] = await Promise.all([
+      files.length === 0
+        ? supabase
+            .from("knowledge_files")
+            .select(KNOWLEDGE_META_COLUMNS)
+            .eq("customer_id", customerId)
+            .eq("instance_id", instance.id)
+            .neq("status", "archived")
+            .order("created_at", { ascending: false })
+        : Promise.resolve({ data: null }),
+      agents.length === 0
+        ? supabase
+            .from("agents")
+            .select("id, agent_key, display_name")
+            .eq("instance_id", instance.id)
+            .order("sort_order", { ascending: true })
+        : Promise.resolve({ data: null }),
+    ]);
+    if (files.length === 0 && legacyFilesResult.data) {
+      files = legacyFilesResult.data as KnowledgeFileMeta[];
+    }
+    if (agents.length === 0 && legacyAgentsResult.data) {
+      agents = legacyAgentsResult.data;
+    }
   }
 
   return (

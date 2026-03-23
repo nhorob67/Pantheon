@@ -7,6 +7,7 @@ import {
   discordCanaryIngressSchema,
   tenantRouteParamsSchema,
 } from "@/lib/runtime/tenant-api-contracts";
+import { resolveSession } from "@/lib/ai/session-resolver";
 import { enqueueDiscordRuntimeRun } from "@/lib/runtime/tenant-runtime-queue";
 import { evaluateTenantRuntimeIngressGovernance } from "@/lib/runtime/tenant-runtime-governance";
 
@@ -78,10 +79,19 @@ export async function POST(
         );
       }
 
+      const session = await resolveSession(state.admin, {
+        tenantId: state.tenantContext.tenantId,
+        customerId: state.tenantContext.customerId,
+        channelId: parsedBody.data.channel_id,
+        agentId: null,
+        sessionKind: parsedBody.data.guild_id ? "channel" : "dm",
+      });
+
       const run = await enqueueDiscordRuntimeRun(state.admin, {
         runKind: "discord_runtime",
         tenantId: state.tenantContext.tenantId,
         customerId: state.tenantContext.customerId,
+        sessionId: session.id,
         requestTraceId: state.requestTraceId,
         idempotencyKey,
         payload: {

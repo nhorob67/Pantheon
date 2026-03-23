@@ -5,9 +5,11 @@ import { isAdmin } from "@/lib/auth/admin";
 import { constantTimeTokenInSet } from "@/lib/security/constant-time";
 import { safeErrorMessage } from "@/lib/security/safe-error";
 import { discordCanaryIngressSchema } from "@/lib/validators/tenant-runtime";
+import { resolveSession } from "@/lib/ai/session-resolver";
 import {
   enqueueDiscordRuntimeRun,
-  claimTenantRuntimeRunById,
+  claimQueuedTenantRuntimeRun,
+  getNextQueuedSessionLaneRun,
   transitionTenantRuntimeRun,
 } from "@/lib/runtime/tenant-runtime-queue";
 import {
@@ -32,6 +34,21 @@ import {
   findRecentApprovedChannelApproval,
   isApprovalAckOnlyMessage,
 } from "@/lib/runtime/discord-approval-ack";
+
+async function triggerNextSessionLaneRun(run: {
+  id: string;
+  tenant_id: string;
+  session_id?: string | null;
+  run_kind: "discord_runtime" | "email_runtime" | "discord_canary" | "discord_heartbeat" | "delegation_runtime" | "discord_follow_up";
+}) {
+  const admin = createAdminClient();
+  const next = await getNextQueuedSessionLaneRun(admin, run).catch(() => null);
+  if (!next) {
+    return;
+  }
+
+  await tasks.trigger("process-runtime-run", { runId: next.id }).catch(() => {});
+}
 
 async function isAuthorized(request: Request): Promise<boolean> {
   const expectedTokens = [
@@ -175,10 +192,19 @@ export async function POST(request: Request) {
       }
     }
 
+    const session = await resolveSession(admin, {
+      tenantId: match.tenantId,
+      customerId: match.customerId,
+      channelId: parsed.data.channel_id,
+      agentId: null,
+      sessionKind: parsed.data.guild_id ? "channel" : "dm",
+    });
+
     const run = await enqueueDiscordRuntimeRun(admin, {
       runKind: "discord_runtime",
       tenantId: match.tenantId,
       customerId: match.customerId,
+      sessionId: session.id,
       requestTraceId,
       idempotencyKey,
       payload: {
@@ -207,7 +233,7 @@ export async function POST(request: Request) {
     });
 
     // Inline processing — execute AI worker directly instead of via Trigger.dev
-    const claimedRun = await claimTenantRuntimeRunById(admin, run.id, "ingress-inline");
+    const claimedRun = await claimQueuedTenantRuntimeRun(admin, run, "ingress-inline");
 
     if (!claimedRun) {
       // Race condition — another worker already claimed it, that's fine
@@ -225,6 +251,9 @@ export async function POST(request: Request) {
         resolvedModels,
       });
       await sendDiscordRuntimeTerminalSafetyNet(admin, outcome.run);
+      if (outcome.finalStatus === "completed" || outcome.finalStatus === "failed") {
+        await triggerNextSessionLaneRun(outcome.run);
+      }
 
       return NextResponse.json(
         {
@@ -248,6 +277,7 @@ export async function POST(request: Request) {
           failedRun.error_message ?? undefined
         ).catch(() => null);
         await sendDiscordRuntimeTerminalSafetyNet(admin, failedRun).catch(() => null);
+        await triggerNextSessionLaneRun(failedRun);
       }
 
       return NextResponse.json(

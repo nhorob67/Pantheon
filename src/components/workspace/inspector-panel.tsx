@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import {
   BookOpen,
   ExternalLink,
@@ -74,16 +74,21 @@ export function InspectorPanel({
   const resolvedSection =
     SECTIONS.find((section) => section.id === activeSection)?.id ?? SECTIONS[0].id;
 
-  // Escape to close
+  // Escape to close — ref-based to avoid listener re-registration
+  const isOpenRef = useRef(isOpen);
+  isOpenRef.current = isOpen;
+  const setInspectorOpenRef = useRef(setInspectorOpen);
+  setInspectorOpenRef.current = setInspectorOpen;
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) {
-        setInspectorOpen(false);
+      if (e.key === "Escape" && isOpenRef.current) {
+        setInspectorOpenRef.current(false);
       }
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, setInspectorOpen]);
+  }, []);
 
   const openSection = useCallback(
     (id: InspectorSectionId) => {

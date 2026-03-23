@@ -51,6 +51,11 @@ export interface UnifiedToolFlushOptions {
    * invocation row itself.
    */
   skipInvocationRecords?: boolean;
+  /**
+   * When true, surface flush failures to the caller instead of logging and
+   * continuing. Use this when runtime correctness depends on tool persistence.
+   */
+  requireSuccess?: boolean;
 }
 
 export interface UnifiedToolExecutorConfig {
@@ -1270,6 +1275,12 @@ function createFlushFn(
 ): (options?: UnifiedToolFlushOptions) => Promise<void> {
   return async (options) => {
     if (records.length === 0) return;
+    const flushFailures: string[] = [];
+
+    const recordFlushFailure = (message: string): void => {
+      flushFailures.push(message);
+      console.error(message);
+    };
 
     // 1. Flush invocation records for native tools with run context
     if (config.run && options?.skipInvocationRecords !== true) {
@@ -1311,12 +1322,15 @@ function createFlushFn(
             .insert(rows);
 
           if (error) {
-            console.error("[unified-executor] Invocation flush failed:", error.message);
+            recordFlushFailure(
+              `[unified-executor] Invocation flush failed: ${error.message}`
+            );
           }
         } catch (err) {
-          console.error(
-            "[unified-executor] Invocation flush error:",
-            err instanceof Error ? err.message : "unknown"
+          recordFlushFailure(
+            `[unified-executor] Invocation flush error: ${
+              err instanceof Error ? err.message : "unknown"
+            }`
           );
         }
       }
@@ -1344,12 +1358,15 @@ function createFlushFn(
           .insert(guardrailRows);
 
         if (error) {
-          console.error("[unified-executor] Guardrail event flush failed:", error.message);
+          recordFlushFailure(
+            `[unified-executor] Guardrail event flush failed: ${error.message}`
+          );
         }
       } catch (err) {
-        console.error(
-          "[unified-executor] Guardrail event flush error:",
-          err instanceof Error ? err.message : "unknown"
+        recordFlushFailure(
+          `[unified-executor] Guardrail event flush error: ${
+            err instanceof Error ? err.message : "unknown"
+          }`
         );
       }
     }
@@ -1382,13 +1399,20 @@ function createFlushFn(
         .insert(telemetryRows);
 
       if (error) {
-        console.error("[unified-executor] Telemetry flush failed:", error.message);
+        recordFlushFailure(
+          `[unified-executor] Telemetry flush failed: ${error.message}`
+        );
       }
     } catch (err) {
-      console.error(
-        "[unified-executor] Telemetry flush error:",
-        err instanceof Error ? err.message : "unknown"
+      recordFlushFailure(
+        `[unified-executor] Telemetry flush error: ${
+          err instanceof Error ? err.message : "unknown"
+        }`
       );
+    }
+
+    if (options?.requireSuccess && flushFailures.length > 0) {
+      throw new Error(flushFailures.join("; "));
     }
   };
 }

@@ -6,6 +6,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { SearchModal } from "./search-modal";
@@ -48,17 +49,20 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
   const closeSearch = useCallback(() => setIsOpen(false), []);
   const toggleSearch = useCallback(() => setIsOpen((previous) => !previous), []);
 
+  const toggleSearchRef = useRef(toggleSearch);
+  toggleSearchRef.current = toggleSearch;
+
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
-        toggleSearch();
+        toggleSearchRef.current();
       }
     }
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [toggleSearch]);
+  }, []);
 
   useEffect(() => {
     const supabase = createClient();

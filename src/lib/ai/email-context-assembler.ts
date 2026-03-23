@@ -26,6 +26,7 @@ interface EmailAssembleInput {
   actorId?: string | null;
   actorDiscordId?: string | null;
   delegationConfig?: Omit<DelegationToolConfig, "admin" | "tenantId" | "customerId" | "parentAgent"> | null;
+  systemPromptAddendum?: string;
 }
 
 function buildFallbackPrompt(): string {
@@ -188,6 +189,10 @@ Sign off as ${agentName}.`;
         delegationConfig: input.delegationConfig,
       })
     : { tools: {}, composioKeyMap: new Map<string, string>(), mcpKeyMap: new Map<string, string>() };
+
+  if (input.systemPromptAddendum) {
+    systemPrompt += `\n\n${input.systemPromptAddendum}`;
+  }
 
   return {
     systemPrompt,

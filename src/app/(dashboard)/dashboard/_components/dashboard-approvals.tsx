@@ -8,24 +8,18 @@ interface DashboardApprovalsProps {
 export async function DashboardApprovals({ tenantId }: DashboardApprovalsProps) {
   const admin = createAdminClient();
 
-  const [pendingCountQuery, pendingRowsQuery] = await Promise.all([
-    admin
-      .from("tenant_approvals")
-      .select("id", { count: "exact", head: true })
-      .eq("tenant_id", tenantId)
-      .eq("status", "pending"),
-    admin
-      .from("tenant_approvals")
-      .select("id, approval_type, required_role, created_at, request_payload")
-      .eq("tenant_id", tenantId)
-      .eq("status", "pending")
-      .order("created_at", { ascending: false })
-      .limit(5),
-  ]);
+  // Single query returns both rows and exact count
+  const { data: pendingRows, count: pendingCount } = await admin
+    .from("tenant_approvals")
+    .select("id, approval_type, required_role, created_at, request_payload", { count: "exact" })
+    .eq("tenant_id", tenantId)
+    .eq("status", "pending")
+    .order("created_at", { ascending: false })
+    .limit(5);
 
-  const pendingApprovalCount = pendingCountQuery.count || 0;
-  const pendingApprovals = Array.isArray(pendingRowsQuery.data)
-    ? (pendingRowsQuery.data as Array<{
+  const pendingApprovalCount = pendingCount || 0;
+  const pendingApprovals = Array.isArray(pendingRows)
+    ? (pendingRows as Array<{
         id: string;
         approval_type: "tool" | "export" | "runtime" | "policy";
         required_role: string;

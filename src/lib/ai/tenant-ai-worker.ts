@@ -1,15 +1,11 @@
-import { generateObject, generateText } from "ai";
+import { generateObject } from "ai";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
-import { AI_CONFIG } from "./client";
-import { estimateTokenUsageCostCents, recordTokenUsage } from "./usage-tracker";
+import { recordAgentTurnArtifacts, runAgentTurn } from "./agent-turn-runner";
 import { assembleContext } from "./context-assembler";
 import { storeOutboundMessage } from "./message-store";
 import { safeErrorMessage } from "@/lib/security/safe-error";
-import { maybeGenerateSummary } from "./session-summarizer";
 import { parseAttachmentsFromPayload, isImageAttachment } from "./attachment-handler";
-import { extractBehavioralPatterns } from "./procedural-memory";
-import { recordConversationTrace, extractWebCitations, extractDelegationEvents } from "./trace-recorder";
 import {
   formatActionFallback,
   formatInformationalFallback,
@@ -18,14 +14,6 @@ import {
   isGenericInformationalResponse,
 } from "./fallback-formatter";
 import { flushBrowserSessionsForRun } from "./tools/browser";
-import { resolveWorkerModels } from "./model-resolver";
-import {
-  createUnifiedToolExecutor,
-  registerComposioToolKeyMappings,
-  registerMcpToolKeyMappings,
-} from "@/lib/runtime/unified-tool-executor";
-import { loadGuardrailConfig, loadMiddlewareRateLimits } from "@/lib/runtime/guardrail-config-loader";
-import { createDefaultGuardrailPipeline } from "@/lib/runtime/guardrail-middleware";
 import {
   DiscordApiError,
 } from "@/lib/runtime/tenant-runtime-discord";
@@ -51,19 +39,22 @@ import { resolveDiscordBotToken } from "@/lib/runtime/tenant-runtime-discord-lif
 import { checkTrialAndSpendingBlock } from "./trial-guard";
 import { buildRedactor } from "@/lib/secrets/redaction";
 import { resolveTenantRuntimeGovernancePolicy } from "@/lib/runtime/tenant-runtime-governance";
+import { applyQueuedTenantRuntimeNextAction } from "@/lib/runtime/tenant-runtime-next-action";
 import type {
   TenantRuntimeWorker,
   TenantRuntimeWorkerContext,
   TenantRuntimeWorkerResult,
 } from "@/lib/runtime/tenant-runtime-worker";
 import type { RuntimeObligation } from "@/types/obligation";
-import type { TenantRole, TenantRuntimeRun } from "@/types/tenant-runtime";
+import type { TenantRole } from "@/types/tenant-runtime";
 
 const PROGRESS_HEARTBEAT_INTERVAL_MS = 5_000;
 const TYPING_REFRESH_INTERVAL_MS = 10_000;
 const LONG_TASK_PROGRESS_UPDATE_MS = 20_000;
 const OBLIGATION_HEARTBEAT_UPDATE_MS = 20_000;
 const MAX_AUTOMATED_PROGRESS_UPDATES = 3;
+const APPROVAL_REQUIRED_REPLY =
+  "I need approval before I can make that change. Once it's approved, I'll pick it up here.";
 const GENERIC_PROGRESS_MESSAGES = [
   "Still working through it.",
   "Almost there.",
@@ -557,106 +548,6 @@ function buildCronPrompt(
   return "Generate a proactive update for the team based on your role and the current context.";
 }
 
-/**
- * When a run is resumed after approval, resolve which tool keys were approved
- * so the executor can bypass the approval gate for those tools.
- */
-interface PreApprovalResolution {
-  keys: Set<string>;
-  /** The tool key and sanitized args from the approved request, used to instruct
-   *  the model to re-execute the tool on the resumed run. */
-  approvedToolContext: { toolKey: string; argsSummary: string } | null;
-  /** For sensitive tools, the approval executor may already run the tool server-side. */
-  executedToolContext: {
-    toolKey: string;
-    status: "completed" | "failed";
-    resultSummary?: string | null;
-    error?: string | null;
-  } | null;
-}
-
-async function resolvePreApprovedToolKeys(
-  adminClient: SupabaseClient,
-  run: TenantRuntimeRun
-): Promise<PreApprovalResolution> {
-  const result: PreApprovalResolution = {
-    keys: new Set(),
-    approvedToolContext: null,
-    executedToolContext: null,
-  };
-  const meta = run.metadata;
-  if (!meta?.resumed_after_approval || typeof meta.approval_id !== "string") {
-    return result;
-  }
-
-  const approvedToolExecution =
-    meta.approved_tool_execution &&
-    typeof meta.approved_tool_execution === "object" &&
-    !Array.isArray(meta.approved_tool_execution)
-      ? (meta.approved_tool_execution as Record<string, unknown>)
-      : null;
-
-  if (
-    approvedToolExecution &&
-    typeof approvedToolExecution.tool_key === "string" &&
-    (approvedToolExecution.status === "completed" || approvedToolExecution.status === "failed")
-  ) {
-    if (approvedToolExecution.status === "completed") {
-      result.keys.add(approvedToolExecution.tool_key);
-    }
-    result.executedToolContext = {
-      toolKey: approvedToolExecution.tool_key,
-      status: approvedToolExecution.status,
-      resultSummary:
-        typeof approvedToolExecution.result_summary === "string"
-          ? approvedToolExecution.result_summary
-          : null,
-      error:
-        typeof approvedToolExecution.error === "string"
-          ? approvedToolExecution.error
-          : null,
-    };
-    return result;
-  }
-
-  const { data } = await adminClient
-    .from("tenant_approvals")
-    .select("status, request_payload")
-    .eq("id", meta.approval_id)
-    .eq("tenant_id", run.tenant_id)
-    .maybeSingle();
-
-  if (data?.status === "approved" && data.request_payload) {
-    const payload =
-      typeof data.request_payload === "object" && !Array.isArray(data.request_payload)
-        ? (data.request_payload as Record<string, unknown>)
-        : {};
-    if (typeof payload.tool_key === "string") {
-      result.keys.add(payload.tool_key);
-
-      // Build a sanitized summary of the args (strip secrets/long values)
-      const args = typeof payload.args === "object" && payload.args !== null
-        ? (payload.args as Record<string, unknown>)
-        : {};
-      const sanitizedArgs: Record<string, unknown> = {};
-      for (const [k, v] of Object.entries(args)) {
-        // Omit values that look like secrets
-        if (typeof v === "string" && (k.includes("key") || k.includes("secret") || k.includes("token") || k.includes("password"))) {
-          sanitizedArgs[k] = "[provided]";
-        } else {
-          sanitizedArgs[k] = v;
-        }
-      }
-      result.approvedToolContext = {
-        toolKey: payload.tool_key,
-        argsSummary: JSON.stringify(sanitizedArgs),
-      };
-    }
-  }
-
-  return result;
-}
-
 interface ExecutorRecordLike {
   toolName: string;
   success: boolean;
@@ -752,7 +643,6 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
   return {
     kind: "discord_runtime",
     async execute(context: TenantRuntimeWorkerContext): Promise<TenantRuntimeWorkerResult> {
-      const { model: primaryModel, modelId: primaryModelId, inputCost: primaryInputCost, outputCost: primaryOutputCost, contextWindowTokens, fastModel } = resolveWorkerModels(context.resolvedModels);
       let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
       let replyOrchestrator: DiscordRuntimeReplyOrchestrator | null = null;
       try {
@@ -861,180 +751,25 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           context.run.tenant_id
         );
 
-        const startTime = Date.now();
-
-        // Mutable delegation context — parentGuardrails/parentRecords/parentToolKeys
-        // populated after executor creation (below), before any tool executes.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const delegationCtx: any = {
-          currentDepth: 0,
-          parentRun: context.run,
-          actorRole,
+        const nextAction = await applyQueuedTenantRuntimeNextAction(admin, context.run, {
           actorId,
-          actorDiscordId,
-          workerKind: "discord_runtime" as const,
-          resolvedModels: context.resolvedModels,
-          revealedSecretValues,
-        };
-
-        // Assemble context: resolve agent, build system prompt, persist messages, load history
-        const assembled = await assembleContext(admin, {
-          tenantId: context.run.tenant_id,
-          customerId: context.run.customer_id,
-          channelId,
-          userId,
-          content: userContent || (hasAttachments ? "What's in this image?" : ""),
-          messageId: inboundMessageId,
-          isDm: !guildId,
-          imageUrls: imageAttachments.map((a) => a.url),
-          runtimeRun: context.run,
-          actorRole,
-          actorId,
-          actorDiscordId,
-          fastModel: fastModel,
-          revealedSecretValues,
-          // delegationConfig uses a mutable object — parentGuardrails and parentRecords
-          // are populated after executor creation (below), before any tool executes.
-          delegationConfig: delegationCtx,
-          // Follow-up context separation: seed retrieval with real task summary,
-          // store a neutral placeholder in history, inject instructions via system prompt
-          ...(isFollowUp ? {
-            retrievalQuery: followUpRetrievalQuery,
-            storedInboundContent: "[follow-up check-in]",
-            systemPromptAddendum: followUpPrompt ?? undefined,
-          } : {}),
         });
-
-        // Custom cron jobs can scope tools to a subset
-        let resolvedTools = assembled.tools;
-        if (isCron) {
-          // Exclude Composio tools from cron runs — they require interactive OAuth context
-          const BUILT_IN_PREFIXES = ["memory_", "schedule_", "conversation_"];
-          const DELEGATION_TOOLS = ["delegate_task", "delegate_task_async", "delegation_poll", "delegation_cancel"];
-          const STANDALONE_TOOLS = ["file_create"];
-          const filtered: typeof resolvedTools = {};
-
-          if (Array.isArray(payload.custom_tools) && payload.custom_tools.length > 0) {
-            const allowedSkills = new Set(payload.custom_tools as string[]);
-            const SKILL_TOOL_PREFIXES: Record<string, string[]> = {};
-            const allowedPrefixes = Array.from(allowedSkills).flatMap(
-              (s) => SKILL_TOOL_PREFIXES[s] || []
-            );
-            for (const [name, tool] of Object.entries(resolvedTools)) {
-              const isAlwaysAvailable = name.startsWith("memory_") || name.startsWith("schedule_") || DELEGATION_TOOLS.includes(name) || STANDALONE_TOOLS.includes(name);
-              const matchesSkill = allowedPrefixes.some((p) => name.startsWith(p));
-              if (isAlwaysAvailable || matchesSkill) {
-                filtered[name] = tool;
-              }
-            }
-          } else {
-            // For standard cron runs, keep all built-in tools but exclude Composio tools
-            for (const [name, tool] of Object.entries(resolvedTools)) {
-              if (BUILT_IN_PREFIXES.some((p) => name.startsWith(p)) || DELEGATION_TOOLS.includes(name) || STANDALONE_TOOLS.includes(name)) {
-                filtered[name] = tool;
-              }
-            }
-          }
-
-          resolvedTools = filtered;
-        }
-
-        // Wrap tools with unified executor (policy enforced: denied/approval-required tools blocked)
-        const agentAutonomy = assembled.agent?.config?.autonomy_level;
-        const [guardrailConfig, middlewareRateLimits] = await Promise.all([
-          loadGuardrailConfig(admin, context.run.tenant_id, assembled.agentId),
-          loadMiddlewareRateLimits(admin, context.run.tenant_id, assembled.agentId),
-        ]);
-        const middlewarePipeline = createDefaultGuardrailPipeline(middlewareRateLimits);
-
-        // Resolve pre-approved tool keys from run metadata (set when resuming after approval)
-        const preApproval = await resolvePreApprovedToolKeys(admin, context.run);
-        const preApprovedToolKeys = preApproval.keys;
-
-        if (preApproval.executedToolContext) {
-          const { toolKey, status, resultSummary, error } = preApproval.executedToolContext;
-          assembled.systemPrompt +=
-            status === "completed"
-              ? `\n\n[APPROVAL GRANTED] The approved "${toolKey}" tool call was already executed successfully server-side. ` +
-                `Do not re-run "${toolKey}" unless it is genuinely needed again. ` +
-                `You can treat its result as: ${resultSummary ?? "{\"success\":true}"}. ` +
-                `Continue with the original task from that completed state.`
-              : `\n\n[APPROVAL GRANTED] The approved "${toolKey}" tool call was attempted server-side but failed. ` +
-                `Do not retry "${toolKey}" automatically because the original sensitive arguments are not available to you. ` +
-                `The failure was: ${JSON.stringify(error ?? "Approved tool execution failed")}. ` +
-                `Explain the failure and decide the next safe step.`;
-        }
-
-        // When resuming after approval, inject a system prompt instruction telling
-        // the model to re-execute the approved tool — the model won't reliably
-        // retry on its own from the conversation history alone.
-        if (preApproval.approvedToolContext && !preApproval.executedToolContext) {
-          const { toolKey, argsSummary } = preApproval.approvedToolContext;
-          assembled.systemPrompt +=
-            `\n\n[APPROVAL GRANTED] The user has approved your previous "${toolKey}" tool call. ` +
-            `You MUST re-execute "${toolKey}" now with the same arguments (${argsSummary}). ` +
-            `The approval gate has been lifted for this tool — it will execute immediately this time. ` +
-            `After the tool succeeds, continue with the original task.`;
-        }
-
-        const executor = createUnifiedToolExecutor({
-          admin,
-          tenantId: context.run.tenant_id,
-          customerId: context.run.customer_id,
-          agentId: assembled.agentId,
-          run: context.run,
-          actorRole,
-          actorId,
-          workerKind: "discord_runtime",
-          enforcePolicy: true,
-          agentAutonomyLevel:
-            agentAutonomy === "assisted" || agentAutonomy === "copilot" || agentAutonomy === "autopilot"
-              ? agentAutonomy
-              : undefined,
-          guardrailConfig,
-          middlewarePipeline,
-          preApprovedToolKeys: preApprovedToolKeys.size > 0 ? preApprovedToolKeys : undefined,
-        });
-        // Register Composio key mappings so the unified executor can resolve
-        // model-facing names (e.g. GITHUB_CREATE_ISSUE) to policy keys (composio.github_create_issue)
-        if (assembled.composioKeyMap && assembled.composioKeyMap.size > 0) {
-          registerComposioToolKeyMappings(assembled.composioKeyMap);
-        }
-        if (assembled.mcpKeyMap && assembled.mcpKeyMap.size > 0) {
-          registerMcpToolKeyMappings(assembled.mcpKeyMap);
-        }
-
-        resolvedTools = executor.wrapAll(resolvedTools);
-
-        // Populate delegation context with executor references (captured by closure)
-        delegationCtx.parentGuardrails = executor.guardrails;
-        delegationCtx.parentRecords = executor.records as unknown[];
-        delegationCtx.parentToolKeys = new Set(Object.keys(resolvedTools));
-
-        const hasTools = Object.keys(resolvedTools).length > 0;
+        const activeRun = nextAction.run;
+        const runtimeSystemPromptAddendum = [
+          isFollowUp ? followUpPrompt : null,
+          nextAction.systemPromptAddendum,
+        ]
+          .filter((value): value is string => typeof value === "string" && value.length > 0)
+          .join("\n\n");
 
         // Resolve typing mode from agent config (defaults to "instant")
-        const agentConfig = assembled.agent?.config;
-        const typingMode =
-          agentConfig && (agentConfig["typing_mode"] === "thinking" || agentConfig["typing_mode"] === "message")
-            ? agentConfig["typing_mode"]
-            : "instant";
-        replyOrchestrator = new DiscordRuntimeReplyOrchestrator({
-          admin,
-          run: context.run,
-          botToken,
-          channelId,
-          replyToMessageId: inboundMessageId,
-        });
-        const runtimeReplyOrchestrator = replyOrchestrator;
+        let typingMode: "instant" | "thinking" | "message" = "instant";
+        let runtimeReplyOrchestrator: DiscordRuntimeReplyOrchestrator | null = null;
         const triggerTypingIndicator = async (): Promise<void> => {
-          await runtimeReplyOrchestrator.refreshTyping();
+          if (runtimeReplyOrchestrator) {
+            await runtimeReplyOrchestrator.refreshTyping();
+          }
         };
-
-        // Show typing indicator while generating (instant mode only — thinking/message defer)
-        if (typingMode === "instant") {
-          await triggerTypingIndicator();
-        }
 
         // Track chunks that were actually delivered to Discord (not just attempted)
         const deliveredIntermediateChunks: string[] = [];
@@ -1048,7 +783,7 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
         let followUpScheduled = false;
         let obligation: RuntimeObligation | null = await getObligationByRunId(
           admin,
-          context.run.id
+          activeRun.id
         ).catch(() => null);
 
         const recordVisibleProgress = async (
@@ -1065,17 +800,17 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
 
           if (obligation && visibility !== "final") {
             if (source === "heartbeat") {
-              await recordObligationHeartbeat(admin, obligation.id, context.run.id, {
+              await recordObligationHeartbeat(admin, obligation.id, activeRun.id, {
                 source,
                 content_preview: sentChunk.slice(0, 160),
               }).catch(() => {});
             } else {
-              await recordObligationToolPhase(admin, obligation.id, context.run.id, {
+              await recordObligationToolPhase(admin, obligation.id, activeRun.id, {
                 source,
                 content_preview: sentChunk.slice(0, 160),
               }).catch(() => {});
             }
-            await recordUserUpdate(admin, obligation.id, context.run.id, {
+            await recordUserUpdate(admin, obligation.id, activeRun.id, {
               source,
               content_preview: sentChunk.slice(0, 160),
             }).catch(() => {});
@@ -1117,6 +852,9 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           const visibility = options?.visibility ?? "progress";
 
           let sent = false;
+          if (!runtimeReplyOrchestrator) {
+            return false;
+          }
           if (source === "heartbeat") {
             sent = await runtimeReplyOrchestrator.emitKeepalive();
           } else if (source === "delegation") {
@@ -1157,7 +895,7 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
             Date.now() - lastObligationHeartbeatAt > OBLIGATION_HEARTBEAT_UPDATE_MS
           ) {
             lastObligationHeartbeatAt = Date.now();
-            recordObligationHeartbeat(admin, obligation.id, context.run.id, {
+            recordObligationHeartbeat(admin, obligation.id, activeRun.id, {
               source: "worker_heartbeat",
             }).catch(() => {});
           }
@@ -1183,18 +921,117 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           }
         }, PROGRESS_HEARTBEAT_INTERVAL_MS);
 
-        // Thinking mode: start typing only after context assembly is complete
-        if (typingMode === "thinking") {
-          await triggerTypingIndicator();
-        }
+        const turn = await runAgentTurn({
+          admin,
+          context: {
+            ...context,
+            run: activeRun,
+          },
+          actorRole,
+          actorId,
+          actorDiscordId,
+          workerKind: "discord_runtime",
+          systemPromptAddendum: runtimeSystemPromptAddendum || null,
+          extraDelegationContext: {
+            revealedSecretValues,
+          },
+          assemble: async ({ delegationConfig, fastModel }) =>
+            assembleContext(admin, {
+              tenantId: activeRun.tenant_id,
+              customerId: activeRun.customer_id,
+              channelId,
+              userId,
+              content: userContent || (hasAttachments ? "What's in this image?" : ""),
+              messageId: inboundMessageId,
+              isDm: !guildId,
+              imageUrls: imageAttachments.map((a) => a.url),
+              runtimeRun: activeRun,
+              actorRole,
+              actorId,
+              actorDiscordId,
+              fastModel: fastModel ?? undefined,
+              revealedSecretValues,
+              delegationConfig,
+              ...(isFollowUp
+                ? {
+                    retrievalQuery: followUpRetrievalQuery,
+                    storedInboundContent: "[follow-up check-in]",
+                  }
+                : {}),
+            }),
+          transformTools: ({ tools }) => {
+            if (!isCron) {
+              return tools;
+            }
 
-        const result = await generateText({
-          model: primaryModel,
-          maxOutputTokens: AI_CONFIG.maxOutputTokens,
-          temperature: AI_CONFIG.temperature,
-          system: assembled.systemPrompt,
-          messages: assembled.messages,
-          ...(hasTools ? { tools: resolvedTools, maxSteps: 5 } : {}),
+            const BUILT_IN_PREFIXES = ["memory_", "schedule_", "conversation_"];
+            const DELEGATION_TOOLS = [
+              "delegate_task",
+              "delegate_task_async",
+              "delegation_poll",
+              "delegation_cancel",
+            ];
+            const STANDALONE_TOOLS = ["file_create"];
+            const filtered: Record<string, typeof tools[string]> = {};
+
+            if (Array.isArray(payload.custom_tools) && payload.custom_tools.length > 0) {
+              const allowedSkills = new Set(payload.custom_tools as string[]);
+              const skillToolPrefixes: Record<string, string[]> = {};
+              const allowedPrefixes = Array.from(allowedSkills).flatMap(
+                (skill) => skillToolPrefixes[skill] || []
+              );
+              for (const [name, tool] of Object.entries(tools)) {
+                const isAlwaysAvailable =
+                  name.startsWith("memory_") ||
+                  name.startsWith("schedule_") ||
+                  DELEGATION_TOOLS.includes(name) ||
+                  STANDALONE_TOOLS.includes(name);
+                const matchesSkill = allowedPrefixes.some((prefix) =>
+                  name.startsWith(prefix)
+                );
+                if (isAlwaysAvailable || matchesSkill) {
+                  filtered[name] = tool;
+                }
+              }
+              return filtered;
+            }
+
+            for (const [name, tool] of Object.entries(tools)) {
+              if (
+                BUILT_IN_PREFIXES.some((prefix) => name.startsWith(prefix)) ||
+                DELEGATION_TOOLS.includes(name) ||
+                STANDALONE_TOOLS.includes(name)
+              ) {
+                filtered[name] = tool;
+              }
+            }
+            return filtered;
+          },
+          beforeGenerate: async ({ assembled }) => {
+            const agentConfig = assembled.agent?.config;
+            typingMode =
+              agentConfig &&
+              (agentConfig["typing_mode"] === "thinking" ||
+                agentConfig["typing_mode"] === "message")
+                ? agentConfig["typing_mode"]
+                : "instant";
+            replyOrchestrator = new DiscordRuntimeReplyOrchestrator({
+              admin,
+              run: activeRun,
+              botToken,
+              channelId,
+              replyToMessageId: inboundMessageId,
+            });
+            runtimeReplyOrchestrator = replyOrchestrator;
+
+            if (typingMode === "instant") {
+              await triggerTypingIndicator();
+            }
+
+            if (typingMode === "thinking") {
+              await triggerTypingIndicator();
+            }
+          },
           onStepFinish: async (step) => {
             // Track the last tool used for contextual progress messages
             if (step.toolCalls.length > 0) {
@@ -1281,24 +1118,18 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
         clearInterval(heartbeatInterval);
 
         // Capture multi-step messages for history reconstruction
+        const assembled = turn.assembled;
+        const resolvedTools = turn.resolvedTools;
+        const executor = turn.executor;
+        const result = turn.result;
         const responseMessages = result.response?.messages ?? [];
-        const inputTokens = result.totalUsage?.inputTokens ?? 0;
-        const outputTokens = result.totalUsage?.outputTokens ?? 0;
-        const estimatedCostCents = estimateTokenUsageCostCents({
-          model: primaryModelId,
-          inputTokens,
-          outputTokens,
-          inputCostPerMillion: primaryInputCost,
-          outputCostPerMillion: primaryOutputCost,
-        });
-        const usageGuardrailEvent = executor.guardrails?.recordTokenUsage(
-          inputTokens,
-          outputTokens,
-          estimatedCostCents
-        );
-        if (usageGuardrailEvent?.action === "halt") {
-          console.warn(`[ai-worker] Guardrail halt after model usage: ${usageGuardrailEvent.message}`);
-        }
+        const inputTokens = turn.inputTokens;
+        const outputTokens = turn.outputTokens;
+        const primaryModelId = turn.primaryModelId;
+        const primaryModel = turn.primaryModel;
+        const fastModel = turn.fastModel;
+        const contextWindowTokens = turn.contextWindowTokens;
+        const startTime = turn.startTime;
 
         let responseText = result.text?.trim() || "";
 
@@ -1428,125 +1259,6 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
         }
 
         const followUpDepth = typeof payload.follow_up_depth === "number" ? payload.follow_up_depth : 0;
-        // Store outbound message
-        await storeOutboundMessage(admin, {
-          tenantId: context.run.tenant_id,
-          customerId: context.run.customer_id,
-          sessionId: assembled.sessionId,
-          agentId: assembled.agentId,
-          content: responseText,
-          tokenCount: inputTokens + outputTokens,
-          toolCalls: responseMessages.length > 0
-            ? responseMessages.map((m) => m as Record<string, unknown>)
-            : undefined,
-        }).catch((err) => {
-          console.error("[ai-worker] Failed to store outbound message:", safeErrorMessage(err));
-        });
-
-        // Fire-and-forget session summarization (non-blocking, gated on autoCompress)
-        if (assembled.memorySettings.autoCompress) {
-          maybeGenerateSummary({
-            admin,
-            tenantId: context.run.tenant_id,
-            customerId: context.run.customer_id,
-            sessionId: assembled.sessionId,
-            agentId: assembled.agentId ?? undefined,
-            captureLevel: assembled.memorySettings.captureLevel,
-            excludeCategories: assembled.memorySettings.excludeCategories,
-            model: fastModel,
-            contextWindowTokens,
-          }).catch((err) => {
-            console.error("[ai-worker] Session summarization failed:", safeErrorMessage(err));
-          });
-        }
-
-        // Fire-and-forget: extract behavioral patterns (Feature 6)
-        extractBehavioralPatterns(admin, {
-          tenantId: context.run.tenant_id,
-          customerId: context.run.customer_id,
-          sessionId: assembled.sessionId,
-          recentMessages: assembled.messages
-            .filter((m) => "role" in m && (m.role === "user" || m.role === "assistant"))
-            .map((m) => ({
-              role: "role" in m ? String(m.role) : "user",
-              content: "content" in m && typeof m.content === "string" ? m.content : "",
-            })),
-          existingPatterns: [],
-          model: fastModel,
-        }).catch((err) => {
-          console.error("[ai-worker] Pattern extraction failed:", safeErrorMessage(err));
-        });
-
-        // Fire-and-forget: flush unified tool executor (invocations + telemetry)
-        executor.flush().catch((err) => {
-          console.error("[ai-worker] Unified executor flush failed:", safeErrorMessage(err));
-        });
-
-        // Fire-and-forget: record conversation trace (Feature 7)
-        const totalLatencyMs = Date.now() - startTime;
-        const browserSessions = await flushBrowserSessionsForRun(context.run.id);
-        recordConversationTrace(admin, {
-          tenantId: context.run.tenant_id,
-          customerId: context.run.customer_id,
-          sessionId: assembled.sessionId,
-          runId: context.run.id,
-          agentId: assembled.agentId,
-          agentName: assembled.agentDisplayName,
-          toolsAvailable: Object.keys(resolvedTools),
-          toolsInvoked: executor.records.map((r) => {
-            let inputSummary = r.inputSummary;
-            if (redactor) inputSummary = redactor(inputSummary);
-            return {
-              name: r.toolName,
-              input_summary: inputSummary,
-              output_summary: r.success ? r.outputSummary : `error: ${r.errorClass}`,
-            };
-          }),
-          memoriesReferenced: assembled.memoryIds?.map((id) => ({
-            id,
-            content_preview: "",
-            score: 0,
-          })) || [],
-          knowledgeReferenced: assembled.knowledgeIds?.map((id) => ({
-            id,
-            source: "",
-            chunk_preview: "",
-          })) || [],
-          webCitations: extractWebCitations(executor.records),
-          delegationEvents: extractDelegationEvents(
-            executor.records,
-            assembled.agentId ?? "unknown",
-            assembled.agentDisplayName
-          ),
-          browserSessions: browserSessions.map((session) => ({
-            session_id: session.sessionId,
-            action_count: session.actionCount,
-            duration_ms: session.durationMs,
-            status: session.status,
-            urls_visited: session.urlsVisited,
-            artifact_count: session.artifactCount,
-          })),
-          modelId: primaryModelId,
-          inputTokens,
-          outputTokens,
-          totalLatencyMs,
-          guardrailSummary: executor.guardrails?.getSummary() ?? null,
-        }).catch((err) => {
-          console.error("[ai-worker] Trace recording failed:", safeErrorMessage(err));
-        });
-
-        // Record token usage for billing
-        await recordTokenUsage(admin, {
-          tenantId: context.run.tenant_id,
-          customerId: context.run.customer_id,
-          model: primaryModelId,
-          inputTokens,
-          outputTokens,
-          inputCostPerMillion: primaryInputCost,
-          outputCostPerMillion: primaryOutputCost,
-        }).catch((err) => {
-          console.error("[ai-worker] Failed to record usage:", safeErrorMessage(err));
-        });
 
         // Check if any tool was blocked by the approval gate — if so, the run
         // should park in awaiting_approval so the approval decision route can
@@ -1625,12 +1337,20 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
         // Send to Discord (skip if intermediate sends already covered the full response)
         let sent: { messageIds: string[]; partsSent: number } = { messageIds: [], partsSent: 0 };
         let finalReplySent = false;
-        const pendingFiles = context.run?.id ? peekPendingFiles(context.run.id) : [];
+        let persistedResponseText = responseText;
+        const pendingFiles = activeRun.id ? peekPendingFiles(activeRun.id) : [];
 
         if (hasApprovalRequired) {
-          finalReplySent = await runtimeReplyOrchestrator.emitApprovalRequested({
-            approvalId: approvalId ?? "approval_required",
-          });
+          const approvalOrchestrator =
+            (runtimeReplyOrchestrator ?? replyOrchestrator) as
+              | DiscordRuntimeReplyOrchestrator
+              | null;
+          finalReplySent = approvalOrchestrator
+            ? await approvalOrchestrator.emitApprovalRequested({
+                approvalId: approvalId ?? "approval_required",
+              })
+            : false;
+          persistedResponseText = finalReplySent ? APPROVAL_REQUIRED_REPLY : "";
           skipFinalSend = true;
           responseText = "";
         } else {
@@ -1646,7 +1366,7 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
 
           const terminalDispatch = await dispatchDiscordRuntimeTerminalSuccess(
             admin,
-            context.run,
+            activeRun,
             {
               channelId,
               replyToMessageId: inboundMessageId,
@@ -1662,15 +1382,49 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
 
           finalReplySent = terminalDispatch.sent;
           responseText = terminalDispatch.text;
+          persistedResponseText = responseText;
           sent = {
             messageIds: terminalDispatch.messageIds,
             partsSent: terminalDispatch.partsSent,
           };
           skipFinalSend = true;
-          if (finalReplySent && context.run?.id && pendingFiles.length > 0) {
-            clearPendingFiles(context.run.id);
+          if (finalReplySent && activeRun.id && pendingFiles.length > 0) {
+            clearPendingFiles(activeRun.id);
           }
         }
+
+        await storeOutboundMessage(admin, {
+          tenantId: activeRun.tenant_id,
+          customerId: activeRun.customer_id,
+          sessionId: assembled.sessionId,
+          agentId: assembled.agentId,
+          content: persistedResponseText,
+          tokenCount: inputTokens + outputTokens,
+          toolCalls: responseMessages.length > 0
+            ? responseMessages.map((m) => m as Record<string, unknown>)
+            : undefined,
+        }).catch((err) => {
+          console.error("[ai-worker] Failed to store outbound message:", safeErrorMessage(err));
+        });
+
+        await recordAgentTurnArtifacts({
+          admin,
+          run: activeRun,
+          assembled,
+          resolvedTools,
+          executor,
+          sessionId: assembled.sessionId,
+          modelId: primaryModelId,
+          fastModel,
+          contextWindowTokens,
+          startTime,
+          inputTokens,
+          outputTokens,
+          inputCostPerMillion: turn.primaryInputCost,
+          outputCostPerMillion: turn.primaryOutputCost,
+          loggerPrefix: "ai-worker",
+          mapInputSummary: redactor ? (summary) => redactor(summary) : undefined,
+        });
 
         const runResult = {
           ack: "ai_response_dispatched",
@@ -1700,8 +1454,10 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
       } catch (error) {
         if (heartbeatInterval) clearInterval(heartbeatInterval);
         await flushBrowserSessionsForRun(context.run.id).catch(() => []);
-        if (replyOrchestrator) {
-          await replyOrchestrator.finalizeFailure(
+        const failureOrchestrator =
+          replyOrchestrator as DiscordRuntimeReplyOrchestrator | null;
+        if (failureOrchestrator) {
+          await failureOrchestrator.finalizeFailure(
             safeErrorMessage(error, "AI worker dispatch failed")
           ).catch(() => {});
         }

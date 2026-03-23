@@ -24,6 +24,7 @@ import {
   DiscordRuntimeReplyOrchestrator,
 } from "./discord-runtime-reply-orchestrator";
 import { resolveDiscordBotToken } from "./tenant-runtime-discord-lifecycle";
+import { buildApprovedToolContinuationNextAction } from "./tenant-runtime-next-action";
 import {
   getObligationById,
   onApprovalGranted,
@@ -453,17 +454,32 @@ export async function executeTenantApprovalDecision(
           metadataPatch: {
             resumed_after_approval: true,
             approval_id: updatedApproval.id,
-            tool_resume_token: encodedContinuationToken,
-            tool_resume_invocation_id: invocationId,
-            approved_tool_execution: approvedToolExecution
-              ? {
-                  tool_key: approvedToolExecution.toolKey,
-                  status: approvedToolExecution.completed ? "completed" : "failed",
-                  execution_mode: "server",
-                  result_summary: approvedToolExecution.resultSummary ?? null,
-                  error: approvedToolExecution.error ?? null,
-                }
-              : null,
+            next_action:
+              encodedContinuationToken || approvedToolExecution
+                ? buildApprovedToolContinuationNextAction({
+                    approvalId: updatedApproval.id,
+                    toolKey:
+                      approvedToolExecution?.toolKey ??
+                      (typeof approvalRequestPayload.tool_key === "string"
+                        ? approvalRequestPayload.tool_key
+                        : "approved_tool"),
+                    invocationId,
+                    requestArgs:
+                      typeof approvalRequestPayload.args === "object" &&
+                      approvalRequestPayload.args !== null &&
+                      !Array.isArray(approvalRequestPayload.args)
+                        ? (approvalRequestPayload.args as Record<string, unknown>)
+                        : null,
+                    continuationToken: encodedContinuationToken,
+                    approvedToolExecution: approvedToolExecution
+                      ? {
+                          completed: approvedToolExecution.completed,
+                          resultSummary: approvedToolExecution.resultSummary,
+                          error: approvedToolExecution.error,
+                        }
+                      : null,
+                  })
+                : null,
           },
         });
         if (obligationId) {

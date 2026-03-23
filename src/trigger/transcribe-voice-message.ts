@@ -1,6 +1,7 @@
 import { task } from "@trigger.dev/sdk";
 import { createTriggerAdminClient } from "./lib/supabase";
 import { transcribeAudio } from "@/lib/ai/audio-transcriber";
+import { resolveSession } from "@/lib/ai/session-resolver";
 import { enqueueDiscordRuntimeRun } from "@/lib/runtime/tenant-runtime-queue";
 import { processRuntimeRun } from "./process-runtime-run";
 
@@ -20,10 +21,18 @@ export const transcribeVoiceMessage = task({
     const transcription = await transcribeAudio(payload.audioUrl);
 
     const admin = createTriggerAdminClient();
+    const session = await resolveSession(admin, {
+      tenantId: payload.tenantId,
+      customerId: payload.customerId,
+      channelId: payload.channelId,
+      agentId: null,
+      sessionKind: payload.guildId ? "channel" : "dm",
+    });
     const run = await enqueueDiscordRuntimeRun(admin, {
       runKind: "discord_runtime",
       tenantId: payload.tenantId,
       customerId: payload.customerId,
+      sessionId: session.id,
       requestTraceId: payload.requestTraceId,
       idempotencyKey: `voice:${payload.messageId}`,
       payload: {

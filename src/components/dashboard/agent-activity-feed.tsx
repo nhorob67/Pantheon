@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { MessageSquare, Zap, Clock, Mail, Brain, Filter, Activity } from "lucide-react";
 import Link from "next/link";
 
@@ -44,11 +44,14 @@ export function AgentActivityFeed({ events, agentNames = [] }: AgentActivityFeed
   const [filterAgent, setFilterAgent] = useState<string>("all");
   const [filterAction, setFilterAction] = useState<string>("all");
 
-  const filtered = events.filter((e) => {
-    if (filterAgent !== "all" && e.agentName !== filterAgent) return false;
-    if (filterAction !== "all" && e.actionType !== filterAction) return false;
-    return true;
-  });
+  const filtered = useMemo(
+    () => events.filter((e) => {
+      if (filterAgent !== "all" && e.agentName !== filterAgent) return false;
+      if (filterAction !== "all" && e.actionType !== filterAction) return false;
+      return true;
+    }),
+    [events, filterAgent, filterAction]
+  );
 
   return (
     <div className="rounded-xl border border-border bg-card">

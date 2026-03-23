@@ -6,7 +6,10 @@ import { SecretsVaultPanel } from "@/components/settings/secrets-vault-panel";
 export const metadata: Metadata = { title: "Secrets Vault" };
 
 export default async function SecretsVaultPage() {
-  const { customerId } = await requireDashboardCustomer();
+  const [{ customerId }, admin] = await Promise.all([
+    requireDashboardCustomer(),
+    Promise.resolve(createAdminClient()),
+  ]);
   const tenant = await getCustomerTenant(customerId);
 
   if (!tenant) {
@@ -23,7 +26,6 @@ export default async function SecretsVaultPage() {
   }
 
   // Fetch active agents for agent scoping picker
-  const admin = createAdminClient();
   const { data: agentRows } = await admin
     .from("tenant_agents")
     .select("id, display_name, agent_key")

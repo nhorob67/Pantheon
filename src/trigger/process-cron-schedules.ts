@@ -1,5 +1,6 @@
 import { schedules, task, wait } from "@trigger.dev/sdk";
 import { createTriggerAdminClient } from "./lib/supabase";
+import { resolveSession } from "@/lib/ai/session-resolver";
 import { enqueueDiscordRuntimeRun } from "@/lib/runtime/tenant-runtime-queue";
 import { processRuntimeRun } from "./process-runtime-run";
 import { computeNextRun } from "@/lib/schedules/compute-next-run";
@@ -50,10 +51,19 @@ export const executeCronSchedule = task({
     let notificationSent: boolean | undefined;
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      const session = await resolveSession(admin, {
+        tenantId: schedule.tenant_id,
+        customerId: schedule.customer_id,
+        channelId: schedule.channel_id,
+        agentId: schedule.agent_id,
+        sessionKind: "channel",
+      });
+
       const run = await enqueueDiscordRuntimeRun(admin, {
         runKind: "discord_runtime",
         tenantId: schedule.tenant_id,
         customerId: schedule.customer_id,
+        sessionId: session.id,
         requestTraceId: crypto.randomUUID(),
         idempotencyKey: `cron:${schedule.id}:${now.slice(0, 16)}:attempt${attempt}`,
         payload: {
