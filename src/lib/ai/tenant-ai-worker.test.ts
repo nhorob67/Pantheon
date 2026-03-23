@@ -194,6 +194,20 @@ test("treats GET integration_api_call records as query-like", () => {
     }),
     false
   );
+  assert.equal(
+    isQueryLikeToolRecord({
+      toolName: "mcp_github_list_issues",
+      inputSummary: "{}",
+    }),
+    true
+  );
+  assert.equal(
+    isQueryLikeToolRecord({
+      toolName: "mcp_github_create_issue",
+      inputSummary: "{}",
+    }),
+    false
+  );
 });
 
 test("formats discourse dashboard visitor counts from integration_api_call output", () => {
@@ -225,6 +239,39 @@ test("formats discourse dashboard visitor counts from integration_api_call outpu
   assert.equal(result, "There were 128 visitors in the last 24 hours.");
 });
 
+test("formats discourse about stats proactively from integration_api_call output", () => {
+  const result = formatQueryToolOutput(
+    "integration_api_call",
+    JSON.stringify({
+      status: 200,
+      status_text: "OK",
+      integration: "discourse",
+      body: {
+        about: {
+          stats: {
+            active_users_last_day: 61,
+            participating_users_last_day: 12,
+            new_users_last_day: 1,
+            posts_last_day: 20,
+            topics_last_day: 2,
+            likes_last_day: 5,
+          },
+        },
+      },
+    }),
+    JSON.stringify({
+      method: "GET",
+      path: "/about.json",
+      integration_slug: "discourse",
+    })
+  );
+
+  assert.equal(
+    result,
+    "In the last 24 hours, 61 people visited the forum.\n\n- participating users: 12\n- new users: 1\n- posts: 20\n- topics: 2\n- likes: 5"
+  );
+});
+
 test("formats generic integration_api_call success without robotic status wrapping", () => {
   const result = formatQueryToolOutput(
     "integration_api_call",
@@ -242,6 +289,25 @@ test("formats generic integration_api_call success without robotic status wrappi
   );
 
   assert.equal(result, "I checked Discourse and it responded normally.");
+});
+
+test("formats read-only MCP output into a proactive summary", () => {
+  const result = formatQueryToolOutput(
+    "mcp_hubspot_list_contacts",
+    JSON.stringify({
+      results: [
+        { name: "Ada Lovelace", email: "ada@example.com" },
+        { name: "Grace Hopper", email: "grace@example.com" },
+      ],
+      total: 2,
+    }),
+    "{}"
+  );
+
+  assert.equal(
+    result,
+    "Here's what I found:\n\n- Name: Ada Lovelace, Email: ada@example.com\n- Name: Grace Hopper, Email: grace@example.com\n- Total: 2"
+  );
 });
 
 // ---------------------------------------------------------------------------
