@@ -340,11 +340,17 @@ export async function sendDiscordChannelMessage(
   }
 
   if (!response.ok) {
-    const message =
+    const baseMessage =
       (payload && typeof payload.message === "string" && payload.message) ||
       `Discord API returned status ${response.status}`;
+    const errorsDetail = payload?.errors;
+    const detailSuffix = errorsDetail
+      ? ` — details: ${JSON.stringify(errorsDetail)}`
+      : "";
+    const contentLength = input.content?.length ?? 0;
+    const diagnosticSuffix = ` (content_length=${contentLength}, channel=${input.channelId}, has_reply_ref=${!!input.replyToMessageId})`;
     throw new DiscordApiError(
-      message,
+      `${baseMessage}${detailSuffix}${diagnosticSuffix}`,
       response.status,
       parseRetryAfterSeconds(response.headers, payload)
     );
@@ -430,11 +436,15 @@ export async function sendDiscordChannelMessageWithFiles(
   }
 
   if (!response.ok) {
-    const message =
+    const baseMessage =
       (payload && typeof payload.message === "string" && payload.message) ||
       `Discord API returned status ${response.status}`;
+    const errorsDetail = payload?.errors;
+    const detailSuffix = errorsDetail
+      ? ` — details: ${JSON.stringify(errorsDetail)}`
+      : "";
     throw new DiscordApiError(
-      message,
+      `${baseMessage}${detailSuffix} (file_upload, channel=${input.channelId})`,
       response.status,
       parseRetryAfterSeconds(response.headers, payload)
     );

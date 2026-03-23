@@ -35,7 +35,7 @@ const SummarySchema = z.object({
       z.object({
         content: z.string(),
         type: z.enum(["fact", "preference", "commitment"]),
-        confidence: z.number().min(0).max(1),
+        confidence: z.number().describe("Confidence score between 0 and 1"),
       })
     )
     .max(5),

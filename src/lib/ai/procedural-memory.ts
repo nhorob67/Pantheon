@@ -11,7 +11,7 @@ const patternSchema = z.object({
       trigger_condition: z
         .string()
         .describe("When this pattern is relevant (e.g., 'Monday morning', 'planting season')"),
-      confidence: z.number().min(0).max(1),
+      confidence: z.number().describe("Confidence score between 0 and 1"),
     })
   ),
 });

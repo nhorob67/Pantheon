@@ -1721,8 +1721,20 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           processed_at: new Date().toISOString(),
         };
 
+        // For cron/follow-up runs, treat Discord delivery failure as a run
+        // failure so the cron executor retries instead of silently moving on.
+        const isSystemInitiated = isCron || isFollowUp;
+        const deliveryFailed = !finalReplySent && !hasApprovalRequired && isSystemInitiated && progressUpdatesSentCount === 0;
+
         return {
-          outcome: hasApprovalRequired ? "awaiting_approval" : "completed",
+          outcome: hasApprovalRequired
+            ? "awaiting_approval"
+            : deliveryFailed
+              ? "failed"
+              : "completed",
+          errorMessage: deliveryFailed
+            ? "Discord delivery failed — the AI response was generated but could not be sent to the channel"
+            : undefined,
           result: runResult,
         };
       } catch (error) {
