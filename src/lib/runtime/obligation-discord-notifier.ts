@@ -100,7 +100,7 @@ export async function sendDiscordObligationStatusReply(
 }
 
 export function buildApprovalGrantedReply(): string {
-  return "Approval received. Resuming now.";
+  return "Got it, resuming.";
 }
 
 export function buildStalledReply(): string {

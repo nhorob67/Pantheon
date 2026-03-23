@@ -263,8 +263,8 @@ test("approval lifecycle sends blocked then resumed messages once", async () => 
   assert.equal(duplicateBlocked, false);
   assert.equal(resumedSent, true);
   assert.deepEqual(sends, [
-    "I need owner approval before I can make that change. Once it's approved, I'll pick it up here.",
-    "Approval came through. I'm picking it back up now.",
+    "This needs owner approval before I can proceed.",
+    "Got it, picking back up.",
   ]);
 });
 
@@ -507,7 +507,7 @@ test("approval-blocked replies release channel ownership for the next run", asyn
 
   assert.deepEqual(directMessages, [
     "Checking the API now.",
-    "I need owner approval before I can make that change. Once it's approved, I'll pick it up here.",
+    "This needs owner approval before I can proceed.",
   ]);
   assert.deepEqual(followUpMessages, ["Checking a couple of sources now."]);
 });
@@ -1060,7 +1060,7 @@ test("emitApprovalGranted can fall back when lifecycle approval id is missing", 
 
   assert.equal(granted, true);
   assert.equal(duplicate, false);
-  assert.deepEqual(sends, ["Approval came through. I'm picking it back up now."]);
+  assert.deepEqual(sends, ["Got it, picking back up."]);
 });
 
 test("emitIntermediateText suppressed during blocked_on_approval", async () => {

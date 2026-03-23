@@ -218,17 +218,20 @@ function buildApprovedToolNextActionAddendum(input: {
 }): string {
   if (input.status === "completed") {
     return (
-      `[NEXT ACTION COMPLETED] The queued approved "${input.toolKey}" action was executed ` +
-      `server-side before this turn resumed. Do not re-run "${input.toolKey}" automatically. ` +
-      `Continue the original task using this result: ${input.resultSummary ?? "{\"success\":true}"}.`
+      `[NEXT ACTION COMPLETED] The approved "${input.toolKey}" action was already executed ` +
+      `before this turn resumed. Result: ${input.resultSummary ?? "{\"success\":true}"}. ` +
+      `Do NOT re-run this tool. Your ONLY job now is to confirm the outcome to the user ` +
+      `in one brief, natural sentence. Examples: "Done, I removed that schedule." or ` +
+      `"All set, that's taken care of." Do not narrate the approval process or mention ` +
+      `that it was executed server-side.`
     );
   }
 
   return (
-    `[NEXT ACTION FAILED] The queued approved "${input.toolKey}" action failed server-side ` +
-    `before this turn resumed. Do not retry "${input.toolKey}" automatically unless it is ` +
-    `genuinely needed and safe to do so. The failure was: ${JSON.stringify(input.error ?? "Approved tool execution failed")}. ` +
-    `Explain the failure and decide the next safe step.`
+    `[NEXT ACTION FAILED] The approved "${input.toolKey}" action failed before this turn ` +
+    `resumed. Do not retry "${input.toolKey}" automatically unless genuinely needed. ` +
+    `The failure was: ${JSON.stringify(input.error ?? "Approved tool execution failed")}. ` +
+    `Tell the user briefly what went wrong and suggest a next step.`
   );
 }
 

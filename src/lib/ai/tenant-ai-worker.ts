@@ -34,7 +34,7 @@ import {
   dispatchDiscordRuntimeTerminalFailure,
   DiscordRuntimeReplyOrchestrator,
 } from "@/lib/runtime/discord-runtime-reply-orchestrator";
-import { chunkReplyContent } from "@/lib/runtime/discord-runtime-reply-policy";
+import { chunkReplyContent, FRIENDLY_TOOL_SUMMARY_MESSAGES } from "@/lib/runtime/discord-runtime-reply-policy";
 import { resolveDiscordBotToken } from "@/lib/runtime/tenant-runtime-discord-lifecycle";
 import { checkTrialAndSpendingBlock } from "./trial-guard";
 import { buildRedactor } from "@/lib/secrets/redaction";
@@ -54,7 +54,7 @@ const LONG_TASK_PROGRESS_UPDATE_MS = 20_000;
 const OBLIGATION_HEARTBEAT_UPDATE_MS = 20_000;
 const MAX_AUTOMATED_PROGRESS_UPDATES = 3;
 const APPROVAL_REQUIRED_REPLY =
-  "I need approval before I can make that change. Once it's approved, I'll pick it up here.";
+  "This needs approval before I can proceed.";
 const GENERIC_PROGRESS_MESSAGES = [
   "Still working through it.",
   "Almost there.",
@@ -1007,6 +1007,16 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
           actorId,
         });
         const activeRun = nextAction.run;
+        const consumedNextActionToolKey =
+          nextAction.action?.kind === "approved_tool_continuation" &&
+          nextAction.action.state === "consumed"
+            ? nextAction.action.tool_key
+            : null;
+        const consumedNextActionResult =
+          nextAction.action?.kind === "approved_tool_continuation" &&
+          nextAction.action.state === "consumed"
+            ? nextAction.action.result
+            : null;
         const runtimeSystemPromptAddendum = [
           isFollowUp ? followUpPrompt : null,
           nextAction.systemPromptAddendum,
@@ -1422,6 +1432,17 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
         // Fallback when maxSteps exhausted on a tool-call step with no final text.
         // Build a natural-language summary — never expose raw JSON or tool names.
         let usedInformationalFallback = false;
+        if (!responseText && consumedNextActionToolKey && consumedNextActionResult) {
+          // Post-approval server-executed tool: guarantee a confirmation message
+          if (consumedNextActionResult.status === "completed") {
+            const friendly = FRIENDLY_TOOL_SUMMARY_MESSAGES[consumedNextActionToolKey];
+            responseText = friendly ?? "Done — that's taken care of.";
+          } else {
+            responseText = consumedNextActionResult.error
+              ? `I tried to finish that after approval, but hit an issue: ${consumedNextActionResult.error}`
+              : "I tried to finish that after approval, but something went wrong.";
+          }
+        }
         if (!responseText) {
           // Layer 1: Try rich informational fallback first (web_search, web_fetch results)
           const richFallback = formatInformationalFallback(result.steps, executor.records);
@@ -1546,10 +1567,16 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
         const hasExplicitFollowUp = executor.records.some(
           (r) => r.toolName === "task_follow_up" && r.success
         );
-        const toolSummary = executor.records
+        const executorToolSummary = executor.records
           .slice(0, 8)
           .map((r) => `${r.toolName}:${r.success ? "success" : r.errorClass ?? "error"}`)
           .join(", ");
+        // When a post-approval tool ran server-side, executor.records is empty.
+        // Inject a synthetic entry so buildFriendlyToolSummary can produce a confirmation.
+        const toolSummary =
+          !executorToolSummary && consumedNextActionToolKey && consumedNextActionResult?.status === "completed"
+            ? `${consumedNextActionToolKey}:success`
+            : executorToolSummary;
         const terminalState: RunTerminalState = hasApprovalRequired
           ? "continuing"
           : hasExplicitFollowUp

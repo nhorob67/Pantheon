@@ -122,9 +122,19 @@ test("getDiscordReplyOrchestratorMode is always active", () => {
 });
 
 test("buildMilestoneMessage keeps schedule and sentence-like labels natural", () => {
+  // Silent phase returns null for single-tool (default)
   assert.equal(
     buildMilestoneMessage({
       phaseKey: "schedule_create",
+    }),
+    null
+  );
+
+  // Silent phase returns message when multi-step
+  assert.equal(
+    buildMilestoneMessage({
+      phaseKey: "schedule_create",
+      isMultiStep: true,
     }),
     "Updating the schedule now."
   );

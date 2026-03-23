@@ -307,10 +307,12 @@ export class DiscordRuntimeReplyOrchestrator {
     phaseKey: string;
     label?: string;
     sentKey?: string;
+    isMultiStep?: boolean;
   }): Promise<boolean> {
     const message = buildMilestoneMessage({
       phaseKey: input.phaseKey,
       label: input.label,
+      isMultiStep: input.isMultiStep,
     });
     if (!message) {
       return false;
@@ -417,8 +419,8 @@ export class DiscordRuntimeReplyOrchestrator {
 
     const roleText = pickString(input.requiredRole);
     const message = roleText
-      ? `I need ${roleText} approval before I can make that change. Once it's approved, I'll pick it up here.`
-      : "I need approval before I can make that change. Once it's approved, I'll pick it up here.";
+      ? `This needs ${roleText} approval before I can proceed.`
+      : "This needs approval before I can proceed.";
 
     const sent = await this.emitVisibleText({
       text: message,
@@ -452,7 +454,7 @@ export class DiscordRuntimeReplyOrchestrator {
     }
 
     return this.emitVisibleText({
-      text: "Approval came through. I'm picking it back up now.",
+      text: "Got it, picking back up.",
       kind: "resumed",
       sentKey,
       nextState: "resumed_after_approval",

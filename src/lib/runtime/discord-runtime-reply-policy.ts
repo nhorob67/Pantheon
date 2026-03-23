@@ -11,11 +11,11 @@ import {
 const SILENT_REPLY_TOKEN = "NO_REPLY";
 const HEARTBEAT_TOKEN = "HEARTBEAT_OK";
 const MIN_INTERMEDIATE_SUBSTANCE_LENGTH = 36;
-const MILESTONE_MIN_SPACING_MS = 2_500;
+const MILESTONE_MIN_SPACING_MS = 4_000;
 const KEEPALIVE_SILENCE_MS = 30_000;
 const KEEPALIVE_MIN_SPACING_MS = 45_000;
 const MAX_KEEPALIVES_PER_RUN = 3;
-const FRIENDLY_TOOL_SUMMARY_MESSAGES: Record<string, string> = {
+export const FRIENDLY_TOOL_SUMMARY_MESSAGES: Record<string, string> = {
   schedule_create: "I set up the schedule.",
   schedule_update: "I updated the schedule.",
   schedule_delete: "I removed the schedule.",
@@ -334,12 +334,27 @@ export function resolvePhaseKey(toolName: string, toolSource?: string): string {
   return "generic_tool";
 }
 
+/** Phases that are routine single-tool operations — silent unless multi-step */
+const SILENT_PHASES = new Set([
+  "schedule_change",
+  "config_update",
+  "memory_lookup",
+  "integration_setup",
+]);
+
 export function buildMilestoneMessage(input: {
   phaseKey: string;
   label?: string;
   targetAgentName?: string;
+  isMultiStep?: boolean;
 }): string | null {
   const phaseKey = resolvePhaseKey(input.phaseKey);
+
+  // Routine single-tool operations don't need narration
+  if (SILENT_PHASES.has(phaseKey) && !input.isMultiStep) {
+    return null;
+  }
+
   switch (phaseKey) {
     case "api_call":
       return "Checking the API now.";
