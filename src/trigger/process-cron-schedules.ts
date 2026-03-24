@@ -1,7 +1,11 @@
 import { schedules, task, wait } from "@trigger.dev/sdk";
 import { createTriggerAdminClient } from "./lib/supabase";
 import { resolveSession } from "@/lib/ai/session-resolver";
-import { enqueueDiscordRuntimeRun } from "@/lib/runtime/tenant-runtime-queue";
+import {
+  enqueueDiscordRuntimeRun,
+  transitionTenantRuntimeRun,
+  getTenantRuntimeRunById,
+} from "@/lib/runtime/tenant-runtime-queue";
 import { processRuntimeRun } from "./process-runtime-run";
 import { computeNextRun } from "@/lib/schedules/compute-next-run";
 import { sendCronFailureNotification } from "@/lib/schedules/cron-failure-notifier";
@@ -102,6 +106,14 @@ export const executeCronSchedule = task({
       }
 
       if (attempt < maxRetries) {
+        // Cancel the orphaned run so it doesn't block the session lane on retry
+        const staleRun = await getTenantRuntimeRunById(admin, run.id);
+        if (staleRun && staleRun.status === "queued") {
+          await transitionTenantRuntimeRun(admin, staleRun, "cancel", {
+            errorMessage: `Canceled before cron retry attempt ${attempt + 1}`,
+            metadataPatch: { cron_retry_canceled: true },
+          }).catch(() => {});
+        }
         await wait.for({ seconds: retryDelay });
         continue;
       }

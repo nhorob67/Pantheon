@@ -56,6 +56,17 @@ function pickString(value: unknown): string | null {
   return normalized.length > 0 ? normalized : null;
 }
 
+/**
+ * Only return message IDs that are valid Discord snowflakes (numeric strings).
+ * Synthetic IDs like "cron-..." cause 400 Invalid Form Body from the Discord API.
+ */
+function sanitizeDiscordMessageRef(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+  return /^\d+$/.test(value) ? value : null;
+}
+
 function updateLifecycle(
   lifecycle: DiscordReplyLifecycleMetadata,
   patch: Partial<DiscordReplyLifecycleMetadata>
@@ -878,7 +889,7 @@ export async function dispatchDiscordRuntimeTerminalSuccess(
     run,
     botToken,
     channelId,
-    replyToMessageId: input.replyToMessageId ?? pickString(run.payload.message_id),
+    replyToMessageId: input.replyToMessageId ?? sanitizeDiscordMessageRef(run.payload.message_id),
     responsePrefix: input.responsePrefix,
     fetchImpl: input.fetchImpl,
     persistRunMetadata: input.persistRunMetadata,
@@ -937,7 +948,7 @@ export async function dispatchDiscordRuntimeTerminalFailure(
     run,
     botToken,
     channelId,
-    replyToMessageId: input?.replyToMessageId ?? pickString(run.payload.message_id),
+    replyToMessageId: input?.replyToMessageId ?? sanitizeDiscordMessageRef(run.payload.message_id),
     responsePrefix: input?.responsePrefix,
     fetchImpl: input?.fetchImpl,
     persistRunMetadata: input?.persistRunMetadata,
@@ -985,7 +996,7 @@ export async function emitDiscordRuntimeTerminalFailure(
     run,
     botToken,
     channelId,
-    replyToMessageId: input?.replyToMessageId ?? pickString(run.payload.message_id),
+    replyToMessageId: input?.replyToMessageId ?? sanitizeDiscordMessageRef(run.payload.message_id),
     responsePrefix: input?.responsePrefix,
     fetchImpl: input?.fetchImpl,
     persistRunMetadata: input?.persistRunMetadata,
