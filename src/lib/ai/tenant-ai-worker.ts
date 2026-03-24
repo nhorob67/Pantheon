@@ -1237,9 +1237,9 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
             const filtered: Record<string, typeof tools[string]> = {};
 
             if (Array.isArray(payload.custom_tools) && payload.custom_tools.length > 0) {
-              const allowedSkills = new Set(payload.custom_tools as string[]);
+              const allowedTools = new Set(payload.custom_tools as string[]);
               const skillToolPrefixes: Record<string, string[]> = {};
-              const allowedPrefixes = Array.from(allowedSkills).flatMap(
+              const allowedPrefixes = Array.from(allowedTools).flatMap(
                 (skill) => skillToolPrefixes[skill] || []
               );
               for (const [name, tool] of Object.entries(tools)) {
@@ -1251,7 +1251,8 @@ export function createTenantAiWorker(admin: SupabaseClient): TenantRuntimeWorker
                 const matchesSkill = allowedPrefixes.some((prefix) =>
                   name.startsWith(prefix)
                 );
-                if (isAlwaysAvailable || matchesSkill) {
+                const isExplicitlyAllowed = allowedTools.has(name);
+                if (isAlwaysAvailable || matchesSkill || isExplicitlyAllowed) {
                   filtered[name] = tool;
                 }
               }
