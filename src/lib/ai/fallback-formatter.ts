@@ -6,6 +6,12 @@
  * user-facing message instead of a generic "Done! I web search." confirmation.
  */
 
+import {
+  parseJsonObject,
+  formatDiscourseAboutStatsSummary,
+  formatStructuredQuerySummary,
+} from "./query-output-formatter";
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -53,7 +59,7 @@ const MAX_FETCH_CONTENT_LENGTH = 300;
 const MAX_SEARCH_RESULTS = 3;
 
 /** Tools that return information the user expects to see */
-const INFORMATIONAL_TOOLS = new Set(["web_search", "web_fetch"]);
+const INFORMATIONAL_TOOLS = new Set(["web_search", "web_fetch", "integration_api_call"]);
 
 // ---------------------------------------------------------------------------
 // Tool status messages (Layer 3)
@@ -192,17 +198,6 @@ function friendlyAction(toolName: string): string | null {
   return null;
 }
 
-function parseJsonObject(summary: string): Record<string, unknown> | null {
-  try {
-    const parsed = JSON.parse(summary);
-    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-      return parsed as Record<string, unknown>;
-    }
-  } catch {
-    // Ignore invalid JSON and fall back to generic text.
-  }
-  return null;
-}
 
 function humanizeSlug(value: string): string {
   return value
@@ -273,7 +268,7 @@ function formatIntegrationApiCallOutcome(outputSummary: string): string | null {
     status >= 200 && status < 300
       ? bodyDetail
         ? `I checked ${integrationName}. ${bodyDetail}`
-        : `I checked ${integrationName} and it responded normally.`
+        : `I called ${integrationName} and got a successful response, but I wasn't able to extract specific data to share. Try asking me about something more specific.`
       : bodyDetail
         ? `I checked ${integrationName}, but it came back ${status}${statusText}. ${bodyDetail}`
         : `I checked ${integrationName}, but it came back ${status}${statusText}.`;
@@ -350,6 +345,7 @@ export function formatInformationalFallback(
   const seen = new Set<string>();
   const searchResults: ParsedWebSearchResult[] = [];
   const fetchResults: ParsedWebFetchResult[] = [];
+  const integrationParts: string[] = [];
 
   // 1. Try rich step-level toolResults first (untruncated)
   for (const step of steps) {
@@ -368,6 +364,17 @@ export function formatInformationalFallback(
         if (parsed && !seen.has(parsed.url)) {
           seen.add(parsed.url);
           fetchResults.push(parsed);
+        }
+      }
+      if (tr.toolName === "integration_api_call" && tr.result && typeof tr.result === "object") {
+        const apiResult = tr.result as Record<string, unknown>;
+        const body = apiResult.body;
+        // Try Discourse-specific formatting first, then generic structured
+        const formatted =
+          formatDiscourseAboutStatsSummary(body) ??
+          formatStructuredQuerySummary(body ?? apiResult);
+        if (formatted) {
+          integrationParts.push(formatted);
         }
       }
     }
@@ -396,10 +403,16 @@ export function formatInformationalFallback(
   }
 
   // No informational results at all — let caller use action-only fallback
-  if (searchResults.length === 0 && fetchResults.length === 0) return null;
+  if (searchResults.length === 0 && fetchResults.length === 0 && integrationParts.length === 0) return null;
 
   // 3. Build the message parts
   const parts: string[] = [];
+
+  // Integration API results (e.g., Discourse stats)
+  if (integrationParts.length > 0) {
+    parts.push(...integrationParts);
+    parts.push("");
+  }
 
   // Search results (up to MAX_SEARCH_RESULTS)
   if (searchResults.length > 0) {

@@ -21,6 +21,7 @@ import {
   type ObligationTransitionEvent,
 } from "./obligation-state";
 import { safeErrorMessage } from "@/lib/security/safe-error";
+import { logSilentCatch } from "@/lib/telemetry/silent-catch";
 import { resolveCustomerFeatureFlag } from "@/lib/queries/extensibility";
 
 // ---------------------------------------------------------------------------
@@ -209,7 +210,7 @@ export async function openObligation(
       run_kind: input.run.run_kind,
       channel_id: input.channelId,
     },
-  }).catch(() => {});
+  }).catch((e) => logSilentCatch("obligation-event-created", e));
 
   return obligation;
 }
@@ -236,7 +237,7 @@ export async function recordObligationToolPhase(
     runId: runId ?? null,
     eventType: "tool_phase",
     payload: payload ?? {},
-  }).catch(() => {});
+  }).catch((e) => logSilentCatch("obligation-event-tool-phase", e));
 }
 
 // ---------------------------------------------------------------------------
@@ -355,7 +356,7 @@ export async function transitionObligation(
     toStatus: updated.status,
     idempotencyKey: input.idempotencyKey ?? null,
     payload: input.payload ?? {},
-  }).catch(() => {});
+  }).catch((e) => logSilentCatch("obligation-event-transition", e));
 
   return updated;
 }
@@ -386,7 +387,7 @@ export async function recordObligationHeartbeat(
     runId: runId ?? null,
     eventType: "heartbeat",
     payload: payload ?? {},
-  }).catch(() => {});
+  }).catch((e) => logSilentCatch("obligation-event-heartbeat", e));
 }
 
 // ---------------------------------------------------------------------------
@@ -564,7 +565,7 @@ export async function recordUserUpdate(
     runId: runId ?? null,
     eventType: "progress_update_sent",
     payload: payload ?? {},
-  }).catch(() => {});
+  }).catch((e) => logSilentCatch("obligation-event-progress-update", e));
 }
 
 // ---------------------------------------------------------------------------

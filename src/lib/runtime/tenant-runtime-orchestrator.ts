@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { TenantRuntimeRun } from "@/types/tenant-runtime";
 import type { ResolvedModels } from "@/lib/ai/model-resolver";
 import { safeErrorMessage } from "@/lib/security/safe-error";
+import { logSilentCatch } from "@/lib/telemetry/silent-catch";
 import {
   transitionTenantRuntimeRun,
   type TenantRuntimeQueueError,
@@ -52,7 +53,7 @@ export async function executeTenantRuntimeRun(
   run: TenantRuntimeRun,
   options?: ExecuteTenantRuntimeRunOptions
 ): Promise<TenantRuntimeOrchestratorResult> {
-  await onRunStarted(admin, run).catch(() => null);
+  await onRunStarted(admin, run).catch((e) => { logSilentCatch("orchestrator-on-run-started", e); return null; });
 
   let workerResult: TenantRuntimeWorkerResult;
   try {
@@ -81,7 +82,7 @@ export async function executeTenantRuntimeRun(
       admin,
       transitioned,
       transitioned.error_message ?? undefined
-    ).catch(() => null);
+    ).catch((e) => { logSilentCatch("orchestrator-on-run-failed", e); return null; });
 
     return {
       runId: transitioned.id,
@@ -103,13 +104,13 @@ export async function executeTenantRuntimeRun(
   });
 
   if (transitioned.status === "completed") {
-    await onRunCompleted(admin, transitioned).catch(() => null);
+    await onRunCompleted(admin, transitioned).catch((e) => { logSilentCatch("orchestrator-on-run-completed", e); return null; });
   } else if (transitioned.status === "failed") {
     await onRunFailed(
       admin,
       transitioned,
       transitioned.error_message ?? undefined
-    ).catch(() => null);
+    ).catch((e) => { logSilentCatch("orchestrator-on-run-failed-terminal", e); return null; });
   } else if (transitioned.status === "awaiting_approval") {
     const approvalId = extractApprovalId(transitioned.result);
     if (approvalId) {
@@ -117,9 +118,11 @@ export async function executeTenantRuntimeRun(
         admin,
         transitioned,
         approvalId
-      ).catch(() => null);
+      ).catch((e) => { logSilentCatch("orchestrator-on-approval-requested", e); return null; });
       if (obligation) {
-        await bindApprovalToObligation(admin, approvalId, obligation).catch(() => {});
+        await bindApprovalToObligation(admin, approvalId, obligation).catch((e) =>
+          logSilentCatch("orchestrator-bind-approval-to-obligation", e)
+        );
       }
     }
   }

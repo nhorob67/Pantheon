@@ -68,6 +68,12 @@ export interface CanonicalToolMeta {
   category: ToolCategory;
   riskLevel: RiskLevel;
   capabilities: ToolCapabilities;
+  /** True if this tool is a read-only query tool (replaces heuristic regex detection) */
+  isQuery?: boolean;
+  /** Autonomy level at which this tool requires approval (replaces hardcoded map) */
+  autonomyGate?: "assisted" | "copilot";
+  /** True if this tool mutates runtime state */
+  isMutating?: boolean;
 }
 
 // ---------------------------------------------------------------------------

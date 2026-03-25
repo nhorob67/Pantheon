@@ -14,6 +14,7 @@ import type {
   GuardrailPipeline,
   GuardrailHookContext,
 } from "./guardrail-middleware.ts";
+import { toolRegistry } from "./tool-registry";
 
 // ---------------------------------------------------------------------------
 // Config & Record types
@@ -139,6 +140,11 @@ export interface UnifiedInvocationRecord {
 // ---------------------------------------------------------------------------
 
 const SUMMARY_MAX_LEN = 500;
+const INTEGRATION_SUMMARY_MAX_LEN = 3000;
+
+function outputSummaryMaxLen(toolName: string): number {
+  return toolName === "integration_api_call" ? INTEGRATION_SUMMARY_MAX_LEN : SUMMARY_MAX_LEN;
+}
 
 function truncateString(value: string, maxLen: number): string {
   if (value.length <= maxLen) return value;
@@ -396,33 +402,6 @@ async function enqueueAiPathApprovalIfNeeded(
 // Autonomy-level gating
 // ---------------------------------------------------------------------------
 
-/**
- * Tools that require approval when the agent's autonomy level is L1 (assisted)
- * or L2 (copilot). These are high-impact self-config and schedule mutations
- * that should not fire autonomously without human review.
- */
-const AUTONOMY_GATED_TOOLS: Record<string, "assisted" | "copilot"> = {
-  // High-impact self-config: require approval for L1 and L2
-  config_create_agent: "copilot",
-  config_archive_agent: "copilot",
-  config_set_my_autonomy: "copilot",
-  config_update_team_profile: "copilot",
-  config_set_my_delegation: "copilot",
-  config_undo_last_change: "copilot",
-  // Schedule mutations: require approval for L1 only
-  schedule_create: "assisted",
-  schedule_delete: "assisted",
-  // Delegation: require approval for L1 only (copilot/autopilot can delegate freely)
-  delegate_task: "assisted",
-  // Integrations: credential storage requires approval for L1+L2
-  integration_store_credential: "copilot",
-  integration_register: "assisted",
-  // Browser: click/fill require approval for L1+L2, navigate for L1 only
-  browser_click: "copilot",
-  browser_fill: "copilot",
-  browser_navigate: "assisted",
-};
-
 const AUTONOMY_PRECEDENCE: Record<string, number> = {
   assisted: 1,
   copilot: 2,
@@ -432,13 +411,14 @@ const AUTONOMY_PRECEDENCE: Record<string, number> = {
 /**
  * Check if a tool should be gated by the agent's autonomy level.
  * Returns the gate reason if the tool should require approval, or null.
+ * Looks up the gate from the tool registry (populated from tool-catalog.ts).
  */
 function checkAutonomyGate(
   toolKey: string,
   autonomyLevel?: string
 ): string | null {
   if (!autonomyLevel) return null;
-  const maxLevel = AUTONOMY_GATED_TOOLS[toolKey];
+  const maxLevel = toolRegistry.getAutonomyGate(toolKey);
   if (!maxLevel) return null;
   const agentLevel = AUTONOMY_PRECEDENCE[autonomyLevel] ?? 3;
   const gateLevel = AUTONOMY_PRECEDENCE[maxLevel] ?? 0;
@@ -921,7 +901,7 @@ export function createUnifiedToolExecutor(config: UnifiedToolExecutorConfig) {
                   success: true,
                   errorClass: "guardrail_halt_after",
                   inputSummary: truncateJson(args, SUMMARY_MAX_LEN),
-                  outputSummary: truncateJson(result, SUMMARY_MAX_LEN),
+                  outputSummary: truncateJson(result, outputSummaryMaxLen(name)),
                   policyDecision: policy.decision,
                   policyReason: browserCostEvent.kind,
                   toolId: policy.toolId,
@@ -949,7 +929,7 @@ export function createUnifiedToolExecutor(config: UnifiedToolExecutorConfig) {
                   success: true,
                   errorClass: "guardrail_halt_after",
                   inputSummary: truncateJson(args, SUMMARY_MAX_LEN),
-                  outputSummary: truncateJson(result, SUMMARY_MAX_LEN),
+                  outputSummary: truncateJson(result, outputSummaryMaxLen(name)),
                   policyDecision: policy.decision,
                   policyReason: postCheck.event?.kind ?? "guardrail",
                   toolId: policy.toolId,
@@ -1007,7 +987,7 @@ export function createUnifiedToolExecutor(config: UnifiedToolExecutorConfig) {
               success,
               errorClass,
               inputSummary: truncateJson(args, SUMMARY_MAX_LEN),
-              outputSummary: result === undefined ? "" : truncateJson(result, SUMMARY_MAX_LEN),
+              outputSummary: result === undefined ? "" : truncateJson(result, outputSummaryMaxLen(name)),
               policyDecision:
                 errorClass === "approval_required" ? "requires_approval" : policy.decision,
               policyReason:
@@ -1182,7 +1162,7 @@ export function createUnifiedToolExecutor(config: UnifiedToolExecutorConfig) {
               success: true,
               errorClass: "guardrail_halt_after",
               inputSummary: truncateJson(args, SUMMARY_MAX_LEN),
-              outputSummary: truncateJson(output, SUMMARY_MAX_LEN),
+              outputSummary: truncateJson(output, outputSummaryMaxLen(toolKey)),
               policyDecision: policy.decision,
               policyReason: postCheck.event?.kind ?? "guardrail",
               toolId: policy.toolId,
@@ -1212,7 +1192,7 @@ export function createUnifiedToolExecutor(config: UnifiedToolExecutorConfig) {
           success: true,
           errorClass: null,
           inputSummary: truncateJson(args, SUMMARY_MAX_LEN),
-          outputSummary: truncateJson(output, SUMMARY_MAX_LEN),
+          outputSummary: truncateJson(output, outputSummaryMaxLen(toolKey)),
           policyDecision: policy.decision,
           policyReason: policy.reason,
           toolId: policy.toolId,

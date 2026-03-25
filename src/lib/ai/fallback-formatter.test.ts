@@ -246,7 +246,7 @@ describe("formatActionFallback", () => {
       },
     ]);
 
-    assert.equal(result, "I checked Discourse and it responded normally.");
+    assert.equal(result, "I called Discourse and got a successful response, but I wasn't able to extract specific data to share. Try asking me about something more specific.");
   });
 
   it("formats integration_api_call failures with API detail", () => {
@@ -288,7 +288,7 @@ describe("formatActionFallback", () => {
       },
     ]);
 
-    assert.equal(result, "I checked Fullstack Ag and it responded normally. I also registered the integration.");
+    assert.equal(result, "I called Fullstack Ag and got a successful response, but I wasn't able to extract specific data to share. Try asking me about something more specific. I also registered the integration.");
   });
 
   it("falls back to generic action copy when no specialized formatter exists", () => {

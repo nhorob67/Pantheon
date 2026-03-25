@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { FileCreateResult } from "@/lib/ai/tools/file-create";
 import type { TenantRuntimeRun } from "@/types/tenant-runtime";
 import { safeErrorMessage } from "@/lib/security/safe-error";
+import { logSilentCatch } from "@/lib/telemetry/silent-catch";
 import {
   patchTenantRuntimeRunMetadata,
   type TenantRuntimeQueueError,
@@ -46,6 +47,17 @@ interface DiscordVisibleChannelOwner {
 }
 
 const visibleChannelOwners = new Map<string, DiscordVisibleChannelOwner>();
+const MAX_VISIBLE_CHANNEL_OWNERS = 1000;
+
+// Periodic cleanup: evict expired entries every 60s
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, owner] of visibleChannelOwners) {
+    if (owner.expiresAt < now) {
+      visibleChannelOwners.delete(key);
+    }
+  }
+}, 60_000).unref();
 
 function pickString(value: unknown): string | null {
   if (typeof value !== "string") {
@@ -367,7 +379,7 @@ export class DiscordRuntimeReplyOrchestrator {
       this.lifecycle = updateLifecycle(this.lifecycle, {
         pending_file_names: [...this.lifecycle.pending_file_names, filename],
       });
-      await this.persistLifecycle().catch(() => {});
+      await this.persistLifecycle().catch((e) => logSilentCatch("persist-lifecycle", e));
     }
 
     return this.emitVisibleText({
@@ -570,6 +582,11 @@ export class DiscordRuntimeReplyOrchestrator {
     }
 
     if (acquire) {
+      // Evict oldest entry if at capacity
+      if (visibleChannelOwners.size >= MAX_VISIBLE_CHANNEL_OWNERS) {
+        const firstKey = visibleChannelOwners.keys().next().value;
+        if (firstKey !== undefined) visibleChannelOwners.delete(firstKey);
+      }
       visibleChannelOwners.set(this.channelId, {
         runId: this.run.id,
         priority: resolveRunVisibilityPriority(this.run),
@@ -718,7 +735,7 @@ export class DiscordRuntimeReplyOrchestrator {
       last_send_attempt_at: nowIso,
       last_send_error: null,
     });
-    await this.persistLifecycle().catch(() => {});
+    await this.persistLifecycle().catch((e) => logSilentCatch("persist-lifecycle", e));
 
     try {
       await runWithCircuitBreaker(
@@ -756,7 +773,7 @@ export class DiscordRuntimeReplyOrchestrator {
       last_send_attempt_at: nowIso,
       last_send_error: null,
     });
-    await this.persistLifecycle().catch(() => {});
+    await this.persistLifecycle().catch((e) => logSilentCatch("persist-lifecycle", e));
 
     try {
       await runWithCircuitBreaker(
@@ -816,7 +833,7 @@ export class DiscordRuntimeReplyOrchestrator {
       last_attachment_error: message,
       last_attachment_fallback_at: new Date().toISOString(),
     });
-    await this.persistLifecycle().catch(() => {});
+    await this.persistLifecycle().catch((e) => logSilentCatch("persist-lifecycle", e));
   }
 
   private async recordDeliveryFailure(sentKey: string, message: string): Promise<void> {
@@ -825,7 +842,7 @@ export class DiscordRuntimeReplyOrchestrator {
       last_send_error: message,
       last_send_attempt_at: new Date().toISOString(),
     });
-    await this.persistLifecycle().catch(() => {});
+    await this.persistLifecycle().catch((e) => logSilentCatch("persist-lifecycle", e));
     console.error(`[discord-reply-orchestrator] ${sentKey}: ${message}`);
   }
 

@@ -3,32 +3,14 @@ import test from "node:test";
 import {
   formatQueryToolOutput,
   isQueryLikeToolRecord,
-  shouldScheduleStructuralFollowUp,
+} from "./query-output-formatter.ts";
+import {
   shouldSuppressIntermediateToolPreamble,
-} from "./tenant-ai-worker.ts";
-
-// ---------------------------------------------------------------------------
-// buildFollowUpPrompt — not exported, so we replicate its logic here and test
-// the same algorithm in isolation.
-// ---------------------------------------------------------------------------
-
-function buildFollowUpPrompt(payload: Record<string, unknown>): string {
-  const taskSummary =
-    typeof payload.task_summary === "string"
-      ? payload.task_summary
-      : "a previous task";
-  const reason =
-    typeof payload.reason === "string" ? payload.reason : "";
-  const parts = [
-    `You scheduled this follow-up while working on: ${taskSummary}`,
-  ];
-  if (reason) parts.push(`You wanted to check back because: ${reason}`);
-  parts.push(
-    "Pick up where you left off naturally. Lead with your finding or update — don't announce this is a follow-up. " +
-      "If the task is done, share the result. If it needs more time, explain and optionally schedule another follow-up."
-  );
-  return parts.join("\n\n");
-}
+} from "./worker-lifecycle-events.ts";
+import {
+  shouldScheduleStructuralFollowUp,
+} from "./follow-up-orchestrator.ts";
+import { buildFollowUpPrompt } from "./specialized-prompts.ts";
 
 test("buildFollowUpPrompt includes task_summary when provided", () => {
   const result = buildFollowUpPrompt({ task_summary: "deploy the bot" });
@@ -288,7 +270,7 @@ test("formats generic integration_api_call success without robotic status wrappi
     })
   );
 
-  assert.equal(result, "I checked Discourse and it responded normally.");
+  assert.equal(result, "I called Discourse and got a successful response, but I wasn't able to extract specific data to share. Try asking me about something more specific.");
 });
 
 test("formats read-only MCP output into a proactive summary", () => {

@@ -28,7 +28,13 @@ function native(
   category: ToolCategory,
   riskLevel: RiskLevel,
   capabilities: Partial<ToolCapabilities> & Pick<ToolCapabilities, "writesState">,
-  overrides?: { defaultStatus?: "enabled" | "disabled"; defaultApprovalMode?: string }
+  overrides?: {
+    defaultStatus?: "enabled" | "disabled";
+    defaultApprovalMode?: string;
+    isQuery?: boolean;
+    autonomyGate?: "assisted" | "copilot";
+    isMutating?: boolean;
+  }
 ): NativeToolEntry {
   return {
     toolKey,
@@ -43,6 +49,9 @@ function native(
       requiresApproval: riskLevel === "high" || riskLevel === "critical",
       supportsStreaming: capabilities.supportsStreaming ?? false,
     },
+    ...(overrides?.isQuery != null ? { isQuery: overrides.isQuery } : {}),
+    ...(overrides?.autonomyGate != null ? { autonomyGate: overrides.autonomyGate } : {}),
+    ...(overrides?.isMutating != null ? { isMutating: overrides.isMutating } : {}),
     defaultStatus: overrides?.defaultStatus ?? "enabled",
     defaultApprovalMode: overrides?.defaultApprovalMode ?? "none",
   };
@@ -68,7 +77,8 @@ const NATIVE_TOOLS: NativeToolEntry[] = [
     "Search long-term memory for previously saved facts, preferences, and commitments",
     "memory",
     "low",
-    { writesState: false }
+    { writesState: false },
+    { isQuery: true }
   ),
   native(
     "memory_read",
@@ -76,7 +86,8 @@ const NATIVE_TOOLS: NativeToolEntry[] = [
     "Fetch a specific memory record by ID",
     "memory",
     "low",
-    { writesState: false }
+    { writesState: false },
+    { isQuery: true }
   ),
   native(
     "conversation_search",
@@ -84,7 +95,8 @@ const NATIVE_TOOLS: NativeToolEntry[] = [
     "Search past conversation messages for specific topics, decisions, or discussions",
     "memory",
     "low",
-    { writesState: false }
+    { writesState: false },
+    { isQuery: true }
   ),
 
   // ── Schedules ───────────────────────────────────────────────────────────
@@ -94,7 +106,8 @@ const NATIVE_TOOLS: NativeToolEntry[] = [
     "Create a recurring scheduled task with a cron expression",
     "schedule",
     "medium",
-    { writesState: true }
+    { writesState: true },
+    { autonomyGate: "assisted" }
   ),
   native(
     "schedule_list",
@@ -102,7 +115,8 @@ const NATIVE_TOOLS: NativeToolEntry[] = [
     "List all active schedules for this team",
     "schedule",
     "low",
-    { writesState: false }
+    { writesState: false },
+    { isQuery: true }
   ),
   native(
     "schedule_toggle",
@@ -126,7 +140,8 @@ const NATIVE_TOOLS: NativeToolEntry[] = [
     "Delete a custom schedule by its ID",
     "schedule",
     "high",
-    { writesState: true }
+    { writesState: true },
+    { autonomyGate: "assisted" }
   ),
 
   // ── Self-Config (read-only) ─────────────────────────────────────────────
@@ -136,7 +151,8 @@ const NATIVE_TOOLS: NativeToolEntry[] = [
     "View the current agent's configuration",
     "self-config",
     "low",
-    { writesState: false }
+    { writesState: false },
+    { isQuery: true }
   ),
   native(
     "config_list_agents",
@@ -144,7 +160,8 @@ const NATIVE_TOOLS: NativeToolEntry[] = [
     "List all active agents on this team",
     "self-config",
     "low",
-    { writesState: false }
+    { writesState: false },
+    { isQuery: true }
   ),
 
   // ── Self-Config (identity mutations — medium risk) ──────────────────────
@@ -196,7 +213,8 @@ const NATIVE_TOOLS: NativeToolEntry[] = [
     "Set this agent's autonomy level",
     "self-config",
     "high",
-    { writesState: true }
+    { writesState: true },
+    { autonomyGate: "copilot" }
   ),
   native(
     "config_set_my_delegation",
@@ -204,7 +222,8 @@ const NATIVE_TOOLS: NativeToolEntry[] = [
     "Control whether this agent can delegate and receive delegated tasks",
     "self-config",
     "high",
-    { writesState: true }
+    { writesState: true },
+    { autonomyGate: "copilot" }
   ),
   native(
     "config_update_team_profile",
@@ -212,7 +231,8 @@ const NATIVE_TOOLS: NativeToolEntry[] = [
     "Update team profile fields (team-wide impact)",
     "self-config",
     "high",
-    { writesState: true }
+    { writesState: true },
+    { autonomyGate: "copilot" }
   ),
   native(
     "config_create_agent",
@@ -220,7 +240,8 @@ const NATIVE_TOOLS: NativeToolEntry[] = [
     "Create a new agent for this team",
     "self-config",
     "high",
-    { writesState: true }
+    { writesState: true },
+    { autonomyGate: "copilot" }
   ),
   native(
     "config_archive_agent",
@@ -228,7 +249,8 @@ const NATIVE_TOOLS: NativeToolEntry[] = [
     "Archive (remove) an agent from this team",
     "self-config",
     "high",
-    { writesState: true }
+    { writesState: true },
+    { autonomyGate: "copilot" }
   ),
   native(
     "config_undo_last_change",
@@ -236,7 +258,8 @@ const NATIVE_TOOLS: NativeToolEntry[] = [
     "Undo the most recent configuration change within 24 hours",
     "self-config",
     "high",
-    { writesState: true }
+    { writesState: true },
+    { autonomyGate: "copilot" }
   ),
 
   // ── Credentials ─────────────────────────────────────────────────────────
@@ -265,7 +288,8 @@ const NATIVE_TOOLS: NativeToolEntry[] = [
     "Delegate a task to another agent on your team for specialized handling",
     "delegation",
     "high",
-    { writesState: false }
+    { writesState: false },
+    { autonomyGate: "assisted" }
   ),
   native(
     "delegate_task_async",
@@ -281,7 +305,8 @@ const NATIVE_TOOLS: NativeToolEntry[] = [
     "Check the status and collect results of async delegations",
     "delegation",
     "high",
-    { writesState: false }
+    { writesState: false },
+    { isQuery: true }
   ),
   native(
     "delegation_cancel",
@@ -300,7 +325,7 @@ const NATIVE_TOOLS: NativeToolEntry[] = [
     "browser",
     "high",
     { networkAccess: true, writesState: false },
-    { defaultStatus: "disabled" }
+    { defaultStatus: "disabled", autonomyGate: "assisted" }
   ),
   native(
     "browser_extract",
@@ -318,7 +343,7 @@ const NATIVE_TOOLS: NativeToolEntry[] = [
     "browser",
     "high",
     { networkAccess: false, writesState: true },
-    { defaultStatus: "disabled" }
+    { defaultStatus: "disabled", autonomyGate: "copilot" }
   ),
   native(
     "browser_fill",
@@ -327,7 +352,7 @@ const NATIVE_TOOLS: NativeToolEntry[] = [
     "browser",
     "high",
     { networkAccess: false, writesState: true },
-    { defaultStatus: "disabled" }
+    { defaultStatus: "disabled", autonomyGate: "copilot" }
   ),
   native(
     "browser_screenshot",
@@ -367,7 +392,7 @@ const NATIVE_TOOLS: NativeToolEntry[] = [
     "integrations",
     "high",
     { writesState: true },
-    { defaultApprovalMode: "owner" }
+    { defaultApprovalMode: "owner", autonomyGate: "copilot" }
   ),
   native(
     "integration_register",
@@ -375,7 +400,8 @@ const NATIVE_TOOLS: NativeToolEntry[] = [
     "Register a new external service integration with discovered API metadata",
     "integrations",
     "medium",
-    { writesState: true }
+    { writesState: true },
+    { autonomyGate: "assisted" }
   ),
   native(
     "integration_list",
@@ -383,7 +409,8 @@ const NATIVE_TOOLS: NativeToolEntry[] = [
     "List all configured external service integrations for this workspace",
     "integrations",
     "low",
-    { writesState: false }
+    { writesState: false },
+    { isQuery: true }
   ),
   native(
     "integration_api_call",
@@ -399,7 +426,8 @@ const NATIVE_TOOLS: NativeToolEntry[] = [
     "Look up pre-built integration templates for common services with known endpoints and setup instructions",
     "integrations",
     "low",
-    { writesState: false }
+    { writesState: false },
+    { isQuery: true }
   ),
 
   // ── Network ─────────────────────────────────────────────────────────────

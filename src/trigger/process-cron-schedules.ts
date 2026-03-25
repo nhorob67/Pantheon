@@ -1,4 +1,5 @@
 import { schedules, task, wait } from "@trigger.dev/sdk";
+import { logSilentCatch } from "@/lib/telemetry/silent-catch";
 import { createTriggerAdminClient } from "./lib/supabase";
 import { resolveSession } from "@/lib/ai/session-resolver";
 import {
@@ -75,7 +76,8 @@ export const executeCronSchedule = task({
           content: `[cron] ${schedule.schedule_key}`,
           user_id: "system",
           guild_id: null,
-          message_id: `cron-${schedule.id}-${Date.now()}`,
+          message_id: null,
+          trigger_id: `cron-${schedule.id}-${Date.now()}`,
           run_kind: "discord_cron",
           schedule_key: schedule.schedule_key,
           schedule_type: scheduleType,
@@ -112,7 +114,7 @@ export const executeCronSchedule = task({
           await transitionTenantRuntimeRun(admin, staleRun, "cancel", {
             errorMessage: `Canceled before cron retry attempt ${attempt + 1}`,
             metadataPatch: { cron_retry_canceled: true },
-          }).catch(() => {});
+          }).catch((e) => logSilentCatch("cron-stale-run-cancel", e));
         }
         await wait.for({ seconds: retryDelay });
         continue;

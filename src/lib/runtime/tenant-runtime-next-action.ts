@@ -321,3 +321,35 @@ export async function applyQueuedTenantRuntimeNextAction(
     }),
   };
 }
+
+// ---------------------------------------------------------------------------
+// Approval ID extraction from executor records
+// ---------------------------------------------------------------------------
+
+interface ExecutorRecordLike {
+  toolName: string;
+  success: boolean;
+  errorClass?: string | null;
+  outputSummary: string;
+}
+
+export function extractApprovalIdFromExecutorRecords(
+  records: readonly ExecutorRecordLike[]
+): string | null {
+  for (const record of records) {
+    if (record.errorClass !== "approval_required") {
+      continue;
+    }
+
+    try {
+      const parsed = JSON.parse(record.outputSummary) as Record<string, unknown>;
+      if (typeof parsed.approval_id === "string" && parsed.approval_id.length > 0) {
+        return parsed.approval_id;
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return null;
+}

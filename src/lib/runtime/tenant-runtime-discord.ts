@@ -1,4 +1,5 @@
 import { runWithCircuitBreaker } from "./tenant-runtime-circuit-breaker";
+import { logSilentCatch } from "@/lib/telemetry/silent-catch";
 
 const DISCORD_API_BASE_URL = "https://discord.com/api/v10";
 const DISCORD_CANARY_MAX_CONTENT_LENGTH = 1900;
@@ -31,6 +32,8 @@ export interface DiscordSendMessageSequenceResult {
   messageIds: string[];
   status: number;
   partsSent: number;
+  totalParts: number;
+  partialFailure: boolean;
 }
 
 export interface DiscordRuntimeVisibleReplyInput {
@@ -466,28 +469,39 @@ export async function sendDiscordChannelMessageSequence(
 
   const messageIds: string[] = [];
   let status = 200;
+  let actualPartsSent = 0;
 
   for (let index = 0; index < input.contents.length; index += 1) {
     const content = input.contents[index];
-    const sent = await sendDiscordChannelMessage(
-      {
-        botToken: input.botToken,
-        channelId: input.channelId,
-        content,
-        replyToMessageId: index === 0 ? input.replyToMessageId : null,
-      },
-      fetchImpl
-    );
-    status = sent.status;
-    if (sent.messageId) {
-      messageIds.push(sent.messageId);
+    try {
+      const sent = await sendDiscordChannelMessage(
+        {
+          botToken: input.botToken,
+          channelId: input.channelId,
+          content,
+          replyToMessageId: index === 0 ? input.replyToMessageId : null,
+        },
+        fetchImpl
+      );
+      status = sent.status;
+      actualPartsSent += 1;
+      if (sent.messageId) {
+        messageIds.push(sent.messageId);
+      }
+    } catch (error) {
+      logSilentCatch("discord-message-sequence-part", error);
+      // If no parts were sent at all, re-throw so the circuit breaker sees the failure
+      if (actualPartsSent === 0) throw error;
+      break;
     }
   }
 
   return {
     messageIds,
     status,
-    partsSent: input.contents.length,
+    partsSent: actualPartsSent,
+    totalParts: input.contents.length,
+    partialFailure: actualPartsSent < input.contents.length,
   };
 }
 
@@ -529,8 +543,19 @@ export interface FinalReplyDedupKey {
   contentHash: string;
 }
 
-const finalReplySentKeys = new Set<string>();
+const finalReplySentKeys = new Map<string, number>();
 const FINAL_REPLY_DEDUP_TTL_MS = 120_000;
+const MAX_FINAL_REPLY_KEYS = 2000;
+
+// Periodic cleanup: evict expired entries every 30s
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, addedAt] of finalReplySentKeys) {
+    if (now - addedAt > FINAL_REPLY_DEDUP_TTL_MS) {
+      finalReplySentKeys.delete(key);
+    }
+  }
+}, 30_000).unref();
 
 function buildFinalReplyFingerprint(key: FinalReplyDedupKey): string {
   return `${key.runId}:${key.channelId}:${key.replyToMessageId ?? ""}:${key.partIndex}:${key.contentHash}`;
@@ -557,7 +582,11 @@ export function checkAndMarkFinalReply(key: Omit<FinalReplyDedupKey, "contentHas
   if (finalReplySentKeys.has(fingerprint)) {
     return true; // duplicate — skip
   }
-  finalReplySentKeys.add(fingerprint);
-  setTimeout(() => finalReplySentKeys.delete(fingerprint), FINAL_REPLY_DEDUP_TTL_MS);
+  // Evict oldest entry if at capacity
+  if (finalReplySentKeys.size >= MAX_FINAL_REPLY_KEYS) {
+    const firstKey = finalReplySentKeys.keys().next().value;
+    if (firstKey !== undefined) finalReplySentKeys.delete(firstKey);
+  }
+  finalReplySentKeys.set(fingerprint, Date.now());
   return false; // not a duplicate — proceed
 }

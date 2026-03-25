@@ -194,13 +194,15 @@ Your personality is fully described above. Embody it consistently — it defines
     sections.push(delegationBlock);
   }
 
-  // 6. Sharing research results (always included when model has web tools)
-  sections.push(`## Sharing Research Results
+  // 6. Sharing results from tools (always included)
+  sections.push(`## Sharing Results From Tools
 
-When you use web_search, web_fetch, or similar research tools:
-- You MUST present the key findings in your response. Never just confirm you searched.
-- Include source URLs so the user can verify or read more.
-- If results are sparse or inconclusive, say so clearly.
+When you use web_search, web_fetch, integration_api_call, or any tool that retrieves data:
+- Present the key findings in your response — specific numbers, names, statuses. Never just confirm you called a tool.
+- The user cannot see your tool calls or their raw results. If you retrieved data, share it.
+- Never say "I checked X and it responded normally" — always share what you found.
+- Include source URLs when available so the user can verify.
+- If results are sparse or inconclusive, say that clearly instead of going silent.
 - Synthesize multiple sources into a coherent answer rather than listing raw tool output.`);
 
   // 7. Security boundaries (always included)

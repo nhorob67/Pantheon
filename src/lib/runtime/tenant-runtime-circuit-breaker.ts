@@ -10,6 +10,17 @@ interface CircuitBreakerOptions {
 }
 
 const circuitStates = new Map<string, CircuitBreakerState>();
+const MAX_CIRCUIT_STATES = 500;
+
+// Periodic cleanup: remove idle entries every 60s
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, state] of circuitStates) {
+    if (state.consecutiveFailures === 0 && (state.openUntilMs === null || state.openUntilMs < now)) {
+      circuitStates.delete(key);
+    }
+  }
+}, 60_000).unref();
 
 export class CircuitBreakerOpenError extends Error {
   readonly key: string;
@@ -26,6 +37,12 @@ function getState(key: string): CircuitBreakerState {
   const existing = circuitStates.get(key);
   if (existing) {
     return existing;
+  }
+
+  // Evict oldest entry if at capacity
+  if (circuitStates.size >= MAX_CIRCUIT_STATES) {
+    const firstKey = circuitStates.keys().next().value;
+    if (firstKey !== undefined) circuitStates.delete(firstKey);
   }
 
   const created: CircuitBreakerState = {

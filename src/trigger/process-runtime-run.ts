@@ -1,5 +1,6 @@
 import { task, tasks } from "@trigger.dev/sdk";
 import { createTriggerAdminClient } from "./lib/supabase";
+import { logSilentCatch } from "@/lib/telemetry/silent-catch";
 import { createTenantAiWorker } from "@/lib/ai/tenant-ai-worker";
 import { createEmailAiWorker } from "@/lib/ai/email-ai-worker";
 import { createHeartbeatAiWorker } from "@/lib/ai/heartbeat-ai-worker";
@@ -21,12 +22,17 @@ async function triggerNextSessionLaneRun(run: Awaited<ReturnType<typeof getTenan
   }
 
   const admin = createTriggerAdminClient();
-  const next = await getNextQueuedSessionLaneRun(admin, run).catch(() => null);
+  const next = await getNextQueuedSessionLaneRun(admin, run).catch((e) => {
+    logSilentCatch("get-next-session-lane-run", e);
+    return null;
+  });
   if (!next) {
     return;
   }
 
-  await tasks.trigger("process-runtime-run", { runId: next.id }).catch(() => {});
+  await tasks.trigger("process-runtime-run", { runId: next.id }).catch((e) => {
+    logSilentCatch("trigger-next-session-lane-run", e);
+  });
 }
 
 export const processRuntimeRun = task({
@@ -78,11 +84,13 @@ export const processRuntimeRun = task({
       await releaseAsyncDelegationBudgetReservation(admin, {
         parentRunId: claimed.parent_run_id,
         childRunId: claimed.id,
-      }).catch(() => {});
+      }).catch((e) => logSilentCatch("release-delegation-budget", e));
     }
 
     if (transitionedRun && claimed.run_kind === "delegation_runtime") {
-      await sendAsyncDelegationLifecycleUpdate(admin, transitionedRun).catch(() => {});
+      await sendAsyncDelegationLifecycleUpdate(admin, transitionedRun).catch((e) =>
+        logSilentCatch("delegation-lifecycle-update", e)
+      );
     }
 
     if (transitionedRun && (outcome.finalStatus === "completed" || outcome.finalStatus === "failed")) {
