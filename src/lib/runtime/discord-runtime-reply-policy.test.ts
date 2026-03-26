@@ -10,6 +10,7 @@ import {
   isWeakProcessText,
   normalizeReplyContent,
   resolvePhaseKey,
+  stripInlineJson,
   shouldEmitKeepalive,
   shouldSendVisibleMessage,
 } from "./discord-runtime-reply-policy.ts";
@@ -335,4 +336,47 @@ test("buildTerminalSummary returns generic when all empty", () => {
     status: "completed",
   });
   assert.equal(result, "I finished that.");
+});
+
+// ---------------------------------------------------------------------------
+// stripInlineJson
+// ---------------------------------------------------------------------------
+
+test("stripInlineJson replaces substantial inline JSON objects with placeholder", () => {
+  const input = 'I checked Discourse. {"users":[{"id":3,"username":"NickHorob","name":"Nick","admin":true}]}';
+  const result = stripInlineJson(input);
+  assert.ok(!result.includes('"users"'), "Should not contain raw JSON keys");
+  assert.ok(result.includes("[data retrieved]"), "Should contain placeholder");
+  assert.ok(result.startsWith("I checked Discourse."), "Should preserve leading text");
+});
+
+test("stripInlineJson replaces truncated JSON with ellipsis", () => {
+  const input = 'I checked Discourse. {"users":[{"id":3,"username":"NickHorob","name":"Nick","avatar_template":"/letter…';
+  const result = stripInlineJson(input);
+  assert.ok(result.includes("[data retrieved]"), "Should contain placeholder for truncated JSON");
+});
+
+test("stripInlineJson preserves JSON inside code fences", () => {
+  const input = 'Here is the data:\n```json\n{"users":[{"id":3,"username":"NickHorob"}]}\n```\nThat is all.';
+  const result = stripInlineJson(input);
+  assert.ok(result.includes('"users"'), "Should preserve JSON inside code fences");
+  assert.ok(!result.includes("[data retrieved]"), "Should not replace fenced JSON");
+});
+
+test("stripInlineJson preserves small JSON-like patterns in prose", () => {
+  const input = "The config is {a: 1} and it works.";
+  const result = stripInlineJson(input);
+  assert.equal(result, input, "Should not modify small inline patterns");
+});
+
+test("stripInlineJson preserves normal prose with curly braces", () => {
+  const input = "The team {Alpha Squad} completed their work today.";
+  const result = stripInlineJson(input);
+  assert.equal(result, input, "Should not modify non-JSON curly braces");
+});
+
+test("stripInlineJson handles text with no JSON at all", () => {
+  const input = "61 people visited the forum in the last 24 hours. 12 participated.";
+  const result = stripInlineJson(input);
+  assert.equal(result, input, "Should not modify plain text");
 });

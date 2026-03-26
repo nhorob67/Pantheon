@@ -155,9 +155,45 @@ function stripKnownControlTokens(text: string): { text: string; skipReason?: "si
   };
 }
 
+/**
+ * Strip raw JSON blobs from user-facing text while preserving JSON inside
+ * code fences. This is a hard guardrail — if the model dumps raw API
+ * response JSON into its message, we replace it with "[data retrieved]"
+ * so downstream formatters can catch the generic text and replace it
+ * with a proper summary.
+ */
+export function stripInlineJson(text: string): string {
+  // Preserve JSON inside code fences (``` ... ```)
+  const fencePlaceholders: string[] = [];
+  let result = text.replace(/```[\s\S]*?```/g, (match) => {
+    fencePlaceholders.push(match);
+    return `\x00FENCE${fencePlaceholders.length - 1}\x00`;
+  });
+
+  // Strip substantial inline JSON: anything starting with { or [{ that contains
+  // "key": patterns and is ≥40 chars. Handles both complete and truncated JSON.
+  result = result.replace(
+    /[\[{](?:[^`])*?"[^"]+":\s*[\s\S]*/g,
+    (match) => {
+      if (match.length >= 40 && /"[^"]+":\s*/.test(match)) {
+        return "[data retrieved]";
+      }
+      return match;
+    }
+  );
+
+  // Restore code fences
+  for (let i = 0; i < fencePlaceholders.length; i++) {
+    result = result.replace(`\x00FENCE${i}\x00`, fencePlaceholders[i]);
+  }
+
+  return result;
+}
+
 function sanitizeUserFacingText(text: string): string {
   let next = text.replace(/\u0000/g, "");
   next = next.replace(/\r\n/g, "\n");
+  next = stripInlineJson(next);
   next = next.replace(/[ \t]+\n/g, "\n");
   next = next.replace(/\n{3,}/g, "\n\n");
   return next.trim();

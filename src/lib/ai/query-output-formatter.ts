@@ -393,7 +393,17 @@ export function isGenericQueryResponse(
     return true;
   }
 
+  // Catch sanitized JSON placeholder from the hard guardrail
+  if (/\[data retrieved\]/i.test(normalized)) {
+    return true;
+  }
+
   if (/^i checked\b/i.test(normalized) && !/[0-9]/.test(normalized) && !/:\s/.test(normalized)) {
+    return true;
+  }
+
+  // Catch model output that embeds raw JSON (even if numbers are present)
+  if (/^i (?:checked|called)\b/i.test(normalized) && /\{[^}]*"[^"]+":/.test(normalized)) {
     return true;
   }
 

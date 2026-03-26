@@ -140,7 +140,7 @@ export interface UnifiedInvocationRecord {
 // ---------------------------------------------------------------------------
 
 const SUMMARY_MAX_LEN = 500;
-const INTEGRATION_SUMMARY_MAX_LEN = 3000;
+const INTEGRATION_SUMMARY_MAX_LEN = 1500;
 
 function outputSummaryMaxLen(toolName: string): number {
   return toolName === "integration_api_call" ? INTEGRATION_SUMMARY_MAX_LEN : SUMMARY_MAX_LEN;
@@ -964,6 +964,37 @@ export function createUnifiedToolExecutor(config: UnifiedToolExecutorConfig) {
                     timestamp: Date.now(),
                   });
                 }
+              }
+            }
+
+            // Pre-format integration API results so the model works with
+            // summarized data instead of raw JSON blobs. Return a shallow
+            // copy with the body summarized — the original `result` is
+            // preserved for the outputSummary recording in the finally block.
+            if (
+              name === "integration_api_call" &&
+              result &&
+              typeof result === "object" &&
+              !Array.isArray(result)
+            ) {
+              const apiResult = result as Record<string, unknown>;
+              const body = apiResult.body;
+              if (body !== undefined && body !== null) {
+                let summarizedBody: unknown = body;
+                try {
+                  const parsed = typeof body === "string" ? JSON.parse(body) : body;
+                  summarizedBody = summarizeJsonValue(parsed, {
+                    maxStringLen: 200,
+                    maxArrayItems: 10,
+                    maxObjectEntries: 15,
+                    maxDepth: 3,
+                  });
+                } catch {
+                  if (typeof body === "string" && body.length > 800) {
+                    summarizedBody = body.slice(0, 800) + "…";
+                  }
+                }
+                return { ...apiResult, body: summarizedBody };
               }
             }
 
